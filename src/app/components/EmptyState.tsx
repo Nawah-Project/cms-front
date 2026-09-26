@@ -1,5 +1,6 @@
 import React from "react";
 import { PlusIcon } from "./Icons";
+import { useI18n } from "../i18n";
 
 interface EmptyStateProps {
   onAddClick: () => void;
@@ -11,19 +12,20 @@ interface EmptyStateProps {
 
 export function EmptyState({
   onAddClick,
-  title = "My Applications",
-  description = "You haven't added any job applications yet.",
+  title = "",
+  description = "",
   isFiltered = false,
   onClearFilters,
 }: EmptyStateProps) {
+  const { t } = useI18n();
   if (isFiltered) {
     return (
       <div className="w-full py-16 px-4 text-center rounded-xl border border-dashed border-neutral-300 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/30">
         <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-          No matching applications
+          {t("applications.noResults")}
         </h3>
         <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-          Try adjusting your search query or stage filters.
+          {t("applications.adjustFilters")}
         </p>
         {onClearFilters && (
           <button
@@ -31,7 +33,7 @@ export function EmptyState({
             onClick={onClearFilters}
             className="mt-4 px-3 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors shadow-xs"
           >
-            Clear Filters
+            {t("applications.clearFilters")}
           </button>
         )}
       </div>
@@ -56,10 +58,10 @@ export function EmptyState({
         </svg>
       </div>
       <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-        {title}
+        {title || t("applications.title")}
       </h2>
       <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-400 max-w-sm mx-auto leading-relaxed">
-        {description}
+        {description || t("applications.noApplicationsYet")}
       </p>
       <div className="mt-6">
         <button
@@ -68,7 +70,7 @@ export function EmptyState({
           className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors shadow-xs"
         >
           <PlusIcon className="w-4 h-4" />
-          <span>+ Add Application</span>
+          <span>{t("common.addApplication")}</span>
         </button>
       </div>
     </div>

@@ -18,5 +18,11 @@ export default [
     ),
     route("profile", "features/auth/pages/ProfilePage.tsx"),
     route("applications/:id", "routes/application-details.tsx"),
+    route("admin", "features/admin/AdminLayout.tsx", [
+      index("features/admin/AdminOverviewPage.tsx"),
+      route("members", "features/admin/AdminMembersPage.tsx"),
+      route("groups", "features/admin/AdminGroupsPage.tsx"),
+      route("activity", "features/admin/AdminActivityPage.tsx"),
+    ]),
   ]),
 ] satisfies RouteConfig;

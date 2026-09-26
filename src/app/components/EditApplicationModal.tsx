@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   APPLICATION_METHODS,
+  formatApplicationMethod,
   STAGES,
   type Application,
   type Outcome,
@@ -8,6 +9,7 @@ import {
   type UpdateApplicationInput,
 } from "../types";
 import { CloseIcon, SpinnerIcon } from "./Icons";
+import { useI18n } from "../i18n";
 
 interface EditApplicationModalProps {
   isOpen: boolean;
@@ -25,6 +27,7 @@ export function EditApplicationModal({
   onClose,
   onSave,
 }: EditApplicationModalProps) {
+  const { t } = useI18n();
   const [companyName, setCompanyName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [applicationDate, setApplicationDate] = useState("");
@@ -72,10 +75,10 @@ export function EditApplicationModal({
   const validate = () => {
     const errs: { companyName?: string; jobTitle?: string } = {};
     if (!companyName.trim()) {
-      errs.companyName = "Company name is required";
+      errs.companyName = t("applications.validationCompany");
     }
     if (!jobTitle.trim()) {
-      errs.jobTitle = "Job title is required";
+      errs.jobTitle = t("applications.validationJobTitle");
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -103,7 +106,7 @@ export function EditApplicationModal({
     } catch (err: any) {
       setErrors({
         submit:
-          err.message || "Failed to update application. Please try again.",
+          t("common.unexpectedError"),
       });
     } finally {
       setIsSubmitting(false);
@@ -123,13 +126,13 @@ export function EditApplicationModal({
             id="edit-application-title"
             className="text-base font-semibold text-neutral-900 dark:text-neutral-100"
           >
-            Edit Application
+            {t("applications.editTitle")}
           </h2>
           <button
             type="button"
             onClick={onClose}
             className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-1 rounded-md transition-colors"
-            aria-label="Close modal"
+            aria-label={t("common.close")}
           >
             <CloseIcon className="w-5 h-5" />
           </button>
@@ -150,7 +153,7 @@ export function EditApplicationModal({
               htmlFor="editCompanyName"
               className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1"
             >
-              Company Name <span className="text-red-500">*</span>
+              {t("applications.companyName")} <span className="text-red-500">*</span>
             </label>
             <input
               id="editCompanyName"
@@ -176,7 +179,7 @@ export function EditApplicationModal({
               htmlFor="editJobTitle"
               className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1"
             >
-              Job Title <span className="text-red-500">*</span>
+              {t("applications.jobTitle")} <span className="text-red-500">*</span>
             </label>
             <input
               id="editJobTitle"
@@ -203,7 +206,7 @@ export function EditApplicationModal({
                 htmlFor="editApplicationDate"
                 className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1"
               >
-                Application Date
+                {t("applications.applicationDate")}
               </label>
               <input
                 id="editApplicationDate"
@@ -219,7 +222,7 @@ export function EditApplicationModal({
                 htmlFor="editLocation"
                 className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1"
               >
-                Location
+                {t("applications.location")}
               </label>
               <input
                 id="editLocation"
@@ -236,7 +239,7 @@ export function EditApplicationModal({
               htmlFor="editApplicationMethod"
               className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1"
             >
-              Application Method
+              {t("applications.method")}
             </label>
             <select
               id="editApplicationMethod"
@@ -246,7 +249,7 @@ export function EditApplicationModal({
             >
               {APPLICATION_METHODS.map((method) => (
                 <option key={method.value} value={method.value}>
-                  {method.label}
+                  {formatApplicationMethod(method.value, t)}
                 </option>
               ))}
             </select>
@@ -257,7 +260,7 @@ export function EditApplicationModal({
               htmlFor="editJobUrl"
               className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1"
             >
-              Job URL
+              {t("applications.jobUrl")}
             </label>
             <input
               id="editJobUrl"
@@ -271,7 +274,7 @@ export function EditApplicationModal({
 
           <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800">
             <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-              Pipeline Stage
+              {t("applications.stage")}
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {STAGES.map((s) => (
@@ -285,7 +288,7 @@ export function EditApplicationModal({
                       : "bg-neutral-50 dark:bg-neutral-800/50 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   }`}
                 >
-                  {s.label}
+                  {t(`applications.${s.key === "APPLIED" ? "submitted" : s.key.toLowerCase()}`)}
                 </button>
               ))}
             </div>
@@ -295,7 +298,7 @@ export function EditApplicationModal({
           {stage === "CLOSED" && (
             <div className="p-3 bg-neutral-50 dark:bg-neutral-800/40 rounded-lg border border-neutral-200 dark:border-neutral-700">
               <label className="block text-xs font-medium text-neutral-800 dark:text-neutral-200 mb-1">
-                Outcome for Closed Application
+                {t("applications.closedOutcome")}
               </label>
               <div className="grid grid-cols-3 gap-2 mt-2">
                 {(["ACCEPTED", "REJECTED", "WITHDRAWN"] as Outcome[]).map(
@@ -310,7 +313,7 @@ export function EditApplicationModal({
                           : "bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50"
                       }`}
                     >
-                      {opt.charAt(0) + opt.slice(1).toLowerCase()}
+                      {t(`applications.${opt.toLowerCase()}`)}
                     </button>
                   ),
                 )}
@@ -325,7 +328,7 @@ export function EditApplicationModal({
               disabled={isSubmitting}
               className="button-ghost text-xs disabled:opacity-50"
             >
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -333,7 +336,7 @@ export function EditApplicationModal({
               className="button-primary inline-flex items-center gap-2 text-xs disabled:opacity-50 shadow-xs dark:border-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
             >
               {isSubmitting && <SpinnerIcon className="w-3.5 h-3.5" />}
-              <span>Save Changes</span>
+              <span>{t("applications.saveChanges")}</span>
             </button>
           </div>
         </form>

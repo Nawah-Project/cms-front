@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
-import { Outlet, useNavigate } from "react-router";
+import { Outlet, useLocation, useNavigate } from "react-router";
 import { AddApplicationModal } from "../components/AddApplicationModal";
 import { AppSidebar } from "../components/AppSidebar";
 import { api } from "../services/api";
@@ -35,9 +35,9 @@ export default function Layout() {
         value={{ openAddModal: () => setIsAddModalOpen(true) }}
       >
         <div className="min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200 dark:bg-neutral-950 dark:text-neutral-100 dark:selection:bg-neutral-800">
-          <AppSidebar onOpenAddModal={() => setIsAddModalOpen(true)} />
+          <AppSidebar />
 
-          <div className="min-h-screen w-full lg:pl-64">
+          <div className="min-h-screen w-full lg:ps-64">
             <main className="mx-auto w-full max-w-7xl px-5 py-7 sm:px-8 lg:px-10 lg:py-10">
               <Outlet
                 context={{ openAddModal: () => setIsAddModalOpen(true) }}

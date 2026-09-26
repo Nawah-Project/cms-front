@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import {
   APPLICATION_METHODS,
+  formatApplicationMethod,
   type Application,
   type CreateApplicationInput,
 } from "../types";
 import { getTodayDateString } from "../utils/date";
 import { CloseIcon, SpinnerIcon } from "./Icons";
+import { useI18n } from "../i18n";
 
 interface AddApplicationModalProps {
   isOpen: boolean;
@@ -18,6 +20,7 @@ export function AddApplicationModal({
   onClose,
   onSubmit,
 }: AddApplicationModalProps) {
+  const { t } = useI18n();
   const [companyName, setCompanyName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [applicationDate, setApplicationDate] = useState(getTodayDateString());
@@ -38,10 +41,10 @@ export function AddApplicationModal({
   const validate = () => {
     const errs: { companyName?: string; jobTitle?: string } = {};
     if (!companyName.trim()) {
-      errs.companyName = "Company name is required";
+      errs.companyName = t("applications.validationCompany");
     }
     if (!jobTitle.trim()) {
-      errs.jobTitle = "Job title is required";
+      errs.jobTitle = t("applications.validationJobTitle");
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -73,7 +76,7 @@ export function AddApplicationModal({
       onClose();
     } catch (err: any) {
       setErrors({
-        submit: err.message || "Failed to add application. Please try again.",
+        submit: t("common.unexpectedError"),
       });
     } finally {
       setIsSubmitting(false);
@@ -93,13 +96,13 @@ export function AddApplicationModal({
             id="add-application-title"
             className="text-base font-semibold text-neutral-900 dark:text-neutral-100"
           >
-            Add Application
+            {t("applications.addTitle")}
           </h2>
           <button
             type="button"
             onClick={onClose}
             className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-1 rounded-md transition-colors"
-            aria-label="Close modal"
+            aria-label={t("common.close")}
           >
             <CloseIcon className="w-5 h-5" />
           </button>
@@ -117,7 +120,7 @@ export function AddApplicationModal({
               htmlFor="companyName"
               className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1"
             >
-              Company Name <span className="text-red-500">*</span>
+              {t("applications.companyName")} <span className="text-red-500">*</span>
             </label>
             <input
               id="companyName"
@@ -129,7 +132,7 @@ export function AddApplicationModal({
                 if (errors.companyName)
                   setErrors((prev) => ({ ...prev, companyName: undefined }));
               }}
-              placeholder="e.g. Vodafone"
+              placeholder={t("applications.companyPlaceholder")}
               className={`w-full px-3 py-2 text-sm bg-neutral-50 dark:bg-neutral-800/60 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-neutral-900 dark:focus:ring-neutral-100 transition-colors ${
                 errors.companyName
                   ? "border-red-500 focus:ring-red-500"
@@ -148,7 +151,7 @@ export function AddApplicationModal({
               htmlFor="jobTitle"
               className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1"
             >
-              Job Title <span className="text-red-500">*</span>
+              {t("applications.jobTitle")} <span className="text-red-500">*</span>
             </label>
             <input
               id="jobTitle"
@@ -160,7 +163,7 @@ export function AddApplicationModal({
                 if (errors.jobTitle)
                   setErrors((prev) => ({ ...prev, jobTitle: undefined }));
               }}
-              placeholder="e.g. UX Designer"
+              placeholder={t("applications.jobPlaceholder")}
               className={`w-full px-3 py-2 text-sm bg-neutral-50 dark:bg-neutral-800/60 border rounded-lg focus:outline-hidden focus:ring-2 focus:ring-neutral-900 dark:focus:ring-neutral-100 transition-colors ${
                 errors.jobTitle
                   ? "border-red-500 focus:ring-red-500"
@@ -180,7 +183,7 @@ export function AddApplicationModal({
                 htmlFor="applicationDate"
                 className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1"
               >
-                Application Date
+                {t("applications.applicationDate")}
               </label>
               <input
                 id="applicationDate"
@@ -196,14 +199,14 @@ export function AddApplicationModal({
                 htmlFor="location"
                 className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1"
               >
-                Location
+                {t("applications.location")}
               </label>
               <input
                 id="location"
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g. Cairo, Remote"
+                placeholder={t("applications.locationPlaceholder")}
                 className="w-full px-3 py-2 text-sm bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-300 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-2 focus:ring-neutral-900 dark:focus:ring-neutral-100"
               />
             </div>
@@ -214,7 +217,7 @@ export function AddApplicationModal({
               htmlFor="applicationMethod"
               className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1"
             >
-              How did you apply?
+              {t("applications.method")}
             </label>
             <select
               id="applicationMethod"
@@ -224,7 +227,7 @@ export function AddApplicationModal({
             >
               {APPLICATION_METHODS.map((method) => (
                 <option key={method.value} value={method.value}>
-                  {method.label}
+                  {formatApplicationMethod(method.value, t)}
                 </option>
               ))}
             </select>
@@ -235,7 +238,7 @@ export function AddApplicationModal({
               htmlFor="jobUrl"
               className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1"
             >
-              Job URL
+              {t("applications.jobUrl")}
             </label>
             <input
               id="jobUrl"
@@ -254,7 +257,7 @@ export function AddApplicationModal({
               disabled={isSubmitting}
               className="button-ghost text-xs disabled:opacity-50"
             >
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -262,7 +265,7 @@ export function AddApplicationModal({
               className="button-primary inline-flex items-center gap-2 text-xs disabled:opacity-50 shadow-xs dark:border-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
             >
               {isSubmitting && <SpinnerIcon className="w-3.5 h-3.5" />}
-              <span>Add Application</span>
+              <span>{t("applications.add")}</span>
             </button>
           </div>
         </form>

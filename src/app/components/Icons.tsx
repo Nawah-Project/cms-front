@@ -170,6 +170,15 @@ export function CloseIcon({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
+export function GlobeIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.5 12h17M12 3c2.2 2.4 3.3 5.4 3.3 9s-1.1 6.6-3.3 9c-2.2-2.4-3.3-5.4-3.3-9S9.8 5.4 12 3Z" />
+    </svg>
+  );
+}
+
 export function ChevronDownIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg

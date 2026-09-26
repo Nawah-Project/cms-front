@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router";
 import { PlusIcon } from "./Icons";
 import { useAuth } from "../features/auth/store/authStore";
 import { useLogout } from "../features/auth/hooks/useLogout";
+import { useI18n } from "../i18n";
 
 interface NavbarProps {
   onOpenAddModal: () => void;
@@ -12,6 +13,7 @@ export function Navbar({ onOpenAddModal }: NavbarProps) {
   const location = useLocation();
   const { user } = useAuth();
   const logout = useLogout();
+  const { t } = useI18n();
   const isDashboard = location.pathname === "/";
   const isApplications = location.pathname.startsWith("/applications") && location.pathname !== "/";
 
@@ -27,7 +29,7 @@ export function Navbar({ onOpenAddModal }: NavbarProps) {
             <div className="w-7 h-7 rounded-lg bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 flex items-center justify-center font-bold text-xs">
               J
             </div>
-            <span>Job Tracker</span>
+            <span>{t("common.brand")}</span>
           </Link>
 
           {/* Navigation Links */}
@@ -40,7 +42,7 @@ export function Navbar({ onOpenAddModal }: NavbarProps) {
                   : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               }`}
             >
-              Dashboard
+              {t("common.navDashboard")}
             </Link>
             <Link
               to="/applications"
@@ -50,22 +52,22 @@ export function Navbar({ onOpenAddModal }: NavbarProps) {
                   : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               }`}
             >
-              Applications
+              {t("common.navApplications")}
             </Link>
           </nav>
         </div>
 
         {/* Right: + Add Application Button */}
         <div className="flex items-center gap-3">
-          <Link to="/profile" className="hidden sm:inline text-xs text-neutral-600 dark:text-neutral-400">{user?.name || "Profile"}</Link>
-          <button type="button" onClick={() => void logout().catch(() => undefined)} className="text-xs text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white">Sign out</button>
+          <Link to="/profile" className="hidden sm:inline text-xs text-neutral-600 dark:text-neutral-400">{user?.name || t("common.profile")}</Link>
+          <button type="button" onClick={() => void logout().catch(() => undefined)} className="text-xs text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white">{t("common.signOut")}</button>
           <button
             type="button"
             onClick={onOpenAddModal}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors shadow-xs"
           >
             <PlusIcon className="w-3.5 h-3.5" />
-            <span>+ Add Application</span>
+            <span>{t("common.addApplication")}</span>
           </button>
         </div>
       </div>

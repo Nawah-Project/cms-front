@@ -5,6 +5,7 @@ import { formatApplicationMethod } from "../types";
 import { formatShortDate } from "../utils/date";
 import { ExternalLinkIcon, GripVerticalIcon } from "./Icons";
 import { StatusBadge } from "./StatusBadge";
+import { useI18n } from "../i18n";
 
 interface KanbanViewProps {
   applications: Application[];
@@ -22,27 +23,65 @@ const COLUMNS: {
 }[] = [
   {
     stage: "APPLIED",
-    label: "Applied",
-    description: "Submitted applications",
+    label: "submitted",
+    description: "submittedApplications",
   },
   {
     stage: "INTERVIEW",
-    label: "Interview",
-    description: "In interview process",
+    label: "interview",
+    description: "interviewProcess",
   },
   {
     stage: "DECISION",
-    label: "Decision",
-    description: "Awaiting final decision",
+    label: "decision",
+    description: "awaitingDecision",
   },
   {
     stage: "CLOSED",
-    label: "Closed",
-    description: "Accepted, rejected, or withdrawn",
+    label: "closed",
+    description: "closedDescription",
   },
 ];
 
+function getApplicationCardColor(app: Application) {
+  if (app.stage === "CLOSED") {
+    switch (app.outcome) {
+      case "ACCEPTED":
+        return "border-[#829f8b] bg-[#d4e0d7] hover:bg-[#c7d7cb] dark:border-green-800 dark:bg-green-950/70 dark:hover:bg-green-900/80";
+      case "REJECTED":
+        return "border-red-400 bg-red-100 hover:bg-red-200 dark:border-red-700 dark:bg-red-900/50 dark:hover:bg-red-900/70";
+      case "WITHDRAWN":
+        return "border-neutral-500 bg-neutral-300 hover:bg-neutral-400 dark:border-neutral-500 dark:bg-neutral-700 dark:hover:bg-neutral-600";
+      default:
+        return "border-neutral-400 bg-neutral-200 hover:bg-neutral-300 dark:border-neutral-600 dark:bg-neutral-800 dark:hover:bg-neutral-700";
+    }
+  }
+
+  switch (app.stage) {
+    case "INTERVIEW":
+      return "border-blue-500 bg-blue-200 hover:bg-blue-300 dark:border-blue-600 dark:bg-blue-800/70 dark:hover:bg-blue-800/90";
+    case "DECISION":
+      return "border-amber-400 bg-amber-100 hover:bg-amber-200 dark:border-amber-700 dark:bg-amber-900/50 dark:hover:bg-amber-900/70";
+    default:
+      return "border-neutral-400 bg-neutral-200 hover:bg-neutral-300 dark:border-neutral-600 dark:bg-neutral-800 dark:hover:bg-neutral-700";
+  }
+}
+
+function getColumnDotColor(stage: Stage) {
+  switch (stage) {
+    case "INTERVIEW":
+      return "bg-blue-600 dark:bg-blue-400";
+    case "DECISION":
+      return "bg-amber-500 dark:bg-amber-400";
+    case "CLOSED":
+      return "bg-neutral-500 dark:bg-neutral-400";
+    default:
+      return "bg-neutral-400 dark:bg-neutral-500";
+  }
+}
+
 export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
+  const { t, locale } = useI18n();
   const navigate = useNavigate();
 
   // Drag and drop state
@@ -143,6 +182,7 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
       <div className="overflow-x-auto pb-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 min-w-[700px] lg:min-w-0">
           {COLUMNS.map((col) => {
+            const label = t(`applications.${col.label}`);
             const colApps = applications.filter(
               (app) => app.stage === col.stage,
             );
@@ -164,9 +204,13 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                 {/* Column Header */}
                 <div className="flex items-center justify-between px-2 py-2 mb-2.5 border-b border-neutral-200/60 dark:border-neutral-800/80">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-neutral-400 dark:bg-neutral-500" />
+                    <span
+                      className={`w-2 h-2 rounded-full ${getColumnDotColor(col.stage)}`}
+                      style={col.stage === "CLOSED" ? { background: "conic-gradient(#15803d 0deg 120deg, #dc2626 120deg 240deg, #52525b 240deg 360deg)" } : undefined}
+                      aria-hidden="true"
+                    />
                     <h3 className="text-xs font-semibold tracking-wider text-neutral-800 dark:text-neutral-200 uppercase">
-                      {col.label}
+                      {label}
                     </h3>
                   </div>
                   <span
@@ -192,13 +236,13 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                     >
                       <p className="text-xs font-medium">
                         {isColumnTarget
-                          ? "Drop here to move"
-                          : "No applications"}
+                          ? t("applications.dropToMove")
+                          : t("applications.noApplications")}
                       </p>
                       <p className="text-[11px] mt-0.5 opacity-70">
                         {isColumnTarget
-                          ? `Move to ${col.label}`
-                          : "Drag cards into this stage"}
+                          ? t("applications.moveToStage", { stage: label })
+                          : t("applications.dragToMove")}
                       </p>
                     </div>
                   ) : (
@@ -217,10 +261,10 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                                 navigate(`/applications/${app.id}`);
                               }
                             }}
-                            className={`bg-white dark:bg-neutral-900 p-3.5 rounded-xl border shadow-xs transition-all duration-150 group cursor-grab active:cursor-grabbing ${
+                            className={`p-3.5 rounded-xl border shadow-xs transition-all duration-150 group cursor-grab active:cursor-grabbing ${getApplicationCardColor(app)} ${
                               isThisCardDragged
-                                ? "opacity-30 border-neutral-500 scale-95 shadow-none"
-                                : "border-neutral-200/90 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-600 hover:shadow-sm"
+                                ? "opacity-30 scale-95 shadow-none"
+                                : "hover:shadow-sm"
                             }`}
                           >
                             {/* Card Top: Grip handle & Company */}
@@ -238,7 +282,7 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                                   rel="noopener noreferrer"
                                   onClick={(e) => e.stopPropagation()}
                                   className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-0.5 rounded-sm shrink-0"
-                                  title={`Open job posting`}
+                                  title={t("applications.openJob", { company: app.companyName })}
                                 >
                                   <ExternalLinkIcon className="w-3 h-3" />
                                 </a>
@@ -246,24 +290,24 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                             </div>
 
                             {/* Job Title */}
-                            <div className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mt-1.5 pl-5 truncate">
+                            <div className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mt-1.5 ps-5 truncate">
                               {app.jobTitle}
                             </div>
 
                             {/* Location & Date */}
                             <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400 mt-2.5 pt-2 border-t border-neutral-100 dark:border-neutral-800/80">
                               <span>
-                                {formatShortDate(app.applicationDate)}
+                                {formatShortDate(app.applicationDate, locale)}
                               </span>
-                              <span className="truncate max-w-[110px] text-right">
-                                {app.location || "Remote"}
+                              <span className="truncate max-w-[110px] text-end">
+                                {app.location || t("common.remote")}
                               </span>
                             </div>
 
                             {/* Footer: Application Method and Outcome Badge */}
                             <div className="flex items-center justify-between gap-2 mt-2 pt-1 text-[11px]">
                               <span className="text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded text-[10px] font-medium truncate max-w-[130px]">
-                                {formatApplicationMethod(app.applicationMethod)}
+                                {formatApplicationMethod(app.applicationMethod, t)}
                               </span>
 
                               {col.stage === "CLOSED" &&
@@ -283,7 +327,7 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                       {/* Drop placeholder highlight at bottom when dragging over populated column */}
                       {isColumnTarget && (
                         <div className="h-14 border-2 border-dashed border-neutral-400 dark:border-neutral-500 rounded-xl bg-neutral-100 dark:bg-neutral-800/50 flex items-center justify-center text-xs font-medium text-neutral-600 dark:text-neutral-300 animate-pulse">
-                          Drop to move here
+                          {t("applications.dropToMove")}
                         </div>
                       )}
                     </>
@@ -305,27 +349,23 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
           <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl max-w-sm w-full p-5 shadow-xl space-y-4">
             <div>
               <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-                Close Application
+                {t("applications.closeApplication")}
               </h3>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                Moving{" "}
-                <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                  {pendingClosedApp.companyName}
-                </span>{" "}
-                to Closed requires an outcome.
+                {t("applications.moveClosedPrompt", { company: pendingClosedApp.companyName })}
               </p>
             </div>
 
             <div className="space-y-2">
               <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
-                Select Final Outcome:
+                {t("applications.selectOutcome")}
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {[
                   {
                     value: "ACCEPTED" as Outcome,
-                    label: "Accepted",
-                    desc: "Offer",
+                    label: t("applications.accepted"),
+                    desc: t("applications.offer"),
                     style:
                       selectedClosedOutcome === "ACCEPTED"
                         ? "bg-neutral-900 text-white border-neutral-900"
@@ -333,8 +373,8 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                   },
                   {
                     value: "REJECTED" as Outcome,
-                    label: "Rejected",
-                    desc: "Passed",
+                    label: t("applications.rejected"),
+                    desc: t("applications.passed"),
                     style:
                       selectedClosedOutcome === "REJECTED"
                         ? "bg-neutral-900 text-white border-neutral-900"
@@ -342,8 +382,8 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                   },
                   {
                     value: "WITHDRAWN" as Outcome,
-                    label: "Withdrawn",
-                    desc: "Opt-out",
+                    label: t("applications.withdrawn"),
+                    desc: t("applications.optOut"),
                     style:
                       selectedClosedOutcome === "WITHDRAWN"
                         ? "bg-neutral-900 text-white border-neutral-900"
@@ -371,14 +411,14 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                 onClick={() => setPendingClosedApp(null)}
                 className="px-3.5 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
                 onClick={confirmClosedOutcome}
                 className="px-4 py-1.5 text-xs font-medium bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 rounded-lg shadow-xs transition-colors"
               >
-                Save & Move
+                {t("applications.saveAndMove")}
               </button>
             </div>
           </div>

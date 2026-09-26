@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { authApi } from "../api/authApi";
 import type { User } from "../types/user";
+import { AUTH_SESSION_EXPIRED_EVENT } from "../../../utils/authSession";
 
 type AuthState = { user: User | null; loading: boolean; authenticated: boolean };
 type AuthContextValue = AuthState & { setUser: (user: User | null) => void; refresh: () => Promise<User | null>; signOut: () => Promise<void> };
@@ -16,6 +17,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     finally { setLoading(false); }
   }, []);
   useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    const clearExpiredSession = () => setUser(null);
+    window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, clearExpiredSession);
+    return () => window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, clearExpiredSession);
+  }, []);
   const signOut = useCallback(async () => {
     try { await authApi.logout(); } finally { setUser(null); }
   }, []);

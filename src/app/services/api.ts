@@ -7,6 +7,7 @@ import type {
   Stage,
   UpdateApplicationInput,
 } from "../types";
+import { notifyAuthSessionExpired } from "../utils/authSession";
 
 /**
  * Clean API service layer for consuming the Job Application Tracking backend.
@@ -85,6 +86,7 @@ async function request<T>(
   });
 
   if (!response.ok) {
+    if (response.status === 401) notifyAuthSessionExpired();
     let errorMessage = `Request failed with status ${response.status}`;
     let details: any;
     try {

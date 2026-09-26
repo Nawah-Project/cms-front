@@ -88,8 +88,12 @@ export const APPLICATION_METHODS: {
   { value: "OTHER", label: "Other" },
 ];
 
-export function formatApplicationMethod(method?: string | null): string {
+export function formatApplicationMethod(method?: string | null, translate?: (key: string) => string): string {
   if (!method) return "—";
+  if (translate) {
+    const key: Record<string, string> = { COMPANY_WEBSITE: "companyWebsite", LINKEDIN: "linkedIn", RECRUITMENT_PLATFORM: "recruitmentPlatform", REFERRAL: "referral", EMAIL: "emailMethod", DIRECT_CONTACT: "directContact", OTHER: "otherMethod" };
+    if (key[method]) return translate(`applications.${key[method]}`);
+  }
   const found = APPLICATION_METHODS.find((m) => m.value === method);
   if (found) return found.label;
   return method;

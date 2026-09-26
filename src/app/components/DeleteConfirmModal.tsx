@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { SpinnerIcon, TrashIcon } from "./Icons";
+import { useI18n } from "../i18n";
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export function DeleteConfirmModal({
   onClose,
   onConfirm,
 }: DeleteConfirmModalProps) {
+  const { t } = useI18n();
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +31,7 @@ export function DeleteConfirmModal({
       onClose();
     } catch (err: any) {
       setError(
-        err.message || "Failed to delete application. Please try again.",
+        t("common.unexpectedError"),
       );
     } finally {
       setIsDeleting(false);
@@ -53,18 +55,10 @@ export function DeleteConfirmModal({
               id="delete-confirm-title"
               className="text-sm font-semibold text-neutral-900 dark:text-neutral-100"
             >
-              Delete Application
+              {t("applications.deleteConfirm")}
             </h3>
             <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              Are you sure you want to delete your application for{" "}
-              <span className="font-semibold text-neutral-900 dark:text-neutral-100">
-                {jobTitle}
-              </span>{" "}
-              at{" "}
-              <span className="font-semibold text-neutral-900 dark:text-neutral-100">
-                {companyName}
-              </span>
-              ? This action cannot be undone.
+              {t("applications.deletePrompt", { jobTitle, company: companyName })} {t("applications.deletePromptEnding")}
             </p>
 
             {error && (
@@ -82,7 +76,7 @@ export function DeleteConfirmModal({
             disabled={isDeleting}
             className="px-4 py-2 text-xs font-medium text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white rounded-lg transition-colors disabled:opacity-50"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -91,7 +85,7 @@ export function DeleteConfirmModal({
             className="button-danger inline-flex items-center gap-2 text-xs disabled:opacity-50 shadow-xs dark:border-red-900 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-950/60"
           >
             {isDeleting && <SpinnerIcon className="w-3.5 h-3.5" />}
-            <span>Delete Application</span>
+            <span>{t("applications.deleteConfirm")}</span>
           </button>
         </div>
       </div>

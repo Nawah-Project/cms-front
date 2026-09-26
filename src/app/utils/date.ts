@@ -10,13 +10,13 @@ export function getTodayDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
-export function formatDisplayDate(dateStr?: string): string {
+export function formatDisplayDate(dateStr?: string, locale = "en-GB"): string {
   if (!dateStr) return "—";
   const [year, month, day] = dateStr.split("-").map(Number);
   if (!year || !month || !day) {
     const parsed = new Date(dateStr);
     if (isNaN(parsed.getTime())) return dateStr;
-    return parsed.toLocaleDateString("en-GB", {
+    return parsed.toLocaleDateString(locale, {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -24,29 +24,21 @@ export function formatDisplayDate(dateStr?: string): string {
   }
 
   const date = new Date(year, month - 1, day);
-  const months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  ];
-  return `${day} ${months[date.getMonth()]} ${year}`;
+  return new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", year: "numeric" }).format(date);
 }
 
-export function formatShortDate(dateStr?: string): string {
+export function formatShortDate(dateStr?: string, locale = "en-US"): string {
   if (!dateStr) return "—";
   const [year, month, day] = dateStr.split("-").map(Number);
   if (!year || !month || !day) {
     const parsed = new Date(dateStr);
     if (isNaN(parsed.getTime())) return dateStr;
-    return parsed.toLocaleDateString("en-US", {
+    return parsed.toLocaleDateString(locale, {
       month: "short",
       day: "numeric",
     });
   }
 
   const date = new Date(year, month - 1, day);
-  const months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  ];
-  return `${months[date.getMonth()]} ${day}`;
+  return new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" }).format(date);
 }

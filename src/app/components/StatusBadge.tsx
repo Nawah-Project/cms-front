@@ -1,4 +1,5 @@
 import type { Outcome, Stage } from "../types";
+import { useI18n } from "../i18n";
 
 type StatusBadgeProps =
   | { kind: "stage"; value: Stage; className?: string }
@@ -18,7 +19,19 @@ const OUTCOME_STYLE: Record<Exclude<Outcome, "NONE">, string> = {
 };
 
 export function StatusBadge(props: StatusBadgeProps) {
-  const label = props.value.charAt(0) + props.value.slice(1).toLowerCase();
+  const { t } = useI18n();
+  const stageKeys: Record<Stage, string> = {
+    APPLIED: "applications.submitted",
+    INTERVIEW: "applications.interview",
+    DECISION: "applications.decision",
+    CLOSED: "applications.closed",
+  };
+  const outcomeKeys: Record<Exclude<Outcome, "NONE">, string> = {
+    ACCEPTED: "applications.accepted",
+    REJECTED: "applications.rejected",
+    WITHDRAWN: "applications.withdrawn",
+  };
+  const label = props.kind === "stage" ? t(stageKeys[props.value]) : t(outcomeKeys[props.value]);
   const semanticStyle =
     props.kind === "stage"
       ? STAGE_STYLE[props.value]

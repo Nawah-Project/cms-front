@@ -5,12 +5,14 @@ import { formatApplicationMethod } from "../types";
 import { formatDisplayDate } from "../utils/date";
 import { ExternalLinkIcon } from "./Icons";
 import { StatusBadge } from "./StatusBadge";
+import { useI18n } from "../i18n";
 
 interface TableViewProps {
   applications: Application[];
 }
 
 export function TableView({ applications }: TableViewProps) {
+  const { t, locale } = useI18n();
   const navigate = useNavigate();
 
   return (
@@ -19,25 +21,25 @@ export function TableView({ applications }: TableViewProps) {
         <thead>
           <tr className="data-table-head">
             <th scope="col" className="data-table-cell font-medium">
-              Company
+              {t("applications.company")}
             </th>
             <th scope="col" className="data-table-cell font-medium">
-              Job Title
+              {t("applications.jobTitle")}
             </th>
             <th scope="col" className="data-table-cell font-medium">
-              Application Date
+              {t("applications.applicationDate")}
             </th>
             <th scope="col" className="data-table-cell font-medium">
-              Location
+              {t("applications.location")}
             </th>
             <th scope="col" className="data-table-cell font-medium">
-              Application Method
+              {t("applications.method")}
             </th>
             <th scope="col" className="data-table-cell font-medium">
-              Status
+              {t("applications.stage")}
             </th>
-            <th scope="col" className="data-table-cell text-right font-medium">
-              Action
+            <th scope="col" className="data-table-cell text-end font-medium">
+              {t("applications.actions")}
             </th>
           </tr>
         </thead>
@@ -57,7 +59,7 @@ export function TableView({ applications }: TableViewProps) {
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
                     className="inline-flex items-center gap-1.5 text-neutral-900 transition-colors hover:underline dark:text-neutral-100"
-                    title={`Open job posting at ${app.companyName}`}
+                    title={t("applications.openJob", { company: app.companyName })}
                   >
                     <span>{app.companyName}</span>
                     <ExternalLinkIcon className="w-3.5 h-3.5 opacity-60 hover:opacity-100 shrink-0" />
@@ -80,7 +82,7 @@ export function TableView({ applications }: TableViewProps) {
 
               {/* Application Date */}
               <td className="data-table-cell whitespace-nowrap text-neutral-600 dark:text-neutral-400">
-                {formatDisplayDate(app.applicationDate)}
+                {formatDisplayDate(app.applicationDate, locale)}
               </td>
 
               {/* Location */}
@@ -90,7 +92,7 @@ export function TableView({ applications }: TableViewProps) {
 
               {/* Application Method */}
               <td className="data-table-cell whitespace-nowrap text-neutral-600 dark:text-neutral-400">
-                {formatApplicationMethod(app.applicationMethod)}
+                {formatApplicationMethod(app.applicationMethod, t)}
               </td>
 
               {/* Status */}
@@ -108,9 +110,9 @@ export function TableView({ applications }: TableViewProps) {
               </td>
 
               {/* Action */}
-              <td className="data-table-cell whitespace-nowrap text-right">
+              <td className="data-table-cell whitespace-nowrap text-end">
                 <span className="text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors text-xs font-medium">
-                  View →
+                  {t("applications.view")} →
                 </span>
               </td>
             </tr>

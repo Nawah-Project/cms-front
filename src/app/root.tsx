@@ -10,6 +10,7 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 import { AuthProvider } from "./features/auth/store/authStore";
+import { I18nProvider } from "./i18n";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -26,7 +27,7 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="ar" dir="rtl">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -44,23 +45,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Outlet />
-    </AuthProvider>
+    <I18nProvider>
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
+    </I18nProvider>
   );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
+  const locale = typeof document !== "undefined" && document.documentElement.lang === "en" ? "en" : "ar";
+  let message = locale === "ar" ? "حدث خطأ" : "Something went wrong";
+  let details = locale === "ar" ? "حدث خطأ غير متوقع. حاول مرة أخرى." : "Something went wrong. Please try again.";
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
+    message = error.status === 404 ? "404" : locale === "ar" ? "حدث خطأ" : "Error";
     details =
       error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
+        ? locale === "ar" ? "الصفحة التي تبحث عنها غير موجودة." : "The requested page could not be found."
+        : details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;
     stack = error.stack;

@@ -25,6 +25,7 @@ import {
   type UpdateApplicationInput,
 } from "../types";
 import { formatDisplayDate } from "../utils/date";
+import { useI18n } from "../i18n";
 
 export function meta({ data }: { data?: { application?: Application } }) {
   if (data?.application) {
@@ -42,6 +43,7 @@ export function meta({ data }: { data?: { application?: Application } }) {
 }
 
 export default function ApplicationDetailsPage() {
+  const { t, locale } = useI18n();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -67,7 +69,7 @@ export default function ApplicationDetailsPage() {
       const data = await api.getApplication(id);
       setApplication(data);
     } catch (err: any) {
-      setError(err.message || "Failed to load application details.");
+      setError(t("common.loadError"));
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +97,7 @@ export default function ApplicationDetailsPage() {
       });
       setApplication(updated);
     } catch (err: any) {
-      alert(err.message || "Failed to update stage");
+      alert(t("common.unexpectedError"));
     }
   };
 
@@ -109,7 +111,7 @@ export default function ApplicationDetailsPage() {
       setApplication(updated);
       setIsPromptingClosedOutcome(false);
     } catch (err: any) {
-      alert(err.message || "Failed to update stage outcome");
+      alert(t("common.unexpectedError"));
     }
   };
 
@@ -133,7 +135,7 @@ export default function ApplicationDetailsPage() {
       <div className="py-24 flex flex-col items-center justify-center">
         <SpinnerIcon className="w-6 h-6 text-neutral-500 mb-3" />
         <p className="text-xs text-neutral-500">
-          Loading application details...
+          {t("applications.loadingDetails")}
         </p>
       </div>
     );
@@ -143,14 +145,14 @@ export default function ApplicationDetailsPage() {
     return (
       <div className="py-16 max-w-md mx-auto text-center">
         <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs">
-          <p className="font-semibold mb-1">Application not found</p>
-          <p>{error || "The requested application could not be found."}</p>
+          <p className="font-semibold mb-1">{t("applications.notFound")}</p>
+          <p>{error || t("common.pageNotFound")}</p>
           <div className="mt-4 flex items-center justify-center gap-3">
             <Link
               to="/applications"
               className="px-3 py-1.5 bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 rounded-md font-medium text-xs hover:bg-neutral-800 transition-colors"
             >
-              Back to Applications
+              {t("applications.backToApplications")}
             </Link>
           </div>
         </div>
@@ -166,8 +168,8 @@ export default function ApplicationDetailsPage() {
           to="/applications"
           className="inline-flex items-center gap-2 text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
         >
-          <ArrowLeftIcon className="w-4 h-4" />
-          <span>Back to Applications</span>
+          <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
+          <span>{t("applications.backToApplications")}</span>
         </Link>
 
         <div className="flex items-center gap-2">
@@ -177,7 +179,7 @@ export default function ApplicationDetailsPage() {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors shadow-2xs"
           >
             <EditIcon className="w-3.5 h-3.5" />
-            <span>Edit</span>
+            <span>{t("common.edit")}</span>
           </button>
           <button
             type="button"
@@ -185,7 +187,7 @@ export default function ApplicationDetailsPage() {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 hover:border-red-200 dark:hover:border-red-900 transition-colors shadow-2xs"
           >
             <TrashIcon className="w-3.5 h-3.5" />
-            <span>Delete</span>
+            <span>{t("common.delete")}</span>
           </button>
         </div>
       </div>
@@ -211,7 +213,7 @@ export default function ApplicationDetailsPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors shrink-0"
             >
-              <span>View Job Posting</span>
+              <span>{t("applications.viewPosting")}</span>
               <ExternalLinkIcon className="w-3.5 h-3.5" />
             </a>
           )}
@@ -220,11 +222,12 @@ export default function ApplicationDetailsPage() {
         {/* Visual Pipeline Timeline */}
         <div className="mt-8 pt-6 border-t border-neutral-100 dark:border-neutral-800">
           <div className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider mb-2">
-            Pipeline Progress
+            {t("applications.pipelineProgress")}
           </div>
           <PipelineTimeline
             currentStage={application.stage}
             outcome={application.outcome}
+            onStageSelect={handleStageSelect}
           />
         </div>
       </div>
@@ -233,10 +236,10 @@ export default function ApplicationDetailsPage() {
       <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 shadow-xs">
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-            Update Stage
+            {t("applications.updateStage")}
           </span>
           <span className="text-xs text-neutral-400">
-            Click to advance or move stage
+            {t("applications.stageHelp")}
           </span>
         </div>
 
@@ -254,7 +257,7 @@ export default function ApplicationDetailsPage() {
                     : "bg-neutral-50 dark:bg-neutral-800/40 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                 }`}
               >
-                {s.label}
+                {t(`applications.${s.key === "APPLIED" ? "submitted" : s.key.toLowerCase()}`)}
               </button>
             );
           })}
@@ -265,7 +268,7 @@ export default function ApplicationDetailsPage() {
       <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-xs divide-y divide-neutral-100 dark:divide-neutral-800">
         <div className="p-4 bg-neutral-50/60 dark:bg-neutral-800/30">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-            Application Details
+            {t("applications.details")}
           </h2>
         </div>
 
@@ -273,10 +276,10 @@ export default function ApplicationDetailsPage() {
         <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
           <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
             <CalendarIcon className="w-3.5 h-3.5 text-neutral-400" />
-            Applied:
+            {t("applications.appliedLabel")}
           </span>
           <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-            {formatDisplayDate(application.applicationDate)}
+            {formatDisplayDate(application.applicationDate, locale)}
           </span>
         </div>
 
@@ -284,10 +287,10 @@ export default function ApplicationDetailsPage() {
         <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
           <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
             <MapPinIcon className="w-3.5 h-3.5 text-neutral-400" />
-            Location:
+            {t("applications.locationLabel")}
           </span>
           <span className="text-xs font-medium text-neutral-900 dark:text-neutral-100">
-            {application.location || "Not specified"}
+            {application.location || t("common.notSpecified")}
           </span>
         </div>
 
@@ -295,17 +298,17 @@ export default function ApplicationDetailsPage() {
         <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
           <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
             <BriefcaseIcon className="w-3.5 h-3.5 text-neutral-400" />
-            Application Method:
+            {t("applications.method")}
           </span>
           <span className="text-xs font-medium text-neutral-900 dark:text-neutral-100">
-            {formatApplicationMethod(application.applicationMethod)}
+            {formatApplicationMethod(application.applicationMethod, t)}
           </span>
         </div>
 
         {/* Status */}
         <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
           <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-            Status:
+            {t("applications.stage")}
           </span>
           <div className="flex items-center gap-2">
             <StatusBadge kind="stage" value={application.stage} />
@@ -320,7 +323,7 @@ export default function ApplicationDetailsPage() {
         {application.jobUrl && (
           <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-              Job URL:
+              {t("applications.jobUrl")}
             </span>
             <a
               href={application.jobUrl}
@@ -344,10 +347,10 @@ export default function ApplicationDetailsPage() {
             aria-modal="true"
           >
             <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              Close Application
+              {t("applications.closeApplication")}
             </h3>
             <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
-              Select the final outcome for this closed application:
+              {t("applications.selectOutcome")}
             </p>
 
             <div className="grid grid-cols-3 gap-2 mt-4">
@@ -363,7 +366,7 @@ export default function ApplicationDetailsPage() {
                         : "bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100"
                     }`}
                   >
-                    {opt.charAt(0) + opt.slice(1).toLowerCase()}
+                    {t(`applications.${opt.toLowerCase()}`)}
                   </button>
                 ),
               )}
@@ -375,14 +378,14 @@ export default function ApplicationDetailsPage() {
                 onClick={() => setIsPromptingClosedOutcome(false)}
                 className="px-3 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
                 onClick={handleConfirmClosedOutcome}
                 className="px-4 py-1.5 text-xs font-medium bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors shadow-xs"
               >
-                Confirm & Close
+                {t("applications.confirmClose")}
               </button>
             </div>
           </div>

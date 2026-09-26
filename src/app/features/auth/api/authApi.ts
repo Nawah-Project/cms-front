@@ -1,16 +1,38 @@
 import type { User, Credentials, RegistrationInput } from "../types/user";
+import { notifyAuthSessionExpired } from "../../../utils/authSession";
 
-const BASE_URL = ((typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) || "http://localhost:3000").replace(/\/$/, "");
+export const AUTH_API_BASE_URL = (
+  (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
+  "http://localhost:3000"
+).replace(/\/$/, "");
 
-async function request<T>(path: string, method: string, body?: unknown): Promise<T> {
-  const response = await fetch(`${BASE_URL}${path}`, {
-    method, credentials: "include",
-    headers: { Accept: "application/json", ...(body ? { "Content-Type": "application/json" } : {}) },
+async function request<T>(
+  path: string,
+  method: string,
+  body?: unknown,
+): Promise<T> {
+  const response = await fetch(`${AUTH_API_BASE_URL}${path}`, {
+    method,
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
   if (!response.ok) {
+    if (response.status === 401 && path !== "/auth/login") {
+      notifyAuthSessionExpired();
+    }
     let message = `Request failed with status ${response.status}`;
-    try { const data = await response.json(); message = Array.isArray(data.message) ? data.message.join(", ") : data.message || data.error || message; } catch { /* use status message */ }
+    try {
+      const data = await response.json();
+      message = Array.isArray(data.message)
+        ? data.message.join(", ")
+        : data.message || data.error || message;
+    } catch {
+      /* use status message */
+    }
     const error = new Error(message) as Error & { status?: number };
     error.status = response.status;
     throw error;
@@ -21,15 +43,38 @@ async function request<T>(path: string, method: string, body?: unknown): Promise
 
 function normalizeUser(payload: any): User {
   const user = payload?.user ?? payload?.data?.user ?? payload?.data ?? payload;
-  if (!user || user.id == null || typeof user.name !== "string" || typeof user.email !== "string") {
+  if (
+    !user ||
+    user.id == null ||
+    typeof user.name !== "string" ||
+    typeof user.email !== "string"
+  ) {
     throw new Error("The server returned an invalid user profile.");
   }
-  return { id: String(user.id), name: user.name, email: user.email };
+  return {
+    id: String(user.id),
+    name: user.name,
+    email: user.email,
+    role: user.role === "ADMIN" ? "ADMIN" : "USER",
+  };
 }
 
 export const authApi = {
-  async login(input: Credentials): Promise<void> { await request("/auth/login", "POST", input); },
-  async register(input: RegistrationInput): Promise<void> { await request("/auth/register", "POST", input); },
-  async logout(): Promise<void> { await request("/auth/logout", "POST"); },
-  async me(): Promise<User> { return normalizeUser(await request("/auth/me", "GET")); },
+  async login(input: Credentials): Promise<void> {
+    await request("/auth/login", "POST", input);
+  },
+  async register(input: RegistrationInput): Promise<void> {
+    await request("/auth/register", "POST", input);
+  },
+  async logout(): Promise<void> {
+    await request("/auth/logout", "POST");
+  },
+  async me(): Promise<User> {
+    return normalizeUser(await request("/auth/me", "GET"));
+  },
 };
+
+/** Start the backend OAuth redirect flow; credentials remain in HttpOnly cookies. */
+export function getSocialAuthUrl(provider: "google"): string {
+  return `${AUTH_API_BASE_URL}/auth/${provider}`;
+}

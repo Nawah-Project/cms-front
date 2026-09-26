@@ -2,18 +2,20 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router";
 import { useAuth } from "../features/auth/store/authStore";
 import { useLogout } from "../features/auth/hooks/useLogout";
-import { PlusIcon } from "./Icons";
+import { useI18n } from "../i18n";
+import { GlobeIcon } from "./Icons";
 
 type NavItem = {
-  label: string;
+  labelKey: string;
   to: string;
-  icon: "dashboard" | "applications" | "members" | "profile";
+  icon: "dashboard" | "applications" | "members" | "profile" | "admin";
 };
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", to: "/", icon: "dashboard" },
-  { label: "My Applications", to: "/applications", icon: "applications" },
-  { label: "Members Progress", to: "/members-progress", icon: "members" },
-  { label: "Profile", to: "/profile", icon: "profile" },
+  { labelKey: "common.navDashboard", to: "/", icon: "dashboard" },
+  { labelKey: "common.navApplications", to: "/applications", icon: "applications" },
+  { labelKey: "common.navMembers", to: "/members-progress", icon: "members" },
+  { labelKey: "common.navAdmin", to: "/admin", icon: "admin" },
+  { labelKey: "common.navProfile", to: "/profile", icon: "profile" },
 ];
 
 function NavIcon({ name }: { name: NavItem["icon"] }) {
@@ -54,6 +56,17 @@ function NavIcon({ name }: { name: NavItem["icon"] }) {
         />
       </svg>
     );
+  if (name === "admin")
+    return (
+      <svg {...common}>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M12 3.5 19 6v5.1c0 4.2-2.9 7.4-7 9.4-4.1-2-7-5.2-7-9.4V6l7-2.5Z"
+        />
+        <path strokeLinecap="round" strokeLinejoin="round" d="m9 12 2 2 4-4" />
+      </svg>
+    );
   return (
     <svg {...common}>
       <circle cx="12" cy="8" r="3.5" />
@@ -72,15 +85,31 @@ function isActive(pathname: string, item: NavItem) {
   return pathname === item.to || pathname.startsWith(`${item.to}/`);
 }
 
-export function AppSidebar({ onOpenAddModal }: { onOpenAddModal: () => void }) {
+export function AppSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const { user } = useAuth();
+  const { t, locale, setLocale } = useI18n();
   const logout = useLogout();
-  const initials = user?.name.trim().charAt(0).toLocaleUpperCase() || "U";
+  const today = new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date());
+
+  const localeToggle = (
+    <button
+      type="button"
+      aria-label={t("common.changeLanguage")}
+      title={t("common.changeLanguage")}
+      onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
+      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-neutral-700 px-2.5 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-info-strong"
+    >
+      <GlobeIcon className="h-4 w-4" />
+      <span>{locale === "ar" ? "ع" : "EN"}</span>
+    </button>
+  );
 
   const navLinks = (mobile = false) =>
-    NAV_ITEMS.map((item) => {
+    NAV_ITEMS.filter(
+      (item) => item.to !== "/admin" || user?.role === "ADMIN",
+    ).map((item) => {
       const active = isActive(location.pathname, item);
       return (
         <Link
@@ -88,50 +117,22 @@ export function AppSidebar({ onOpenAddModal }: { onOpenAddModal: () => void }) {
           to={item.to}
           onClick={() => mobile && setMobileOpen(false)}
           aria-current={active ? "page" : undefined}
-          className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition duration-150 hover:scale-[1.01] ${active ? "bg-neutral-100 font-medium text-neutral-950 shadow-xs" : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"}`}
+          className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition duration-150 hover:scale-[1.01] ${mobile ? (active ? "bg-neutral-100 font-medium text-neutral-950 shadow-xs" : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900") : active ? "bg-neutral-700 font-medium text-white shadow-xs" : "text-neutral-300 hover:bg-neutral-800 hover:text-white"}`}
         >
           <NavIcon name={item.icon} />
-          <span>{item.label}</span>
+          <span>{t(item.labelKey)}</span>
         </Link>
       );
     });
 
   const actions = (mobile = false) => (
-    <>
-      <button
-        type="button"
-        onClick={() => {
-          onOpenAddModal();
-          if (mobile) setMobileOpen(false);
-        }}
-        className="button-secondary mb-3 flex w-full items-center justify-center gap-2 px-3 py-3"
-      >
-        <PlusIcon className="h-4 w-4" />
-        <span>Add application</span>
-      </button>
-      <Link
-        to="/profile"
-        className="flex items-center gap-3 rounded-lg px-3 py-3 transition-transform duration-150 hover:scale-[1.01]"
-        onClick={() => mobile && setMobileOpen(false)}
-      >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
-          {initials}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
-            {user?.name || "Your profile"}
-          </span>
-          <span className="block text-xs text-neutral-500">Profile</span>
-        </span>
-        <NavIcon name="profile" />
-      </Link>
       <button
         type="button"
         onClick={() => {
           setMobileOpen(false);
           void logout().catch(() => undefined);
         }}
-        className="mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-500 transition-transform duration-150 hover:scale-[1.01] dark:text-neutral-400"
+        className={`mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition duration-150 hover:scale-[1.01] ${mobile ? "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900" : "text-neutral-400 hover:bg-neutral-800 hover:text-white"}`}
       >
         <svg
           className="h-[18px] w-[18px]"
@@ -147,45 +148,47 @@ export function AppSidebar({ onOpenAddModal }: { onOpenAddModal: () => void }) {
             d="M10 17l5-5-5-5m5 5H3.5m8-8.5h5A3.5 3.5 0 0 1 20 7v10a3.5 3.5 0 0 1-3.5 3.5h-5"
           />
         </svg>
-        <span>Sign out</span>
+        <span>{t("common.signOut")}</span>
       </button>
-    </>
   );
 
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-surface px-5 py-7 dark:border-neutral-800 dark:bg-neutral-950 lg:flex">
-        <Link
-          to="/"
-          className="mb-10 flex items-center gap-3 px-2 text-sm font-semibold tracking-tight text-neutral-950 dark:text-white"
-        >
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-900 bg-neutral-100 text-sm font-bold text-neutral-900 dark:bg-white dark:text-neutral-900">
-            J
-          </span>
-          <span>Job Tracker</span>
-        </Link>
-        <nav aria-label="Primary navigation" className="space-y-1">
+      <aside className="fixed inset-y-0 start-0 z-40 hidden w-64 flex-col border-e border-neutral-800 bg-neutral-900 px-5 py-7 lg:flex">
+        <div className="mb-10 flex items-start justify-between gap-2 px-2">
+          <Link to="/" className="flex min-w-0 items-start gap-3 text-sm font-semibold tracking-tight text-white">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-white text-sm font-bold text-neutral-900">J</span>
+            <span className="min-w-0 pt-0.5">
+              <span className="block truncate">{t("common.brand")}</span>
+              <time className="mt-1 block text-xs font-normal tracking-normal text-neutral-400" dateTime={new Date().toISOString()}>{today}</time>
+            </span>
+          </Link>
+          {localeToggle}
+        </div>
+        <nav aria-label={t("common.primaryNavigation")} className="space-y-1">
           {navLinks()}
         </nav>
-        <div className="mt-auto border-t border-neutral-100 pt-4 dark:border-neutral-800">
+        <div className="mt-auto border-t border-neutral-800 pt-4">
           {actions()}
         </div>
       </aside>
 
       <header className="sticky top-0 z-40 border-b border-border bg-surface/95 px-5 py-3.5 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95 lg:hidden">
         <div className="flex items-center justify-between">
-          <Link
-            to="/"
-            className="flex items-center gap-2.5 text-sm font-semibold tracking-tight text-neutral-950 dark:text-white"
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-900 bg-neutral-100 text-xs font-bold text-neutral-900 dark:bg-white dark:text-neutral-900">
-              J
-            </span>
-            <span>Job Tracker</span>
-          </Link>
+          <div className="flex min-w-0 items-start gap-3">
+            <Link to="/" className="flex min-w-0 items-start gap-2.5 text-sm font-semibold tracking-tight text-neutral-950 dark:text-white">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-neutral-900 bg-neutral-100 text-xs font-bold text-neutral-900 dark:bg-white dark:text-neutral-900">J</span>
+              <span className="min-w-0 pt-0.5">
+                <span className="block truncate">{t("common.brand")}</span>
+                <time className="mt-0.5 block text-[11px] font-normal tracking-normal text-neutral-500" dateTime={new Date().toISOString()}>{today}</time>
+              </span>
+            </Link>
+            {localeToggle}
+          </div>
+          <div className="flex items-center gap-2">
           <button
             type="button"
-            aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
+            aria-label={mobileOpen ? t("common.closeNavigation") : t("common.openNavigation")}
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((open) => !open)}
             className="rounded-lg border border-neutral-200 p-2 text-neutral-700 dark:border-neutral-800 dark:text-neutral-300"
@@ -214,10 +217,11 @@ export function AppSidebar({ onOpenAddModal }: { onOpenAddModal: () => void }) {
               </svg>
             )}
           </button>
+          </div>
         </div>
         {mobileOpen && (
           <div className="absolute inset-x-0 top-full border-b border-border bg-surface px-5 pb-4 pt-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
-            <nav aria-label="Primary navigation" className="space-y-1">
+            <nav aria-label={t("common.primaryNavigation")} className="space-y-1">
               {navLinks(true)}
             </nav>
             <div className="mt-3 border-t border-neutral-100 pt-3 dark:border-neutral-800">
