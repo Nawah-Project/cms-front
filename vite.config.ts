@@ -7,4 +7,20 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  server: {
+    proxy: {
+      "/applications": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        bypass(req) {
+          const accept = req.headers["accept"] || "";
+          if (req.method === "GET" && accept.includes("text/html")) {
+            return req.url;
+          }
+        },
+      },
+    },
+  },
 });
+
+
