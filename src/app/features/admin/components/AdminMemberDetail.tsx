@@ -15,6 +15,7 @@ import {
 } from "./AdminUI";
 import { AdminActivityList } from "./AdminActivityList";
 import { useI18n } from "../../../i18n";
+import { ProfessionalProfileActions } from "../../profile/MemberProfessionalCard";
 
 export function AdminMemberDetail({
   member,
@@ -98,6 +99,10 @@ export function AdminMemberDetail({
           </div>
         ) : (
           <div className="space-y-7 py-6">
+            <section className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-700">
+              <h3 className="mb-3 text-sm font-semibold">{t("profile.professionalProfile")}</h3>
+              <ProfessionalProfileActions portfolioUrl={detail.user.portfolioUrl ?? null} hasCv={detail.user.hasCv === true} userId={detail.user.id} />
+            </section>
             <section className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-lg border border-border p-4">
                 <p className="text-xs text-neutral-500">{t("admin.currentGroup")}</p>

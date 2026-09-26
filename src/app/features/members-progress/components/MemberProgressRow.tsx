@@ -19,48 +19,52 @@ function MemberIdentity({
   isCurrentUser,
   expanded,
   onToggle,
+  onOpenProfile,
   controlsId,
 }: {
   member: MemberProgress;
   isCurrentUser: boolean;
   expanded: boolean;
   onToggle: () => void;
+  onOpenProfile: () => void;
   controlsId: string;
 }) {
   const { t } = useI18n();
   return (
-    <button
-      type="button"
-      aria-expanded={expanded}
-      aria-controls={controlsId}
-      aria-label={`${member.name}, ${expanded ? t("members.hideApplications") : t("members.viewApplications")}`}
-      onClick={onToggle}
-      className="group flex w-full min-w-0 items-center gap-3 rounded-lg text-start focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info-strong"
-    >
-      <MemberAvatar member={member} />
-      <span className="min-w-0">
-        <span className="flex flex-wrap items-center gap-2">
-          <span className="truncate text-sm font-semibold text-neutral-900">
-            {member.name}
-          </span>
-          {isCurrentUser && (
-            <span className="inline-flex shrink-0 items-center rounded-full border border-info-border bg-info-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-info-strong">
-              {t("members.you")}
-            </span>
-          )}
-        </span>
-      </span>
-      <svg
-        className={`ms-auto h-4 w-4 shrink-0 text-neutral-400 transition-transform group-hover:text-neutral-700 dark:group-hover:text-neutral-200 ${expanded ? "rotate-180" : ""}`}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
+    <div className="flex min-w-0 items-center gap-2">
+      <button
+        type="button"
+        aria-label={t("members.viewProfessionalProfile", { name: member.name })}
+        onClick={onOpenProfile}
+        className="group flex min-w-0 items-center gap-3 rounded-lg text-start focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info-strong"
       >
-        <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
-      </svg>
-    </button>
+        <MemberAvatar member={member} />
+        <span className="min-w-0">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="truncate text-sm font-semibold text-neutral-900">
+              {member.name}
+            </span>
+            {isCurrentUser && (
+              <span className="inline-flex shrink-0 items-center rounded-full border border-info-border bg-info-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-info-strong">
+                {t("members.you")}
+              </span>
+            )}
+          </span>
+        </span>
+      </button>
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={controlsId}
+        aria-label={expanded ? t("members.hideApplications") : t("members.viewApplications")}
+        onClick={onToggle}
+        className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-2 focus-visible:outline-info-strong dark:hover:bg-neutral-800"
+      >
+        <svg className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+    </div>
   );
 }
 
@@ -201,6 +205,7 @@ export interface MemberRowState {
   isCurrentUser: boolean;
   expanded: boolean;
   onToggle: () => void;
+  onOpenProfile: () => void;
   detail?: MemberDetail;
   detailLoading: boolean;
   detailError: boolean;
@@ -211,7 +216,7 @@ export interface MemberRowState {
 
 export function MemberProgressRow(props: MemberRowState) {
   const { t } = useI18n();
-  const { variant, member, isCurrentUser, expanded, onToggle } = props;
+  const { variant, member, isCurrentUser, expanded, onToggle, onOpenProfile } = props;
   const detail = expanded ? (
     <MemberDetailContent
       member={member}
@@ -235,6 +240,7 @@ export function MemberProgressRow(props: MemberRowState) {
               isCurrentUser={isCurrentUser}
               expanded={expanded}
               onToggle={onToggle}
+              onOpenProfile={onOpenProfile}
               controlsId={`member-details-${member.memberId}-desktop`}
             />
           </th>
@@ -279,6 +285,7 @@ export function MemberProgressRow(props: MemberRowState) {
           isCurrentUser={isCurrentUser}
           expanded={expanded}
           onToggle={onToggle}
+          onOpenProfile={onOpenProfile}
           controlsId={`member-details-${member.memberId}-mobile`}
         />
         <LastUpdated value={member.lastUpdatedAt} />

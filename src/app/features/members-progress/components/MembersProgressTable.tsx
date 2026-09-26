@@ -8,6 +8,7 @@ import type {
 import { MemberProgressRow } from "./MemberProgressRow";
 import { useI18n } from "../../../i18n";
 import { ProgressStageIcon, type ProgressStage } from "./ProgressCount";
+import { MemberProfessionalCard } from "../../profile/MemberProfessionalCard";
 
 export function MembersProgressTable({
   members,
@@ -30,6 +31,7 @@ export function MembersProgressTable({
   const [details, setDetails] = useState<Record<string, MemberDetail>>({});
   const [loadingMemberId, setLoadingMemberId] = useState<string | null>(null);
   const [errorMemberId, setErrorMemberId] = useState<string | null>(null);
+  const [profileMember, setProfileMember] = useState<MemberProgress | null>(null);
 
   const loadMember = useCallback(async (memberId: string) => {
     setLoadingMemberId(memberId);
@@ -59,6 +61,7 @@ export function MembersProgressTable({
 
   return (
     <div className="space-y-3">
+      {profileMember && <MemberProfessionalCard member={profileMember} onClose={() => setProfileMember(null)} />}
       <div className="hidden overflow-hidden rounded-xl border border-neutral-300 bg-white shadow-sm md:block">
         <table className="data-table w-full table-fixed">
           <caption className="sr-only">
@@ -103,6 +106,7 @@ export function MembersProgressTable({
                 }
                 expanded={expandedMemberId === member.memberId}
                 onToggle={() => toggleMember(member.memberId)}
+                onOpenProfile={() => setProfileMember(member)}
                 detail={details[member.memberId]}
                 detailLoading={loadingMemberId === member.memberId}
                 detailError={errorMemberId === member.memberId}
@@ -125,6 +129,7 @@ export function MembersProgressTable({
             }
             expanded={expandedMemberId === member.memberId}
             onToggle={() => toggleMember(member.memberId)}
+            onOpenProfile={() => setProfileMember(member)}
             detail={details[member.memberId]}
             detailLoading={loadingMemberId === member.memberId}
             detailError={errorMemberId === member.memberId}

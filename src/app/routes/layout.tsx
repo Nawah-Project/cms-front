@@ -5,6 +5,7 @@ import { AppSidebar } from "../components/AppSidebar";
 import { api } from "../services/api";
 import type { CreateApplicationInput } from "../types";
 import { ProtectedRoute } from "../features/auth/components/ProtectedRoute";
+import { ProfileCompletionGate } from "../features/profile/ProfileCompletionGate";
 
 interface AppContextType {
   openAddModal: () => void;
@@ -31,6 +32,7 @@ export default function Layout() {
 
   return (
     <ProtectedRoute>
+      <ProfileCompletionGate>
       <AppContext.Provider
         value={{ openAddModal: () => setIsAddModalOpen(true) }}
       >
@@ -52,6 +54,7 @@ export default function Layout() {
           />
         </div>
       </AppContext.Provider>
+      </ProfileCompletionGate>
     </ProtectedRoute>
   );
 }

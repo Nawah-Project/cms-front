@@ -41,4 +41,5 @@ export default {
   lastUpdatedLabel: "آخر تحديث",
   tableCaption: "الأعضاء وعدد طلبات التقديم في كل مرحلة",
   stageApplicationCount: "{stage}: {count} طلبات تقديم",
+  viewProfessionalProfile: "عرض الملف المهني لـ {name}",
 } as const;

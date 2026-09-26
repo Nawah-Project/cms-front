@@ -41,4 +41,5 @@ export default {
   lastUpdatedLabel: "Last updated",
   tableCaption: "Members and their application counts at each pipeline stage",
   stageApplicationCount: "{stage}: {count} applications",
+  viewProfessionalProfile: "View {name}’s professional profile",
 } as const;

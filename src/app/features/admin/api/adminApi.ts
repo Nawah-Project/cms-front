@@ -58,6 +58,8 @@ export type AdminUserDetail = {
     name: string;
     role: "USER" | "ADMIN";
     createdAt: string;
+    portfolioUrl: string | null;
+    hasCv: boolean;
     group: { id: string; name: string } | null;
   };
   lastActivityAt: string | null;

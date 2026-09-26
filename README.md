@@ -16,6 +16,10 @@ A modern, production-ready template for building full-stack React applications u
 
 ## Getting Started
 
+Copy `.env.example` to `.env` and set `VITE_API_URL` to the backend URL. Keep
+`VITE_CV_MAX_FILE_SIZE_BYTES` in sync with the backend's `CV_MAX_FILE_SIZE_BYTES`
+(5 MiB by default, with a 25 MiB maximum).
+
 ### Installation
 
 Install the dependencies:
