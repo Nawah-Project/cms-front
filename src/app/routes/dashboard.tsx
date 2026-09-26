@@ -48,25 +48,25 @@ const STAGE_PRESENTATION = [
     key: "applied",
     label: "Applied",
     href: "/applications?stage=APPLIED",
-    tone: "border-neutral-800 bg-neutral-800 text-white dark:border-neutral-200 dark:bg-neutral-200 dark:text-neutral-900",
+    tone: "text-neutral-600",
   },
   {
     key: "interview",
     label: "Interview",
     href: "/applications?stage=INTERVIEW",
-    tone: "border-neutral-300 bg-neutral-100 text-neutral-800 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100",
+    tone: "text-info-strong",
   },
   {
     key: "decision",
     label: "Decision",
     href: "/applications?stage=DECISION",
-    tone: "border-neutral-300 bg-white text-neutral-800 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-100",
+    tone: "text-warning-strong",
   },
   {
     key: "closed",
     label: "Closed",
     href: "/applications?stage=CLOSED",
-    tone: "border-neutral-200 bg-neutral-200 text-neutral-800 dark:border-neutral-700 dark:bg-neutral-700 dark:text-neutral-100",
+    tone: "text-neutral-500",
   },
 ] as const;
 
@@ -205,29 +205,26 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="relative">
-          <div
-            aria-hidden="true"
-            className="absolute left-[12.5%] right-[12.5%] top-5 hidden h-px bg-stone-300 md:block dark:bg-neutral-700"
-          />
-          <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:grid-cols-4 sm:gap-x-5">
-            {STAGE_PRESENTATION.map((stage, index) => (
-              <Link
-                key={stage.key}
-                to={stage.href}
-                className="group flex min-w-0 flex-col items-center gap-3 rounded-md py-2 text-center transition-colors hover:bg-white/60 dark:hover:bg-neutral-900/60"
-              >
-                <span
-                  className={`relative z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border text-sm font-medium tabular-nums ${stage.tone}`}
-                >
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {STAGE_PRESENTATION.map((stage, index) => (
+            <Link
+              key={stage.key}
+              to={stage.href}
+              className="group rounded-xl border border-border-subtle bg-surface p-4 shadow-xs transition duration-150 hover:scale-[1.01] hover:border-border-hover hover:shadow-sm sm:p-5"
+            >
+              <span className={`text-xs font-medium ${stage.tone}`}>
+                {stage.label}
+              </span>
+              <span className="mt-3 flex items-baseline gap-2">
+                <span className="text-2xl font-semibold tabular-nums tracking-tight text-neutral-900">
                   {stageCounts[index]}
                 </span>
-                <span className="text-sm text-neutral-600 transition-colors group-hover:text-neutral-950 dark:text-neutral-400 dark:group-hover:text-white">
-                  {stage.label}
+                <span className="text-xs text-neutral-500">
+                  {stageCounts[index] === 1 ? "application" : "applications"}
                 </span>
-              </Link>
-            ))}
-          </div>
+              </span>
+            </Link>
+          ))}
         </div>
       </section>
 
@@ -284,45 +281,45 @@ export default function DashboardPage() {
             </Link>
           </header>
           <div className="min-h-36 divide-y divide-neutral-100 rounded-xl border border-neutral-200 bg-white px-5 dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-900">
-            {recentApplications.length === 0 ? (
+            {memberEventsLoading ? (
+              <div className="flex min-h-36 items-center gap-3 py-6 text-sm text-neutral-500" role="status">
+                <SpinnerIcon className="h-4 w-4" /> Loading group activity…
+              </div>
+            ) : memberEventsError ? (
               <div className="flex min-h-36 flex-col items-start justify-center py-6">
-                <p className="text-sm text-neutral-500">No applications yet.</p>
-                <button
-                  type="button"
-                  onClick={openAddModal}
-                  className="button-ghost mt-2 inline-flex items-center gap-2 px-0"
-                >
-                  <PlusIcon className="h-4 w-4" /> Add your first application
+                <p className="text-sm text-danger-strong">Unable to load group activity.</p>
+                <button type="button" onClick={() => void retryMemberEvents()} className="button-ghost mt-2 px-0 text-info-strong">
+                  Try again
                 </button>
               </div>
+            ) : memberEvents.length === 0 ? (
+              <div className="flex min-h-36 flex-col items-start justify-center py-6">
+                <p className="text-sm text-neutral-500">No member updates yet.</p>
+              </div>
             ) : (
-              recentApplications.map((application) => (
+              memberEvents.slice(0, 4).map((event) => (
                 <Link
-                  key={application.id}
-                  to={`/applications/${application.id}`}
-                  className="interactive-transition flex items-center justify-between gap-4 py-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                  key={event.id}
+                  to="/members-progress"
+                  className="interactive-transition flex flex-col gap-2 py-4 hover:bg-neutral-50 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                      {application.companyName}
+                      {event.user.name}
                     </span>
                     <span className="mt-0.5 block truncate text-xs text-neutral-500 dark:text-neutral-400">
-                      {application.jobTitle}
+                      {event.application.jobTitle} · {event.application.companyName}
                     </span>
                   </span>
-                  <span className="flex shrink-0 flex-col items-end gap-1.5">
-                    {application.stage === "CLOSED" &&
-                    application.outcome !== "NONE" ? (
-                      <StatusBadge kind="outcome" value={application.outcome} />
-                    ) : (
-                      <StatusBadge kind="stage" value={application.stage} />
+                  <span className="flex shrink-0 flex-wrap items-center gap-1.5">
+                    <StatusBadge kind="stage" value={event.fromStage} />
+                    <span className="px-0.5 text-neutral-400" aria-hidden="true">→</span>
+                    <StatusBadge kind="stage" value={event.toStage} />
+                    {event.toStage === "CLOSED" && event.outcome && (
+                      <StatusBadge kind="outcome" value={event.outcome} />
                     )}
-                    <time
-                      className="text-[11px] text-neutral-500"
-                      dateTime={application.updatedAt}
-                      title={new Date(application.updatedAt).toLocaleString()}
-                    >
-                      {relativeTime(application.updatedAt)}
+                    <time className="ml-1 text-[11px] text-neutral-500" dateTime={event.changedAt} title={new Date(event.changedAt).toLocaleString()}>
+                      {relativeTime(event.changedAt)}
                     </time>
                   </span>
                 </Link>

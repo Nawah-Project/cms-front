@@ -88,7 +88,7 @@ export function AppSidebar({ onOpenAddModal }: { onOpenAddModal: () => void }) {
           to={item.to}
           onClick={() => mobile && setMobileOpen(false)}
           aria-current={active ? "page" : undefined}
-          className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-transform duration-150 hover:scale-[1.01] ${active ? "bg-neutral-900 font-medium text-white dark:bg-neutral-800 dark:text-white" : "text-neutral-600 dark:text-neutral-400"}`}
+          className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition duration-150 hover:scale-[1.01] ${active ? "bg-neutral-100 font-medium text-neutral-950 shadow-xs" : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"}`}
         >
           <NavIcon name={item.icon} />
           <span>{item.label}</span>

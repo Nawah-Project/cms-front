@@ -3,14 +3,10 @@ import type { MemberProgressCounts } from "../types/membersProgress.types";
 export type ProgressStage = keyof MemberProgressCounts;
 
 const STAGE_STYLES: Record<ProgressStage, string> = {
-  applied:
-    "border-neutral-800 bg-neutral-800 text-white dark:border-neutral-200 dark:bg-neutral-200 dark:text-neutral-900",
-  interview:
-    "border-neutral-300 bg-neutral-100 text-neutral-800 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100",
-  decision:
-    "border-neutral-300 bg-white text-neutral-800 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-100",
-  closed:
-    "border-neutral-200 bg-neutral-200 text-neutral-800 dark:border-neutral-700 dark:bg-neutral-700 dark:text-neutral-100",
+  applied: "border-neutral-300 bg-neutral-100 text-neutral-800",
+  interview: "border-info-border bg-info-soft text-info-strong",
+  decision: "border-warning-border bg-warning-soft text-warning-strong",
+  closed: "border-neutral-200 bg-neutral-200 text-neutral-700",
 };
 
 const STAGE_LABELS: Record<ProgressStage, string> = {
