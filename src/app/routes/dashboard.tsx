@@ -170,8 +170,6 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <ProfessionalDevelopmentSummary />
-
       <section aria-labelledby="pipeline-heading" className="space-y-7">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-stone-200 pb-3 dark:border-neutral-800">
           <div>
@@ -233,6 +231,8 @@ export default function DashboardPage() {
           ))}
         </div>
       </section>
+
+      <ProfessionalDevelopmentSummary />
 
       <section
         aria-labelledby="outcomes-heading"
