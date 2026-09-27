@@ -14,6 +14,10 @@ import type {
   TaskNote,
   TaskPage,
   TaskStatus,
+  FeedbackPage,
+  FeedbackPost,
+  FeedbackScope,
+  FeedbackUnreadCount,
 } from "../features/professional-development/types";
 
 /**
@@ -406,5 +410,33 @@ export const api = {
     return request<ProfessionalDevelopmentSummary>(
       "/dashboard/professional-development",
     );
+  },
+
+  getFeedback(params: {
+    scope: FeedbackScope;
+    page?: number;
+    limit?: number;
+  }): Promise<FeedbackPage> {
+    const query = new URLSearchParams({
+      scope: params.scope,
+      page: String(params.page ?? 1),
+      limit: String(params.limit ?? 20),
+    });
+    return request<FeedbackPage>(`/feedback?${query}`);
+  },
+
+  getFeedbackItem(feedbackId: string): Promise<FeedbackPost> {
+    return request<FeedbackPost>(`/feedback/${encodeURIComponent(feedbackId)}`);
+  },
+
+  markFeedbackRead(feedbackId: string) {
+    return request<{ success: boolean; feedbackId: string; readAt: string }>(
+      `/feedback/${encodeURIComponent(feedbackId)}/read`,
+      { method: "POST" },
+    );
+  },
+
+  getFeedbackUnreadCount(): Promise<FeedbackUnreadCount> {
+    return request<FeedbackUnreadCount>("/feedback/unread-count");
   },
 };

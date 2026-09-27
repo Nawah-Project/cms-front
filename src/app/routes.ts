@@ -17,6 +17,10 @@ export default [
       "features/professional-development/pages/TasksPage.tsx",
     ),
     route(
+      "professional-development/feedback",
+      "features/professional-development/pages/FeedbackInsightsPage.tsx",
+    ),
+    route(
       "members-progress",
       "features/members-progress/pages/MembersProgressPage.tsx",
     ),

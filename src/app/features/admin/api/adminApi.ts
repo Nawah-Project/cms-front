@@ -4,6 +4,9 @@ import type {
   TaskNote,
   TaskPage,
   UpdateTaskInput,
+  CreateFeedbackInput,
+  FeedbackPage,
+  FeedbackPost,
 } from "../../professional-development/types";
 import type { Stage } from "../../../types";
 import { notifyAuthSessionExpired } from "../../../utils/authSession";
@@ -219,4 +222,25 @@ export const adminApi = {
     }),
   mentorFeedback: (taskId: string) =>
     request<TaskNote[]>(`/admin/tasks/${encodeURIComponent(taskId)}/feedback`),
+  feedback: (feedbackId: string) =>
+    request<FeedbackPost>(`/admin/feedback/${encodeURIComponent(feedbackId)}`),
+  feedbackPosts: (page = 1, limit = 20, archived = false) =>
+    request<FeedbackPage>(
+      `/admin/feedback?page=${page}&limit=${limit}&archived=${archived}`,
+    ),
+  createFeedback: (input: CreateFeedbackInput) =>
+    request<FeedbackPost>("/admin/feedback", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  updateFeedback: (feedbackId: string, input: CreateFeedbackInput) =>
+    request<FeedbackPost>(`/admin/feedback/${encodeURIComponent(feedbackId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }),
+  archiveFeedback: (feedbackId: string) =>
+    request<{ success: boolean }>(
+      `/admin/feedback/${encodeURIComponent(feedbackId)}/archive`,
+      { method: "POST" },
+    ),
 };

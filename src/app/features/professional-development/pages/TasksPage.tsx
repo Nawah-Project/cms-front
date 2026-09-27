@@ -6,6 +6,7 @@ import { api } from "../../../services/api";
 import type { ProfessionalTask, TaskStatus } from "../types";
 import { TaskDetailDrawer } from "../components/TaskDetailDrawer";
 import { TaskCard, TaskSection } from "../components/TaskPresentation";
+import { ProfessionalDevelopmentNav } from "../components/ProfessionalDevelopmentNav";
 
 const COLUMNS: Array<{ status: TaskStatus; key: string }> = [
   { status: "TODO", key: "toDo" },
@@ -66,6 +67,8 @@ export default function TasksPage() {
         title={t("professionalDevelopment.tasks")}
         description={t("professionalDevelopment.subtitle")}
       />
+
+      <ProfessionalDevelopmentNav />
 
       {loading ? (
         <div

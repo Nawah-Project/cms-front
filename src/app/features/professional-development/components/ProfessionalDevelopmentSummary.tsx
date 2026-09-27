@@ -13,7 +13,7 @@ import {
 } from "./TaskPresentation";
 
 export function ProfessionalDevelopmentSummary() {
-  const { t, number, date } = useI18n();
+  const { t, number, date, relativeTime } = useI18n();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -192,6 +192,78 @@ export function ProfessionalDevelopmentSummary() {
                 </li>
               ))}
             </ul>
+          )}
+          {summary.feedback && (
+            <section
+              aria-labelledby="feedback-summary-heading"
+              className="rounded-xl border border-border bg-surface p-4 sm:p-5"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3
+                    id="feedback-summary-heading"
+                    className="text-sm font-semibold text-neutral-900 dark:text-neutral-100"
+                  >
+                    {t("professionalDevelopment.feedbackInsights")}
+                  </h3>
+                  {summary.feedback.unreadDirectFeedbackCount > 0 && (
+                    <p className="mt-1 text-xs font-medium text-danger-strong">
+                      {t("professionalDevelopment.unreadDirectCount")}:{" "}
+                      {number(summary.feedback.unreadDirectFeedbackCount)}
+                    </p>
+                  )}
+                </div>
+                <Link
+                  to="/professional-development/feedback"
+                  className="text-xs font-medium text-neutral-600 underline decoration-neutral-300 underline-offset-4 hover:text-neutral-950 dark:text-neutral-300 dark:hover:text-white"
+                >
+                  {t("professionalDevelopment.viewAllFeedback")}
+                </Link>
+              </div>
+              {(() => {
+                const featured =
+                  summary.feedback.unreadDirectFeedbackCount > 0
+                    ? (summary.feedback.latestDirectFeedback ??
+                      summary.feedback.latestSharedInsight)
+                    : (summary.feedback.latestSharedInsight ??
+                      summary.feedback.latestDirectFeedback);
+                if (!featured)
+                  return (
+                    <p className="mt-3 text-sm text-neutral-500">
+                      {t("professionalDevelopment.noFeedbackSummary")}
+                    </p>
+                  );
+                const scope =
+                  featured.visibility === "DIRECT" ? "for-you" : "shared";
+                return (
+                  <Link
+                    to={`/professional-development/feedback?scope=${scope}&feedback=${encodeURIComponent(featured.id)}`}
+                    className="mt-3 flex items-start gap-2 rounded-lg border border-border-subtle px-3 py-3 transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-info-strong dark:hover:bg-neutral-900"
+                  >
+                    {!featured.isRead && (
+                      <span
+                        className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-danger-strong"
+                        aria-hidden="true"
+                      />
+                    )}
+                    {!featured.isRead && (
+                      <span className="sr-only">
+                        {t("professionalDevelopment.feedbackUnreadLabel")}
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                        {featured.title}
+                      </span>
+                      <span className="mt-1 block text-xs text-neutral-500">
+                        {featured.author.name} ·{" "}
+                        {relativeTime(featured.publishedAt)}
+                      </span>
+                    </span>
+                  </Link>
+                );
+              })()}
+            </section>
           )}
         </>
       )}
