@@ -1,4 +1,11 @@
-import type { Application, CreateApplicationInput, DashboardStats, Outcome, Stage, UpdateApplicationInput } from "../types";
+import type {
+  Application,
+  CreateApplicationInput,
+  DashboardStats,
+  Outcome,
+  Stage,
+  UpdateApplicationInput,
+} from "../types";
 
 // Server memory store that persists across requests during the server lifecycle
 const INITIAL_APPLICATIONS: Application[] = [
@@ -295,7 +302,11 @@ const INITIAL_APPLICATIONS: Application[] = [
 class ApplicationStore {
   private items: Application[] = [...INITIAL_APPLICATIONS];
 
-  public getAll(filters?: { stage?: string; outcome?: string; search?: string }): Application[] {
+  public getAll(filters?: {
+    stage?: string;
+    outcome?: string;
+    search?: string;
+  }): Application[] {
     let list = [...this.items];
 
     if (filters?.stage) {
@@ -317,12 +328,14 @@ class ApplicationStore {
       list = list.filter(
         (app) =>
           app.companyName.toLowerCase().includes(q) ||
-          app.jobTitle.toLowerCase().includes(q)
+          app.jobTitle.toLowerCase().includes(q),
       );
     }
 
     // Sort by application date descending by default
-    return list.sort((a, b) => b.applicationDate.localeCompare(a.applicationDate));
+    return list.sort((a, b) =>
+      b.applicationDate.localeCompare(a.applicationDate),
+    );
   }
 
   public getById(id: string): Application | undefined {
@@ -351,7 +364,10 @@ class ApplicationStore {
     return newApp;
   }
 
-  public update(id: string, data: UpdateApplicationInput): Application | undefined {
+  public update(
+    id: string,
+    data: UpdateApplicationInput,
+  ): Application | undefined {
     const index = this.items.findIndex((app) => app.id === id);
     if (index === -1) return undefined;
 
@@ -368,12 +384,34 @@ class ApplicationStore {
 
     const updated: Application = {
       ...current,
-      companyName: data.companyName !== undefined ? data.companyName.trim() : current.companyName,
-      jobTitle: data.jobTitle !== undefined ? data.jobTitle.trim() : current.jobTitle,
-      applicationDate: data.applicationDate !== undefined ? data.applicationDate : current.applicationDate,
-      location: data.location !== undefined ? (data.location ? data.location.trim() : null) : current.location,
-      applicationMethod: data.applicationMethod !== undefined ? (data.applicationMethod ? data.applicationMethod.trim() : null) : current.applicationMethod,
-      jobUrl: data.jobUrl !== undefined ? (data.jobUrl ? data.jobUrl.trim() : null) : current.jobUrl,
+      companyName:
+        data.companyName !== undefined
+          ? data.companyName.trim()
+          : current.companyName,
+      jobTitle:
+        data.jobTitle !== undefined ? data.jobTitle.trim() : current.jobTitle,
+      applicationDate:
+        data.applicationDate !== undefined
+          ? data.applicationDate
+          : current.applicationDate,
+      location:
+        data.location !== undefined
+          ? data.location
+            ? data.location.trim()
+            : null
+          : current.location,
+      applicationMethod:
+        data.applicationMethod !== undefined
+          ? data.applicationMethod
+            ? data.applicationMethod.trim()
+            : null
+          : current.applicationMethod,
+      jobUrl:
+        data.jobUrl !== undefined
+          ? data.jobUrl
+            ? data.jobUrl.trim()
+            : null
+          : current.jobUrl,
       stage,
       outcome,
       updatedAt: now,
@@ -397,6 +435,7 @@ class ApplicationStore {
     let accepted = 0;
     let rejected = 0;
     let withdrawn = 0;
+    let noResponse = 0;
 
     for (const app of this.items) {
       if (app.stage === "APPLIED") applied++;
@@ -406,11 +445,12 @@ class ApplicationStore {
         if (app.outcome === "ACCEPTED") accepted++;
         else if (app.outcome === "REJECTED") rejected++;
         else if (app.outcome === "WITHDRAWN") withdrawn++;
+        else if (app.outcome === "NO_RESPONSE") noResponse++;
       }
     }
 
     const activeTotal = applied + interview + decision;
-    const closedTotal = accepted + rejected + withdrawn;
+    const closedTotal = accepted + rejected + withdrawn + noResponse;
 
     return {
       active: {
@@ -424,6 +464,7 @@ class ApplicationStore {
         accepted,
         rejected,
         withdrawn,
+        noResponse,
       },
     };
   }
@@ -435,4 +476,5 @@ declare global {
   var __APP_STORE__: ApplicationStore | undefined;
 }
 
-export const db = global.__APP_STORE__ ?? (global.__APP_STORE__ = new ApplicationStore());
+export const db =
+  global.__APP_STORE__ ?? (global.__APP_STORE__ = new ApplicationStore());

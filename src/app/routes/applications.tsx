@@ -148,7 +148,8 @@ export default function ApplicationsPage() {
           ? [...next, previousApplication]
           : next;
       });
-      const message = err instanceof Error ? err.message : t("applications.moveError");
+      const message =
+        err instanceof Error ? err.message : t("applications.moveError");
       alert(message || t("applications.moveError"));
     } finally {
       pendingMoves.current.delete(appId);
@@ -287,6 +288,7 @@ export default function ApplicationsPage() {
               { key: "ACCEPTED", label: t("applications.accepted") },
               { key: "REJECTED", label: t("applications.rejected") },
               { key: "WITHDRAWN", label: t("applications.withdrawn") },
+              { key: "NO_RESPONSE", label: t("applications.noResponse") },
             ].map((sub) => {
               const isSelected = currentOutcome === sub.key;
               return (
@@ -339,7 +341,9 @@ export default function ApplicationsPage() {
       {isLoading ? (
         <div className="py-20 flex flex-col items-center justify-center">
           <SpinnerIcon className="w-6 h-6 text-neutral-500 mb-3" />
-          <p className="text-xs text-neutral-500">{t("applications.loading")}</p>
+          <p className="text-xs text-neutral-500">
+            {t("applications.loading")}
+          </p>
         </div>
       ) : error ? (
         <div className="py-16 max-w-md mx-auto text-center">
@@ -354,7 +358,6 @@ export default function ApplicationsPage() {
               {t("common.retry")}
             </button>
           </div>
-
         </div>
       ) : applications.length === 0 ? (
         totalCount === 0 ? (
@@ -370,7 +373,9 @@ export default function ApplicationsPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between text-xs text-neutral-500 px-1">
             <span>
-              {t("applications.showingCount", { count: tp("common.applicationCount", applications.length) })}
+              {t("applications.showingCount", {
+                count: tp("common.applicationCount", applications.length),
+              })}
             </span>
             {isFiltering && (
               <button

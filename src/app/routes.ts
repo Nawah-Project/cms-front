@@ -13,6 +13,10 @@ export default [
     index("routes/dashboard.tsx"),
     route("applications", "routes/applications.tsx"),
     route(
+      "professional-development",
+      "features/professional-development/pages/TasksPage.tsx",
+    ),
+    route(
       "members-progress",
       "features/members-progress/pages/MembersProgressPage.tsx",
     ),

@@ -1,0 +1,176 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router";
+import { PageHeading } from "../../admin/components/AdminUI";
+import { useI18n } from "../../../i18n";
+import { api } from "../../../services/api";
+import type { ProfessionalTask, TaskStatus } from "../types";
+import { TaskDetailDrawer } from "../components/TaskDetailDrawer";
+import { TaskCard, TaskSection } from "../components/TaskPresentation";
+
+const COLUMNS: Array<{ status: TaskStatus; key: string }> = [
+  { status: "TODO", key: "toDo" },
+  { status: "IN_PROGRESS", key: "inProgress" },
+  { status: "BLOCKED", key: "blocked" },
+  { status: "DONE", key: "done" },
+];
+
+export default function TasksPage() {
+  const { t } = useI18n();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedTaskId = searchParams.get("task");
+  const [tasks, setTasks] = useState<ProfessionalTask[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const result = await api.getTasks({ page, limit: 50 });
+      setTasks(result.items);
+      setTotalPages(result.totalPages);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [page]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const byStatus = useMemo(
+    () =>
+      Object.fromEntries(
+        COLUMNS.map(({ status }) => [
+          status,
+          tasks.filter((task) => task.status === status),
+        ]),
+      ) as Record<TaskStatus, ProfessionalTask[]>,
+    [tasks],
+  );
+  const selectTask = (taskId: string | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (taskId) next.set("task", taskId);
+    else next.delete("task");
+    setSearchParams(next, { preventScrollReset: true });
+  };
+
+  return (
+    <div className="space-y-7">
+      <PageHeading
+        eyebrow={t("professionalDevelopment.title")}
+        title={t("professionalDevelopment.tasks")}
+        description={t("professionalDevelopment.subtitle")}
+      />
+
+      {loading ? (
+        <div
+          className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4"
+          aria-label={t("professionalDevelopment.loading")}
+        >
+          {COLUMNS.map(({ status, key }) => (
+            <section key={status} className="space-y-3" aria-hidden="true">
+              <div className="h-8 animate-pulse border-b border-border bg-neutral-50 dark:bg-neutral-900" />
+              <div className="h-36 animate-pulse rounded-xl border border-border bg-neutral-50 dark:bg-neutral-900" />
+              <div className="h-28 animate-pulse rounded-xl border border-border bg-neutral-50 dark:bg-neutral-900" />
+              <span className="sr-only">
+                {t(`professionalDevelopment.${key}`)}
+              </span>
+            </section>
+          ))}
+        </div>
+      ) : error ? (
+        <div
+          role="alert"
+          className="rounded-xl border border-danger-border bg-surface px-5 py-8 text-center"
+        >
+          <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+            {t("professionalDevelopment.loadError")}
+          </p>
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="button-secondary mt-4 px-3 py-2 text-xs"
+          >
+            {t("professionalDevelopment.retry")}
+          </button>
+        </div>
+      ) : !tasks.length && page === 1 ? (
+        <section className="rounded-xl border border-dashed border-border bg-surface px-6 py-14 text-center">
+          <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+            {t("professionalDevelopment.noTasks")}
+          </h2>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-neutral-500 dark:text-neutral-400">
+            {t("professionalDevelopment.noTasksDescription")}
+          </p>
+        </section>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 2xl:grid-cols-4">
+            {COLUMNS.map(({ status, key }) => (
+              <TaskSection
+                key={status}
+                title={t(`professionalDevelopment.${key}`)}
+                count={byStatus[status].length}
+              >
+                {byStatus[status].length ? (
+                  byStatus[status].map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onClick={() => selectTask(task.id)}
+                    />
+                  ))
+                ) : (
+                  <p className="rounded-xl border border-dashed border-border-subtle px-3 py-6 text-center text-xs text-neutral-500">
+                    {t("professionalDevelopment.noTasksInColumn")}
+                  </p>
+                )}
+              </TaskSection>
+            ))}
+          </div>
+          {totalPages > 1 && (
+            <nav
+              aria-label={t("professionalDevelopment.taskPagination")}
+              className="flex items-center justify-center gap-3 border-t border-border pt-5"
+            >
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                className="button-secondary px-3 py-2 text-xs disabled:opacity-50"
+              >
+                {t("professionalDevelopment.previous")}
+              </button>
+              <span className="text-xs tabular-nums text-neutral-500">
+                {t("professionalDevelopment.pageOf", {
+                  page,
+                  pages: totalPages,
+                })}
+              </span>
+              <button
+                type="button"
+                disabled={page >= totalPages}
+                onClick={() =>
+                  setPage((current) => Math.min(totalPages, current + 1))
+                }
+                className="button-secondary px-3 py-2 text-xs disabled:opacity-50"
+              >
+                {t("professionalDevelopment.next")}
+              </button>
+            </nav>
+          )}
+        </>
+      )}
+      <TaskDetailDrawer
+        taskId={selectedTaskId}
+        onClose={() => selectTask(null)}
+        onChanged={load}
+      />
+    </div>
+  );
+}

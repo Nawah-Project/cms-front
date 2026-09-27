@@ -8,11 +8,26 @@ import { GlobeIcon } from "./Icons";
 type NavItem = {
   labelKey: string;
   to: string;
-  icon: "dashboard" | "applications" | "members" | "profile" | "admin";
+  icon:
+    | "dashboard"
+    | "applications"
+    | "development"
+    | "members"
+    | "profile"
+    | "admin";
 };
 const NAV_ITEMS: NavItem[] = [
   { labelKey: "common.navDashboard", to: "/", icon: "dashboard" },
-  { labelKey: "common.navApplications", to: "/applications", icon: "applications" },
+  {
+    labelKey: "common.navApplications",
+    to: "/applications",
+    icon: "applications",
+  },
+  {
+    labelKey: "common.navProfessionalDevelopment",
+    to: "/professional-development",
+    icon: "development",
+  },
   { labelKey: "common.navMembers", to: "/members-progress", icon: "members" },
   { labelKey: "common.navAdmin", to: "/admin", icon: "admin" },
   { labelKey: "common.navProfile", to: "/profile", icon: "profile" },
@@ -56,6 +71,21 @@ function NavIcon({ name }: { name: NavItem["icon"] }) {
         />
       </svg>
     );
+  if (name === "development")
+    return (
+      <svg {...common}>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M5 4.5h14A1.5 1.5 0 0 1 20.5 6v14a.5.5 0 0 1-.78.42L12 15.25l-7.72 5.17A.5.5 0 0 1 3.5 20V6A1.5 1.5 0 0 1 5 4.5Z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M8 8h8M8 11.5h5"
+        />
+      </svg>
+    );
   if (name === "admin")
     return (
       <svg {...common}>
@@ -91,7 +121,9 @@ export function AppSidebar() {
   const { user } = useAuth();
   const { t, locale, setLocale } = useI18n();
   const logout = useLogout();
-  const today = new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date());
+  const today = new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
+    new Date(),
+  );
 
   const localeToggle = (
     <button
@@ -126,41 +158,51 @@ export function AppSidebar() {
     });
 
   const actions = (mobile = false) => (
-      <button
-        type="button"
-        onClick={() => {
-          setMobileOpen(false);
-          void logout().catch(() => undefined);
-        }}
-        className={`mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition duration-150 hover:scale-[1.01] ${mobile ? "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900" : "text-neutral-400 hover:bg-neutral-800 hover:text-white"}`}
+    <button
+      type="button"
+      onClick={() => {
+        setMobileOpen(false);
+        void logout().catch(() => undefined);
+      }}
+      className={`mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition duration-150 hover:scale-[1.01] ${mobile ? "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900" : "text-neutral-400 hover:bg-neutral-800 hover:text-white"}`}
+    >
+      <svg
+        className="h-[18px] w-[18px]"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
       >
-        <svg
-          className="h-[18px] w-[18px]"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M10 17l5-5-5-5m5 5H3.5m8-8.5h5A3.5 3.5 0 0 1 20 7v10a3.5 3.5 0 0 1-3.5 3.5h-5"
-          />
-        </svg>
-        <span>{t("common.signOut")}</span>
-      </button>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M10 17l5-5-5-5m5 5H3.5m8-8.5h5A3.5 3.5 0 0 1 20 7v10a3.5 3.5 0 0 1-3.5 3.5h-5"
+        />
+      </svg>
+      <span>{t("common.signOut")}</span>
+    </button>
   );
 
   return (
     <>
       <aside className="fixed inset-y-0 start-0 z-40 hidden w-64 flex-col border-e border-neutral-800 bg-neutral-900 px-5 py-7 lg:flex">
         <div className="mb-10 flex items-start justify-between gap-2 px-2">
-          <Link to="/" className="flex min-w-0 items-start gap-3 text-sm font-semibold tracking-tight text-white">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-white text-sm font-bold text-neutral-900">J</span>
+          <Link
+            to="/"
+            className="flex min-w-0 items-start gap-3 text-sm font-semibold tracking-tight text-white"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-white text-sm font-bold text-neutral-900">
+              J
+            </span>
             <span className="min-w-0 pt-0.5">
               <span className="block truncate">{t("common.brand")}</span>
-              <time className="mt-1 block text-xs font-normal tracking-normal text-neutral-400" dateTime={new Date().toISOString()}>{today}</time>
+              <time
+                className="mt-1 block text-xs font-normal tracking-normal text-neutral-400"
+                dateTime={new Date().toISOString()}
+              >
+                {today}
+              </time>
             </span>
           </Link>
           {localeToggle}
@@ -176,52 +218,69 @@ export function AppSidebar() {
       <header className="sticky top-0 z-40 border-b border-border bg-surface/95 px-5 py-3.5 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95 lg:hidden">
         <div className="flex items-center justify-between">
           <div className="flex min-w-0 items-start gap-3">
-            <Link to="/" className="flex min-w-0 items-start gap-2.5 text-sm font-semibold tracking-tight text-neutral-950 dark:text-white">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-neutral-900 bg-neutral-100 text-xs font-bold text-neutral-900 dark:bg-white dark:text-neutral-900">J</span>
+            <Link
+              to="/"
+              className="flex min-w-0 items-start gap-2.5 text-sm font-semibold tracking-tight text-neutral-950 dark:text-white"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-neutral-900 bg-neutral-100 text-xs font-bold text-neutral-900 dark:bg-white dark:text-neutral-900">
+                J
+              </span>
               <span className="min-w-0 pt-0.5">
                 <span className="block truncate">{t("common.brand")}</span>
-                <time className="mt-0.5 block text-[11px] font-normal tracking-normal text-neutral-500" dateTime={new Date().toISOString()}>{today}</time>
+                <time
+                  className="mt-0.5 block text-[11px] font-normal tracking-normal text-neutral-500"
+                  dateTime={new Date().toISOString()}
+                >
+                  {today}
+                </time>
               </span>
             </Link>
             {localeToggle}
           </div>
           <div className="flex items-center gap-2">
-          <button
-            type="button"
-            aria-label={mobileOpen ? t("common.closeNavigation") : t("common.openNavigation")}
-            aria-expanded={mobileOpen}
-            onClick={() => setMobileOpen((open) => !open)}
-            className="rounded-lg border border-neutral-200 p-2 text-neutral-700 dark:border-neutral-800 dark:text-neutral-300"
-          >
-            {mobileOpen ? (
-              <span
-                aria-hidden="true"
-                className="block h-5 w-5 text-lg leading-4"
-              >
-                ×
-              </span>
-            ) : (
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M4 6.5h16M4 12h16M4 17.5h16"
-                />
-              </svg>
-            )}
-          </button>
+            <button
+              type="button"
+              aria-label={
+                mobileOpen
+                  ? t("common.closeNavigation")
+                  : t("common.openNavigation")
+              }
+              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen((open) => !open)}
+              className="rounded-lg border border-neutral-200 p-2 text-neutral-700 dark:border-neutral-800 dark:text-neutral-300"
+            >
+              {mobileOpen ? (
+                <span
+                  aria-hidden="true"
+                  className="block h-5 w-5 text-lg leading-4"
+                >
+                  ×
+                </span>
+              ) : (
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4 6.5h16M4 12h16M4 17.5h16"
+                  />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
         {mobileOpen && (
           <div className="absolute inset-x-0 top-full border-b border-border bg-surface px-5 pb-4 pt-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
-            <nav aria-label={t("common.primaryNavigation")} className="space-y-1">
+            <nav
+              aria-label={t("common.primaryNavigation")}
+              className="space-y-1"
+            >
               {navLinks(true)}
             </nav>
             <div className="mt-3 border-t border-neutral-100 pt-3 dark:border-neutral-800">

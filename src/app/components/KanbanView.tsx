@@ -52,6 +52,8 @@ function getApplicationCardColor(app: Application) {
         return "border-red-400 bg-red-100 hover:bg-red-200 dark:border-red-700 dark:bg-red-900/50 dark:hover:bg-red-900/70";
       case "WITHDRAWN":
         return "border-neutral-500 bg-neutral-300 hover:bg-neutral-400 dark:border-neutral-500 dark:bg-neutral-700 dark:hover:bg-neutral-600";
+      case "NO_RESPONSE":
+        return "border-warning-strong bg-warning-soft hover:bg-warning-hover dark:border-warning-strong dark:bg-amber-950/50 dark:hover:bg-amber-900/60";
       default:
         return "border-neutral-400 bg-neutral-200 hover:bg-neutral-300 dark:border-neutral-600 dark:bg-neutral-800 dark:hover:bg-neutral-700";
     }
@@ -208,7 +210,14 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                   <div className="flex items-center gap-2">
                     <span
                       className={`w-2 h-2 rounded-full ${getColumnDotColor(col.stage)}`}
-                      style={col.stage === "CLOSED" ? { background: "conic-gradient(#15803d 0deg 120deg, #dc2626 120deg 240deg, #52525b 240deg 360deg)" } : undefined}
+                      style={
+                        col.stage === "CLOSED"
+                          ? {
+                              background:
+                                "conic-gradient(#15803d 0deg 120deg, #dc2626 120deg 240deg, #52525b 240deg 360deg)",
+                            }
+                          : undefined
+                      }
                       aria-hidden="true"
                     />
                     <h3 className="text-xs font-semibold tracking-wider text-neutral-800 dark:text-neutral-200 uppercase">
@@ -278,7 +287,9 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                                   rel="noopener noreferrer"
                                   onClick={(e) => e.stopPropagation()}
                                   className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-0.5 rounded-sm shrink-0"
-                                  title={t("applications.openJob", { company: app.companyName })}
+                                  title={t("applications.openJob", {
+                                    company: app.companyName,
+                                  })}
                                 >
                                   <ExternalLinkIcon className="w-3 h-3" />
                                 </a>
@@ -303,7 +314,10 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                             {/* Footer: Application Method and Outcome Badge */}
                             <div className="flex items-center justify-between gap-2 mt-2 pt-1 text-[11px]">
                               <span className="text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded text-[10px] font-medium truncate max-w-[130px]">
-                                {formatApplicationMethod(app.applicationMethod, t)}
+                                {formatApplicationMethod(
+                                  app.applicationMethod,
+                                  t,
+                                )}
                               </span>
 
                               {col.stage === "CLOSED" &&
@@ -348,7 +362,9 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                 {t("applications.closeApplication")}
               </h3>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                {t("applications.moveClosedPrompt", { company: pendingClosedApp.companyName })}
+                {t("applications.moveClosedPrompt", {
+                  company: pendingClosedApp.companyName,
+                })}
               </p>
             </div>
 

@@ -100,13 +100,17 @@ export function EditApplicationModal({
         applicationMethod,
         jobUrl: jobUrl.trim(),
         stage,
-        outcome: stage === "CLOSED" ? outcome : "NONE",
+        outcome:
+          stage !== "CLOSED"
+            ? "NONE"
+            : outcome === "NO_RESPONSE" && application.outcome === "NO_RESPONSE"
+              ? undefined
+              : outcome,
       });
       onClose();
     } catch (err: any) {
       setErrors({
-        submit:
-          t("common.unexpectedError"),
+        submit: t("common.unexpectedError"),
       });
     } finally {
       setIsSubmitting(false);
@@ -153,7 +157,8 @@ export function EditApplicationModal({
               htmlFor="editCompanyName"
               className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1"
             >
-              {t("applications.companyName")} <span className="text-red-500">*</span>
+              {t("applications.companyName")}{" "}
+              <span className="text-red-500">*</span>
             </label>
             <input
               id="editCompanyName"
@@ -179,7 +184,8 @@ export function EditApplicationModal({
               htmlFor="editJobTitle"
               className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1"
             >
-              {t("applications.jobTitle")} <span className="text-red-500">*</span>
+              {t("applications.jobTitle")}{" "}
+              <span className="text-red-500">*</span>
             </label>
             <input
               id="editJobTitle"
@@ -288,7 +294,9 @@ export function EditApplicationModal({
                       : "bg-neutral-50 dark:bg-neutral-800/50 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   }`}
                 >
-                  {t(`applications.${s.key === "APPLIED" ? "submitted" : s.key.toLowerCase()}`)}
+                  {t(
+                    `applications.${s.key === "APPLIED" ? "submitted" : s.key.toLowerCase()}`,
+                  )}
                 </button>
               ))}
             </div>
@@ -300,23 +308,31 @@ export function EditApplicationModal({
               <label className="block text-xs font-medium text-neutral-800 dark:text-neutral-200 mb-1">
                 {t("applications.closedOutcome")}
               </label>
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                {(["ACCEPTED", "REJECTED", "WITHDRAWN"] as Outcome[]).map(
-                  (opt) => (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => setOutcome(opt)}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${
-                        outcome === opt
-                          ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900"
-                          : "bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50"
-                      }`}
-                    >
-                      {t(`applications.${opt.toLowerCase()}`)}
-                    </button>
-                  ),
-                )}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+                {(
+                  [
+                    "ACCEPTED",
+                    "REJECTED",
+                    "WITHDRAWN",
+                    ...(application.outcome === "NO_RESPONSE"
+                      ? ["NO_RESPONSE"]
+                      : []),
+                  ] as Outcome[]
+                ).map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    disabled={opt === "NO_RESPONSE"}
+                    onClick={() => setOutcome(opt)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${
+                      outcome === opt
+                        ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900"
+                        : "bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50"
+                    } ${opt === "NO_RESPONSE" ? "cursor-not-allowed opacity-80" : ""}`}
+                  >
+                    {t(`applications.${opt.toLowerCase()}`)}
+                  </button>
+                ))}
               </div>
             </div>
           )}

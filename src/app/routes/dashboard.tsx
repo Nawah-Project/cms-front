@@ -7,6 +7,7 @@ import { RecentActivityList } from "../features/members-progress/components/Rece
 import { api } from "../services/api";
 import type { DashboardStats } from "../types";
 import { useI18n } from "../i18n";
+import { ProfessionalDevelopmentSummary } from "../features/professional-development/components/ProfessionalDevelopmentSummary";
 
 export function meta() {
   return [
@@ -111,22 +112,28 @@ export default function DashboardPage() {
   const recentApplications = stats.recentApplications ?? [];
   const outcomes = [
     {
-      label: "Accepted",
+      labelKey: "accepted",
       value: "ACCEPTED" as const,
       count: stats.closed.accepted,
       href: "/applications?stage=CLOSED&outcome=ACCEPTED",
     },
     {
-      label: "Rejected",
+      labelKey: "rejected",
       value: "REJECTED" as const,
       count: stats.closed.rejected,
       href: "/applications?stage=CLOSED&outcome=REJECTED",
     },
     {
-      label: "Withdrawn",
+      labelKey: "withdrawn",
       value: "WITHDRAWN" as const,
       count: stats.closed.withdrawn,
       href: "/applications?stage=CLOSED&outcome=WITHDRAWN",
+    },
+    {
+      labelKey: "noResponse",
+      value: "NO_RESPONSE" as const,
+      count: stats.closed.noResponse,
+      href: "/applications?stage=CLOSED&outcome=NO_RESPONSE",
     },
   ];
 
@@ -147,7 +154,9 @@ export default function DashboardPage() {
               to="/applications"
               className="text-sm font-medium text-neutral-700 transition-colors hover:text-neutral-950 dark:text-neutral-300 dark:hover:text-white"
             >
-              {t("dashboard.viewApplications", { count: number(stats.active.total + stats.closed.total) })}
+              {t("dashboard.viewApplications", {
+                count: number(stats.active.total + stats.closed.total),
+              })}
             </Link>
             <button
               type="button"
@@ -160,6 +169,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </header>
+
+      <ProfessionalDevelopmentSummary />
 
       <section aria-labelledby="pipeline-heading" className="space-y-7">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-stone-200 pb-3 dark:border-neutral-800">
@@ -179,7 +190,9 @@ export default function DashboardPage() {
               to="/applications?stage=ACTIVE"
               className="transition-colors hover:text-neutral-950 dark:hover:text-white"
             >
-              {t("dashboard.activeCount", { count: number(stats.active.total) })}
+              {t("dashboard.activeCount", {
+                count: number(stats.active.total),
+              })}
             </Link>
             <span
               aria-hidden="true"
@@ -189,7 +202,9 @@ export default function DashboardPage() {
               to="/applications?stage=CLOSED"
               className="transition-colors hover:text-neutral-950 dark:hover:text-white"
             >
-              {t("dashboard.closedCount", { count: number(stats.closed.total) })}
+              {t("dashboard.closedCount", {
+                count: number(stats.closed.total),
+              })}
             </Link>
           </div>
         </div>
@@ -202,7 +217,9 @@ export default function DashboardPage() {
               className="group rounded-xl border border-gray-200/80 bg-surface p-4 shadow-xs transition duration-150 hover:scale-[1.01] hover:border-border-hover hover:shadow-sm dark:border-neutral-800 sm:p-5"
             >
               <span className={`text-xs font-medium ${stage.tone}`}>
-                {t(`applications.${stage.key === "applied" ? "submitted" : stage.key}`)}
+                {t(
+                  `applications.${stage.key === "applied" ? "submitted" : stage.key}`,
+                )}
               </span>
               <span className="mt-3 flex items-baseline gap-2">
                 <span className="text-2xl font-semibold tabular-nums tracking-tight text-neutral-900">
@@ -232,12 +249,12 @@ export default function DashboardPage() {
             {t("dashboard.outcomes")}
           </h2>
         </div>
-        <div className="grid grid-cols-1 divide-y divide-stone-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0 dark:divide-neutral-800">
+        <div className="grid grid-cols-1 divide-y divide-stone-200 sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4 dark:divide-neutral-800">
           {outcomes.map((outcome) => (
             <Link
-              key={outcome.label}
+              key={outcome.value}
               to={outcome.href}
-              aria-label={`${t(`applications.${outcome.value.toLowerCase()}`)}: ${number(outcome.count)}`}
+              aria-label={`${t(`applications.${outcome.labelKey}`)}: ${number(outcome.count)}`}
               className="group inline-flex items-center justify-center gap-3 px-4 py-5 transition-colors hover:bg-neutral-50 sm:px-3 dark:hover:bg-neutral-800/50"
             >
               <StatusBadge kind="outcome" value={outcome.value} />
@@ -310,7 +327,9 @@ export default function DashboardPage() {
           <div className="min-h-36 divide-y divide-neutral-100 rounded-xl border border-neutral-200 bg-white px-5 dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-900">
             {(stats.recentApplications ?? []).length === 0 ? (
               <div className="flex min-h-36 flex-col items-start justify-center py-6">
-                <p className="text-sm text-neutral-500">{t("applications.noApplicationsYet")}</p>
+                <p className="text-sm text-neutral-500">
+                  {t("applications.noApplicationsYet")}
+                </p>
                 <Link
                   to="/applications"
                   className="button-ghost mt-2 inline-flex items-center gap-2 px-0"
@@ -343,7 +362,10 @@ export default function DashboardPage() {
                     <time
                       className="text-[11px] text-neutral-500"
                       dateTime={application.updatedAt}
-                      title={new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(application.updatedAt))}
+                      title={new Intl.DateTimeFormat(locale, {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(application.updatedAt))}
                     >
                       {relativeTime(application.updatedAt)}
                     </time>

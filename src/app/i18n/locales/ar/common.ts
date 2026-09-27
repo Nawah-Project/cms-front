@@ -5,6 +5,7 @@ export default {
   languageEnglish: "English",
   navDashboard: "الرئيسية",
   navApplications: "طلبات التقديم",
+  navProfessionalDevelopment: "التطوير المهني",
   navMembers: "تقدم المجموعة",
   navAdmin: "الإدارة",
   navProfile: "الملف الشخصي",

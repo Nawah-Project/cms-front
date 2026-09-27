@@ -14,6 +14,7 @@ import arDashboard from "./locales/ar/dashboard";
 import arMembers from "./locales/ar/members";
 import arAdmin from "./locales/ar/admin";
 import arProfile from "./locales/ar/profile";
+import arProfessionalDevelopment from "./locales/ar/professionalDevelopment";
 import enCommon from "./locales/en/common";
 import enAuth from "./locales/en/auth";
 import enApplications from "./locales/en/applications";
@@ -21,10 +22,19 @@ import enDashboard from "./locales/en/dashboard";
 import enMembers from "./locales/en/members";
 import enAdmin from "./locales/en/admin";
 import enProfile from "./locales/en/profile";
+import enProfessionalDevelopment from "./locales/en/professionalDevelopment";
 
 export type Locale = "ar" | "en";
 export type Message = string | Partial<Record<Intl.LDMLPluralRule, string>>;
-type Domain = "common" | "auth" | "applications" | "dashboard" | "members" | "admin" | "profile";
+type Domain =
+  | "common"
+  | "auth"
+  | "applications"
+  | "dashboard"
+  | "members"
+  | "admin"
+  | "profile"
+  | "professionalDevelopment";
 type DomainMessages = Record<string, Message>;
 type Catalog = Record<Domain, DomainMessages>;
 
@@ -37,6 +47,7 @@ const catalogs: Record<Locale, Catalog> = {
     members: arMembers,
     admin: arAdmin,
     profile: arProfile,
+    professionalDevelopment: arProfessionalDevelopment,
   },
   en: {
     common: enCommon,
@@ -46,6 +57,7 @@ const catalogs: Record<Locale, Catalog> = {
     members: enMembers,
     admin: enAdmin,
     profile: enProfile,
+    professionalDevelopment: enProfessionalDevelopment,
   },
 };
 
@@ -70,11 +82,17 @@ function lookup(locale: Locale, key: string): Message | undefined {
   return catalogs[locale][domain]?.[messageKey];
 }
 
-function interpolate(template: string, values: Record<string, string | number> = {}, locale: Locale) {
+function interpolate(
+  template: string,
+  values: Record<string, string | number> = {},
+  locale: Locale,
+) {
   return template.replace(/\{([\w]+)\}/g, (token, name: string) => {
     const value = values[name];
     if (value === undefined) return token;
-    return typeof value === "number" ? new Intl.NumberFormat(locale).format(value) : value;
+    return typeof value === "number"
+      ? new Intl.NumberFormat(locale).format(value)
+      : value;
   });
 }
 
@@ -82,7 +100,11 @@ type I18nContextValue = {
   locale: Locale;
   setLocale: (locale: Locale) => void;
   t: (key: string, values?: Record<string, string | number>) => string;
-  tp: (key: string, count: number, values?: Record<string, string | number>) => string;
+  tp: (
+    key: string,
+    count: number,
+    values?: Record<string, string | number>,
+  ) => string;
   number: (value: number, options?: Intl.NumberFormatOptions) => string;
   date: (value: string | Date, options?: Intl.DateTimeFormatOptions) => string;
   relativeTime: (value: string | Date | null) => string;
@@ -127,7 +149,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   );
 
   const tp = useCallback(
-    (key: string, count: number, values: Record<string, string | number> = {}) => {
+    (
+      key: string,
+      count: number,
+      values: Record<string, string | number> = {},
+    ) => {
       const message = lookup(locale, key) ?? lookup("en", key);
       if (!message) return key;
       if (typeof message === "string")
@@ -145,7 +171,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       setLocale,
       t,
       tp,
-      number: (amount, options) => new Intl.NumberFormat(locale, options).format(amount),
+      number: (amount, options) =>
+        new Intl.NumberFormat(locale, options).format(amount),
       date: (dateValue, options = { dateStyle: "medium" }) =>
         new Intl.DateTimeFormat(locale, options).format(new Date(dateValue)),
       relativeTime: (dateValue) => {
@@ -165,7 +192,10 @@ export function I18nProvider({ children }: { children: ReactNode }) {
                   : absSeconds < 31_536_000
                     ? [Math.round(seconds / 2_592_000), "month"]
                     : [Math.round(seconds / 31_536_000), "year"];
-        return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(value, unit);
+        return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(
+          value,
+          unit,
+        );
       },
     }),
     [locale, setLocale, t, tp],

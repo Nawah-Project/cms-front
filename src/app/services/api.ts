@@ -8,6 +8,13 @@ import type {
   UpdateApplicationInput,
 } from "../types";
 import { notifyAuthSessionExpired } from "../utils/authSession";
+import type {
+  ProfessionalDevelopmentSummary,
+  ProfessionalTask,
+  TaskNote,
+  TaskPage,
+  TaskStatus,
+} from "../features/professional-development/types";
 
 /**
  * Clean API service layer for consuming the Job Application Tracking backend.
@@ -44,7 +51,7 @@ function normalizeRecentApplications(value: unknown): DashboardApplication[] {
       !["APPLIED", "INTERVIEW", "DECISION", "CLOSED"].includes(
         String(app.stage),
       ) ||
-      !["NONE", "ACCEPTED", "REJECTED", "WITHDRAWN"].includes(
+      !["NONE", "ACCEPTED", "REJECTED", "WITHDRAWN", "NO_RESPONSE"].includes(
         String(app.outcome),
       )
     )
@@ -264,6 +271,7 @@ export const api = {
             accepted: Number(data.closed.accepted) || 0,
             rejected: Number(data.closed.rejected) || 0,
             withdrawn: Number(data.closed.withdrawn) || 0,
+            noResponse: Number(data.closed.noResponse) || 0,
           },
           recentApplications: normalizeRecentApplications(
             data.recentApplications,
@@ -281,8 +289,10 @@ export const api = {
       const accepted = Number(data.accepted) || 0;
       const rejected = Number(data.rejected) || 0;
       const withdrawn = Number(data.withdrawn) || 0;
+      const noResponse = Number(data.noResponse) || 0;
       const closedTotal =
-        Number(data.totalClosed) || accepted + rejected + withdrawn;
+        Number(data.totalClosed) ||
+        accepted + rejected + withdrawn + noResponse;
 
       return {
         active: {
@@ -296,6 +306,7 @@ export const api = {
           accepted,
           rejected,
           withdrawn,
+          noResponse,
         },
         recentApplications: normalizeRecentApplications(
           data.recentApplications,
@@ -305,8 +316,95 @@ export const api = {
 
     return {
       active: { total: 0, applied: 0, interview: 0, decision: 0 },
-      closed: { total: 0, accepted: 0, rejected: 0, withdrawn: 0 },
+      closed: {
+        total: 0,
+        accepted: 0,
+        rejected: 0,
+        withdrawn: 0,
+        noResponse: 0,
+      },
       recentApplications: [],
     };
+  },
+
+  getTasks(params: { page?: number; limit?: number } = {}): Promise<TaskPage> {
+    const query = new URLSearchParams();
+    query.set("page", String(params.page ?? 1));
+    query.set("limit", String(params.limit ?? 50));
+    return request<TaskPage>(`/tasks?${query}`);
+  },
+
+  getTask(taskId: string): Promise<ProfessionalTask> {
+    return request<ProfessionalTask>(`/tasks/${encodeURIComponent(taskId)}`);
+  },
+
+  updateTaskStatus(
+    taskId: string,
+    status: TaskStatus,
+  ): Promise<ProfessionalTask> {
+    return request<ProfessionalTask>(
+      `/tasks/${encodeURIComponent(taskId)}/status`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      },
+    );
+  },
+
+  addChecklistItem(taskId: string, title: string) {
+    return request<ProfessionalTask["checklist"][number]>(
+      `/tasks/${encodeURIComponent(taskId)}/checklist`,
+      {
+        method: "POST",
+        body: JSON.stringify({ title }),
+      },
+    );
+  },
+
+  updateChecklistItem(
+    taskId: string,
+    itemId: string,
+    input: { title?: string; completed?: boolean; position?: number },
+  ) {
+    return request<ProfessionalTask["checklist"][number]>(
+      `/tasks/${encodeURIComponent(taskId)}/checklist/${encodeURIComponent(itemId)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      },
+    );
+  },
+
+  deleteChecklistItem(
+    taskId: string,
+    itemId: string,
+  ): Promise<{ success: boolean }> {
+    return request(
+      `/tasks/${encodeURIComponent(taskId)}/checklist/${encodeURIComponent(itemId)}`,
+      { method: "DELETE" },
+    );
+  },
+
+  addPersonalNote(taskId: string, content: string): Promise<TaskNote> {
+    return request<TaskNote>(`/tasks/${encodeURIComponent(taskId)}/notes`, {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    });
+  },
+
+  markMentorFeedbackRead(
+    taskId: string,
+    noteId: string,
+  ): Promise<{ success: boolean }> {
+    return request(
+      `/tasks/${encodeURIComponent(taskId)}/notes/${encodeURIComponent(noteId)}/read`,
+      { method: "PATCH" },
+    );
+  },
+
+  getProfessionalDevelopmentSummary(): Promise<ProfessionalDevelopmentSummary> {
+    return request<ProfessionalDevelopmentSummary>(
+      "/dashboard/professional-development",
+    );
   },
 };

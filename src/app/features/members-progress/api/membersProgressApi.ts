@@ -19,6 +19,7 @@ const OUTCOMES: Exclude<Outcome, "NONE">[] = [
   "ACCEPTED",
   "REJECTED",
   "WITHDRAWN",
+  "NO_RESPONSE",
 ];
 
 function objectValue(value: unknown): Record<string, unknown> | null {
@@ -76,7 +77,8 @@ function normalizeMember(value: unknown): MemberProgress {
     userId: typeof member.userId === "string" ? member.userId : memberId,
     name: member.name,
     avatar: normalizeAvatar(member.avatar),
-    portfolioUrl: typeof member.portfolioUrl === "string" ? member.portfolioUrl : null,
+    portfolioUrl:
+      typeof member.portfolioUrl === "string" ? member.portfolioUrl : null,
     hasCv: member.hasCv === true,
     isCurrentUser:
       typeof member.isCurrentUser === "boolean"

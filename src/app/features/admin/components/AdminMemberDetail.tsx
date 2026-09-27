@@ -16,6 +16,7 @@ import {
 import { AdminActivityList } from "./AdminActivityList";
 import { useI18n } from "../../../i18n";
 import { ProfessionalProfileActions } from "../../profile/MemberProfessionalCard";
+import { AdminMemberTasks } from "./AdminMemberTasks";
 
 export function AdminMemberDetail({
   member,
@@ -64,7 +65,9 @@ export function AdminMemberDetail({
           <div className="flex items-center gap-3">
             <Initials name={member.name} avatar={member.avatar} />
             <div>
-              <p className="text-xs text-neutral-500">{t("admin.memberDetails")}</p>
+              <p className="text-xs text-neutral-500">
+                {t("admin.memberDetails")}
+              </p>
               <h2
                 id="admin-member-title"
                 className="text-xl font-semibold text-neutral-950 dark:text-neutral-100"
@@ -99,19 +102,30 @@ export function AdminMemberDetail({
           </div>
         ) : (
           <div className="space-y-7 py-6">
+            <AdminMemberTasks member={member} />
             <section className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-700">
-              <h3 className="mb-3 text-sm font-semibold">{t("profile.professionalProfile")}</h3>
-              <ProfessionalProfileActions portfolioUrl={detail.user.portfolioUrl ?? null} hasCv={detail.user.hasCv === true} userId={detail.user.id} />
+              <h3 className="mb-3 text-sm font-semibold">
+                {t("profile.professionalProfile")}
+              </h3>
+              <ProfessionalProfileActions
+                portfolioUrl={detail.user.portfolioUrl ?? null}
+                hasCv={detail.user.hasCv === true}
+                userId={detail.user.id}
+              />
             </section>
             <section className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-lg border border-border p-4">
-                <p className="text-xs text-neutral-500">{t("admin.currentGroup")}</p>
+                <p className="text-xs text-neutral-500">
+                  {t("admin.currentGroup")}
+                </p>
                 <p className="mt-1 text-sm font-medium">
                   {detail.user.group?.name ?? t("common.unassigned")}
                 </p>
               </div>
               <div className="rounded-lg border border-border p-4">
-                <p className="text-xs text-neutral-500">{t("admin.lastActivity")}</p>
+                <p className="text-xs text-neutral-500">
+                  {t("admin.lastActivity")}
+                </p>
                 <p
                   className="mt-1 text-sm font-medium"
                   title={timeTitle(detail.lastActivityAt, locale)}
@@ -120,7 +134,9 @@ export function AdminMemberDetail({
                 </p>
               </div>
               <div className="rounded-lg border border-border p-4">
-                <p className="text-xs text-neutral-500">{t("admin.activityStatus")}</p>
+                <p className="text-xs text-neutral-500">
+                  {t("admin.activityStatus")}
+                </p>
                 <div className="mt-2">
                   <ActivityBadge
                     status={detail.activityStatus}
@@ -129,14 +145,18 @@ export function AdminMemberDetail({
                 </div>
               </div>
               <div className="rounded-lg border border-border p-4">
-                <p className="text-xs text-neutral-500">{t("admin.applications")}</p>
+                <p className="text-xs text-neutral-500">
+                  {t("admin.applications")}
+                </p>
                 <p className="mt-1 text-sm font-medium">
                   {tp("admin.applicationsTotal", detail.applicationsCount)}
                 </p>
               </div>
             </section>
             <section className="space-y-3">
-              <h3 className="text-sm font-semibold">{t("admin.applicationProgress")}</h3>
+              <h3 className="text-sm font-semibold">
+                {t("admin.applicationProgress")}
+              </h3>
               <StageCounts counts={detail.currentStageCounts} />
             </section>
             <section className="space-y-2">
@@ -148,7 +168,9 @@ export function AdminMemberDetail({
               </div>
             </section>
             <section className="space-y-2">
-              <h3 className="text-sm font-semibold">{t("admin.recentApplications")}</h3>
+              <h3 className="text-sm font-semibold">
+                {t("admin.recentApplications")}
+              </h3>
               {detail.recentApplications.length ? (
                 <div className="divide-y divide-neutral-100 rounded-lg border border-border dark:divide-neutral-800">
                   {detail.recentApplications.map((application) => (
@@ -164,8 +186,10 @@ export function AdminMemberDetail({
                           {application.jobTitle}
                         </p>
                       </div>
-              <span className="status-badge status-neutral">
-                        {t(`applications.${application.stage === "APPLIED" ? "submitted" : application.stage.toLowerCase()}`)}
+                      <span className="status-badge status-neutral">
+                        {t(
+                          `applications.${application.stage === "APPLIED" ? "submitted" : application.stage.toLowerCase()}`,
+                        )}
                       </span>
                     </div>
                   ))}

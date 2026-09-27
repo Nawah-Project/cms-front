@@ -1,3 +1,13 @@
+import type {
+  CreateTaskInput,
+  ProfessionalTask,
+  TaskNote,
+  TaskPage,
+  UpdateTaskInput,
+} from "../../professional-development/types";
+import type { Stage } from "../../../types";
+import { notifyAuthSessionExpired } from "../../../utils/authSession";
+
 export type ActivityStatus = "ACTIVE" | "WARNING" | "CRITICAL" | "NEVER_ACTIVE";
 export type StageCounts = {
   applied: number;
@@ -155,6 +165,58 @@ export const adminApi = {
       `/admin/users/${encodeURIComponent(userId)}/group-assignment`,
       { method: "POST", body: JSON.stringify({ groupId }) },
     ),
+  tasksForUser: (userId: string, page = 1, limit = 50) =>
+    request<TaskPage>(
+      `/admin/users/${encodeURIComponent(userId)}/tasks?page=${page}&limit=${limit}`,
+    ),
+  createTask: (userId: string, input: CreateTaskInput) =>
+    request<ProfessionalTask>(
+      `/admin/users/${encodeURIComponent(userId)}/tasks`,
+      {
+        method: "POST",
+        body: JSON.stringify(input),
+      },
+    ),
+  updateTask: (taskId: string, input: UpdateTaskInput) =>
+    request<ProfessionalTask>(`/admin/tasks/${encodeURIComponent(taskId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }),
+  deleteTask: (taskId: string) =>
+    request<{ success: boolean }>(
+      `/admin/tasks/${encodeURIComponent(taskId)}`,
+      { method: "DELETE" },
+    ),
+  addTaskChecklistItem: (taskId: string, title: string) =>
+    request<ProfessionalTask["checklist"][number]>(
+      `/admin/tasks/${encodeURIComponent(taskId)}/checklist`,
+      {
+        method: "POST",
+        body: JSON.stringify({ title }),
+      },
+    ),
+  updateTaskChecklistItem: (
+    taskId: string,
+    itemId: string,
+    input: { title?: string; position?: number },
+  ) =>
+    request<ProfessionalTask["checklist"][number]>(
+      `/admin/tasks/${encodeURIComponent(taskId)}/checklist/${encodeURIComponent(itemId)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      },
+    ),
+  deleteTaskChecklistItem: (taskId: string, itemId: string) =>
+    request<{ success: boolean }>(
+      `/admin/tasks/${encodeURIComponent(taskId)}/checklist/${encodeURIComponent(itemId)}`,
+      { method: "DELETE" },
+    ),
+  addMentorFeedback: (taskId: string, content: string) =>
+    request<TaskNote>(`/admin/tasks/${encodeURIComponent(taskId)}/feedback`, {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    }),
+  mentorFeedback: (taskId: string) =>
+    request<TaskNote[]>(`/admin/tasks/${encodeURIComponent(taskId)}/feedback`),
 };
-import type { Stage } from "../../../types";
-import { notifyAuthSessionExpired } from "../../../utils/authSession";

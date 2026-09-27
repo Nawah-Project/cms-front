@@ -1,6 +1,7 @@
 export type Stage = "APPLIED" | "INTERVIEW" | "DECISION" | "CLOSED";
 
-export type Outcome = "NONE" | "ACCEPTED" | "REJECTED" | "WITHDRAWN";
+export type Outcome =
+  "NONE" | "ACCEPTED" | "REJECTED" | "WITHDRAWN" | "NO_RESPONSE";
 
 export type ApplicationMethod =
   | "COMPANY_WEBSITE"
@@ -38,6 +39,7 @@ export interface DashboardStats {
     accepted: number;
     rejected: number;
     withdrawn: number;
+    noResponse: number;
   };
   recentApplications?: DashboardApplication[];
 }
@@ -88,10 +90,21 @@ export const APPLICATION_METHODS: {
   { value: "OTHER", label: "Other" },
 ];
 
-export function formatApplicationMethod(method?: string | null, translate?: (key: string) => string): string {
+export function formatApplicationMethod(
+  method?: string | null,
+  translate?: (key: string) => string,
+): string {
   if (!method) return "—";
   if (translate) {
-    const key: Record<string, string> = { COMPANY_WEBSITE: "companyWebsite", LINKEDIN: "linkedIn", RECRUITMENT_PLATFORM: "recruitmentPlatform", REFERRAL: "referral", EMAIL: "emailMethod", DIRECT_CONTACT: "directContact", OTHER: "otherMethod" };
+    const key: Record<string, string> = {
+      COMPANY_WEBSITE: "companyWebsite",
+      LINKEDIN: "linkedIn",
+      RECRUITMENT_PLATFORM: "recruitmentPlatform",
+      REFERRAL: "referral",
+      EMAIL: "emailMethod",
+      DIRECT_CONTACT: "directContact",
+      OTHER: "otherMethod",
+    };
     if (key[method]) return translate(`applications.${key[method]}`);
   }
   const found = APPLICATION_METHODS.find((m) => m.value === method);
@@ -111,4 +124,5 @@ export const OUTCOMES: { key: Outcome; label: string }[] = [
   { key: "ACCEPTED", label: "Accepted" },
   { key: "REJECTED", label: "Rejected" },
   { key: "WITHDRAWN", label: "Withdrawn" },
+  { key: "NO_RESPONSE", label: "No Response" },
 ];

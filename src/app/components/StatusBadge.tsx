@@ -16,6 +16,7 @@ const OUTCOME_STYLE: Record<Exclude<Outcome, "NONE">, string> = {
   ACCEPTED: "status-success",
   REJECTED: "status-danger",
   WITHDRAWN: "status-neutral",
+  NO_RESPONSE: "status-warning",
 };
 
 export function StatusBadge(props: StatusBadgeProps) {
@@ -30,8 +31,12 @@ export function StatusBadge(props: StatusBadgeProps) {
     ACCEPTED: "applications.accepted",
     REJECTED: "applications.rejected",
     WITHDRAWN: "applications.withdrawn",
+    NO_RESPONSE: "applications.noResponse",
   };
-  const label = props.kind === "stage" ? t(stageKeys[props.value]) : t(outcomeKeys[props.value]);
+  const label =
+    props.kind === "stage"
+      ? t(stageKeys[props.value])
+      : t(outcomeKeys[props.value]);
   const semanticStyle =
     props.kind === "stage"
       ? STAGE_STYLE[props.value]
