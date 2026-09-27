@@ -50,9 +50,9 @@ export function TaskDetailDrawer({
   const [personalNote, setPersonalNote] = useState("");
   const [editOpen, setEditOpen] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (showLoading = true) => {
     if (!taskId) return;
-    setLoading(true);
+    if (showLoading) setLoading(true);
     setError(false);
     setActionError("");
     try {
@@ -71,7 +71,7 @@ export function TaskDetailDrawer({
     } catch {
       setError(true);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [taskId, onChanged]);
 
@@ -108,7 +108,7 @@ export function TaskDetailDrawer({
     setActionError("");
     try {
       await operation();
-      await load();
+      await load(false);
       onChanged?.();
       return true;
     } catch {
@@ -352,9 +352,9 @@ export function TaskDetailDrawer({
                             className="flex min-w-0 flex-1 gap-2"
                             onSubmit={(event) => {
                               event.preventDefault();
-                              void saveChecklistTitle(item).then(() =>
-                                setEditingId(null),
-                              );
+                              void saveChecklistTitle(item).then((saved) => {
+                                if (saved) setEditingId(null);
+                              });
                             }}
                           >
                             <input
