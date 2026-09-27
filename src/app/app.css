@@ -131,7 +131,7 @@
     @apply w-full overflow-x-auto border-y border-border bg-transparent;
   }
   .application-table-shell {
-    @apply overflow-hidden rounded-xl border border-neutral-300 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900;
+    @apply overflow-x-auto rounded-xl border border-neutral-300 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900;
   }
   .application-table-shell .data-table-head {
     @apply border-b border-neutral-300 bg-neutral-100 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200;

@@ -64,6 +64,7 @@ export default {
   personalTask: "Personal Task",
   personalTasks: "Personal tasks",
   mentorAssigned: "Mentor Assigned",
+  mentorTaskSource: "Assigned by mentor",
   memberRequired: "Choose a member before assigning this task.",
   development: "Development",
   giveFeedback: "Give Feedback",

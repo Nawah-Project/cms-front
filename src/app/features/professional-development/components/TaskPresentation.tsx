@@ -82,8 +82,8 @@ export function TaskSourceLabel({
     <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
       {t(
         source === "PERSONAL"
-          ? "professionalDevelopment.personal"
-          : "professionalDevelopment.mentorAssigned",
+          ? "professionalDevelopment.personalTask"
+          : "professionalDevelopment.mentorTaskSource",
       )}
     </span>
   );

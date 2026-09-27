@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   adminApi,
   type AdminMember,
@@ -32,6 +32,7 @@ export function AdminMemberDetail({
   const [error, setError] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackNotice, setFeedbackNotice] = useState("");
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const load = useCallback(() => {
     setLoading(true);
     setError(false);
@@ -45,26 +46,26 @@ export function AdminMemberDetail({
     load();
   }, [load]);
   useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !document.querySelector("dialog[open]"))
-        onClose();
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) dialog.showModal();
+    return () => {
+      if (dialog?.open) dialog.close();
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, []);
   return (
-    <div
-      className="fixed inset-0 z-50 flex justify-end bg-neutral-950/40"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
+    <dialog
+      ref={dialogRef}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
       }}
+      onMouseDown={(event) => {
+        if (event.target === dialogRef.current) onClose();
+      }}
+      aria-labelledby="admin-member-title"
+      className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-1.5rem)] max-w-2xl overflow-y-auto rounded-2xl border border-border bg-surface p-5 text-start text-neutral-900 shadow-2xl backdrop:bg-neutral-950/50 dark:text-neutral-100 sm:w-[calc(100%-3rem)] sm:p-8"
     >
-      <aside
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="admin-member-title"
-        className="h-full w-full max-w-2xl overflow-y-auto border-s border-border bg-surface p-5 shadow-xl sm:p-8"
-      >
+      <section>
         <div className="flex items-start justify-between gap-4 border-b border-border pb-5">
           <div className="flex items-center gap-3">
             <Initials name={member.name} avatar={member.avatar} />
@@ -256,7 +257,7 @@ export function AdminMemberDetail({
             </section>
           </div>
         )}
-      </aside>
+      </section>
       {feedbackOpen && (
         <FeedbackFormDialog
           post={null}
@@ -270,6 +271,6 @@ export function AdminMemberDetail({
           }}
         />
       )}
-    </div>
+    </dialog>
   );
 }

@@ -78,11 +78,10 @@ export function FeedbackDetailDrawer({
         if (event.target === dialogRef.current) onClose();
       }}
       aria-labelledby="feedback-detail-title"
-      className="fixed inset-0 m-0 h-dvh max-h-none w-screen max-w-none border-0 bg-transparent p-0 text-start backdrop:bg-neutral-950/50"
+      className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-1.5rem)] max-w-3xl overflow-hidden rounded-2xl border border-border bg-surface p-0 text-start text-neutral-900 shadow-2xl backdrop:bg-neutral-950/50 dark:text-neutral-100 sm:w-[calc(100%-3rem)]"
     >
-      <div className="flex h-full justify-end">
-        <section className="flex h-full w-full max-w-3xl flex-col overflow-y-auto border-s border-border bg-surface shadow-2xl">
-          <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-surface/95 px-5 py-4 backdrop-blur sm:px-8">
+      <section className="flex max-h-[92dvh] flex-col overflow-hidden">
+          <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-8">
             <div className="min-w-0">
               <p className="text-xs text-neutral-500">
                 {t("professionalDevelopment.feedbackDetail")}
@@ -106,6 +105,7 @@ export function FeedbackDetailDrawer({
             </button>
           </header>
 
+          <div className="min-h-0 flex-1 overflow-y-auto">
           {loading ? (
             <div
               className="space-y-4 px-5 py-8"
@@ -208,8 +208,8 @@ export function FeedbackDetailDrawer({
               )}
             </article>
           )}
-        </section>
-      </div>
+          </div>
+      </section>
     </dialog>
   );
 }

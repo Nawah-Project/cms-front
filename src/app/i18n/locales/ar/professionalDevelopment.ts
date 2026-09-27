@@ -63,6 +63,7 @@ export default {
   personalTask: "مهمة شخصية",
   personalTasks: "المهام الشخصية",
   mentorAssigned: "مُسندة من المرشد",
+  mentorTaskSource: "مهمة من المرشد",
   memberRequired: "اختر عضوًا لإسناد المهمة إليه.",
   development: "التطوير المهني",
   giveFeedback: "إرسال ملاحظات",

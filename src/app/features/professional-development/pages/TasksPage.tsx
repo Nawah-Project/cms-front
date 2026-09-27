@@ -141,7 +141,11 @@ export default function TasksPage() {
           className="button-primary inline-flex min-h-11 items-center gap-2 px-4 py-2 text-sm"
         >
           <PlusIcon className="h-4 w-4" />
-          {t("professionalDevelopment.addTask")}
+          {t(
+            isAdmin
+              ? "professionalDevelopment.assignTask"
+              : "professionalDevelopment.addTask",
+          )}
         </button>
       </header>
 
@@ -199,10 +203,23 @@ export default function TasksPage() {
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-neutral-500 dark:text-neutral-400">
             {t("professionalDevelopment.noTasksDescription")}
           </p>
+          <button
+            type="button"
+            onClick={() => setTaskFormOpen(true)}
+            className="button-primary mt-5 inline-flex min-h-10 items-center gap-2 px-4 py-2 text-sm"
+          >
+            <PlusIcon className="h-4 w-4" />
+            {t(
+              isAdmin
+                ? "professionalDevelopment.assignTask"
+                : "professionalDevelopment.addTask",
+            )}
+          </button>
         </section>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 2xl:grid-cols-4">
+          <div className="overflow-x-auto pb-2">
+          <div className="grid min-w-[68rem] grid-cols-4 gap-6">
             {COLUMNS.map(({ status, key }) => (
               <TaskSection
                 key={status}
@@ -240,7 +257,8 @@ export default function TasksPage() {
                   </p>
                 )}
               </TaskSection>
-            ))}
+          ))}
+          </div>
           </div>
           {totalPages > 1 && (
             <nav

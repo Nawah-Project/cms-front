@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { SpinnerIcon, TrashIcon } from "./Icons";
 import { useI18n } from "../i18n";
 
@@ -20,6 +20,21 @@ export function DeleteConfirmModal({
   const { t } = useI18n();
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    previousFocus.current = document.activeElement as HTMLElement | null;
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) dialog.showModal();
+    requestAnimationFrame(() => cancelRef.current?.focus());
+    return () => {
+      if (dialog?.open) dialog.close();
+      previousFocus.current?.focus();
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -39,13 +54,19 @@ export function DeleteConfirmModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/40 backdrop-blur-xs">
-      <div
-        className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 overflow-hidden"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="delete-confirm-title"
-      >
+    <dialog
+      ref={dialogRef}
+      onCancel={(event) => {
+        event.preventDefault();
+        if (!isDeleting) onClose();
+      }}
+      onMouseDown={(event) => {
+        if (event.target === dialogRef.current && !isDeleting) onClose();
+      }}
+      aria-labelledby="delete-confirm-title"
+      className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-md overflow-hidden rounded-xl border border-neutral-200 bg-white p-0 text-start shadow-xl backdrop:bg-neutral-950/40 backdrop:backdrop-blur-xs dark:border-neutral-800 dark:bg-neutral-900"
+    >
+      <div className="p-6">
         <div className="flex items-start gap-4">
           <div className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-950/50 flex items-center justify-center text-red-600 shrink-0">
             <TrashIcon className="w-5 h-5" />
@@ -73,6 +94,7 @@ export function DeleteConfirmModal({
           <button
             type="button"
             onClick={onClose}
+            ref={cancelRef}
             disabled={isDeleting}
             className="px-4 py-2 text-xs font-medium text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white rounded-lg transition-colors disabled:opacity-50"
           >
@@ -89,6 +111,6 @@ export function DeleteConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   APPLICATION_METHODS,
   formatApplicationMethod,
@@ -35,6 +35,21 @@ export function AddApplicationModal({
     submit?: string;
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    previousFocus.current = document.activeElement as HTMLElement | null;
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) dialog.showModal();
+    requestAnimationFrame(() => closeRef.current?.focus());
+    return () => {
+      if (dialog?.open) dialog.close();
+      previousFocus.current?.focus();
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -84,13 +99,19 @@ export function AddApplicationModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/40 backdrop-blur-xs">
-      <div
-        className="w-full max-w-lg bg-white dark:bg-neutral-900 rounded-xl shadow-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-application-title"
-      >
+    <dialog
+      ref={dialogRef}
+      onCancel={(event) => {
+        event.preventDefault();
+        if (!isSubmitting) onClose();
+      }}
+      onMouseDown={(event) => {
+        if (event.target === dialogRef.current && !isSubmitting) onClose();
+      }}
+      aria-labelledby="add-application-title"
+      className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-lg overflow-hidden rounded-xl border border-neutral-200 bg-white p-0 text-start shadow-xl backdrop:bg-neutral-950/40 backdrop:backdrop-blur-xs dark:border-neutral-800 dark:bg-neutral-900"
+    >
+      <div>
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 dark:border-neutral-800">
           <h2
             id="add-application-title"
@@ -101,6 +122,7 @@ export function AddApplicationModal({
           <button
             type="button"
             onClick={onClose}
+            ref={closeRef}
             className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-1 rounded-md transition-colors"
             aria-label={t("common.close")}
           >
@@ -108,7 +130,7 @@ export function AddApplicationModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="max-h-[calc(92dvh-4rem)] space-y-4 overflow-y-auto p-6">
           {errors.submit && (
             <div className="p-3 text-xs text-red-600 bg-red-50 dark:bg-red-950/40 dark:text-red-300 rounded-md border border-red-200 dark:border-red-900">
               {errors.submit}
@@ -270,6 +292,6 @@ export function AddApplicationModal({
           </div>
         </form>
       </div>
-    </div>
+    </dialog>
   );
 }

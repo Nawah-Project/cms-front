@@ -31,6 +31,8 @@ export default function ApplicationsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const pendingMoves = useRef(new Set<string>());
+  const requestId = useRef(0);
+  const [moveError, setMoveError] = useState(false);
 
   // View mode: 'table' | 'kanban', persisted locally
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
@@ -41,6 +43,12 @@ export default function ApplicationsPage() {
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("search") || "",
   );
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => window.clearTimeout(timeout);
+  }, [searchQuery]);
 
   // Initialize view mode from localStorage
   useEffect(() => {
@@ -64,7 +72,7 @@ export default function ApplicationsPage() {
   };
 
   const loadData = async () => {
-    setIsLoading(true);
+    const request = ++requestId.current;
     setError(null);
     try {
       // Fetch full applications list to know totalCount
@@ -75,7 +83,7 @@ export default function ApplicationsPage() {
       const stageParam = currentStage === "ALL" ? undefined : currentStage;
       const outcomeParam =
         currentOutcome === "ALL" ? undefined : currentOutcome;
-      const searchParam = searchQuery.trim() || undefined;
+      const searchParam = debouncedSearch.trim() || undefined;
 
       const filtered = await api.getApplications({
         stage: stageParam,
@@ -83,11 +91,15 @@ export default function ApplicationsPage() {
         search: searchParam,
       });
 
+      if (request !== requestId.current) return;
+
       setApplications(filtered);
+      setTotalCount(allApps.length);
     } catch {
+      if (request !== requestId.current) return;
       setError(t("common.loadError"));
     } finally {
-      setIsLoading(false);
+      if (request === requestId.current) setIsLoading(false);
     }
   };
 
@@ -107,6 +119,7 @@ export default function ApplicationsPage() {
     }
 
     const nextOutcome = outcome || "NONE";
+    setMoveError(false);
     const matchesCurrentFilters = (app: Application) => {
       const matchesStage =
         currentStage === "ALL" ||
@@ -140,7 +153,7 @@ export default function ApplicationsPage() {
       setApplications((prev) =>
         prev.map((app) => (app.id === appId ? savedApplication : app)),
       );
-    } catch (err: unknown) {
+    } catch {
       // Roll back only this card, preserving other moves made meanwhile.
       setApplications((prev) => {
         const next = prev.filter((app) => app.id !== appId);
@@ -148,9 +161,7 @@ export default function ApplicationsPage() {
           ? [...next, previousApplication]
           : next;
       });
-      const message =
-        err instanceof Error ? err.message : t("applications.moveError");
-      alert(message || t("applications.moveError"));
+      setMoveError(true);
     } finally {
       pendingMoves.current.delete(appId);
     }
@@ -158,7 +169,12 @@ export default function ApplicationsPage() {
 
   useEffect(() => {
     loadData();
-  }, [currentStage, currentOutcome, searchQuery]);
+  }, [currentStage, currentOutcome, debouncedSearch]);
+
+  useEffect(() => {
+    const searchFromUrl = searchParams.get("search") || "";
+    if (searchFromUrl !== searchQuery) setSearchQuery(searchFromUrl);
+  }, [searchParams]);
 
   const updateStageFilter = (newStage: string) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -268,6 +284,7 @@ export default function ApplicationsPage() {
           >
             <input
               type="text"
+              aria-label={t("applications.search")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t("applications.search")}
@@ -336,6 +353,12 @@ export default function ApplicationsPage() {
           </button>
         </div>
       </div>
+
+      {moveError && (
+        <p role="alert" className="rounded-lg border border-danger-border bg-danger-soft px-3 py-2 text-sm text-danger-strong">
+          {t("applications.moveError")}
+        </p>
+      )}
 
       {/* Main Content Area: Loading, Error, Empty, or Data */}
       {isLoading ? (
