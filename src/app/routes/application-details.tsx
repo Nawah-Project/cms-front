@@ -161,7 +161,7 @@ export default function ApplicationDetailsPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-200">
+    <div className="w-full space-y-6 animate-in fade-in duration-200">
       {/* Back Link and Actions Header */}
       <div className="flex items-center justify-between">
         <Link

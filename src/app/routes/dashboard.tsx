@@ -111,7 +111,7 @@ export default function DashboardPage() {
   ];
   const recentApplications = stats.recentApplications ?? [];
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-12">
+    <div className="w-full space-y-12">
       <header className="border-b border-stone-300/80 pb-7 dark:border-neutral-800">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>

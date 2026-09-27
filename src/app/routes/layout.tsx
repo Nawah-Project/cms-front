@@ -40,7 +40,7 @@ export default function Layout() {
           <AppSidebar />
 
           <div className="min-h-screen w-full lg:ps-64">
-            <main className="mx-auto w-full max-w-7xl px-5 py-7 sm:px-8 lg:px-10 lg:py-10">
+            <main className="w-full px-5 py-7 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 lg:py-10">
               <Outlet
                 context={{ openAddModal: () => setIsAddModalOpen(true) }}
               />

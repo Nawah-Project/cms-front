@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Let rem-based typography and controls grow slightly on wide desktop screens. */
+html {
+  font-size: clamp(16px, calc(15px + 0.105vw), 17px);
+}
+
 /* This product uses a light workspace theme regardless of the OS preference. */
 @custom-variant dark (&:where(.dark, .dark *));
 
