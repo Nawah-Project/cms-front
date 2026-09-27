@@ -1,4 +1,4 @@
-name: cms-front-dev
+name: cms-development-frontend
 
 services:
   frontend:
@@ -8,12 +8,23 @@ services:
       target: development-dependencies-env
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
     environment:
-      VITE_API_URL: ${DEV_VITE_API_URL:-http://localhost:3001}
+      VITE_API_URL: ${DEV_VITE_API_URL:?Set DEV_VITE_API_URL in development .env}
       VITE_CV_MAX_FILE_SIZE_BYTES: ${DEV_VITE_CV_MAX_FILE_SIZE_BYTES:-5242880}
     ports:
-      - "127.0.0.1:${DEV_FRONTEND_HOST_PORT:-5173}:5173"
+      - "127.0.0.1:${DEV_FRONTEND_HOST_PORT:?Set DEV_FRONTEND_HOST_PORT in development .env}:5173"
     volumes:
       - ./src:/app/src
       - ./public:/app/public
       - ./vite.config.ts:/app/vite.config.ts
       - ./react-router.config.ts:/app/react-router.config.ts
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:5173/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 4s
+      retries: 6
+      start_period: 20s
+    mem_limit: 768m
