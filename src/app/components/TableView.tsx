@@ -16,7 +16,7 @@ export function TableView({ applications }: TableViewProps) {
   const navigate = useNavigate();
 
   return (
-    <div className="data-table-shell">
+    <div className="data-table-shell application-table-shell">
       <table className="data-table min-w-[980px]">
         <thead>
           <tr className="data-table-head">

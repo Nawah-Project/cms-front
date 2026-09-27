@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
-import { SpinnerIcon } from "../components/Icons";
+import { Link, useOutletContext } from "react-router";
+import { PlusIcon, SpinnerIcon } from "../components/Icons";
 import { StatusBadge } from "../components/StatusBadge";
 import { useRecentMemberProgress } from "../features/members-progress/hooks/useRecentMemberProgress";
 import { RecentActivityList } from "../features/members-progress/components/RecentActivityList";
@@ -47,6 +47,7 @@ const STAGE_PRESENTATION = [
 
 export default function DashboardPage() {
   const { t, tp, number, locale, relativeTime } = useI18n();
+  const { openAddModal } = useOutletContext<{ openAddModal: () => void }>();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -132,20 +133,32 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-12">
       <header className="border-b border-stone-300/80 pb-7 dark:border-neutral-800">
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-          <h1 className="text-3xl font-medium tracking-tight text-neutral-950 dark:text-neutral-100">
-            {t("applications.title")}
-          </h1>
-          <Link
-            to="/applications"
-            className="inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-950 focus-visible:outline-2 focus-visible:outline-info-strong dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white"
-          >
-            {t("dashboard.viewApplications", { count: number(stats.active.total + stats.closed.total) })}
-          </Link>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-100 sm:text-4xl">
+              {t("dashboard.title")}
+            </h1>
+            <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+              {t("dashboard.subtitle")}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              to="/applications"
+              className="text-sm font-medium text-neutral-700 transition-colors hover:text-neutral-950 dark:text-neutral-300 dark:hover:text-white"
+            >
+              {t("dashboard.viewApplications", { count: number(stats.active.total + stats.closed.total) })}
+            </Link>
+            <button
+              type="button"
+              onClick={openAddModal}
+              className="button-primary inline-flex items-center gap-1.5 py-2 text-sm dark:border-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+            >
+              <PlusIcon className="w-3.5 h-3.5" />
+              <span>+ {t("common.addApplication")}</span>
+            </button>
+          </div>
         </div>
-        <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-          {t("dashboard.subtitle")}
-        </p>
       </header>
 
       <section aria-labelledby="pipeline-heading" className="space-y-7">

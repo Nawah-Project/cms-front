@@ -145,6 +145,8 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
   const handleDrop = async (e: React.DragEvent, targetStage: Stage) => {
     e.preventDefault();
     setDragOverColumn(null);
+    setDraggedAppId(null);
+    setTimeout(() => setIsDraggingNow(false), 100);
 
     const appId = e.dataTransfer.getData("text/plain") || draggedAppId;
     if (!appId) return;
@@ -198,11 +200,11 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                 className={`rounded-2xl p-3 flex flex-col min-h-[460px] transition-all duration-200 border ${
                   isColumnTarget
                     ? "bg-neutral-100 dark:bg-neutral-800/60 border-neutral-500 dark:border-neutral-500 ring-2 ring-neutral-300/70 shadow-sm"
-                    : "bg-neutral-50/70 dark:bg-neutral-900/40 border-neutral-200/80 dark:border-neutral-800"
+                    : "bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 shadow-sm"
                 }`}
               >
                 {/* Column Header */}
-                <div className="flex items-center justify-between px-2 py-2 mb-2.5 border-b border-neutral-200/60 dark:border-neutral-800/80">
+                <div className="flex items-center justify-between px-2 py-2 mb-2.5 border-b border-neutral-300 dark:border-neutral-700">
                   <div className="flex items-center gap-2">
                     <span
                       className={`w-2 h-2 rounded-full ${getColumnDotColor(col.stage)}`}
@@ -231,7 +233,7 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                       className={`flex-1 flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl text-center transition-all ${
                         isColumnTarget
                           ? "border-neutral-500 bg-neutral-100 text-neutral-700 dark:border-neutral-500 dark:bg-neutral-800 dark:text-neutral-200"
-                          : "border-neutral-200/80 dark:border-neutral-800/80 text-neutral-400 dark:text-neutral-500"
+                          : "border-neutral-300 bg-neutral-50/70 text-neutral-500 dark:border-neutral-700 dark:bg-neutral-950/50 dark:text-neutral-400"
                       }`}
                     >
                       <p className="text-xs font-medium">
@@ -248,8 +250,6 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                   ) : (
                     <>
                       {colApps.map((app) => {
-                        const isThisCardDragged = draggedAppId === app.id;
-
                         return (
                           <div
                             key={app.id}
@@ -261,11 +261,7 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                                 navigate(`/applications/${app.id}`);
                               }
                             }}
-                            className={`p-3.5 rounded-xl border shadow-xs transition-all duration-150 group cursor-grab active:cursor-grabbing ${getApplicationCardColor(app)} ${
-                              isThisCardDragged
-                                ? "opacity-30 scale-95 shadow-none"
-                                : "hover:shadow-sm"
-                            }`}
+                            className={`p-3.5 rounded-xl border shadow-xs transition-all duration-150 group cursor-grab active:cursor-grabbing hover:shadow-sm ${getApplicationCardColor(app)}`}
                           >
                             {/* Card Top: Grip handle & Company */}
                             <div className="flex items-start justify-between gap-2">

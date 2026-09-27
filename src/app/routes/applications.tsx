@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useOutletContext, useSearchParams } from "react-router";
 import { EmptyState } from "../components/EmptyState";
 import {
@@ -30,6 +30,7 @@ export default function ApplicationsPage() {
   const [totalCount, setTotalCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const pendingMoves = useRef(new Set<string>());
 
   // View mode: 'table' | 'kanban', persisted locally
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
@@ -95,27 +96,62 @@ export default function ApplicationsPage() {
     newStage: Stage,
     outcome?: Outcome,
   ) => {
-    // Optimistic update: move the card immediately in the UI
-    const prevApplications = [...applications];
-    setApplications((prev) =>
-      prev.map((app) =>
-        app.id === appId
-          ? { ...app, stage: newStage, outcome: outcome || "NONE" }
-          : app,
-      ),
-    );
+    // Update the visible board immediately; persist in the background.
+    if (pendingMoves.current.has(appId)) return;
+    pendingMoves.current.add(appId);
+
+    const previousApplication = applications.find((app) => app.id === appId);
+    if (!previousApplication) {
+      pendingMoves.current.delete(appId);
+      return;
+    }
+
+    const nextOutcome = outcome || "NONE";
+    const matchesCurrentFilters = (app: Application) => {
+      const matchesStage =
+        currentStage === "ALL" ||
+        (currentStage === "ACTIVE"
+          ? app.stage !== "CLOSED"
+          : app.stage === currentStage);
+      const matchesOutcome =
+        currentOutcome === "ALL" ||
+        (app.stage === "CLOSED" && app.outcome === currentOutcome);
+      return matchesStage && matchesOutcome;
+    };
+
+    const optimisticApplication = {
+      ...previousApplication,
+      stage: newStage,
+      outcome: nextOutcome,
+    };
+
+    setApplications((prev) => {
+      const next = prev.filter((app) => app.id !== appId);
+      return matchesCurrentFilters(optimisticApplication)
+        ? [...next, optimisticApplication]
+        : next;
+    });
 
     try {
-      await api.updateApplication(appId, {
+      const savedApplication = await api.updateApplication(appId, {
         stage: newStage,
-        outcome: outcome || "NONE",
+        outcome: nextOutcome,
       });
-      // Reload to get fresh server state
-      await loadData();
-    } catch (err: any) {
-      // Revert on failure
-      setApplications(prevApplications);
-      alert(err.message || t("applications.moveError"));
+      setApplications((prev) =>
+        prev.map((app) => (app.id === appId ? savedApplication : app)),
+      );
+    } catch (err: unknown) {
+      // Roll back only this card, preserving other moves made meanwhile.
+      setApplications((prev) => {
+        const next = prev.filter((app) => app.id !== appId);
+        return matchesCurrentFilters(previousApplication)
+          ? [...next, previousApplication]
+          : next;
+      });
+      const message = err instanceof Error ? err.message : t("applications.moveError");
+      alert(message || t("applications.moveError"));
+    } finally {
+      pendingMoves.current.delete(appId);
     }
   };
 

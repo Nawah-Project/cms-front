@@ -1,5 +1,5 @@
 export default {
-  title: "لوحة المتابعة",
+  title: "لوحة التحكم الرئيسية",
   subtitle: "تابع رحلة البحث عن وظيفة من مكان واحد.",
   applicationsOverview: "ملخص طلبات التقديم",
   activeApplications: "طلبات مفتوحة",
