@@ -110,33 +110,6 @@ export default function DashboardPage() {
     stats.closed.total,
   ];
   const recentApplications = stats.recentApplications ?? [];
-  const outcomes = [
-    {
-      labelKey: "accepted",
-      value: "ACCEPTED" as const,
-      count: stats.closed.accepted,
-      href: "/applications?stage=CLOSED&outcome=ACCEPTED",
-    },
-    {
-      labelKey: "rejected",
-      value: "REJECTED" as const,
-      count: stats.closed.rejected,
-      href: "/applications?stage=CLOSED&outcome=REJECTED",
-    },
-    {
-      labelKey: "withdrawn",
-      value: "WITHDRAWN" as const,
-      count: stats.closed.withdrawn,
-      href: "/applications?stage=CLOSED&outcome=WITHDRAWN",
-    },
-    {
-      labelKey: "noResponse",
-      value: "NO_RESPONSE" as const,
-      count: stats.closed.noResponse,
-      href: "/applications?stage=CLOSED&outcome=NO_RESPONSE",
-    },
-  ];
-
   return (
     <div className="mx-auto w-full max-w-6xl space-y-12">
       <header className="border-b border-stone-300/80 pb-7 dark:border-neutral-800">
@@ -233,38 +206,6 @@ export default function DashboardPage() {
       </section>
 
       <ProfessionalDevelopmentSummary />
-
-      <section
-        aria-labelledby="outcomes-heading"
-        className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
-      >
-        <div className="border-b border-stone-200 px-5 py-4 dark:border-neutral-800">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            {t("dashboard.closedApplications")}
-          </p>
-          <h2
-            id="outcomes-heading"
-            className="mt-1 text-lg font-medium tracking-tight text-neutral-900 dark:text-neutral-100"
-          >
-            {t("dashboard.outcomes")}
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 divide-y divide-stone-200 sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4 dark:divide-neutral-800">
-          {outcomes.map((outcome) => (
-            <Link
-              key={outcome.value}
-              to={outcome.href}
-              aria-label={`${t(`applications.${outcome.labelKey}`)}: ${number(outcome.count)}`}
-              className="group inline-flex items-center justify-center gap-3 px-4 py-5 transition-colors hover:bg-neutral-50 sm:px-3 dark:hover:bg-neutral-800/50"
-            >
-              <StatusBadge kind="outcome" value={outcome.value} />
-              <span className="text-base font-semibold tabular-nums text-neutral-900 dark:text-neutral-100">
-                {number(outcome.count)}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
 
       <div className="grid grid-cols-1 gap-8 border-t border-stone-200 pt-8 lg:grid-cols-2 lg:gap-10 dark:border-neutral-800">
         <section aria-labelledby="member-updates-heading" className="space-y-4">
