@@ -1,5 +1,5 @@
 export default {
-  brand: "متتبع الوظائف",
+  brand: "مشروع نواة",
   changeLanguage: "تغيير اللغة",
   languageArabic: "العربية",
   languageEnglish: "English",

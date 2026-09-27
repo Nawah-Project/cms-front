@@ -192,9 +192,11 @@ export function AppSidebar() {
             to="/"
             className="flex min-w-0 items-start gap-3 text-sm font-semibold tracking-tight text-white"
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-white text-sm font-bold text-neutral-900">
-              J
-            </span>
+            <img
+              src="/nawah-logo.svg"
+              alt=""
+              className="h-9 w-9 shrink-0 rounded-lg object-cover"
+            />
             <span className="min-w-0 pt-0.5">
               <span className="block truncate">{t("common.brand")}</span>
               <time
@@ -222,9 +224,11 @@ export function AppSidebar() {
               to="/"
               className="flex min-w-0 items-start gap-2.5 text-sm font-semibold tracking-tight text-neutral-950 dark:text-white"
             >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-neutral-900 bg-neutral-100 text-xs font-bold text-neutral-900 dark:bg-white dark:text-neutral-900">
-                J
-              </span>
+              <img
+                src="/nawah-logo.svg"
+                alt=""
+                className="h-8 w-8 shrink-0 rounded-lg object-cover"
+              />
               <span className="min-w-0 pt-0.5">
                 <span className="block truncate">{t("common.brand")}</span>
                 <time

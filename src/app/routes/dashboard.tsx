@@ -11,7 +11,7 @@ import { ProfessionalDevelopmentSummary } from "../features/professional-develop
 
 export function meta() {
   return [
-    { title: "My Applications | Dashboard" },
+    { title: "Dashboard | Nawah Project" },
     {
       name: "description",
       content: "Overview of active and closed job applications",

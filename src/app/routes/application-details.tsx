@@ -31,7 +31,7 @@ export function meta({ data }: { data?: { application?: Application } }) {
   if (data?.application) {
     return [
       {
-        title: `${data.application.jobTitle} at ${data.application.companyName} | Job Tracker`,
+        title: `${data.application.jobTitle} at ${data.application.companyName} | Nawah Project`,
       },
       {
         name: "description",
@@ -39,7 +39,7 @@ export function meta({ data }: { data?: { application?: Application } }) {
       },
     ];
   }
-  return [{ title: "Application Details | Job Tracker" }];
+  return [{ title: "Application Details | Nawah Project" }];
 }
 
 export default function ApplicationDetailsPage() {

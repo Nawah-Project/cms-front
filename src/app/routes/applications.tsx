@@ -16,7 +16,7 @@ import { useI18n } from "../i18n";
 
 export function meta() {
   return [
-    { title: "Applications | Job Tracker" },
+    { title: "Applications | Nawah Project" },
     { name: "description", content: "List of all tracked job applications" },
   ];
 }

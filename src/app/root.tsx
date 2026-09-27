@@ -13,6 +13,7 @@ import { AuthProvider } from "./features/auth/store/authStore";
 import { I18nProvider } from "./i18n";
 
 export const links: Route.LinksFunction = () => [
+  { rel: "icon", type: "image/svg+xml", href: "/nawah-logo.svg" },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",

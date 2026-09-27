@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Nawah Project logo">
+  <rect width="512" height="512" rx="56" fill="#fff6d9"/>
+  <path d="M78 424V88h75l184 220v116h-69L161 211v213z" fill="#174f91"/>
+  <path d="M227 422c-7-40-6-83 0-126 7-49 25-92 53-129 23-30 49-53 81-72" fill="none" stroke="#45a943" stroke-linecap="round" stroke-width="27"/>
+  <path d="M258 282c-61 4-100-21-118-74 53-26 101-21 143 15-8 24-16 43-25 59z" fill="#45a943"/>
+  <path d="M288 225c-11-54 9-101 63-143 42 37 54 81 35 131-32 15-64 19-98 12z" fill="#45a943"/>
+  <path d="M279 359c5-57 37-96 96-116 29 48 26 94-10 137-31 4-59-3-86-21z" fill="#45a943"/>
+  <path d="M270 274c-25-29-51-47-79-57m111-8c19-34 41-60 69-81m-67 220c22-24 45-41 70-52" fill="none" stroke="#fff6d9" stroke-linecap="round" stroke-width="12"/>
+  <path d="M351 67a181 181 0 0 1 99 90M385 145a123 123 0 0 1 53 84M399 221a71 71 0 0 1 18 62" fill="none" stroke="#f39200" stroke-linecap="round" stroke-width="25"/>
+</svg>

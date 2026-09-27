@@ -1,5 +1,5 @@
 export default {
-  brand: "Job Tracker",
+  brand: "Nawah Project",
   changeLanguage: "Change language",
   languageArabic: "العربية",
   languageEnglish: "English",

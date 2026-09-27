@@ -16,7 +16,7 @@ export default {
   continueGoogle: "Continue with Google",
   connecting: "Connecting…",
   alreadyHaveAccount: "Already have an account?",
-  newToApp: "New to Job Tracker?",
+  newToApp: "New to Nawah Project?",
   createAccountLink: "Create an account",
   signInLink: "Sign in",
   accountCreated: "Account created. Please sign in.",
