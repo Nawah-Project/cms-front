@@ -4,6 +4,7 @@ export default {
   description: "تابع نشاط الأعضاء وأدر سعة المجموعات.",
   overview: "نظرة عامة",
   members: "الأعضاء",
+  professionalDevelopment: "التطوير المهني",
   groups: "المجموعات",
   activity: "النشاط",
   overviewTitle: "ملخص العمل",
@@ -53,7 +54,8 @@ export default {
   loadingMembers: "جارٍ تحميل الأعضاء…",
   removeFromGroup: "إزالة من المجموعة",
   removeTitle: "إزالة {name} من {group}؟",
-  removeDescription: "سيغادر العضو هذه المجموعة، مع الاحتفاظ بطلبات التقديم وسجل النشاط.",
+  removeDescription:
+    "سيغادر العضو هذه المجموعة، مع الاحتفاظ بطلبات التقديم وسجل النشاط.",
   removeConfirm: "إزالة من المجموعة",
   removing: "جارٍ الإزالة…",
   removedSuccess: "تمت إزالة {name} من {group}.",
@@ -76,7 +78,8 @@ export default {
   memberActivity: "نشاط الأعضاء",
   loadingActivity: "جارٍ تحميل آخر الأنشطة…",
   activityTitle: "آخر الأنشطة",
-  activityDescription: "إنشاء طلبات التقديم وتعديلها وتغيير مراحلها في مساحة العمل.",
+  activityDescription:
+    "إنشاء طلبات التقديم وتعديلها وتغيير مراحلها في مساحة العمل.",
   meaningfulChanges: "تغييرات على طلبات التقديم",
   appliedTo: "قدّم على",
   updated: "حدّث",

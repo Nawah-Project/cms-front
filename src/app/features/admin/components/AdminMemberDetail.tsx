@@ -17,6 +17,7 @@ import { AdminActivityList } from "./AdminActivityList";
 import { useI18n } from "../../../i18n";
 import { ProfessionalProfileActions } from "../../profile/MemberProfessionalCard";
 import { AdminMemberTasks } from "./AdminMemberTasks";
+import { FeedbackFormDialog } from "../../professional-development/components/FeedbackFormDialog";
 
 export function AdminMemberDetail({
   member,
@@ -29,6 +30,8 @@ export function AdminMemberDetail({
   const [detail, setDetail] = useState<AdminUserDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackNotice, setFeedbackNotice] = useState("");
   const load = useCallback(() => {
     setLoading(true);
     setError(false);
@@ -43,7 +46,8 @@ export function AdminMemberDetail({
   }, [load]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape" && !document.querySelector("dialog[open]"))
+        onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -85,6 +89,18 @@ export function AdminMemberDetail({
             ×
           </button>
         </div>
+        <button
+          type="button"
+          onClick={() => setFeedbackOpen(true)}
+          className="button-primary mt-4 px-3 py-2 text-xs"
+        >
+          {t("professionalDevelopment.giveFeedback")}
+        </button>
+        {feedbackNotice && (
+          <p role="status" className="mt-2 text-xs text-success-strong">
+            {feedbackNotice}
+          </p>
+        )}
         {loading ? (
           <LoadingState label={t("admin.loadingMemberDetails")} />
         ) : error || !detail ? (
@@ -102,7 +118,47 @@ export function AdminMemberDetail({
           </div>
         ) : (
           <div className="space-y-7 py-6">
-            <AdminMemberTasks member={member} />
+            <section
+              aria-labelledby="member-development-summary"
+              className="space-y-3"
+            >
+              <h3
+                id="member-development-summary"
+                className="text-sm font-semibold"
+              >
+                {t("professionalDevelopment.development")}
+              </h3>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {[
+                  ["activeTasks", detail.development.totalActiveTasks],
+                  [
+                    "inProgressCount",
+                    detail.development.taskStatusCounts.IN_PROGRESS,
+                  ],
+                  ["blocked", detail.development.taskStatusCounts.BLOCKED],
+                  ["overdueCount", detail.development.overdueTasks],
+                  ["done", detail.development.taskStatusCounts.DONE],
+                  [
+                    "mentorAssigned",
+                    detail.development.tasksBySource.mentorAssigned,
+                  ],
+                  ["personalTasks", detail.development.tasksBySource.personal],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="rounded-lg border border-border px-3 py-3"
+                  >
+                    <p className="text-xs text-neutral-500">
+                      {t(`professionalDevelopment.${label}`)}
+                    </p>
+                    <p className="mt-1 text-lg font-semibold tabular-nums">
+                      {value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+            <AdminMemberTasks member={member} onChanged={load} />
             <section className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-700">
               <h3 className="mb-3 text-sm font-semibold">
                 {t("profile.professionalProfile")}
@@ -201,6 +257,19 @@ export function AdminMemberDetail({
           </div>
         )}
       </aside>
+      {feedbackOpen && (
+        <FeedbackFormDialog
+          post={null}
+          initialTargetUserId={member.id}
+          initialTargetName={member.name}
+          initialVisibility="DIRECT"
+          onClose={() => setFeedbackOpen(false)}
+          onSaved={(message) => {
+            setFeedbackOpen(false);
+            setFeedbackNotice(t(`professionalDevelopment.${message}`));
+          }}
+        />
+      )}
     </div>
   );
 }

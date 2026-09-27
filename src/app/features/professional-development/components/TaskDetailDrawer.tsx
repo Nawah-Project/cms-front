@@ -9,10 +9,13 @@ import { CloseIcon, PlusIcon, TrashIcon } from "../../../components/Icons";
 import { api } from "../../../services/api";
 import { useI18n } from "../../../i18n";
 import type { ProfessionalTask, TaskChecklistItem, TaskStatus } from "../types";
+import type { UpdateTaskInput } from "../types";
+import { TaskFormDialog } from "./TaskFormDialog";
 import {
   MentorPriorityMark,
   PriorityLabel,
   StatusPill,
+  TaskSourceLabel,
 } from "./TaskPresentation";
 
 const STATUSES: TaskStatus[] = ["TODO", "IN_PROGRESS", "BLOCKED", "DONE"];
@@ -45,6 +48,7 @@ export function TaskDetailDrawer({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editedTitle, setEditedTitle] = useState("");
   const [personalNote, setPersonalNote] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
 
   const load = useCallback(async () => {
     if (!taskId) return;
@@ -143,6 +147,7 @@ export function TaskDetailDrawer({
   if (!taskId) return null;
 
   return (
+    <>
     <dialog
       ref={dialogRef}
       onCancel={(event) => {
@@ -214,10 +219,25 @@ export function TaskDetailDrawer({
                 className="space-y-4 rounded-xl border border-border p-4"
               >
                 <div className="flex flex-wrap items-center gap-2">
+                  <TaskSourceLabel source={task.source} />
                   <StatusPill status={task.status} />
                   <PriorityLabel priority={task.priority} />
                   {task.mentorPriority && <MentorPriorityMark />}
                 </div>
+                {task.source === "PERSONAL" && (
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" disabled={busy} onClick={() => setEditOpen(true)} className="button-secondary px-3 py-2 text-xs">
+                      {t("professionalDevelopment.editTask")}
+                    </button>
+                    <button type="button" disabled={busy} onClick={async () => {
+                      if (!window.confirm(t("professionalDevelopment.deleteTaskConfirm"))) return;
+                      try { await api.deletePersonalTask(task.id); onChanged?.(); onClose(); }
+                      catch { setActionError(t("professionalDevelopment.saveError")); }
+                    }} className="rounded-lg border border-danger-border px-3 py-2 text-xs font-medium text-danger-strong hover:bg-danger-soft">
+                      {t("professionalDevelopment.deleteTask")}
+                    </button>
+                  </div>
+                )}
                 <label className="grid max-w-xs gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
                   {t("professionalDevelopment.updateStatus")}
                   <select
@@ -365,7 +385,7 @@ export function TaskDetailDrawer({
                             {item.title}
                           </span>
                         )}
-                        <button
+                        {task.source === "PERSONAL" && <button
                           type="button"
                           disabled={busy}
                           onClick={() => {
@@ -375,8 +395,8 @@ export function TaskDetailDrawer({
                           className="rounded-md px-2 py-1 text-xs text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                         >
                           {t("common.edit")}
-                        </button>
-                        <button
+                        </button>}
+                        {task.source === "PERSONAL" && <button
                           type="button"
                           disabled={busy}
                           aria-label={`${t("professionalDevelopment.deleteChecklistItem")}: ${item.title}`}
@@ -396,12 +416,12 @@ export function TaskDetailDrawer({
                           className="rounded-md p-2 text-neutral-500 hover:bg-danger-soft hover:text-danger-strong"
                         >
                           <TrashIcon className="h-4 w-4" />
-                        </button>
+                        </button>}
                       </li>
                     ))}
                   </ul>
                 )}
-                <form className="flex gap-2" onSubmit={addChecklist}>
+                {task.source === "PERSONAL" && <form className="flex gap-2" onSubmit={addChecklist}>
                   <label htmlFor="new-checklist-item" className="sr-only">
                     {t("professionalDevelopment.checklistPlaceholder")}
                   </label>
@@ -423,7 +443,7 @@ export function TaskDetailDrawer({
                     <PlusIcon className="h-4 w-4" />
                     <span>{t("professionalDevelopment.add")}</span>
                   </button>
-                </form>
+                </form>}
               </section>
 
               <section
@@ -555,5 +575,19 @@ export function TaskDetailDrawer({
         </section>
       </div>
     </dialog>
+    {editOpen && task?.source === "PERSONAL" && (
+      <TaskFormDialog
+        mode="editPersonal"
+        task={task}
+        onClose={() => setEditOpen(false)}
+        onSave={async (input) => {
+          await api.updatePersonalTask(task.id, input as UpdateTaskInput);
+          setEditOpen(false);
+          await load();
+          onChanged?.();
+        }}
+      />
+    )}
+    </>
   );
 }

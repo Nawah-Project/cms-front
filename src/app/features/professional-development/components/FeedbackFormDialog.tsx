@@ -50,10 +50,16 @@ function plainContent(value: string) {
 
 export function FeedbackFormDialog({
   post,
+  initialTargetUserId,
+  initialTargetName,
+  initialVisibility = "DIRECT",
   onClose,
   onSaved,
 }: {
   post: FeedbackPost | null;
+  initialTargetUserId?: string;
+  initialTargetName?: string;
+  initialVisibility?: FeedbackVisibility;
   onClose: () => void;
   onSaved: (message: "feedbackCreated" | "feedbackUpdated") => void;
 }) {
@@ -66,11 +72,9 @@ export function FeedbackFormDialog({
     post ? plainContent(post.content) : "",
   );
   const [visibility, setVisibility] = useState<FeedbackVisibility>(
-    post?.visibility ?? "DIRECT",
+    post?.visibility ?? initialVisibility,
   );
-  const [targetUserId, setTargetUserId] = useState(
-    post?.visibility === "DIRECT" ? "" : "",
-  );
+  const [targetUserId, setTargetUserId] = useState(initialTargetUserId ?? "");
   const [groupId, setGroupId] = useState(
     post?.visibility === "GROUP" ? "" : "",
   );
@@ -105,7 +109,31 @@ export function FeedbackFormDialog({
         adminApi.users({ page: 1, limit: 100 }),
         adminApi.groups(),
       ]);
-      setMembers(users.items.filter((member) => member.role === "USER"));
+      const memberItems = users.items.filter(
+        (member) => member.role === "USER",
+      );
+      if (
+        initialTargetUserId &&
+        !memberItems.some((item) => item.id === initialTargetUserId)
+      ) {
+        memberItems.unshift({
+          id: initialTargetUserId,
+          name: initialTargetName ?? initialTargetUserId,
+          role: "USER",
+          group: null,
+          lastActivityAt: null,
+          inactivityDays: null,
+          activityStatus: "NEVER_ACTIVE",
+          applicationsCount: 0,
+          currentStageCounts: {
+            applied: 0,
+            interview: 0,
+            decision: 0,
+            closed: 0,
+          },
+        });
+      }
+      setMembers(memberItems);
       setMemberPage(1);
       setMemberPages(users.totalPages);
       setGroups(groupResult.items);
@@ -114,7 +142,7 @@ export function FeedbackFormDialog({
     } finally {
       setLookupLoading(false);
     }
-  }, []);
+  }, [initialTargetName, initialTargetUserId]);
 
   useEffect(() => {
     previousFocus.current = document.activeElement as HTMLElement | null;
@@ -241,9 +269,9 @@ export function FeedbackFormDialog({
         if (event.target === dialogRef.current) onClose();
       }}
       aria-labelledby="feedback-form-title"
-      className="fixed inset-0 m-0 flex h-dvh max-h-none w-screen max-w-none items-end justify-center border-0 bg-transparent p-0 text-start backdrop:bg-neutral-950/50 sm:items-center sm:p-5"
+      className="fixed inset-0 m-auto flex max-h-[92dvh] w-[calc(100%-1.5rem)] max-w-3xl items-center justify-center overflow-hidden border-0 bg-transparent p-0 text-start backdrop:bg-neutral-950/50 sm:w-[calc(100%-3rem)]"
     >
-      <section className="max-h-full w-full max-w-3xl overflow-y-auto rounded-t-2xl border border-border bg-surface shadow-2xl sm:rounded-2xl">
+      <section className="max-h-full w-full max-w-3xl overflow-y-auto rounded-2xl border border-border bg-surface shadow-2xl">
         <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-surface/95 px-5 py-4 backdrop-blur sm:px-7">
           <div>
             <p className="text-xs text-neutral-500">

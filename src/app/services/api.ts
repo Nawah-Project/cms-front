@@ -11,6 +11,8 @@ import { notifyAuthSessionExpired } from "../utils/authSession";
 import type {
   ProfessionalDevelopmentSummary,
   ProfessionalTask,
+  CreateTaskInput,
+  UpdateTaskInput,
   TaskNote,
   TaskPage,
   TaskStatus,
@@ -340,6 +342,32 @@ export const api = {
 
   getTask(taskId: string): Promise<ProfessionalTask> {
     return request<ProfessionalTask>(`/tasks/${encodeURIComponent(taskId)}`);
+  },
+
+  createTask(input: CreateTaskInput): Promise<ProfessionalTask> {
+    return request<ProfessionalTask>("/tasks", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+
+  updatePersonalTask(
+    taskId: string,
+    input: UpdateTaskInput,
+  ): Promise<ProfessionalTask> {
+    return request<ProfessionalTask>(`/tasks/${encodeURIComponent(taskId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+  },
+
+  deletePersonalTask(taskId: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(
+      `/tasks/${encodeURIComponent(taskId)}`,
+      {
+        method: "DELETE",
+      },
+    );
   },
 
   updateTaskStatus(

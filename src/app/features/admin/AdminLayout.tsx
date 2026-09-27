@@ -6,6 +6,7 @@ import { useI18n } from "../../i18n";
 const tabs = [
   ["overview", "/admin"],
   ["members", "/admin/members"],
+  ["professionalDevelopment", "/admin/professional-development"],
   ["groups", "/admin/groups"],
   ["activity", "/admin/activity"],
 ] as const;

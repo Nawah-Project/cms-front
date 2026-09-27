@@ -5,8 +5,6 @@ import type {
   CreateTaskInput,
   ProfessionalTask,
   TaskNote,
-  TaskPriority,
-  TaskStatus,
   UpdateTaskInput,
 } from "../../professional-development/types";
 import {
@@ -16,246 +14,8 @@ import {
 } from "../../professional-development/components/TaskPresentation";
 import { adminApi } from "../api/adminApi";
 import type { AdminMember } from "../api/adminApi";
-
-const PRIORITIES: TaskPriority[] = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
-const STATUSES: TaskStatus[] = ["TODO", "IN_PROGRESS", "BLOCKED", "DONE"];
-const STATUS_KEYS: Record<TaskStatus, string> = {
-  TODO: "toDo",
-  IN_PROGRESS: "inProgress",
-  BLOCKED: "blocked",
-  DONE: "done",
-};
-
-type TaskDraft = {
-  title: string;
-  description: string;
-  priority: TaskPriority;
-  mentorPriority: boolean;
-  startDate: string;
-  dueDate: string;
-  status: TaskStatus;
-  checklistText: string;
-};
-
-function blankDraft(): TaskDraft {
-  return {
-    title: "",
-    description: "",
-    priority: "MEDIUM",
-    mentorPriority: false,
-    startDate: "",
-    dueDate: "",
-    status: "TODO",
-    checklistText: "",
-  };
-}
-
-function fromTask(task: ProfessionalTask): TaskDraft {
-  return {
-    title: task.title,
-    description: task.description ?? "",
-    priority: task.priority,
-    mentorPriority: task.mentorPriority,
-    startDate: task.startDate?.slice(0, 10) ?? "",
-    dueDate: task.dueDate?.slice(0, 10) ?? "",
-    status: task.status,
-    checklistText: "",
-  };
-}
-
-function TaskForm({
-  member,
-  task,
-  onCancel,
-  onSave,
-}: {
-  member: AdminMember;
-  task?: ProfessionalTask;
-  onCancel: () => void;
-  onSave: (draft: TaskDraft) => Promise<void>;
-}) {
-  const { t } = useI18n();
-  const [draft, setDraft] = useState(() =>
-    task ? fromTask(task) : blankDraft(),
-  );
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(false);
-  const change = <K extends keyof TaskDraft>(key: K, value: TaskDraft[K]) =>
-    setDraft((current) => ({ ...current, [key]: value }));
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    setSaving(true);
-    setError(false);
-    try {
-      await onSave(draft);
-    } catch {
-      setError(true);
-    } finally {
-      setSaving(false);
-    }
-  };
-  const fieldClass = "field-control w-full";
-  return (
-    <form
-      onSubmit={submit}
-      className="space-y-4 rounded-xl border border-border bg-neutral-50/60 p-4 dark:bg-neutral-900/60"
-    >
-      <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-        {task
-          ? t("professionalDevelopment.editTask")
-          : t("professionalDevelopment.assignTaskTitle")}
-      </h4>
-      <label className="grid gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
-        {t("professionalDevelopment.member")}
-        <span className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-neutral-800 dark:text-neutral-200">
-          {member.name}
-        </span>
-      </label>
-      <label className="grid gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
-        {t("professionalDevelopment.taskTitle")}
-        <input
-          required
-          maxLength={200}
-          value={draft.title}
-          onChange={(event) => change("title", event.target.value)}
-          placeholder={t("professionalDevelopment.taskTitlePlaceholder")}
-          className={fieldClass}
-        />
-      </label>
-      <label className="grid gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
-        {t("professionalDevelopment.description")}
-        <textarea
-          maxLength={5000}
-          rows={3}
-          value={draft.description}
-          onChange={(event) => change("description", event.target.value)}
-          placeholder={t("professionalDevelopment.descriptionPlaceholder")}
-          className={`${fieldClass} resize-y`}
-        />
-      </label>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="grid gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
-          {t("professionalDevelopment.priority")}
-          <select
-            value={draft.priority}
-            onChange={(event) =>
-              change("priority", event.target.value as TaskPriority)
-            }
-            className={fieldClass}
-          >
-            {PRIORITIES.map((priority) => (
-              <option key={priority} value={priority}>
-                {t(`professionalDevelopment.${priority.toLowerCase()}`)}
-              </option>
-            ))}
-          </select>
-        </label>
-        {task && (
-          <label className="grid gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
-            {t("professionalDevelopment.status")}
-            <select
-              value={draft.status}
-              onChange={(event) =>
-                change("status", event.target.value as TaskStatus)
-              }
-              className={fieldClass}
-            >
-              {STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {t(`professionalDevelopment.${STATUS_KEYS[status]}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-      </div>
-      <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-amber-300/70 bg-amber-50/60 px-3 py-2.5 text-sm dark:border-amber-900 dark:bg-amber-950/20">
-        <input
-          type="checkbox"
-          checked={draft.mentorPriority}
-          onChange={(event) => change("mentorPriority", event.target.checked)}
-          className="h-4 w-4 accent-amber-600"
-        />
-        <span className="flex-1 font-medium text-neutral-800 dark:text-neutral-200">
-          {t("professionalDevelopment.mentorPriority")}
-        </span>
-        {draft.mentorPriority && <MentorPriorityMark />}
-      </label>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="grid gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
-          {t("professionalDevelopment.startDate")}{" "}
-          <span className="font-normal">
-            ({t("professionalDevelopment.optional")})
-          </span>
-          <input
-            type="date"
-            value={draft.startDate}
-            onChange={(event) => change("startDate", event.target.value)}
-            className={fieldClass}
-          />
-        </label>
-        <label className="grid gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
-          {t("professionalDevelopment.dueDate")}{" "}
-          <span className="font-normal">
-            ({t("professionalDevelopment.optional")})
-          </span>
-          <input
-            type="date"
-            value={draft.dueDate}
-            onChange={(event) => change("dueDate", event.target.value)}
-            className={fieldClass}
-          />
-        </label>
-      </div>
-      {!task ? (
-        <label className="grid gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
-          {t("professionalDevelopment.checklistItems")}{" "}
-          <span className="font-normal">
-            ({t("professionalDevelopment.optional")})
-          </span>
-          <textarea
-            rows={3}
-            value={draft.checklistText}
-            onChange={(event) => change("checklistText", event.target.value)}
-            placeholder={t("professionalDevelopment.checklistLinesHelp")}
-            className={`${fieldClass} resize-y`}
-          />
-          <span className="font-normal text-neutral-500">
-            {t("professionalDevelopment.checklistLinesHelp")}
-          </span>
-        </label>
-      ) : (
-        <p className="text-xs text-neutral-500">
-          {t("professionalDevelopment.manageChecklist")}
-        </p>
-      )}
-      {error && (
-        <p role="alert" className="text-sm text-danger-strong">
-          {t("professionalDevelopment.saveError")}
-        </p>
-      )}
-      <div className="flex justify-end gap-2 border-t border-border pt-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={saving}
-          className="button-secondary px-3 py-2 text-xs"
-        >
-          {t("professionalDevelopment.cancel")}
-        </button>
-        <button
-          type="submit"
-          disabled={saving}
-          className="button-primary inline-flex items-center gap-2 px-3 py-2 text-xs"
-        >
-          {saving
-            ? t("professionalDevelopment.saving")
-            : t("professionalDevelopment.save")}
-        </button>
-      </div>
-    </form>
-  );
-}
+import { TaskFormDialog } from "../../professional-development/components/TaskFormDialog";
+import { TaskSourceLabel } from "../../professional-development/components/TaskPresentation";
 
 function AdminTaskRow({
   task,
@@ -294,8 +54,9 @@ function AdminTaskRow({
     }
   }, [task.id]);
   useEffect(() => {
-    if (expanded) void loadFeedback();
-  }, [expanded, loadFeedback]);
+    if (expanded && task.source === "MENTOR_ASSIGNED") void loadFeedback();
+    if (task.source === "PERSONAL") setFeedback([]);
+  }, [expanded, loadFeedback, task.source]);
 
   const perform = async (operation: () => Promise<unknown>) => {
     setBusy(true);
@@ -320,6 +81,7 @@ function AdminTaskRow({
       await adminApi.addMentorFeedback(task.id, feedbackText.trim());
       setFeedbackText("");
       await loadFeedback();
+      await onRefresh();
     } catch {
       setError(true);
     } finally {
@@ -361,26 +123,29 @@ function AdminTaskRow({
                 : t("professionalDevelopment.noDueDate")}
             </span>
           </button>
-          <div className="flex shrink-0 gap-1">
-            <button
-              type="button"
-              onClick={onEdit}
-              aria-label={`${t("professionalDevelopment.editTask")}: ${task.title}`}
-              className="rounded-md p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-            >
-              <EditIcon className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={onDelete}
-              aria-label={`${t("professionalDevelopment.deleteTask")}: ${task.title}`}
-              className="rounded-md p-2 text-neutral-500 hover:bg-danger-soft hover:text-danger-strong"
-            >
-              <TrashIcon className="h-4 w-4" />
-            </button>
-          </div>
+          {task.source === "MENTOR_ASSIGNED" && (
+            <div className="flex shrink-0 gap-1">
+              <button
+                type="button"
+                onClick={onEdit}
+                aria-label={`${t("professionalDevelopment.editTask")}: ${task.title}`}
+                className="rounded-md p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              >
+                <EditIcon className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={onDelete}
+                aria-label={`${t("professionalDevelopment.deleteTask")}: ${task.title}`}
+                className="rounded-md p-2 text-neutral-500 hover:bg-danger-soft hover:text-danger-strong"
+              >
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <TaskSourceLabel source={task.source} />
           <StatusPill status={task.status} />
           <PriorityLabel priority={task.priority} />
           {task.mentorPriority && <MentorPriorityMark />}
@@ -391,7 +156,28 @@ function AdminTaskRow({
           )}
         </div>
       </div>
-      {expanded && (
+      {expanded && task.source === "PERSONAL" && (
+        <div className="border-t border-border p-4">
+          <h4 className="mb-3 text-xs font-semibold">
+            {t("professionalDevelopment.checklist")}
+          </h4>
+          {task.checklist.length ? (
+            <ul className="space-y-2">
+              {task.checklist.map((item) => (
+                <li key={item.id} className="flex items-center gap-2 text-sm">
+                  <span aria-hidden="true">{item.completed ? "✓" : "○"}</span>
+                  <span>{item.title}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-neutral-500">
+              {t("professionalDevelopment.checklistEmpty")}
+            </p>
+          )}
+        </div>
+      )}
+      {expanded && task.source === "MENTOR_ASSIGNED" && (
         <div className="space-y-5 border-t border-border p-4">
           {error && (
             <p role="alert" className="text-sm text-danger-strong">
@@ -604,8 +390,14 @@ function AdminTaskRow({
   );
 }
 
-export function AdminMemberTasks({ member }: { member: AdminMember }) {
-  const { t, number } = useI18n();
+export function AdminMemberTasks({
+  member,
+  onChanged,
+}: {
+  member: AdminMember;
+  onChanged?: () => void;
+}) {
+  const { t, number, date } = useI18n();
   const [tasks, setTasks] = useState<ProfessionalTask[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -635,40 +427,25 @@ export function AdminMemberTasks({ member }: { member: AdminMember }) {
     void load();
   }, [load]);
 
-  const create = async (draft: TaskDraft) => {
-    const input: CreateTaskInput = {
-      title: draft.title.trim(),
-      description: draft.description.trim() || undefined,
-      priority: draft.priority,
-      mentorPriority: draft.mentorPriority,
-      startDate: draft.startDate || undefined,
-      dueDate: draft.dueDate || undefined,
-      checklist: draft.checklistText
-        .split("\n")
-        .map((title) => title.trim())
-        .filter(Boolean)
-        .map((title) => ({ title })),
-    };
-    await adminApi.createTask(member.id, input);
+  const refresh = useCallback(async () => {
+    await load();
+    onChanged?.();
+  }, [load, onChanged]);
+
+  const create = async (input: CreateTaskInput | UpdateTaskInput) => {
+    await adminApi.createTask(member.id, input as CreateTaskInput);
     setAssigning(false);
     setNotice(t("professionalDevelopment.taskCreated"));
+    onChanged?.();
     if (page !== 1) setPage(1);
     else await load();
   };
-  const update = async (draft: TaskDraft) => {
+  const update = async (input: CreateTaskInput | UpdateTaskInput) => {
     if (!editing) return;
-    const input: UpdateTaskInput = {
-      title: draft.title.trim(),
-      description: draft.description.trim() || null,
-      priority: draft.priority,
-      mentorPriority: draft.mentorPriority,
-      startDate: draft.startDate || null,
-      dueDate: draft.dueDate || null,
-      status: draft.status,
-    };
-    await adminApi.updateTask(editing.id, input);
+    await adminApi.updateTask(editing.id, input as UpdateTaskInput);
     setEditing(null);
     setNotice(t("professionalDevelopment.taskUpdated"));
+    onChanged?.();
     await load();
   };
   const deleteTask = async (task: ProfessionalTask) => {
@@ -676,11 +453,20 @@ export function AdminMemberTasks({ member }: { member: AdminMember }) {
     try {
       await adminApi.deleteTask(task.id);
       setNotice(t("professionalDevelopment.taskDeleted"));
+      onChanged?.();
       await load();
     } catch {
       setError(true);
     }
   };
+  const recentFeedback = tasks
+    .flatMap((task) =>
+      task.notes
+        .filter((note) => note.type === "MENTOR_FEEDBACK")
+        .map((note) => ({ ...note, taskTitle: task.title })),
+    )
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 10);
 
   return (
     <section
@@ -719,10 +505,20 @@ export function AdminMemberTasks({ member }: { member: AdminMember }) {
         </p>
       )}
       {assigning && (
-        <TaskForm
-          member={member}
-          onCancel={() => setAssigning(false)}
+        <TaskFormDialog
+          mode="assign"
+          selectedMember={member}
+          onClose={() => setAssigning(false)}
           onSave={create}
+        />
+      )}
+      {editing && (
+        <TaskFormDialog
+          mode="editAssigned"
+          selectedMember={member}
+          task={editing}
+          onClose={() => setEditing(null)}
+          onSave={update}
         />
       )}
       {loading ? (
@@ -758,33 +554,23 @@ export function AdminMemberTasks({ member }: { member: AdminMember }) {
             {number(total)} · {t("professionalDevelopment.tasks")}
           </p>
           <div className="space-y-3">
-            {tasks.map((task) =>
-              editing?.id === task.id ? (
-                <TaskForm
-                  key={task.id}
-                  member={member}
-                  task={task}
-                  onCancel={() => setEditing(null)}
-                  onSave={update}
-                />
-              ) : (
-                <AdminTaskRow
-                  key={task.id}
-                  task={task}
-                  expanded={expandedId === task.id}
-                  onExpand={() =>
-                    setExpandedId((id) => (id === task.id ? null : task.id))
-                  }
-                  onEdit={() => {
-                    setAssigning(false);
-                    setEditing(task);
-                    setNotice("");
-                  }}
-                  onDelete={() => void deleteTask(task)}
-                  onRefresh={load}
-                />
-              ),
-            )}
+            {tasks.map((task) => (
+              <AdminTaskRow
+                key={task.id}
+                task={task}
+                expanded={expandedId === task.id}
+                onExpand={() =>
+                  setExpandedId((id) => (id === task.id ? null : task.id))
+                }
+                onEdit={() => {
+                  setAssigning(false);
+                  setEditing(task);
+                  setNotice("");
+                }}
+                onDelete={() => void deleteTask(task)}
+                onRefresh={refresh}
+              />
+            ))}
           </div>
           {totalPages > 1 && (
             <nav
@@ -816,6 +602,43 @@ export function AdminMemberTasks({ member }: { member: AdminMember }) {
             </nav>
           )}
         </>
+      )}
+      {!loading && !error && (
+        <section
+          className="space-y-3 border-t border-border pt-5"
+          aria-labelledby="member-mentor-feedback"
+        >
+          <h3 id="member-mentor-feedback" className="text-sm font-semibold">
+            {t("professionalDevelopment.mentorFeedback")}
+          </h3>
+          {recentFeedback.length ? (
+            <ul className="space-y-2">
+              {recentFeedback.map((note) => (
+                <li
+                  key={note.id}
+                  className="rounded-lg border-s-2 border-info-strong bg-info-soft/50 p-3 dark:bg-blue-950/20"
+                >
+                  <div className="flex flex-wrap justify-between gap-2 text-xs text-neutral-500">
+                    <span>{note.taskTitle}</span>
+                    <time dateTime={note.createdAt}>
+                      {date(note.createdAt, {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </time>
+                  </div>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-neutral-700 dark:text-neutral-200">
+                    {note.content}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-neutral-500">
+              {t("professionalDevelopment.noFeedback")}
+            </p>
+          )}
+        </section>
       )}
     </section>
   );

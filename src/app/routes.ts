@@ -29,6 +29,10 @@ export default [
     route("admin", "features/admin/AdminLayout.tsx", [
       index("features/admin/AdminOverviewPage.tsx"),
       route("members", "features/admin/AdminMembersPage.tsx"),
+      route(
+        "professional-development",
+        "features/admin/AdminProfessionalDevelopmentPage.tsx",
+      ),
       route("groups", "features/admin/AdminGroupsPage.tsx"),
       route("activity", "features/admin/AdminActivityPage.tsx"),
     ]),

@@ -72,6 +72,23 @@ export function MentorPriorityMark() {
   );
 }
 
+export function TaskSourceLabel({
+  source,
+}: {
+  source: ProfessionalTask["source"];
+}) {
+  const { t } = useI18n();
+  return (
+    <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+      {t(
+        source === "PERSONAL"
+          ? "professionalDevelopment.personal"
+          : "professionalDevelopment.mentorAssigned",
+      )}
+    </span>
+  );
+}
+
 export function TaskCard({
   task,
   onClick,
@@ -113,6 +130,7 @@ export function TaskCard({
         )}
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <TaskSourceLabel source={task.source} />
         <StatusPill status={task.status} />
         <PriorityLabel priority={task.priority} />
       </div>

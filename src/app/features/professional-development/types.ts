@@ -1,4 +1,5 @@
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
+export type TaskSource = "PERSONAL" | "MENTOR_ASSIGNED";
 export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export type TaskNoteType = "MENTOR_FEEDBACK" | "PERSONAL_NOTE";
 export type FeedbackVisibility = "DIRECT" | "GROUP" | "ALL";
@@ -113,6 +114,8 @@ export interface ProfessionalTask {
   id: string;
   userId: string;
   createdById: string;
+  source: TaskSource;
+  createdBy?: { id: string; name: string };
   title: string;
   description: string | null;
   status: TaskStatus;
@@ -140,6 +143,8 @@ export interface TaskPage {
 
 export interface ProfessionalDevelopmentSummary {
   totalActiveTasks: number;
+  personalTasks?: number;
+  mentorAssignedTasks?: number;
   TODO: number;
   IN_PROGRESS: number;
   BLOCKED: number;

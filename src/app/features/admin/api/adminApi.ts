@@ -79,6 +79,19 @@ export type AdminUserDetail = {
   inactivityDays: number | null;
   activityStatus: ActivityStatus;
   applicationsCount: number;
+  development: {
+    totalActiveTasks: number;
+    taskStatusCounts: {
+      TODO: number;
+      IN_PROGRESS: number;
+      BLOCKED: number;
+      DONE: number;
+    };
+    overdueTasks: number;
+    mentorPriorityTasks: number;
+    tasksBySource: { personal: number; mentorAssigned: number };
+    unreadMentorFeedback: number;
+  };
   currentStageCounts: StageCounts;
   recentActivities: AdminActivity[];
   recentApplications: Array<{

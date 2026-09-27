@@ -10,6 +10,7 @@ import {
   PriorityLabel,
   StatusPill,
   MentorPriorityMark,
+  TaskSourceLabel,
 } from "./TaskPresentation";
 
 export function ProfessionalDevelopmentSummary() {
@@ -184,6 +185,7 @@ export function ProfessionalDevelopmentSummary() {
                       </span>
                     </span>
                     <span className="flex flex-wrap items-center gap-2">
+                      <TaskSourceLabel source={task.source} />
                       <StatusPill status={task.status} />
                       <PriorityLabel priority={task.priority} />
                       {task.mentorPriority && <MentorPriorityMark />}
