@@ -164,7 +164,7 @@ function AdminTaskRow({
 
   return (
     <article
-      className={`rounded-xl border bg-surface ${task.overdue && task.status !== "DONE" ? "border-danger-border" : task.mentorPriority ? "border-amber-600/80 shadow-[0_0_0_2px_rgba(147,106,24,0.12)]" : "border-border"}`}
+      className={`relative overflow-hidden rounded-xl border bg-surface ${task.overdue && task.status !== "DONE" ? "border-danger-border" : task.mentorPriority ? "border-amber-700/75 shadow-[0_0_0_2px_rgba(127,29,29,0.10)] before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:bg-gradient-to-r before:from-red-800 before:via-orange-700 before:to-amber-500" : "border-border"}`}
     >
       <div className="space-y-3 p-4">
         <div className="flex items-start justify-between gap-3">

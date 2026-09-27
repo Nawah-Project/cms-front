@@ -92,7 +92,7 @@ export function TaskCard({
   const border = overdue
     ? "border-danger-border ring-1 ring-danger-border/60"
     : task.mentorPriority
-      ? "border-amber-600/80 shadow-[0_0_0_2px_rgba(147,106,24,0.12)] before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:bg-gradient-to-r before:from-amber-500 before:via-amber-700 before:to-amber-500"
+      ? "border-amber-700/75 shadow-[0_0_0_2px_rgba(127,29,29,0.10)] before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:bg-gradient-to-r before:from-red-800 before:via-orange-700 before:to-amber-500"
       : "border-border hover:border-border-hover";
   return (
     <button
