@@ -51,22 +51,7 @@ export function PriorityLabel({ priority }: { priority: TaskPriority }) {
 export function MentorPriorityMark() {
   const { t } = useI18n();
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/80 bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-900 shadow-[0_0_0_2px_rgba(245,158,11,0.10)] dark:border-amber-500/70 dark:bg-amber-950/50 dark:text-amber-200">
-      <svg
-        className="h-3.5 w-3.5"
-        viewBox="0 0 16 16"
-        fill="none"
-        aria-hidden="true"
-      >
-        <path
-          d="M8.2 1.4c.4 2.2-1.4 2.8-.8 4.6.3.8 1 1.1 1.5 1.5.1-1.2.7-1.8 1.3-2.4 1.3 1.2 2.3 2.6 2.3 4.5a4.5 4.5 0 1 1-9 0c0-2.1 1.3-3.7 3.2-5.2-.1 1.1.2 1.7.7 2.1.7-1.4 1.7-2.6.8-5.1Z"
-          fill="#F59E0B"
-        />
-        <path
-          d="M8 8.4c.7.8 1.5 1.3 1.5 2.6a1.5 1.5 0 1 1-3 0c0-.9.6-1.8 1.5-2.6Z"
-          fill="#EA580C"
-        />
-      </svg>
+    <span className="inline-flex items-center rounded-full border border-amber-600/70 bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-900 dark:border-amber-500/70 dark:bg-amber-950/50 dark:text-amber-200">
       {t("professionalDevelopment.mentorPriorityShort")}
     </span>
   );
@@ -107,7 +92,7 @@ export function TaskCard({
   const border = overdue
     ? "border-danger-border ring-1 ring-danger-border/60"
     : task.mentorPriority
-      ? "border-amber-400/90 shadow-[0_0_0_2px_rgba(245,158,11,0.10)] before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:bg-gradient-to-r before:from-amber-300 before:via-orange-500 before:to-amber-400"
+      ? "border-amber-600/80 shadow-[0_0_0_2px_rgba(147,106,24,0.12)] before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:bg-gradient-to-r before:from-amber-500 before:via-amber-700 before:to-amber-500"
       : "border-border hover:border-border-hover";
   return (
     <button
