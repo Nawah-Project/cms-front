@@ -23,8 +23,8 @@ the production Docker network or volumes.
 - A push to `main` syncs this repository to `/data/cms-front` and rebuilds only
   the `frontend` service using `/data/cms-back/compose.yml`.
 
-Configure the same four GitHub Actions repository secrets listed in
-`cms-back/DEVELOPMENT.md` in this repository before merging a production
-deployment: `PROD_SERVER_HOST`, `PROD_SERVER_USER`, `PROD_SSH_PRIVATE_KEY`, and
-`PROD_SSH_KNOWN_HOSTS`. Production deployment uses SSH on port 22 and does not
-remove server `.env` files or Docker volumes.
+Register an online self-hosted Linux x64 Actions runner for this repository or
+for the GitHub organization. The runner account must be able to write to
+`/data/cms-front`, run Docker Compose, and use `rsync`. CI validation runs on a
+GitHub-hosted runner; only deployment runs on the production server runner.
+Deployment does not remove the server `.env` file or Docker volumes.
