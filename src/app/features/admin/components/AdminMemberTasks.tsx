@@ -54,9 +54,8 @@ function AdminTaskRow({
     }
   }, [task.id]);
   useEffect(() => {
-    if (expanded && task.source === "MENTOR_ASSIGNED") void loadFeedback();
-    if (task.source === "PERSONAL") setFeedback([]);
-  }, [expanded, loadFeedback, task.source]);
+    if (expanded) void loadFeedback();
+  }, [expanded, loadFeedback]);
 
   const perform = async (operation: () => Promise<unknown>) => {
     setBusy(true);
@@ -96,6 +95,72 @@ function AdminTaskRow({
     );
     if (saved) setChecklistText("");
   };
+  const mentorFeedbackSection = (
+    <section className="space-y-2">
+      <h4 className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+        {t("professionalDevelopment.mentorFeedback")}
+      </h4>
+      {feedbackLoading ? (
+        <p className="text-xs text-neutral-500">
+          {t("professionalDevelopment.loadingTask")}
+        </p>
+      ) : feedback.length ? (
+        <ul className="space-y-2">
+          {feedback.map((note) => (
+            <li
+              key={note.id}
+              className="rounded-lg border-s-2 border-info-strong bg-info-soft/50 px-3 py-2 dark:bg-blue-950/20"
+            >
+              <div className="flex justify-between gap-2">
+                <span className="text-[11px] font-medium text-info-strong">
+                  {t("professionalDevelopment.mentor")}
+                </span>
+                <time
+                  className="text-[11px] text-neutral-500"
+                  dateTime={note.createdAt}
+                >
+                  {date(note.createdAt, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </time>
+              </div>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-700 dark:text-neutral-300">
+                {note.content}
+              </p>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-xs text-neutral-500">
+          {t("professionalDevelopment.noFeedback")}
+        </p>
+      )}
+      <form onSubmit={sendFeedback} className="space-y-2">
+        <label htmlFor={`feedback-${task.id}`} className="sr-only">
+          {t("professionalDevelopment.mentorFeedback")}
+        </label>
+        <textarea
+          id={`feedback-${task.id}`}
+          rows={2}
+          maxLength={5000}
+          value={feedbackText}
+          onChange={(event) => setFeedbackText(event.target.value)}
+          placeholder={t("professionalDevelopment.feedbackPlaceholder")}
+          className="field-control w-full resize-y"
+        />
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={busy || !feedbackText.trim()}
+            className="button-primary px-3 py-2 text-xs"
+          >
+            {t("professionalDevelopment.sendFeedback")}
+          </button>
+        </div>
+      </form>
+    </section>
+  );
 
   return (
     <article
@@ -157,24 +222,32 @@ function AdminTaskRow({
         </div>
       </div>
       {expanded && task.source === "PERSONAL" && (
-        <div className="border-t border-border p-4">
-          <h4 className="mb-3 text-xs font-semibold">
-            {t("professionalDevelopment.checklist")}
-          </h4>
-          {task.checklist.length ? (
-            <ul className="space-y-2">
-              {task.checklist.map((item) => (
-                <li key={item.id} className="flex items-center gap-2 text-sm">
-                  <span aria-hidden="true">{item.completed ? "✓" : "○"}</span>
-                  <span>{item.title}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs text-neutral-500">
-              {t("professionalDevelopment.checklistEmpty")}
+        <div className="space-y-5 border-t border-border p-4">
+          <section>
+            <h4 className="mb-3 text-xs font-semibold">
+              {t("professionalDevelopment.checklist")}
+            </h4>
+            {task.checklist.length ? (
+              <ul className="space-y-2">
+                {task.checklist.map((item) => (
+                  <li key={item.id} className="flex items-center gap-2 text-sm">
+                    <span aria-hidden="true">{item.completed ? "✓" : "○"}</span>
+                    <span>{item.title}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-neutral-500">
+                {t("professionalDevelopment.checklistEmpty")}
+              </p>
+            )}
+          </section>
+          {error && (
+            <p role="alert" className="text-sm text-danger-strong">
+              {t("professionalDevelopment.saveError")}
             </p>
           )}
+          {mentorFeedbackSection}
         </div>
       )}
       {expanded && task.source === "MENTOR_ASSIGNED" && (
@@ -320,70 +393,7 @@ function AdminTaskRow({
               </button>
             </form>
           </section>
-          <section className="space-y-2">
-            <h4 className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
-              {t("professionalDevelopment.mentorFeedback")}
-            </h4>
-            {feedbackLoading ? (
-              <p className="text-xs text-neutral-500">
-                {t("professionalDevelopment.loadingTask")}
-              </p>
-            ) : feedback.length ? (
-              <ul className="space-y-2">
-                {feedback.map((note) => (
-                  <li
-                    key={note.id}
-                    className="rounded-lg border-s-2 border-info-strong bg-info-soft/50 px-3 py-2 dark:bg-blue-950/20"
-                  >
-                    <div className="flex justify-between gap-2">
-                      <span className="text-[11px] font-medium text-info-strong">
-                        {t("professionalDevelopment.mentor")}
-                      </span>
-                      <time
-                        className="text-[11px] text-neutral-500"
-                        dateTime={note.createdAt}
-                      >
-                        {date(note.createdAt, {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        })}
-                      </time>
-                    </div>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-700 dark:text-neutral-300">
-                      {note.content}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-xs text-neutral-500">
-                {t("professionalDevelopment.noFeedback")}
-              </p>
-            )}
-            <form onSubmit={sendFeedback} className="space-y-2">
-              <label htmlFor={`feedback-${task.id}`} className="sr-only">
-                {t("professionalDevelopment.mentorFeedback")}
-              </label>
-              <textarea
-                id={`feedback-${task.id}`}
-                rows={2}
-                maxLength={5000}
-                value={feedbackText}
-                onChange={(event) => setFeedbackText(event.target.value)}
-                placeholder={t("professionalDevelopment.feedbackPlaceholder")}
-                className="field-control w-full resize-y"
-              />
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={busy || !feedbackText.trim()}
-                  className="button-primary px-3 py-2 text-xs"
-                >
-                  {t("professionalDevelopment.sendFeedback")}
-                </button>
-              </div>
-            </form>
-          </section>
+          {mentorFeedbackSection}
         </div>
       )}
     </article>
