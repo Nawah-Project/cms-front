@@ -68,11 +68,13 @@ export default function AdminOverviewPage() {
           t("admin.totalUsers"),
           data.overview.usersCount,
           tp("admin.unassignedCount", data.overview.unassignedUsersCount),
+          "text-info-strong",
         )}
         {stat(
           t("admin.groupsCount"),
           data.overview.groupsCount,
           tp("admin.assignedMembers", data.overview.membershipsCount),
+          "text-info-strong",
         )}
         {stat(
           t("admin.activeUsers"),
@@ -96,11 +98,13 @@ export default function AdminOverviewPage() {
           t("admin.neverActiveUsers"),
           data.overview.neverActiveUsersCount,
           t("admin.noApplicationsYet"),
+          "text-neutral-700 dark:text-neutral-300",
         )}
         {stat(
           t("admin.applications"),
           data.overview.applicationsCount,
           t("admin.acrossMembers"),
+          "text-info-strong",
         )}
         {stat(
           t("admin.groupsWithSpace"),
