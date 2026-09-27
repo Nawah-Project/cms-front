@@ -190,15 +190,15 @@ export function AppSidebar() {
         <div className="mb-10 flex items-start justify-between gap-2 px-2">
           <Link
             to="/"
-            className="flex min-w-0 items-start gap-3 text-sm font-semibold tracking-tight text-white"
+            className="flex min-w-0 flex-1 items-start gap-3 text-sm font-semibold tracking-tight text-white"
           >
             <img
               src="/nawah-logo.svg"
               alt=""
-              className="h-9 w-9 shrink-0 rounded-lg object-cover"
+              className="h-9 w-9 shrink-0 object-contain"
             />
             <span className="min-w-0 pt-0.5">
-              <span className="block truncate">{t("common.brand")}</span>
+              <span className="block whitespace-normal break-words leading-tight">{t("common.brand")}</span>
               <time
                 className="mt-1 block text-xs font-normal tracking-normal text-neutral-400"
                 dateTime={new Date().toISOString()}
@@ -222,15 +222,15 @@ export function AppSidebar() {
           <div className="flex min-w-0 items-start gap-3">
             <Link
               to="/"
-              className="flex min-w-0 items-start gap-2.5 text-sm font-semibold tracking-tight text-neutral-950 dark:text-white"
+              className="flex min-w-0 flex-1 items-start gap-2.5 text-sm font-semibold tracking-tight text-neutral-950 dark:text-white"
             >
               <img
                 src="/nawah-logo.svg"
                 alt=""
-                className="h-8 w-8 shrink-0 rounded-lg object-cover"
+                className="h-8 w-8 shrink-0 object-contain"
               />
               <span className="min-w-0 pt-0.5">
-                <span className="block truncate">{t("common.brand")}</span>
+                <span className="block whitespace-normal break-words leading-tight">{t("common.brand")}</span>
                 <time
                   className="mt-0.5 block text-[11px] font-normal tracking-normal text-neutral-500"
                   dateTime={new Date().toISOString()}
