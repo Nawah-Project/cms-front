@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type DragEvent } from "react";
 import { useSearchParams } from "react-router";
 import { PageHeading } from "../../admin/components/AdminUI";
 import { useI18n } from "../../../i18n";
@@ -37,6 +37,10 @@ export default function TasksPage() {
   const [taskFormOpen, setTaskFormOpen] = useState(false);
   const [members, setMembers] = useState<AdminMember[]>([]);
   const [memberLoadError, setMemberLoadError] = useState(false);
+  const [movingTaskIds, setMovingTaskIds] = useState<Set<string>>(() => new Set());
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [dragOverStatus, setDragOverStatus] = useState<TaskStatus | null>(null);
+  const [moveError, setMoveError] = useState(false);
   const isAdmin = user?.role === "ADMIN";
 
   useEffect(() => {
@@ -84,6 +88,45 @@ export default function TasksPage() {
     setSearchParams(next, { preventScrollReset: true });
   };
 
+  const moveTask = async (taskId: string, status: TaskStatus) => {
+    const task = tasks.find((item) => item.id === taskId);
+    if (!task || task.status === status || movingTaskIds.has(taskId)) return;
+
+    const previousStatus = task.status;
+    setMoveError(false);
+    setMovingTaskIds((current) => new Set(current).add(taskId));
+    setTasks((current) =>
+      current.map((item) => (item.id === taskId ? { ...item, status } : item)),
+    );
+    try {
+      const updated = await api.updateTaskStatus(taskId, status);
+      setTasks((current) =>
+        current.map((item) => (item.id === taskId ? updated : item)),
+      );
+    } catch {
+      setTasks((current) =>
+        current.map((item) =>
+          item.id === taskId ? { ...item, status: previousStatus } : item,
+        ),
+      );
+      setMoveError(true);
+    } finally {
+      setMovingTaskIds((current) => {
+        const next = new Set(current);
+        next.delete(taskId);
+        return next;
+      });
+    }
+  };
+
+  const handleDrop = (event: DragEvent<HTMLElement>, status: TaskStatus) => {
+    event.preventDefault();
+    const taskId = event.dataTransfer.getData("text/plain");
+    setDraggedTaskId(null);
+    setDragOverStatus(null);
+    if (taskId) void moveTask(taskId, status);
+  };
+
   return (
     <div className="space-y-7">
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -109,6 +152,12 @@ export default function TasksPage() {
       )}
 
       <ProfessionalDevelopmentNav />
+
+      {moveError && (
+        <p role="alert" className="rounded-lg border border-danger-border bg-danger-soft px-3 py-2 text-sm text-danger-strong">
+          {t("professionalDevelopment.saveError")}
+        </p>
+      )}
 
       {loading ? (
         <div
@@ -159,6 +208,13 @@ export default function TasksPage() {
                 key={status}
                 title={t(`professionalDevelopment.${key}`)}
                 count={byStatus[status].length}
+                isDragTarget={draggedTaskId !== null && dragOverStatus === status}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = "move";
+                  setDragOverStatus(status);
+                }}
+                onDrop={(event) => handleDrop(event, status)}
               >
                 {byStatus[status].length ? (
                   byStatus[status].map((task) => (
@@ -166,6 +222,16 @@ export default function TasksPage() {
                       key={task.id}
                       task={task}
                       onClick={() => selectTask(task.id)}
+                      draggable={!movingTaskIds.has(task.id)}
+                      onDragStart={(event) => {
+                        event.dataTransfer.effectAllowed = "move";
+                        event.dataTransfer.setData("text/plain", task.id);
+                        setDraggedTaskId(task.id);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedTaskId(null);
+                        setDragOverStatus(null);
+                      }}
                     />
                   ))
                 ) : (

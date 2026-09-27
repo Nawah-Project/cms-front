@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { DragEvent, ReactNode } from "react";
 import { useI18n } from "../../../i18n";
 import type { ProfessionalTask, TaskPriority, TaskStatus } from "../types";
 
@@ -92,9 +92,15 @@ export function TaskSourceLabel({
 export function TaskCard({
   task,
   onClick,
+  draggable = false,
+  onDragStart,
+  onDragEnd,
 }: {
   task: ProfessionalTask;
   onClick: () => void;
+  draggable?: boolean;
+  onDragStart?: (event: DragEvent<HTMLButtonElement>) => void;
+  onDragEnd?: () => void;
 }) {
   const { t, date } = useI18n();
   const overdue = task.overdue && task.status !== "DONE";
@@ -107,7 +113,10 @@ export function TaskCard({
     <button
       type="button"
       onClick={onClick}
-      className={`relative w-full overflow-hidden rounded-xl border bg-surface p-4 text-start shadow-xs transition hover:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info-strong ${border}`}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      className={`relative w-full overflow-hidden rounded-xl border bg-surface p-4 text-start shadow-xs transition hover:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info-strong ${draggable ? "cursor-grab active:cursor-grabbing" : ""} ${border}`}
       aria-label={`${task.title}${task.unreadMentorFeedbackCount ? `, ${t("professionalDevelopment.unreadFeedback")}` : ""}`}
     >
       <div className="flex items-start gap-2">
@@ -168,14 +177,25 @@ export function TaskSection({
   title,
   count,
   children,
+  onDragOver,
+  onDrop,
+  isDragTarget = false,
 }: {
   title: string;
   count: number;
   children: ReactNode;
+  onDragOver?: (event: DragEvent<HTMLElement>) => void;
+  onDrop?: (event: DragEvent<HTMLElement>) => void;
+  isDragTarget?: boolean;
 }) {
   const { number } = useI18n();
   return (
-    <section className="min-w-0 space-y-3" aria-label={title}>
+    <section
+      className={`min-w-0 space-y-3 rounded-xl transition-colors ${isDragTarget ? "bg-info-soft/50 ring-2 ring-info-border" : ""}`}
+      aria-label={title}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
       <header className="flex items-center justify-between border-b border-border pb-2.5">
         <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
           {title}
@@ -184,7 +204,7 @@ export function TaskSection({
           {number(count)}
         </span>
       </header>
-      <div className="space-y-3">{children}</div>
+      <div className="min-h-24 space-y-3 rounded-xl">{children}</div>
     </section>
   );
 }
