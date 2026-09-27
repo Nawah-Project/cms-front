@@ -11,7 +11,7 @@ services:
       VITE_API_URL: ${DEV_VITE_API_URL:?Set DEV_VITE_API_URL in development .env}
       VITE_CV_MAX_FILE_SIZE_BYTES: ${DEV_VITE_CV_MAX_FILE_SIZE_BYTES:-5242880}
     ports:
-      - "127.0.0.1:${DEV_FRONTEND_HOST_PORT:?Set DEV_FRONTEND_HOST_PORT in development .env}:5173"
+      - "${DEV_BIND_ADDRESS:-127.0.0.1}:${DEV_FRONTEND_HOST_PORT:?Set DEV_FRONTEND_HOST_PORT in development .env}:5173"
     volumes:
       - ./src:/app/src
       - ./public:/app/public
