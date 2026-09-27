@@ -18,6 +18,13 @@ const STATUS_STYLES: Record<TaskStatus, string> = {
   DONE: "border-success-border bg-success-soft text-success-strong dark:border-success-strong dark:bg-green-950/50 dark:text-green-200",
 };
 
+const STATUS_DOT_STYLES: Record<TaskStatus, string> = {
+  TODO: "bg-neutral-400",
+  IN_PROGRESS: "bg-info-strong",
+  BLOCKED: "bg-warning-strong",
+  DONE: "bg-success-strong",
+};
+
 const PRIORITY_STYLES: Record<TaskPriority, string> = {
   LOW: "text-neutral-500",
   MEDIUM: "text-neutral-700 dark:text-neutral-300",
@@ -160,6 +167,7 @@ export function TaskCard({
 
 export function TaskSection({
   title,
+  status,
   count,
   children,
   onDragOver,
@@ -167,6 +175,7 @@ export function TaskSection({
   isDragTarget = false,
 }: {
   title: string;
+  status: TaskStatus;
   count: number;
   children: ReactNode;
   onDragOver?: (event: DragEvent<HTMLElement>) => void;
@@ -176,20 +185,24 @@ export function TaskSection({
   const { number } = useI18n();
   return (
     <section
-      className={`min-w-0 space-y-3 rounded-xl transition-colors ${isDragTarget ? "bg-info-soft/50 ring-2 ring-info-border" : ""}`}
+      className={`min-w-0 space-y-3 rounded-xl border p-3 shadow-xs transition-colors ${isDragTarget ? "border-info-strong bg-info-soft/50 ring-2 ring-info-border" : "border-border bg-surface"}`}
       aria-label={title}
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
-      <header className="flex items-center justify-between border-b border-border pb-2.5">
-        <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-          {title}
+      <header className="flex items-center justify-between gap-2 border-b border-border pb-3">
+        <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+          <span
+            aria-hidden="true"
+            className={`h-2.5 w-2.5 shrink-0 rounded-full ${STATUS_DOT_STYLES[status]}`}
+          />
+          <span className="truncate">{title}</span>
         </h2>
-        <span className="text-xs tabular-nums text-neutral-500">
+        <span className="inline-flex min-w-7 items-center justify-center rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold tabular-nums text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
           {number(count)}
         </span>
       </header>
-      <div className="min-h-24 space-y-3 rounded-xl">{children}</div>
+      <div className="min-h-72 space-y-3 rounded-lg p-1">{children}</div>
     </section>
   );
 }

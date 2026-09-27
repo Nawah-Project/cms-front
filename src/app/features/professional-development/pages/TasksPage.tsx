@@ -218,47 +218,50 @@ export default function TasksPage() {
         </section>
       ) : (
         <>
-          <div className="overflow-x-auto pb-2">
-          <div className="grid min-w-[68rem] grid-cols-4 gap-6">
-            {COLUMNS.map(({ status, key }) => (
-              <TaskSection
-                key={status}
-                title={t(`professionalDevelopment.${key}`)}
-                count={byStatus[status].length}
-                isDragTarget={draggedTaskId !== null && dragOverStatus === status}
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = "move";
-                  setDragOverStatus(status);
-                }}
-                onDrop={(event) => handleDrop(event, status)}
-              >
-                {byStatus[status].length ? (
-                  byStatus[status].map((task) => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      onClick={() => selectTask(task.id)}
-                      draggable={!movingTaskIds.has(task.id)}
-                      onDragStart={(event) => {
-                        event.dataTransfer.effectAllowed = "move";
-                        event.dataTransfer.setData("text/plain", task.id);
-                        setDraggedTaskId(task.id);
-                      }}
-                      onDragEnd={() => {
-                        setDraggedTaskId(null);
-                        setDragOverStatus(null);
-                      }}
-                    />
-                  ))
-                ) : (
-                  <p className="rounded-xl border border-dashed border-border-subtle px-3 py-6 text-center text-xs text-neutral-500">
-                    {t("professionalDevelopment.noTasksInColumn")}
-                  </p>
-                )}
-              </TaskSection>
-          ))}
-          </div>
+          <div className="overflow-x-auto pb-3">
+            <div className="grid min-w-[68rem] grid-cols-4 gap-5">
+              {COLUMNS.map(({ status, key }) => (
+                <TaskSection
+                  key={status}
+                  status={status}
+                  title={t(`professionalDevelopment.${key}`)}
+                  count={byStatus[status].length}
+                  isDragTarget={
+                    draggedTaskId !== null && dragOverStatus === status
+                  }
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = "move";
+                    setDragOverStatus(status);
+                  }}
+                  onDrop={(event) => handleDrop(event, status)}
+                >
+                  {byStatus[status].length ? (
+                    byStatus[status].map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        onClick={() => selectTask(task.id)}
+                        draggable={!movingTaskIds.has(task.id)}
+                        onDragStart={(event) => {
+                          event.dataTransfer.effectAllowed = "move";
+                          event.dataTransfer.setData("text/plain", task.id);
+                          setDraggedTaskId(task.id);
+                        }}
+                        onDragEnd={() => {
+                          setDraggedTaskId(null);
+                          setDragOverStatus(null);
+                        }}
+                      />
+                    ))
+                  ) : (
+                    <p className="flex min-h-36 items-center justify-center rounded-lg border border-dashed border-border bg-neutral-50/70 px-3 py-6 text-center text-xs leading-5 text-neutral-500 dark:bg-neutral-900/60">
+                      {t("professionalDevelopment.noTasksInColumn")}
+                    </p>
+                  )}
+                </TaskSection>
+              ))}
+            </div>
           </div>
           {totalPages > 1 && (
             <nav
