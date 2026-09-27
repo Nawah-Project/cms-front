@@ -7,7 +7,7 @@ import { relativeActivityTime } from "./LastUpdated";
 import { useI18n } from "../../../i18n";
 
 function ActivityDescription({ event }: { event: RecentMemberProgress }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   if (event.fromStage === null) {
     return (
       <span>
@@ -28,7 +28,7 @@ function ActivityDescription({ event }: { event: RecentMemberProgress }) {
     <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
       <StatusBadge kind="stage" value={event.fromStage} />
       <span className="text-neutral-400" aria-hidden="true">
-        →
+        {locale === "ar" ? "←" : "→"}
       </span>
       <StatusBadge kind="stage" value={event.toStage} />
       {event.toStage === "CLOSED" && event.outcome && (
