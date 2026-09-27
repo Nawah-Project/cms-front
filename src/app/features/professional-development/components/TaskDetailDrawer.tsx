@@ -157,12 +157,11 @@ export function TaskDetailDrawer({
       onMouseDown={(event) => {
         if (event.target === dialogRef.current) onClose();
       }}
-      className="fixed inset-0 m-0 h-dvh max-h-none w-screen max-w-none border-0 bg-transparent p-0 text-start backdrop:bg-neutral-950/45"
+      className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-1.5rem)] max-w-2xl overflow-hidden rounded-2xl border border-border bg-surface p-0 text-start text-neutral-900 shadow-2xl backdrop:bg-neutral-950/50 dark:text-neutral-100 sm:w-[calc(100%-3rem)]"
       aria-labelledby="task-detail-title"
     >
-      <div className="flex h-full justify-end">
-        <section className="h-full w-full max-w-2xl overflow-y-auto border-s border-border bg-surface px-5 py-5 shadow-2xl sm:px-8 sm:py-7">
-          <header className="sticky top-0 z-10 -mx-5 -mt-5 flex items-start justify-between gap-4 border-b border-border bg-surface/95 px-5 py-4 backdrop-blur sm:-mx-8 sm:-mt-7 sm:px-8">
+      <section className="flex max-h-[92dvh] flex-col overflow-hidden">
+          <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
             <div className="min-w-0">
               <p className="text-xs font-medium text-neutral-500">
                 {t("professionalDevelopment.tasks")}
@@ -185,6 +184,7 @@ export function TaskDetailDrawer({
             </button>
           </header>
 
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
           {loading ? (
             <div className="space-y-4 py-8" role="status" aria-live="polite">
               <div className="h-4 w-2/3 animate-pulse rounded bg-neutral-100 dark:bg-neutral-800" />
@@ -205,7 +205,7 @@ export function TaskDetailDrawer({
               </button>
             </div>
           ) : (
-            <div className="space-y-7 py-6">
+            <div className="space-y-7">
               {actionError && (
                 <p
                   role="alert"
@@ -572,8 +572,8 @@ export function TaskDetailDrawer({
               </section>
             </div>
           )}
-        </section>
-      </div>
+          </div>
+      </section>
     </dialog>
     {editOpen && task?.source === "PERSONAL" && (
       <TaskFormDialog
