@@ -122,8 +122,9 @@ jobs:
             ./ /data/cms-development/frontend/
           docker compose --project-name cms-development-frontend --env-file /data/cms-development/.env -f /data/cms-development/frontend/compose.dev.yml config --quiet
           docker compose --project-name cms-development-frontend --env-file /data/cms-development/.env -f /data/cms-development/frontend/compose.dev.yml up -d --build frontend
+          frontend_endpoint="$(docker compose --project-name cms-development-frontend --env-file /data/cms-development/.env -f /data/cms-development/frontend/compose.dev.yml port frontend 5173)"
           for attempt in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:5174/ >/dev/null; then
+            if curl --fail --silent "http://${frontend_endpoint}/" >/dev/null; then
               exit 0
             fi
             sleep 2
