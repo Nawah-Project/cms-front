@@ -99,7 +99,7 @@ export default {
   dueSoonCount: "Due soon",
   overdueCount: "Overdue",
   viewAllTasks: "View all tasks",
-  dashboard: "Professional Development",
+  dashboard: "Your progress summary",
   dashboardEmpty: "Assigned tasks will appear here.",
   dashboardLoadError: "We couldn’t load the professional development summary.",
   adminEmpty: "No tasks have been assigned to this member yet.",

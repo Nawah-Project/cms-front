@@ -98,7 +98,7 @@ export default {
   dueSoonCount: "مواعيد قريبة",
   overdueCount: "متأخرة",
   viewAllTasks: "عرض كل المهام",
-  dashboard: "التطوير المهني",
+  dashboard: "ملخص تقدمك",
   dashboardEmpty: "ستظهر المهام المسندة إليك هنا.",
   dashboardLoadError: "تعذر تحميل ملخص التطوير المهني.",
   adminEmpty: "لم تُسند مهام لهذا العضو بعد.",
