@@ -269,9 +269,9 @@ export function FeedbackFormDialog({
         if (event.target === dialogRef.current) onClose();
       }}
       aria-labelledby="feedback-form-title"
-      className="fixed inset-0 m-auto flex max-h-[92dvh] w-[calc(100%-1.5rem)] max-w-3xl items-center justify-center overflow-hidden border-0 bg-transparent p-0 text-start backdrop:bg-neutral-950/50 sm:w-[calc(100%-3rem)]"
+      className="fixed inset-0 m-auto flex h-[92dvh] max-h-[92dvh] w-[calc(100%-1.5rem)] max-w-3xl items-stretch justify-center overflow-hidden border-0 bg-transparent p-0 text-start backdrop:bg-neutral-950/50 sm:w-[calc(100%-3rem)]"
     >
-      <section className="max-h-full w-full max-w-3xl overflow-y-auto rounded-2xl border border-border bg-surface shadow-2xl">
+      <section className="h-full min-h-0 w-full max-w-3xl overflow-y-auto overscroll-contain rounded-2xl border border-border bg-surface shadow-2xl">
         <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-surface/95 px-5 py-4 backdrop-blur sm:px-7">
           <div>
             <p className="text-xs text-neutral-500">

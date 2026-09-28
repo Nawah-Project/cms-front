@@ -8,7 +8,7 @@ import type {
   TaskStatus,
   UpdateTaskInput,
 } from "../types";
-import type { AdminMember } from "../../admin/api/adminApi";
+import type { AdminGroup, AdminMember } from "../../admin/api/adminApi";
 
 const PRIORITIES: TaskPriority[] = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 const STATUSES: TaskStatus[] = ["TODO", "IN_PROGRESS", "BLOCKED", "DONE"];
@@ -16,19 +16,22 @@ const STATUSES: TaskStatus[] = ["TODO", "IN_PROGRESS", "BLOCKED", "DONE"];
 export function TaskFormDialog({
   mode,
   members = [],
+  groups = [],
   selectedMember,
   task,
   onClose,
   onSave,
 }: {
-  mode: "personal" | "assign" | "editPersonal" | "editAssigned";
+  mode: "personal" | "assign" | "assignGroup" | "editPersonal" | "editAssigned";
   members?: AdminMember[];
+  groups?: AdminGroup[];
   selectedMember?: AdminMember;
   task?: ProfessionalTask;
   onClose: () => void;
   onSave: (
     input: CreateTaskInput | UpdateTaskInput,
     memberId?: string,
+    groupId?: string,
   ) => Promise<void>;
 }) {
   const { t } = useI18n();
@@ -53,11 +56,14 @@ export function TaskFormDialog({
   );
   const [step, setStep] = useState("");
   const [memberId, setMemberId] = useState(selectedMember?.id ?? "");
+  const [groupId, setGroupId] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const fieldClass = "field-control w-full";
   const isEditing = mode === "editPersonal" || mode === "editAssigned";
-  const isAdmin = mode === "assign" || mode === "editAssigned";
+  const isGroupAssignment = mode === "assignGroup";
+  const isAdmin =
+    mode === "assign" || mode === "editAssigned" || isGroupAssignment;
 
   useEffect(() => {
     previousFocus.current = document.activeElement as HTMLElement | null;
@@ -78,8 +84,12 @@ export function TaskFormDialog({
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (isAdmin && !selectedMember && !memberId) {
+    if (mode === "assign" && !selectedMember && !memberId) {
       setError(t("professionalDevelopment.memberRequired"));
+      return;
+    }
+    if (isGroupAssignment && !groupId) {
+      setError(t("professionalDevelopment.groupRequired"));
       return;
     }
     setSaving(true);
@@ -100,7 +110,11 @@ export function TaskFormDialog({
                 .map((item) => ({ title: item })),
             }),
       };
-      await onSave(input, (selectedMember?.id ?? memberId) || undefined);
+      await onSave(
+        input,
+        (selectedMember?.id ?? memberId) || undefined,
+        groupId || undefined,
+      );
     } catch {
       setError(t("professionalDevelopment.saveError"));
     } finally {
@@ -127,7 +141,7 @@ export function TaskFormDialog({
             <h2 id="task-form-title" className="text-lg font-semibold">
               {mode === "personal"
                 ? t("professionalDevelopment.addTask")
-                : mode === "assign"
+                : mode === "assign" || isGroupAssignment
                   ? t("professionalDevelopment.assignTaskTitle")
                   : t("professionalDevelopment.editTask")}
             </h2>
@@ -148,6 +162,24 @@ export function TaskFormDialog({
           </button>
         </header>
         <div className="space-y-4 overflow-y-auto px-5 py-4 sm:px-6">
+          {isGroupAssignment && (
+            <label className="grid gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+              {t("professionalDevelopment.group")}
+              <select
+                required
+                value={groupId}
+                onChange={(event) => setGroupId(event.target.value)}
+                className={fieldClass}
+              >
+                <option value="">{t("professionalDevelopment.chooseGroup")}</option>
+                {groups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name} · {group.memberCount}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           {mode === "assign" && !selectedMember && (
             <label className="grid gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
               {t("professionalDevelopment.member")}
@@ -353,7 +385,8 @@ export function TaskFormDialog({
             disabled={
               saving ||
               !title.trim() ||
-              (mode === "assign" && !selectedMember && !memberId)
+              (mode === "assign" && !selectedMember && !memberId) ||
+              (isGroupAssignment && !groupId)
             }
             className="button-primary px-4 py-2 text-sm disabled:opacity-50"
           >
@@ -361,7 +394,7 @@ export function TaskFormDialog({
               ? t("professionalDevelopment.saving")
               : mode === "personal"
                 ? t("professionalDevelopment.createTask")
-                : mode === "assign"
+                : mode === "assign" || isGroupAssignment
                   ? t("professionalDevelopment.assignTask")
                   : t("professionalDevelopment.save")}
           </button>

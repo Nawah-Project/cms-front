@@ -79,6 +79,14 @@ export function AdminMemberDetail({
               >
                 {member.name}
               </h2>
+              {detail?.user.email && (
+                <a
+                  href={`mailto:${detail.user.email}`}
+                  className="mt-1 inline-block text-sm text-info-strong underline underline-offset-2"
+                >
+                  {detail.user.email}
+                </a>
+              )}
             </div>
           </div>
           <button

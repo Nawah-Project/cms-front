@@ -57,6 +57,8 @@ export default {
   unreadFeedback: "توجد ملاحظات جديدة من المنتور",
   assignTask: "إسناد مهمة",
   assignTaskTitle: "إسناد مهمة جديدة",
+  assignGroupTask: "إسناد مهمة لمجموعة",
+  groupTaskCreated: "تم إسناد المهمة إلى {count} من أعضاء مجموعة {group}.",
   addTask: "إضافة مهمة",
   createTask: "إنشاء المهمة",
   personal: "شخصية",
@@ -65,6 +67,7 @@ export default {
   mentorAssigned: "مُسندة من المرشد",
   mentorTaskSource: "مهمة من المرشد",
   memberRequired: "اختر عضوًا لإسناد المهمة إليه.",
+  groupRequired: "اختر مجموعة لإسناد المهمة إلى أعضائها.",
   development: "التطوير المهني",
   giveFeedback: "إرسال ملاحظات",
   adminDevelopmentDescription:

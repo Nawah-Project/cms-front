@@ -186,7 +186,7 @@ export function FeedbackRichContent({
     );
   }
   return (
-    <div className="space-y-3 break-words text-sm text-neutral-700 dark:text-neutral-300">
+    <div className="space-y-3 break-words whitespace-pre-wrap text-sm text-neutral-700 dark:text-neutral-300">
       {rendered}
     </div>
   );

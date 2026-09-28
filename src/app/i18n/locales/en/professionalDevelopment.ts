@@ -58,6 +58,8 @@ export default {
   unreadFeedback: "New mentor feedback is available",
   assignTask: "Assign Task",
   assignTaskTitle: "Assign a task",
+  assignGroupTask: "Assign task to a group",
+  groupTaskCreated: "Task assigned to {count} members of {group}.",
   addTask: "Add Task",
   createTask: "Create Task",
   personal: "Personal",
@@ -66,6 +68,7 @@ export default {
   mentorAssigned: "Mentor Assigned",
   mentorTaskSource: "Assigned by mentor",
   memberRequired: "Choose a member before assigning this task.",
+  groupRequired: "Choose a group before assigning this task.",
   development: "Development",
   giveFeedback: "Give Feedback",
   adminDevelopmentDescription:

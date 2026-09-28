@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useI18n } from "../../i18n";
-import { adminApi, type AdminMember } from "./api/adminApi";
+import { adminApi, type AdminGroup, type AdminMember } from "./api/adminApi";
 import { AdminMemberDetail } from "./components/AdminMemberDetail";
 import {
   EmptyState,
@@ -11,6 +11,8 @@ import {
   relativeTime,
   timeTitle,
 } from "./components/AdminUI";
+import { TaskFormDialog } from "../professional-development/components/TaskFormDialog";
+import type { CreateTaskInput } from "../professional-development/types";
 
 type DevelopmentMember = AdminMember & {
   development: {
@@ -29,12 +31,19 @@ export default function AdminProfessionalDevelopmentPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [groups, setGroups] = useState<AdminGroup[]>([]);
+  const [assignGroupOpen, setAssignGroupOpen] = useState(false);
+  const [notice, setNotice] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(false);
     try {
-      const result = await adminApi.users({ page, limit: 20 });
+      const [result, groupResult] = await Promise.all([
+        adminApi.users({ page, limit: 20 }),
+        adminApi.groups(),
+      ]);
+      setGroups(groupResult.items);
       const users = result.items.filter((member) => member.role === "USER");
       const withDevelopment = await Promise.all(
         users.map(async (member) => {
@@ -73,11 +82,22 @@ export default function AdminProfessionalDevelopmentPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeading
-        eyebrow={t("admin.eyebrow")}
-        title={t("admin.professionalDevelopment")}
-        description={t("professionalDevelopment.adminDevelopmentDescription")}
-      />
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <PageHeading
+          eyebrow={t("admin.eyebrow")}
+          title={t("admin.professionalDevelopment")}
+          description={t("professionalDevelopment.adminDevelopmentDescription")}
+        />
+        <button
+          type="button"
+          onClick={() => setAssignGroupOpen(true)}
+          disabled={!groups.some((group) => group.memberCount > 0)}
+          className="button-primary px-4 py-2 text-sm disabled:opacity-50"
+        >
+          {t("professionalDevelopment.assignGroupTask")}
+        </button>
+      </div>
+      {notice && <p role="status" className="text-sm text-success-strong">{notice}</p>}
       <p className="text-xs text-neutral-500">
         {tp("common.memberCount", members.length)}
       </p>
@@ -168,6 +188,28 @@ export default function AdminProfessionalDevelopmentPage() {
         <AdminMemberDetail
           member={selected}
           onClose={() => setSelected(null)}
+        />
+      )}
+      {assignGroupOpen && (
+        <TaskFormDialog
+          mode="assignGroup"
+          groups={groups.filter((group) => group.memberCount > 0)}
+          onClose={() => setAssignGroupOpen(false)}
+          onSave={async (input, _memberId, groupId) => {
+            if (!groupId) return;
+            const result = await adminApi.createTaskForGroup(
+              groupId,
+              input as CreateTaskInput,
+            );
+            setAssignGroupOpen(false);
+            setNotice(
+              t("professionalDevelopment.groupTaskCreated", {
+                count: result.assignedCount,
+                group: result.groupName,
+              }),
+            );
+            void load();
+          }}
         />
       )}
     </div>

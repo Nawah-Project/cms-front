@@ -69,6 +69,7 @@ export type AdminUserDetail = {
   user: {
     id: string;
     name: string;
+    email: string;
     role: "USER" | "ADMIN";
     createdAt: string;
     portfolioUrl: string | null;
@@ -192,6 +193,11 @@ export const adminApi = {
         method: "POST",
         body: JSON.stringify(input),
       },
+    ),
+  createTaskForGroup: (groupId: string, input: CreateTaskInput) =>
+    request<{ groupId: string; groupName: string; assignedCount: number }>(
+      `/admin/groups/${encodeURIComponent(groupId)}/tasks`,
+      { method: "POST", body: JSON.stringify(input) },
     ),
   updateTask: (taskId: string, input: UpdateTaskInput) =>
     request<ProfessionalTask>(`/admin/tasks/${encodeURIComponent(taskId)}`, {
