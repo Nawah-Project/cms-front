@@ -2,6 +2,8 @@ export default {
   title: "Profile",
   accountDetails: "Account details",
   name: "Name",
+  nameHelp: "This is the name other members see in the app.",
+  nameRequired: "Enter the name you want displayed on your account.",
   email: "Email",
   professionalProfile: "Professional profile",
   completeTitle: "Complete your professional profile",

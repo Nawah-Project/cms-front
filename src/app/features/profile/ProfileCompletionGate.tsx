@@ -5,7 +5,7 @@ import { profileApi, type ProfessionalProfile } from "./profileApi";
 import { ProfileForm } from "./ProfileForm";
 
 export function ProfileCompletionGate({ children }: { children: React.ReactNode }) {
-  const { authenticated, user } = useAuth();
+  const { authenticated, user, setUser } = useAuth();
   const { t } = useI18n();
   const [profile, setProfile] = useState<ProfessionalProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,7 +41,14 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
         <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">{t("profile.accountDetails")}</p>
         <h1 id="profile-completion-title" className="mt-2 text-2xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-100">{t("profile.completeTitle")}</h1>
         <p className="mb-6 mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-400">{t("profile.completeDescription")}</p>
-        <ProfileForm initial={profile} onboarding onSaved={setProfile} />
+        <ProfileForm
+          initial={profile}
+          onboarding
+          onSaved={(saved) => {
+            setProfile(saved);
+            if (user) setUser({ ...user, name: saved.name });
+          }}
+        />
       </section>
     </main>
   );

@@ -18,10 +18,12 @@ export function ProfileForm({
 }) {
   const { t, locale } = useI18n();
   const fileInput = useRef<HTMLInputElement>(null);
+  const [name, setName] = useState(initial.name);
   const [portfolio, setPortfolio] = useState(initial.portfolioUrl ?? "");
   const [file, setFile] = useState<File | null>(null);
   const [uploadState, setUploadState] = useState<"idle" | "selected" | "uploading" | "uploaded" | "error">("idle");
   const [portfolioError, setPortfolioError] = useState("");
+  const [nameError, setNameError] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -62,6 +64,11 @@ export function ProfileForm({
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setError("");
+    if (!name.trim()) {
+      setNameError(t("profile.nameRequired"));
+      return;
+    }
+    setNameError("");
     if (!validatePortfolio()) return;
     if (!file && !initial.hasCv) {
       setError(t("profile.cvRequired"));
@@ -69,7 +76,7 @@ export function ProfileForm({
     }
     setSaving(true);
     try {
-      let next = await profileApi.update(portfolio.trim());
+      let next = await profileApi.update(name.trim(), portfolio.trim());
       if (file) {
         setUploadState("uploading");
         const cv = await profileApi.uploadCv(file);
@@ -88,6 +95,24 @@ export function ProfileForm({
 
   return (
     <form onSubmit={submit} className="space-y-5" noValidate>
+      <div>
+        <label htmlFor="profile-name" className="mb-2 block text-sm font-medium text-neutral-800 dark:text-neutral-200">{t("profile.name")}</label>
+        <input
+          id="profile-name"
+          type="text"
+          autoComplete="name"
+          maxLength={100}
+          required
+          value={name}
+          onChange={(event) => { setName(event.target.value); setNameError(""); }}
+          aria-invalid={Boolean(nameError)}
+          aria-describedby={nameError ? "profile-name-error" : undefined}
+          className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-info-strong focus:ring-2 focus:ring-info-soft dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100"
+        />
+        {!nameError && <p className="mt-1.5 text-xs text-neutral-500">{t("profile.nameHelp")}</p>}
+        {nameError && <p id="profile-name-error" className="mt-1.5 text-xs text-danger-strong">{nameError}</p>}
+      </div>
+
       <div>
         <label htmlFor="portfolio-url" className="mb-2 block text-sm font-medium text-neutral-800 dark:text-neutral-200">{t("profile.portfolio")}</label>
         <input

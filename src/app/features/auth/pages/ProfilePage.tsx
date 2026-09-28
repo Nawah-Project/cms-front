@@ -6,7 +6,7 @@ import { ProfileForm } from "../../profile/ProfileForm";
 import { CvViewer } from "../../profile/CvViewer";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const { t } = useI18n();
   const [profile, setProfile] = useState<ProfessionalProfile | null>(null);
   const [error, setError] = useState(false);
@@ -50,7 +50,14 @@ export default function ProfilePage() {
           <p className="mt-1 text-sm text-neutral-500">{t("profile.completeDescription")}</p>
         </header>
         {error ? <div role="alert" className="text-sm text-danger-strong">{t("profile.loadError")} <button type="button" onClick={load} className="ms-2 underline">{t("common.retry")}</button></div> : !profile ? <p role="status" className="text-sm text-neutral-500">{t("profile.loadingProfile")}</p> : <>
-          <ProfileForm key={profile.cv?.id ?? "no-cv"} initial={profile} onSaved={setProfile} />
+          <ProfileForm
+            key={profile.cv?.id ?? "no-cv"}
+            initial={profile}
+            onSaved={(saved) => {
+              setProfile(saved);
+              if (user) setUser({ ...user, name: saved.name });
+            }}
+          />
           <div className="flex flex-wrap gap-3">
             {profile.portfolioUrl && <a href={profile.portfolioUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800">{t("profile.viewPortfolio")} ↗</a>}
             {profile.hasCv && <button type="button" onClick={() => setViewCv(true)} className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800">{t("profile.viewCv")}</button>}

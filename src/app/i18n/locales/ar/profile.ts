@@ -2,6 +2,8 @@ export default {
   title: "الملف الشخصي",
   accountDetails: "بيانات الحساب",
   name: "الاسم",
+  nameHelp: "هذا هو الاسم الذي يظهر للأعضاء في التطبيق.",
+  nameRequired: "اكتب الاسم الذي تريد ظهوره في حسابك.",
   email: "البريد الإلكتروني",
   professionalProfile: "الملف المهني",
   completeTitle: "أكمل ملفك المهني",

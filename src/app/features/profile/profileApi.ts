@@ -48,10 +48,10 @@ async function jsonRequest<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const profileApi = {
   get: () => jsonRequest<ProfessionalProfile>("/profile"),
-  update: (portfolioUrl: string | null) =>
+  update: (name: string, portfolioUrl: string | null) =>
     jsonRequest<ProfessionalProfile>("/profile", {
       method: "PATCH",
-      body: JSON.stringify({ portfolioUrl }),
+      body: JSON.stringify({ name, portfolioUrl }),
     }),
   uploadCv: async (file: File): Promise<CvMetadata> => {
     const form = new FormData();
