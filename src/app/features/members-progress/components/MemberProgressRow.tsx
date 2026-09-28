@@ -232,9 +232,20 @@ export function MemberProgressRow(props: MemberRowState) {
     return (
       <>
         <tr
-          className={`hidden border-t border-neutral-200 transition-colors hover:bg-neutral-50 md:table-row ${isCurrentUser ? "bg-info-soft/20" : ""}`}
+          tabIndex={0}
+          aria-expanded={expanded}
+          aria-label={`${member.name}: ${expanded ? t("members.hideApplications") : t("members.viewApplications")}`}
+          onClick={onToggle}
+          onKeyDown={(event) => {
+            if (event.target !== event.currentTarget) return;
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              onToggle();
+            }
+          }}
+          className={`hidden cursor-pointer border-t border-neutral-200 transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-info-strong md:table-row ${isCurrentUser ? "bg-info-soft/20" : ""}`}
         >
-          <th scope="row" className="data-table-cell ps-5 text-start sm:ps-6">
+          <th scope="row" onClick={(event) => event.stopPropagation()} className="data-table-cell ps-5 text-start sm:ps-6">
             <MemberIdentity
               member={member}
               isCurrentUser={isCurrentUser}
@@ -281,9 +292,20 @@ export function MemberProgressRow(props: MemberRowState) {
   }
   return (
     <article
-      className={`rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition-colors hover:bg-neutral-50 ${isCurrentUser ? "border-s-2 border-s-info-strong" : ""}`}
+      tabIndex={0}
+      aria-expanded={expanded}
+      aria-label={`${member.name}: ${expanded ? t("members.hideApplications") : t("members.viewApplications")}`}
+      onClick={onToggle}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onToggle();
+        }
+      }}
+      className={`cursor-pointer rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-info-strong ${isCurrentUser ? "border-s-2 border-s-info-strong" : ""}`}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3" onClick={(event) => event.stopPropagation()}>
         <MemberIdentity
           member={member}
           isCurrentUser={isCurrentUser}
@@ -312,6 +334,7 @@ export function MemberProgressRow(props: MemberRowState) {
       <div
         id={`member-details-${member.memberId}-mobile`}
         hidden={!expanded}
+        onClick={(event) => event.stopPropagation()}
         className="member-detail-enter mt-4 border-t border-neutral-200 pt-2"
       >
         {detail}

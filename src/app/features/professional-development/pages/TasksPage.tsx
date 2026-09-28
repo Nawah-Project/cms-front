@@ -29,6 +29,7 @@ export default function TasksPage() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedTaskId = searchParams.get("task");
+  const activeFilter = searchParams.get("filter");
   const [tasks, setTasks] = useState<ProfessionalTask[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -71,16 +72,55 @@ export default function TasksPage() {
     void load();
   }, [load]);
 
+  const filteredTasks = useMemo(() => {
+    if (!activeFilter || activeFilter === "active") {
+      return activeFilter === "active"
+        ? tasks.filter((task) => task.status !== "DONE")
+        : tasks;
+    }
+    if (activeFilter === "in-progress") {
+      return tasks.filter((task) => task.status === "IN_PROGRESS");
+    }
+    if (activeFilter === "overdue") {
+      return tasks.filter((task) => task.overdue && task.status !== "DONE");
+    }
+    if (activeFilter === "upcoming") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const nextWeek = new Date(today);
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      return tasks.filter((task) => {
+        if (!task.dueDate || task.overdue || task.status === "DONE") return false;
+        const dueDate = new Date(task.dueDate);
+        dueDate.setHours(0, 0, 0, 0);
+        return dueDate >= today && dueDate <= nextWeek;
+      });
+    }
+    return tasks;
+  }, [activeFilter, tasks]);
+  const filterLabel = activeFilter
+    ? ({
+        active: "activeTasks",
+        "in-progress": "inProgressCount",
+        upcoming: "dueSoonCount",
+        overdue: "overdueCount",
+      } as Record<string, string>)[activeFilter]
+    : undefined;
+
   const byStatus = useMemo(
     () =>
       Object.fromEntries(
         COLUMNS.map(({ status }) => [
           status,
-          tasks.filter((task) => task.status === status),
+          filteredTasks.filter((task) => task.status === status),
         ]),
       ) as Record<TaskStatus, ProfessionalTask[]>,
-    [tasks],
+    [filteredTasks],
   );
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeFilter]);
   const selectTask = (taskId: string | null) => {
     const next = new URLSearchParams(searchParams);
     if (taskId) next.set("task", taskId);
@@ -156,6 +196,28 @@ export default function TasksPage() {
       )}
 
       <ProfessionalDevelopmentNav />
+
+      {filterLabel && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-info-border bg-info-soft/50 px-4 py-3">
+          <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+            {t("professionalDevelopment.showingFilteredTasks", {
+              filter: t(`professionalDevelopment.${filterLabel}`),
+              count: filteredTasks.length,
+            })}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              const next = new URLSearchParams(searchParams);
+              next.delete("filter");
+              setSearchParams(next, { preventScrollReset: true });
+            }}
+            className="text-sm font-semibold text-info-strong underline underline-offset-4"
+          >
+            {t("professionalDevelopment.clearTaskFilter")}
+          </button>
+        </div>
+      )}
 
       {moveError && (
         <p role="alert" className="rounded-lg border border-danger-border bg-danger-soft px-3 py-2 text-sm text-danger-strong">
@@ -263,7 +325,7 @@ export default function TasksPage() {
               ))}
             </div>
           </div>
-          {totalPages > 1 && (
+          {totalPages > 1 && !activeFilter && (
             <nav
               aria-label={t("professionalDevelopment.taskPagination")}
               className="flex items-center justify-center gap-3 border-t border-border pt-5"

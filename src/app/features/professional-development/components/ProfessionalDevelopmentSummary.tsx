@@ -117,34 +117,34 @@ export function ProfessionalDevelopmentSummary() {
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              ["activeTasks", summary.totalActiveTasks, "text-info-strong"],
-              ["inProgressCount", summary.IN_PROGRESS, "text-info-strong"],
-              [
-                "dueSoonCount",
-                summary.upcomingDeadlines.length,
-                "text-warning-strong",
-              ],
-              [
-                "overdueCount",
-                summary.overdueCount,
-                summary.overdueCount
+              { key: "activeTasks", value: summary.totalActiveTasks, tone: "text-info-strong", filter: "active" },
+              { key: "inProgressCount", value: summary.IN_PROGRESS, tone: "text-info-strong", filter: "in-progress" },
+              { key: "dueSoonCount", value: summary.upcomingDeadlines.length, tone: "text-warning-strong", filter: "upcoming" },
+              {
+                key: "overdueCount",
+                value: summary.overdueCount,
+                tone: summary.overdueCount
                   ? "text-danger-strong"
                   : "text-neutral-700 dark:text-neutral-300",
-              ],
-            ].map(([key, value, tone]) => (
-              <div
-                key={String(key)}
-                className="rounded-xl border border-border bg-surface px-4 py-3"
+                filter: "overdue",
+              },
+            ].map(({ key, value, tone, filter }) => (
+              <Link
+                key={key}
+                to={`/professional-development?filter=${filter}`}
+                aria-label={`${t(`professionalDevelopment.${key}`)}: ${number(Number(value))}`}
+                className="group rounded-xl border border-border bg-surface px-4 py-3 transition hover:border-border-hover hover:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info-strong"
               >
                 <p className="text-xs text-neutral-500">
-                  {t(`professionalDevelopment.${key}`)}
+                  <span>{t(`professionalDevelopment.${key}`)}</span>
+                  <span className="sr-only"> — {t("professionalDevelopment.openFilteredTasks")}</span>
                 </p>
                 <p
                   className={`mt-1 text-xl font-semibold tabular-nums ${tone}`}
                 >
                   {number(Number(value))}
                 </p>
-              </div>
+              </Link>
             ))}
           </div>
           {!relevantTasks.length ? (
