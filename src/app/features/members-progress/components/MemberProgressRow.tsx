@@ -111,7 +111,9 @@ function MemberDetailContent({
   }
   if (detail.applications.length === 0) {
     return (
-      <p className="py-5 text-sm text-neutral-500">{t("members.noApplications")}</p>
+      <p className="w-full py-5 text-center text-sm text-neutral-500">
+        {t("members.noApplications")}
+      </p>
     );
   }
   return (
@@ -228,6 +230,11 @@ export function MemberProgressRow(props: MemberRowState) {
       onRetry={props.onRetry}
     />
   ) : null;
+  const noApplications =
+    expanded &&
+    !props.detailLoading &&
+    !props.detailError &&
+    props.detail?.applications.length === 0;
   if (variant === "desktop") {
     return (
       <>
@@ -282,7 +289,13 @@ export function MemberProgressRow(props: MemberRowState) {
             colSpan={6}
             className="px-6 pb-5"
           >
-            <div className="ms-[24%] border-s border-neutral-300/80 ps-4 dark:border-neutral-700">
+            <div
+              className={
+                noApplications
+                  ? "flex min-h-20 items-center justify-center"
+                  : "ms-[24%] border-s border-neutral-300/80 ps-4 dark:border-neutral-700"
+              }
+            >
               {detail}
             </div>
           </td>

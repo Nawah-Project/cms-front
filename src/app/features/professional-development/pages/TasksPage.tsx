@@ -14,8 +14,6 @@ import { TaskCard, TaskSection } from "../components/TaskPresentation";
 import { ProfessionalDevelopmentNav } from "../components/ProfessionalDevelopmentNav";
 import { TaskFormDialog } from "../components/TaskFormDialog";
 import { PlusIcon } from "../../../components/Icons";
-import { useAuth } from "../../auth/store/authStore";
-import { adminApi, type AdminMember } from "../../admin/api/adminApi";
 
 const COLUMNS: Array<{ status: TaskStatus; key: string }> = [
   { status: "TODO", key: "toDo" },
@@ -26,7 +24,6 @@ const COLUMNS: Array<{ status: TaskStatus; key: string }> = [
 
 export default function TasksPage() {
   const { t } = useI18n();
-  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedTaskId = searchParams.get("task");
   const activeFilter = searchParams.get("filter");
@@ -36,24 +33,10 @@ export default function TasksPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [taskFormOpen, setTaskFormOpen] = useState(false);
-  const [members, setMembers] = useState<AdminMember[]>([]);
-  const [memberLoadError, setMemberLoadError] = useState(false);
   const [movingTaskIds, setMovingTaskIds] = useState<Set<string>>(() => new Set());
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<TaskStatus | null>(null);
   const [moveError, setMoveError] = useState(false);
-  const isAdmin = user?.role === "ADMIN";
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    void adminApi
-      .users({ page: 1, limit: 100 })
-      .then((result) =>
-        setMembers(result.items.filter((member) => member.role === "USER")),
-      )
-      .catch(() => setMemberLoadError(true));
-  }, [isAdmin]);
-
   const load = useCallback(async () => {
     setLoading(true);
     setError(false);
@@ -181,19 +164,9 @@ export default function TasksPage() {
           className="button-primary inline-flex min-h-11 items-center gap-2 px-4 py-2 text-sm"
         >
           <PlusIcon className="h-4 w-4" />
-          {t(
-            isAdmin
-              ? "professionalDevelopment.assignTask"
-              : "professionalDevelopment.addTask",
-          )}
+          {t("professionalDevelopment.addTask")}
         </button>
       </header>
-
-      {memberLoadError && isAdmin && (
-        <p role="alert" className="text-sm text-danger-strong">
-          {t("professionalDevelopment.noMembers")}
-        </p>
-      )}
 
       <ProfessionalDevelopmentNav />
 
@@ -271,11 +244,7 @@ export default function TasksPage() {
             className="button-primary mt-5 inline-flex min-h-10 items-center gap-2 px-4 py-2 text-sm"
           >
             <PlusIcon className="h-4 w-4" />
-            {t(
-              isAdmin
-                ? "professionalDevelopment.assignTask"
-                : "professionalDevelopment.addTask",
-            )}
+            {t("professionalDevelopment.addTask")}
           </button>
         </section>
       ) : (
@@ -365,16 +334,10 @@ export default function TasksPage() {
       />
       {taskFormOpen && (
         <TaskFormDialog
-          mode={isAdmin ? "assign" : "personal"}
-          members={members}
+          mode="personal"
           onClose={() => setTaskFormOpen(false)}
-          onSave={async (input, memberId) => {
-            if (isAdmin) {
-              if (!memberId) throw new Error("Member required");
-              await adminApi.createTask(memberId, input as CreateTaskInput);
-            } else {
-              await api.createTask(input as CreateTaskInput);
-            }
+          onSave={async (input) => {
+            await api.createTask(input as CreateTaskInput);
             setTaskFormOpen(false);
             await load();
           }}
