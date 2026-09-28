@@ -60,9 +60,11 @@ export function ProgressStageIcon({ stage }: { stage: ProgressStage }) {
 export function ProgressCount({
   stage,
   count,
+  highlightSuccess = false,
 }: {
   stage: ProgressStage;
   count: number;
+  highlightSuccess?: boolean;
 }) {
   const { t, number } = useI18n();
   const label = t(`applications.${stage === "applied" ? "submitted" : stage}`);
@@ -77,10 +79,15 @@ export function ProgressCount({
     );
   }
 
+  const stageStyle =
+    stage === "closed" && highlightSuccess
+      ? "border-2 border-green-800 bg-green-50 text-green-950 dark:border-green-400 dark:bg-green-950/40 dark:text-green-100"
+      : STAGE_STYLES[stage];
+
   return (
     <span
       aria-label={t("members.stageApplicationCount", { stage: label, count: number(count) })}
-      className={`mx-auto flex min-h-12 w-full max-w-44 items-center justify-center rounded-xl border px-3 py-2 text-lg font-semibold tabular-nums shadow-xs ${STAGE_STYLES[stage]}`}
+      className={`mx-auto flex min-h-12 w-full max-w-44 items-center justify-center rounded-xl border px-3 py-2 text-lg font-semibold tabular-nums shadow-xs ${stageStyle}`}
     >
       {number(count)}
     </span>

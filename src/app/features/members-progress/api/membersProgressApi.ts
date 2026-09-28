@@ -80,6 +80,7 @@ function normalizeMember(value: unknown): MemberProgress {
     portfolioUrl:
       typeof member.portfolioUrl === "string" ? member.portfolioUrl : null,
     hasCv: member.hasCv === true,
+    hasAcceptedApplication: member.hasAcceptedApplication === true,
     isCurrentUser:
       typeof member.isCurrentUser === "boolean"
         ? member.isCurrentUser

@@ -249,7 +249,11 @@ export function MemberProgressRow(props: MemberRowState) {
               key={stage}
             className="data-table-cell px-2 py-5 text-center sm:px-3"
             >
-              <ProgressCount stage={stage} count={member.counts[stage]} />
+              <ProgressCount
+                stage={stage}
+                count={member.counts[stage]}
+                highlightSuccess={member.hasAcceptedApplication}
+              />
               <span className="sr-only">{stage}</span>
             </td>
           ))}
@@ -297,7 +301,11 @@ export function MemberProgressRow(props: MemberRowState) {
               <ProgressStageIcon stage={stage} />
               {t(`applications.${stage === "applied" ? "submitted" : stage}`)}
             </p>
-            <ProgressCount stage={stage} count={member.counts[stage]} />
+            <ProgressCount
+              stage={stage}
+              count={member.counts[stage]}
+              highlightSuccess={member.hasAcceptedApplication}
+            />
           </div>
         ))}
       </div>

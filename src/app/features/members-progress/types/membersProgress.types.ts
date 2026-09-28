@@ -21,6 +21,7 @@ export interface MemberProgress {
   avatar: string | null;
   portfolioUrl: string | null;
   hasCv: boolean;
+  hasAcceptedApplication: boolean;
   isCurrentUser?: boolean;
   lastUpdatedAt: string | null;
   counts: MemberProgressCounts;
