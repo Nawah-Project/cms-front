@@ -83,7 +83,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               src="/nawah-logo.svg"
               alt=""
               aria-hidden="true"
-              className="h-10 w-10 shrink-0 rounded-xl border border-neutral-200 object-cover dark:border-neutral-700"
+              className="h-10 w-10 shrink-0 rounded-md border border-neutral-200 object-cover dark:border-neutral-700"
             />
             {t("common.brand")}
           </Link>

@@ -195,7 +195,7 @@ export function AppSidebar() {
             <img
               src="/nawah-logo.svg"
               alt=""
-              className="h-9 w-9 shrink-0 object-contain"
+              className="h-9 w-9 shrink-0 rounded-md object-contain"
             />
             <span className="min-w-0 pt-0.5">
               <span className="block whitespace-normal break-words leading-tight">{t("common.brand")}</span>
@@ -227,7 +227,7 @@ export function AppSidebar() {
               <img
                 src="/nawah-logo.svg"
                 alt=""
-                className="h-8 w-8 shrink-0 object-contain"
+                className="h-8 w-8 shrink-0 rounded-md object-contain"
               />
               <span className="min-w-0 pt-0.5">
                 <span className="block whitespace-normal break-words leading-tight">{t("common.brand")}</span>
