@@ -75,16 +75,19 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     <main className="flex min-h-screen items-center justify-center bg-app px-5 py-12 dark:bg-neutral-950">
       <section className="w-full max-w-md rounded-2xl border border-border-strong bg-surface px-7 py-8 shadow-sm sm:px-9 sm:py-10 dark:border-neutral-800 dark:bg-neutral-900">
         <div className="flex items-center justify-between gap-3">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-neutral-900 dark:text-white"
-        >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-900 bg-neutral-100 text-xs font-bold">
-            J
-          </span>
-          {t("common.brand")}
-        </Link>
-        <LanguageSwitcher />
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-neutral-900 dark:text-white"
+          >
+            <img
+              src="/nawah-logo.svg"
+              alt=""
+              aria-hidden="true"
+              className="h-10 w-10 shrink-0 rounded-xl border border-neutral-200 object-cover dark:border-neutral-700"
+            />
+            {t("common.brand")}
+          </Link>
+          <LanguageSwitcher />
         </div>
         <h1 className="mt-9 text-3xl font-semibold leading-tight tracking-tight text-neutral-950 dark:text-neutral-100">
           {registering ? t("auth.registerTitle") : t("auth.loginTitle")}
