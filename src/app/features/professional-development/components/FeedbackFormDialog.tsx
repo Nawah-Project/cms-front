@@ -34,18 +34,42 @@ const TAGS: FeedbackTag[] = [
   "GENERAL",
 ];
 
-function plainContent(value: string) {
+function escapeHtml(value: string) {
   return value
-    .replace(/<\/(p|h[2-4]|li|blockquote|pre)>/gi, "\n")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<[^>]*>/g, "")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
-    .trim();
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function sanitizeFeedbackMarkup(value: string) {
+  if (typeof DOMParser === "undefined") return escapeHtml(value);
+  const document = new DOMParser().parseFromString(value, "text/html");
+  const serialize = (node: Node): string => {
+    if (node.nodeType === Node.TEXT_NODE)
+      return escapeHtml(node.nodeValue ?? "");
+    if (!(node instanceof Element)) return "";
+    const children = Array.from(node.childNodes, serialize).join("");
+    switch (node.tagName.toLowerCase()) {
+      case "br":
+        return "<br>";
+      case "b":
+      case "strong":
+        return `<strong>${children}</strong>`;
+      case "i":
+      case "em":
+        return `<em>${children}</em>`;
+      case "u":
+        return `<u>${children}</u>`;
+      case "p":
+      case "div":
+        return children ? `<p>${children}</p>` : "<p><br></p>";
+      default:
+        return children;
+    }
+  };
+  return Array.from(document.body.childNodes, serialize).join("").trim();
 }
 
 export function FeedbackFormDialog({
@@ -65,12 +89,11 @@ export function FeedbackFormDialog({
 }) {
   const { t } = useI18n();
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const previousFocus = useRef<HTMLElement | null>(null);
   const [title, setTitle] = useState(post?.title ?? "");
-  const [content, setContent] = useState(
-    post ? plainContent(post.content) : "",
-  );
+  const [content, setContent] = useState(post?.content ?? "");
   const [visibility, setVisibility] = useState<FeedbackVisibility>(
     post?.visibility ?? initialVisibility,
   );
@@ -156,6 +179,12 @@ export function FeedbackFormDialog({
     };
   }, [loadLookups]);
 
+  useEffect(() => {
+    const safeContent = sanitizeFeedbackMarkup(post?.content ?? "");
+    if (editorRef.current) editorRef.current.innerHTML = safeContent;
+    setContent(safeContent);
+  }, [post?.id]);
+
   const loadMoreMembers = async () => {
     const nextPage = memberPage + 1;
     setLookupError(false);
@@ -197,6 +226,15 @@ export function FeedbackFormDialog({
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setError("");
+    const formattedContent = sanitizeFeedbackMarkup(content);
+    if (!formattedContent.replace(/<[^>]*>/g, "").trim()) {
+      setError(t("professionalDevelopment.formError"));
+      return;
+    }
+    if (formattedContent.length > 20000) {
+      setError(t("professionalDevelopment.contentTooLong"));
+      return;
+    }
     if (!audienceReady) {
       setError(t("professionalDevelopment.chooseAudience"));
       return;
@@ -218,7 +256,7 @@ export function FeedbackFormDialog({
 
     const input: CreateFeedbackInput = {
       title: title.trim(),
-      content: content.trim(),
+      content: formattedContent,
       visibility,
       context,
       tags,
@@ -257,6 +295,13 @@ export function FeedbackFormDialog({
       .toLocaleLowerCase()
       .includes(memberSearch.trim().toLocaleLowerCase()),
   );
+
+  const applyFormat = (command: "bold" | "italic" | "underline") => {
+    editorRef.current?.focus();
+    document.execCommand(command);
+    if (editorRef.current)
+      setContent(sanitizeFeedbackMarkup(editorRef.current.innerHTML));
+  };
 
   return (
     <dialog
@@ -318,22 +363,62 @@ export function FeedbackFormDialog({
                 className="field-control"
               />
             </label>
-            <label className="grid gap-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              {t("professionalDevelopment.contentLabel")}
-              <textarea
-                required
-                minLength={1}
-                maxLength={20000}
-                rows={7}
-                value={content}
-                onChange={(event) => setContent(event.target.value)}
-                placeholder={t("professionalDevelopment.contentPlaceholder")}
-                className="field-control min-h-40 resize-y leading-6"
-              />
+            <div className="grid gap-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              <span>{t("professionalDevelopment.contentLabel")}</span>
+              <div className="overflow-hidden rounded-lg border border-border bg-surface focus-within:border-neutral-500 focus-within:ring-2 focus-within:ring-neutral-900/15 dark:focus-within:ring-white/15">
+                <div
+                  role="toolbar"
+                  aria-label={t("professionalDevelopment.textFormatting")}
+                  className="flex items-center gap-1 border-b border-border bg-neutral-100 px-2 py-1.5 dark:bg-neutral-800"
+                >
+                  {([
+                    ["bold", "B", "boldText"],
+                    ["italic", "I", "italicText"],
+                    ["underline", "U", "underlineText"],
+                  ] as const).map(([command, label, accessibleLabel]) => (
+                    <button
+                      key={command}
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => applyFormat(command)}
+                      aria-label={t(`professionalDevelopment.${accessibleLabel}`)}
+                      title={t(`professionalDevelopment.${accessibleLabel}`)}
+                      className="flex h-8 min-w-9 items-center justify-center rounded-md text-neutral-950 hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-neutral-950 dark:text-white dark:hover:bg-neutral-700 dark:focus-visible:outline-white"
+                    >
+                      <span className={command === "bold" ? "font-bold" : command === "italic" ? "italic" : "underline"}>
+                        {label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <div className="relative">
+                  <div
+                    ref={editorRef}
+                    contentEditable
+                    suppressContentEditableWarning
+                    role="textbox"
+                    aria-multiline="true"
+                    aria-required="true"
+                    aria-label={t("professionalDevelopment.contentLabel")}
+                    dir="auto"
+                    onInput={(event) =>
+                      setContent(
+                        sanitizeFeedbackMarkup(event.currentTarget.innerHTML),
+                      )
+                    }
+                    className="min-h-40 max-h-[45dvh] overflow-y-auto whitespace-pre-wrap px-3 py-2 leading-6 text-neutral-950 outline-none dark:text-neutral-100"
+                  />
+                  {!content.replace(/<[^>]*>/g, "").trim() && (
+                    <span className="pointer-events-none absolute start-3 top-2 text-neutral-500">
+                      {t("professionalDevelopment.contentPlaceholder")}
+                    </span>
+                  )}
+                </div>
+              </div>
               <span className="text-xs font-normal text-neutral-500">
                 {t("professionalDevelopment.contentHelp")}
               </span>
-            </label>
+            </div>
           </div>
 
           <fieldset className="space-y-3 rounded-xl border border-border p-4 sm:p-5">

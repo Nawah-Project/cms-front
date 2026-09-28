@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ExternalLinkIcon } from "../../../components/Icons";
 import { useI18n } from "../../../i18n";
 import { FeedbackRichContent } from "./FeedbackRichContent";
@@ -124,6 +125,9 @@ export function FeedbackCard({
   archiving?: boolean;
 }) {
   const { t, date } = useI18n();
+  const [expanded, setExpanded] = useState(false);
+  const plainLength = post.content.replace(/<[^>]*>/g, "").trim().length;
+  const canExpand = plainLength > 180 || (post.content.match(/\n/g)?.length ?? 0) > 3;
   const initials = post.author.name
     .trim()
     .split(/\s+/)
@@ -192,10 +196,22 @@ export function FeedbackCard({
           <FeedbackContextTag context={post.context} />
           {post.tags.length > 0 && <FeedbackTagList tags={post.tags} />}
         </span>
-        <span className="mt-3 block text-left">
-          <FeedbackRichContent content={post.content} preview />
-        </span>
       </button>
+      <div className="px-4 pb-4 text-start sm:px-5">
+        <FeedbackRichContent content={post.content} preview={!expanded} />
+        {canExpand && (
+          <button
+            type="button"
+            onClick={() => setExpanded((current) => !current)}
+            aria-expanded={expanded}
+            className="mt-2 text-sm font-bold text-neutral-950 underline decoration-2 underline-offset-2 hover:text-neutral-700 focus-visible:outline-2 focus-visible:outline-info-strong dark:text-white dark:hover:text-neutral-300"
+          >
+            {t(
+              `professionalDevelopment.${expanded ? "showLess" : "showMore"}`,
+            )}
+          </button>
+        )}
+      </div>
       {post.resources[0] && (
         <div className="px-4 pb-4 sm:px-5 sm:pb-5">
           <FeedbackResourceCard resource={post.resources[0]} />

@@ -153,7 +153,7 @@ function MemberFeedbackPage() {
                   type="button"
                   aria-current={selected ? "page" : undefined}
                   onClick={() => selectScope(item)}
-                  className={`flex min-h-11 shrink-0 items-center justify-between gap-3 rounded-lg px-3 py-2 text-start text-sm transition-colors focus-visible:outline-2 focus-visible:outline-info-strong lg:w-full ${selected ? "bg-neutral-100 font-medium text-neutral-950 dark:bg-neutral-800 dark:text-neutral-100" : "text-neutral-600 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-900"}`}
+                  className={`flex min-h-11 shrink-0 items-center justify-between gap-3 rounded-lg px-3 py-2 text-start text-sm transition-colors focus-visible:outline-2 focus-visible:outline-info-strong lg:w-full ${selected ? "border border-neutral-950 bg-neutral-950 font-semibold text-white shadow-sm dark:border-white dark:bg-white dark:text-neutral-950" : "font-medium text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-900"}`}
                 >
                   <span>
                     {t(

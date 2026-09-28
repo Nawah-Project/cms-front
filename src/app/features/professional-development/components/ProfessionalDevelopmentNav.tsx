@@ -26,7 +26,7 @@ export function ProfessionalDevelopmentNav({
                 : "/professional-development/feedback"
             }
             aria-current={selected ? "page" : undefined}
-            className={`inline-flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-info-strong sm:px-4 ${selected ? "bg-neutral-900 font-medium text-white dark:bg-white dark:text-neutral-900" : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"}`}
+            className={`inline-flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-info-strong sm:px-4 ${selected ? "border border-neutral-950 bg-neutral-950 font-semibold text-white shadow-sm dark:border-white dark:bg-white dark:text-neutral-950" : "font-medium text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800"}`}
           >
             {t(
               `professionalDevelopment.${item === "tasks" ? "tasks" : "feedbackInsights"}`,

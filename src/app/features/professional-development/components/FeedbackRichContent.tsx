@@ -173,20 +173,14 @@ export function FeedbackRichContent({
   const tree = parseSafeContent(content);
   const rendered = tree.children.map((node, index) => renderNode(node, index));
   if (preview) {
-    const plain = content
-      .replace(/<\/(p|h[2-4]|li|blockquote|pre)>/gi, " ")
-      .replace(/<br\s*\/?>/gi, " ")
-      .replace(/<[^>]*>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
     return (
-      <span className="line-clamp-3 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-        {decodeEntities(plain)}
-      </span>
+      <div className="line-clamp-3 break-words whitespace-pre-wrap text-sm leading-6 text-neutral-900 dark:text-neutral-100">
+        {rendered}
+      </div>
     );
   }
   return (
-    <div className="space-y-3 break-words whitespace-pre-wrap text-sm text-neutral-700 dark:text-neutral-300">
+    <div className="space-y-3 break-words whitespace-pre-wrap text-sm text-neutral-900 dark:text-neutral-100">
       {rendered}
     </div>
   );
