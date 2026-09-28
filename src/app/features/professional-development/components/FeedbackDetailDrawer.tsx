@@ -78,9 +78,9 @@ export function FeedbackDetailDrawer({
         if (event.target === dialogRef.current) onClose();
       }}
       aria-labelledby="feedback-detail-title"
-      className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-1.5rem)] max-w-3xl overflow-hidden rounded-2xl border border-border bg-surface p-0 text-start text-neutral-900 shadow-2xl backdrop:bg-neutral-950/50 dark:text-neutral-100 sm:w-[calc(100%-3rem)]"
+      className="fixed inset-y-0 end-0 m-0 h-dvh max-h-none w-full max-w-2xl overflow-hidden rounded-s-2xl rounded-e-none border border-border bg-surface p-0 text-start text-neutral-900 shadow-2xl backdrop:bg-neutral-950/50 dark:text-neutral-100 sm:w-[min(42rem,calc(100%-2rem))]"
     >
-      <section className="flex max-h-[92dvh] flex-col overflow-hidden">
+      <section className="flex h-full max-h-full flex-col overflow-hidden">
           <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-8">
             <div className="min-w-0">
               <p className="text-xs text-neutral-500">

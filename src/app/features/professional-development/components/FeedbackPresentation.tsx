@@ -25,7 +25,7 @@ const TAG_KEYS: Record<FeedbackTag, string> = {
 export function FeedbackContextTag({ context }: { context: FeedbackContext }) {
   const { t } = useI18n();
   return (
-    <span className="inline-flex rounded-md border border-border-subtle bg-neutral-50 px-2 py-1 text-[11px] font-medium text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300">
+    <span className="inline-flex rounded-md border border-neutral-300 bg-neutral-100 px-2 py-1 text-[11px] font-semibold text-neutral-800 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100">
       {t(`professionalDevelopment.${CONTEXT_KEYS[context]}`)}
     </span>
   );
@@ -44,7 +44,7 @@ export function FeedbackTagList({ tags }: { tags: FeedbackTag[] }) {
         <span
           role="listitem"
           key={tag}
-          className="rounded-md bg-neutral-100 px-2 py-1 text-[11px] text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+          className="rounded-md border border-neutral-300 bg-neutral-100 px-2 py-1 text-[11px] font-medium text-neutral-800 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
         >
           {t(`professionalDevelopment.${TAG_KEYS[tag]}`)}
         </span>
@@ -159,17 +159,17 @@ export function FeedbackCard({
             </time>
           </span>
           {scope === "for-you" && (
-            <span className="rounded-md bg-info-soft px-2 py-1 text-[11px] font-medium text-info-strong">
+            <span className="rounded-md border border-info-border bg-info-soft px-2 py-1 text-[11px] font-semibold text-info-strong">
               {t("professionalDevelopment.forYou")}
             </span>
           )}
           {scope === "shared" && (
-            <span className="text-xs text-neutral-500">
+            <span className="rounded-md border border-neutral-300 bg-neutral-100 px-2 py-1 text-xs font-medium text-neutral-800 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100">
               <FeedbackScopeLabel visibility={post.visibility} />
             </span>
           )}
           {scope === "admin" && (
-            <span className="text-xs text-neutral-500">
+            <span className="rounded-md border border-neutral-300 bg-neutral-100 px-2 py-1 text-xs font-medium text-neutral-800 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100">
               <FeedbackScopeLabel visibility={post.visibility} />
             </span>
           )}

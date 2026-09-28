@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useAuth } from "../../auth/store/authStore";
 import { PageHeading } from "../../admin/components/AdminUI";
@@ -12,6 +12,7 @@ import { FeedbackDetailDrawer } from "../components/FeedbackDetailDrawer";
 import { FeedbackFormDialog } from "../components/FeedbackFormDialog";
 
 const PAGE_SIZE = 20;
+const FEEDBACK_LOAD_LIMIT = 50;
 const CONTEXTS: FeedbackContext[] = [
   "APPLICATION",
   "INTERVIEW",
@@ -31,15 +32,18 @@ function MemberFeedbackPage() {
   const { t, number } = useI18n();
   const [searchParams, setSearchParams] = useSearchParams();
   const rawScope = searchParams.get("scope");
-  const scope: FeedbackScope = rawScope === "shared" ? "shared" : "for-you";
+  const scope: "all" | FeedbackScope =
+    rawScope === "all" ? "all" : rawScope === "shared" ? "shared" : "for-you";
   const feedbackId = searchParams.get("feedback");
   const [posts, setPosts] = useState<FeedbackPost[]>([]);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const postsRef = useRef(posts);
+  postsRef.current = posts;
   const [unreadCount, setUnreadCount] = useState({ forYou: 0, shared: 0 });
   const [contextFilter, setContextFilter] = useState<FeedbackContext | "ALL">(
     "ALL",
   );
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -47,35 +51,54 @@ function MemberFeedbackPage() {
     setLoading(true);
     setError(false);
     try {
-      const [result, unread] = await Promise.all([
-        api.getFeedback({ scope, page, limit: PAGE_SIZE }),
+      const scopes: FeedbackScope[] =
+        scope === "all" ? ["for-you", "shared"] : [scope];
+      const [results, unread] = await Promise.all([
+        Promise.all(
+          scopes.map((item) =>
+            api.getFeedback({ scope: item, page: 1, limit: FEEDBACK_LOAD_LIMIT }),
+          ),
+        ),
         api.getFeedbackUnreadCount(),
       ]);
-      setPosts(result.items);
-      setTotalPages(result.totalPages);
+      const merged = results
+        .flatMap((result) => result.items)
+        .sort(
+          (a, b) =>
+            new Date(b.publishedAt).getTime() -
+            new Date(a.publishedAt).getTime(),
+        );
+      setPosts(merged);
       setUnreadCount({ forYou: unread.forYou, shared: unread.shared });
     } catch {
       setError(true);
     } finally {
       setLoading(false);
     }
-  }, [page, scope]);
+  }, [scope]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const visiblePosts = useMemo(
-    () =>
-      contextFilter === "ALL"
-        ? posts
-        : posts.filter((post) => post.context === contextFilter),
-    [contextFilter, posts],
-  );
+  const filteredPosts = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    return posts.filter((post) => {
+      const matchesContext =
+        contextFilter === "ALL" || post.context === contextFilter;
+      const matchesSearch =
+        !query ||
+        `${post.title}\n${post.content}`.toLocaleLowerCase().includes(query);
+      return matchesContext && matchesSearch;
+    });
+  }, [contextFilter, posts, search]);
+  const visiblePosts = filteredPosts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const filteredTotalPages = Math.max(1, Math.ceil(filteredPosts.length / PAGE_SIZE));
 
-  const selectScope = (next: FeedbackScope) => {
+  const selectScope = (next: "all" | FeedbackScope) => {
     setPage(1);
     setContextFilter("ALL");
+    setSearch("");
     setSearchParams({ scope: next }, { preventScrollReset: true });
   };
 
@@ -93,15 +116,16 @@ function MemberFeedbackPage() {
           post.id === id ? { ...post, isRead: true } : post,
         ),
       );
+      const key =
+        postsRef.current.find((post) => post.id === id)?.visibility === "DIRECT"
+          ? "forYou"
+          : "shared";
       setUnreadCount((current) => ({
         ...current,
-        [scope === "for-you" ? "forYou" : "shared"]: Math.max(
-          0,
-          current[scope === "for-you" ? "forYou" : "shared"] - 1,
-        ),
+        [key]: Math.max(0, current[key] - 1),
       }));
     },
-    [scope],
+    [],
   );
 
   return (
@@ -116,34 +140,12 @@ function MemberFeedbackPage() {
       />
 
       <div className="space-y-4">
-        <div className="flex justify-end">
-          <label className="flex items-center gap-2 text-xs text-neutral-500">
-            {t("professionalDevelopment.context")}
-            <select
-              value={contextFilter}
-              onChange={(event) =>
-                setContextFilter(event.target.value as FeedbackContext | "ALL")
-              }
-              className="field-control min-h-9 w-auto py-1.5 text-xs"
-            >
-              <option value="ALL">
-                {t("professionalDevelopment.allContexts")}
-              </option>
-              {CONTEXTS.map((context) => (
-                <option key={context} value={context}>
-                  {t(`professionalDevelopment.${CONTEXT_KEYS[context]}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-7">
+        <div className="space-y-3 rounded-xl border border-border bg-surface p-3 sm:p-4">
           <nav
             aria-label={t("professionalDevelopment.feedbackViews")}
-            className="flex gap-2 overflow-x-auto rounded-xl border border-border bg-surface p-2 lg:flex-col lg:space-y-1 lg:overflow-visible"
+            className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-lg border border-border bg-neutral-100 p-1 dark:bg-neutral-900"
           >
-            {(["for-you", "shared"] as const).map((item) => {
+            {(["all", "for-you", "shared"] as const).map((item) => {
               const selected = item === scope;
               const count =
                 item === "for-you" ? unreadCount.forYou : unreadCount.shared;
@@ -151,16 +153,14 @@ function MemberFeedbackPage() {
                 <button
                   key={item}
                   type="button"
-                  aria-current={selected ? "page" : undefined}
+                  aria-pressed={selected}
                   onClick={() => selectScope(item)}
-                  className={`flex min-h-11 shrink-0 items-center justify-between gap-3 rounded-lg px-3 py-2 text-start text-sm transition-colors focus-visible:outline-2 focus-visible:outline-info-strong lg:w-full ${selected ? "border border-neutral-950 bg-neutral-950 font-semibold text-white shadow-sm dark:border-white dark:bg-white dark:text-neutral-950" : "font-medium text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-900"}`}
+                  className={`flex min-h-10 shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-info-strong ${selected ? "bg-neutral-950 font-semibold text-white shadow-sm dark:bg-white dark:text-neutral-950" : "font-medium text-neutral-800 hover:bg-white dark:text-neutral-200 dark:hover:bg-neutral-800"}`}
                 >
-                  <span>
-                    {t(
-                      `professionalDevelopment.${item === "for-you" ? "forYouTab" : "sharedTab"}`,
-                    )}
-                  </span>
-                  {count > 0 && (
+                  {t(
+                    `professionalDevelopment.${item === "all" ? "allFeedback" : item === "for-you" ? "forYouTab" : "sharedTab"}`,
+                  )}
+                  {item !== "all" && count > 0 && (
                     <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-danger-soft px-1.5 py-0.5 text-[10px] font-semibold text-danger-strong">
                       {number(count)}
                     </span>
@@ -170,12 +170,53 @@ function MemberFeedbackPage() {
             })}
           </nav>
 
-          <section
-            aria-label={t(
-              `professionalDevelopment.${scope === "for-you" ? "forYouTab" : "sharedTab"}`,
-            )}
-            className="min-w-0 space-y-4"
-          >
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <label className="min-w-0">
+              <span className="sr-only">
+                {t("professionalDevelopment.searchFeedback")}
+              </span>
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+                placeholder={t("professionalDevelopment.searchFeedbackPlaceholder")}
+                className="field-control w-full py-2 text-sm"
+              />
+            </label>
+            <label className="flex items-center gap-2 text-xs font-medium text-neutral-800 dark:text-neutral-200">
+              {t("professionalDevelopment.context")}
+              <select
+                value={contextFilter}
+                onChange={(event) => {
+                  setContextFilter(
+                    event.target.value as FeedbackContext | "ALL",
+                  );
+                  setPage(1);
+                }}
+                className="field-control min-h-10 w-auto py-2 text-sm"
+              >
+                <option value="ALL">
+                  {t("professionalDevelopment.allContexts")}
+                </option>
+                {CONTEXTS.map((context) => (
+                  <option key={context} value={context}>
+                    {t(`professionalDevelopment.${CONTEXT_KEYS[context]}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <section
+          aria-label={t(
+              `professionalDevelopment.${scope === "all" ? "allFeedback" : scope === "for-you" ? "forYouTab" : "sharedTab"}`,
+          )}
+          className="min-w-0 space-y-4"
+        >
             {loading ? (
               <div
                 className="space-y-4"
@@ -209,7 +250,7 @@ function MemberFeedbackPage() {
               <section className="rounded-xl border border-dashed border-border bg-surface px-6 py-14 text-center">
                 <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
                   {t(
-                    contextFilter !== "ALL"
+                    contextFilter !== "ALL" || search.trim()
                       ? "professionalDevelopment.noFilteredFeedback"
                       : scope === "for-you"
                         ? "professionalDevelopment.noDirectFeedback"
@@ -223,14 +264,14 @@ function MemberFeedbackPage() {
                   <FeedbackCard
                     key={post.id}
                     post={post}
-                    scope={scope}
+                    scope={post.visibility === "DIRECT" ? "for-you" : "shared"}
                     onOpen={() => selectFeedback(post.id)}
                   />
                 ))}
               </div>
             )}
 
-            {!loading && !error && totalPages > 1 && (
+            {!loading && !error && filteredTotalPages > 1 && (
               <nav
                 aria-label={t("professionalDevelopment.feedbackPagination")}
                 className="flex flex-wrap items-center justify-center gap-3 border-t border-border pt-5"
@@ -246,14 +287,14 @@ function MemberFeedbackPage() {
                 <span className="text-xs text-neutral-500">
                   {t("professionalDevelopment.feedbackPageOf", {
                     page: number(page),
-                    pages: number(totalPages),
+                    pages: number(filteredTotalPages),
                   })}
                 </span>
                 <button
                   type="button"
-                  disabled={page >= totalPages}
+                  disabled={page >= filteredTotalPages}
                   onClick={() =>
-                    setPage((current) => Math.min(totalPages, current + 1))
+                    setPage((current) => Math.min(filteredTotalPages, current + 1))
                   }
                   className="button-secondary px-3 py-2 text-xs disabled:opacity-50"
                 >

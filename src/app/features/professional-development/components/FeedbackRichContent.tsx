@@ -85,6 +85,36 @@ function safeHref(value: string | undefined) {
   }
 }
 
+function renderMixedText(value: string, key: number): ReactNode {
+  const latinLength = (value.match(/[A-Za-z]/g) ?? []).length;
+  if (!latinLength) return value;
+
+  const arabicLength = (value.match(/[\u0600-\u06ff]/g) ?? []).length;
+  if (value.trim().length >= 80 && latinLength > arabicLength) {
+    return createElement(
+      "span",
+      {
+        key,
+        dir: "ltr",
+        className:
+          "my-2 block rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-start font-sans text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100",
+      },
+      value,
+    );
+  }
+
+  const parts = value.split(/([A-Za-z][A-Za-z0-9]*(?:[ '-][A-Za-z0-9]+)*)/g);
+  return createElement(
+    Fragment,
+    { key },
+    ...parts.map((part, index) =>
+      /^[A-Za-z]/.test(part)
+        ? createElement("bdi", { key: index, dir: "ltr" }, part)
+        : part,
+    ),
+  );
+}
+
 function parseSafeContent(content: string): TreeNode {
   const root: TreeNode = { tag: "root", children: [] };
   const stack = [root];
@@ -124,7 +154,7 @@ function parseSafeContent(content: string): TreeNode {
 }
 
 function renderNode(node: TreeNode, key: number): ReactNode {
-  if (node.text !== undefined) return node.text;
+  if (node.text !== undefined) return renderMixedText(node.text, key);
   const children = node.children.map((child, index) =>
     renderNode(child, index),
   );
