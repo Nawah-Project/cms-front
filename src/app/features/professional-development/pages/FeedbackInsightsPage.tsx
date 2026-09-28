@@ -304,7 +304,6 @@ function MemberFeedbackPage() {
             )}
           </section>
         </div>
-      </div>
 
       <FeedbackDetailDrawer
         feedbackId={feedbackId}
