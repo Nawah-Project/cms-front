@@ -152,7 +152,7 @@ function ApplicationItem({
     : null;
   return (
     <li className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between">
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1 text-start">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="text-sm font-semibold text-neutral-900">
             {application.companyName}
@@ -162,7 +162,9 @@ function ApplicationItem({
             <StatusBadge kind="outcome" value={application.outcome} />
           )}
         </div>
-        <p className="mt-1 text-sm text-neutral-700">{application.jobTitle}</p>
+        <p className="mt-1 w-full text-start text-sm text-neutral-700">
+          {application.jobTitle}
+        </p>
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-500">
           <span>{t("members.appliedDate", { date: formatDisplayDate(application.applicationDate, locale) })}</span>
           {application.location && <span>{application.location}</span>}
