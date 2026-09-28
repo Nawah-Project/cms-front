@@ -162,7 +162,7 @@ export function ProfessionalDevelopmentSummary() {
                     <span className="flex min-w-0 flex-1 items-start gap-2">
                       {task.unreadMentorFeedbackCount > 0 && (
                         <span
-                          className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-danger-strong"
+                          className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#FF3B30]"
                           aria-label={t(
                             "professionalDevelopment.unreadFeedback",
                           )}

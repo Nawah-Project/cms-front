@@ -459,7 +459,7 @@ export function TaskDetailDrawer({
                   </h3>
                   {task.unreadMentorFeedbackCount > 0 && (
                     <span
-                      className="h-2 w-2 rounded-full bg-danger-strong"
+                      className="h-2 w-2 rounded-full bg-[#FF3B30]"
                       aria-label={t("professionalDevelopment.unreadFeedback")}
                     />
                   )}

@@ -122,7 +122,7 @@ export function TaskCard({
           >
             <span
               aria-hidden="true"
-              className="h-2 w-2 rounded-full bg-danger-strong"
+              className="h-2 w-2 rounded-full bg-[#FF3B30]"
             />
             <span className="sr-only">
               {t("professionalDevelopment.unreadFeedback")}
