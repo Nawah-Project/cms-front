@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router";
 import { useAuth } from "../features/auth/store/authStore";
 import { useLogout } from "../features/auth/hooks/useLogout";
 import { useI18n } from "../i18n";
+import { ThemeToggle } from "../theme/ThemeToggle";
 import { GlobeIcon } from "./Icons";
 
 type NavItem = {
@@ -134,7 +135,7 @@ export function AppSidebar() {
       className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-neutral-700 px-2.5 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-info-strong"
     >
       <GlobeIcon className="h-4 w-4" />
-      <span>{locale === "ar" ? "ع" : "EN"}</span>
+      <span>{locale === "ar" ? "English" : "العربية"}</span>
     </button>
   );
 
@@ -207,7 +208,10 @@ export function AppSidebar() {
               </time>
             </span>
           </Link>
-          {localeToggle}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {localeToggle}
+            <ThemeToggle />
+          </div>
         </div>
         <nav aria-label={t("common.primaryNavigation")} className="space-y-1">
           {navLinks()}
@@ -239,7 +243,10 @@ export function AppSidebar() {
                 </time>
               </span>
             </Link>
-            {localeToggle}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {localeToggle}
+              <ThemeToggle />
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button

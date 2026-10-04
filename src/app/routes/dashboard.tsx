@@ -78,27 +78,47 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-64 flex-col items-center justify-center text-sm text-neutral-500">
-        <SpinnerIcon className="mb-3 h-6 w-6" />
-        <p>{t("dashboard.loading")}</p>
+      <div className="w-full space-y-12">
+        <header className="border-b border-stone-300/80 pb-7 dark:border-neutral-800">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-2">
+              <div className="h-8 w-48 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
+              <div className="h-4 w-72 animate-pulse rounded bg-neutral-100 dark:bg-neutral-800/60" />
+            </div>
+          </div>
+        </header>
+
+        <section className="space-y-7">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-28 rounded-xl border border-neutral-200 bg-white p-5 shadow-xs animate-pulse dark:border-neutral-800 dark:bg-neutral-900"
+              >
+                <div className="h-3 w-16 rounded bg-neutral-200 dark:bg-neutral-700" />
+                <div className="mt-4 h-7 w-20 rounded bg-neutral-200 dark:bg-neutral-700" />
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     );
   }
 
   if (error || !stats) {
     return (
-      <div className="mx-auto max-w-md border-s-2 border-rose-300 py-4 ps-5 text-sm dark:border-rose-900">
-        <p className="font-medium text-neutral-900 dark:text-neutral-100">
-          {t("dashboard.loadError")}
-        </p>
-        <p className="mt-1 text-neutral-500 dark:text-neutral-400">{error}</p>
-        <button
-          type="button"
-          onClick={() => void fetchStats()}
-          className="mt-3 text-sm font-medium text-neutral-800 underline decoration-stone-300 underline-offset-4 hover:text-neutral-950 dark:text-neutral-200 dark:hover:text-white"
-        >
-          {t("common.retry")}
-        </button>
+      <div className="py-16 max-w-md mx-auto text-center">
+        <div className="p-6 rounded-2xl bg-red-50/60 dark:bg-red-950/20 border border-red-200/80 dark:border-red-900/40 text-red-800 dark:text-red-300 text-xs shadow-xs">
+          <p className="font-semibold text-sm mb-1">{t("dashboard.loadError")}</p>
+          <p className="text-neutral-600 dark:text-neutral-400 mb-4">{error}</p>
+          <button
+            type="button"
+            onClick={() => void fetchStats()}
+            className="px-4 py-2 bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 rounded-lg font-medium text-xs hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors shadow-xs"
+          >
+            {t("common.retry")}
+          </button>
+        </div>
       </div>
     );
   }

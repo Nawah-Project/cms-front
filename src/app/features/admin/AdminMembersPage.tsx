@@ -7,6 +7,7 @@ import {
 } from "./api/adminApi";
 import { AdminMemberDetail } from "./components/AdminMemberDetail";
 import { useI18n } from "../../i18n";
+import { useToast } from "../../components/Toast";
 import {
   ActivityBadge,
   EmptyState,
@@ -27,6 +28,7 @@ const statuses: ActivityStatus[] = [
 ];
 export default function AdminMembersPage() {
   const { t, tp, locale } = useI18n();
+  const { showToast } = useToast();
   const [members, setMembers] = useState<AdminMember[]>([]);
   const [groups, setGroups] = useState<AdminGroup[]>([]);
   const [page, setPage] = useState(1);
@@ -83,16 +85,18 @@ export default function AdminMembersPage() {
     setActionError("");
     try {
       await adminApi.removeFromGroup(removing.group.id, removing.id);
-      setMessage(t("admin.removedSuccess", { name: removing.name, group: removing.group.name }));
+      const successMsg = t("admin.removedSuccess", { name: removing.name, group: removing.group.name });
+      setMessage(successMsg);
+      showToast(successMsg, "success");
       setGroup("UNASSIGNED");
       if (selected?.id === removing.id)
         setSelected({ ...selected, group: null });
       setRemoving(null);
       load();
     } catch (err) {
-      setActionError(
-        t("admin.actionFailed"),
-      );
+      const errText = t("admin.actionFailed");
+      setActionError(errText);
+      showToast(errText, "error");
     } finally {
       setRemoveLoading(false);
     }
@@ -103,15 +107,17 @@ export default function AdminMembersPage() {
     setActionError("");
     try {
       const result = await adminApi.assignToGroup(assigning.id, targetGroupId);
-      setMessage(t("admin.assignedSuccess", { name: assigning.name, group: result.group.name }));
+      const successMsg = t("admin.assignedSuccess", { name: assigning.name, group: result.group.name });
+      setMessage(successMsg);
+      showToast(successMsg, "success");
       if (selected?.id === assigning.id)
         setSelected({ ...selected, group: result.group });
       setAssigning(null);
       load();
     } catch (err) {
-      setActionError(
-        t("admin.actionFailed"),
-      );
+      const errText = t("admin.actionFailed");
+      setActionError(errText);
+      showToast(errText, "error");
     } finally {
       setAssignLoading(false);
     }

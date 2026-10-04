@@ -15,6 +15,7 @@ import {
 } from "../components/Icons";
 import { PipelineTimeline } from "../components/PipelineTimeline";
 import { StatusBadge } from "../components/StatusBadge";
+import { useToast } from "../components/Toast";
 import { api } from "../services/api";
 import {
   STAGES,
@@ -44,6 +45,7 @@ export function meta({ data }: { data?: { application?: Application } }) {
 
 export default function ApplicationDetailsPage() {
   const { t, locale } = useI18n();
+  const { showToast } = useToast();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -96,8 +98,12 @@ export default function ApplicationDetailsPage() {
         outcome: "NONE",
       });
       setApplication(updated);
+      showToast(
+        locale === "ar" ? "تم تحديث مرحلة الطلب" : "Application stage updated",
+        "success",
+      );
     } catch (err: any) {
-      alert(t("common.unexpectedError"));
+      showToast(t("common.unexpectedError"), "error");
     }
   };
 
@@ -110,8 +116,12 @@ export default function ApplicationDetailsPage() {
       });
       setApplication(updated);
       setIsPromptingClosedOutcome(false);
+      showToast(
+        locale === "ar" ? "تم إغلاق الطلب بنجاح" : "Application closed successfully",
+        "success",
+      );
     } catch (err: any) {
-      alert(t("common.unexpectedError"));
+      showToast(t("common.unexpectedError"), "error");
     }
   };
 
@@ -121,13 +131,25 @@ export default function ApplicationDetailsPage() {
   ) => {
     const updated = await api.updateApplication(appId, updates);
     setApplication(updated);
+    showToast(
+      locale === "ar" ? "تم حفظ التعديلات بنجاح" : "Changes saved successfully",
+      "success",
+    );
     return updated;
   };
 
   const handleDelete = async () => {
     if (!application) return;
-    await api.deleteApplication(application.id);
-    navigate("/applications");
+    try {
+      await api.deleteApplication(application.id);
+      showToast(
+        locale === "ar" ? "تم حذف الطلب بنجاح" : "Application deleted successfully",
+        "success",
+      );
+      navigate("/applications");
+    } catch {
+      showToast(t("common.unexpectedError"), "error");
+    }
   };
 
   if (isLoading) {
@@ -353,22 +375,25 @@ export default function ApplicationDetailsPage() {
               {t("applications.selectOutcome")}
             </p>
 
-            <div className="grid grid-cols-3 gap-2 mt-4">
-              {(["ACCEPTED", "REJECTED", "WITHDRAWN"] as Outcome[]).map(
-                (opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => setSelectedOutcomeForClose(opt)}
-                    className={`px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
-                      selectedOutcomeForClose === opt
-                        ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900"
-                        : "bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100"
-                    }`}
-                  >
-                    {t(`applications.${opt.toLowerCase()}`)}
-                  </button>
-                ),
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              {(["ACCEPTED", "REJECTED", "WITHDRAWN", "NO_RESPONSE"] as Outcome[]).map(
+                (opt) => {
+                  const labelKey = opt === "NO_RESPONSE" ? "noResponse" : opt.toLowerCase();
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setSelectedOutcomeForClose(opt)}
+                      className={`px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
+                        selectedOutcomeForClose === opt
+                          ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900"
+                          : "bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100"
+                      }`}
+                    >
+                      {t(`applications.${labelKey}`)}
+                    </button>
+                  );
+                },
               )}
             </div>
 
