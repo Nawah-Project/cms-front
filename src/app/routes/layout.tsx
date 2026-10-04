@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { AddApplicationModal } from "../components/AddApplicationModal";
 import { AppSidebar } from "../components/AppSidebar";
+import { useToast } from "../components/Toast";
+import { useI18n } from "../i18n";
 import { api } from "../services/api";
 import type { CreateApplicationInput } from "../types";
 import { ProtectedRoute } from "../features/auth/components/ProtectedRoute";
@@ -22,9 +24,17 @@ export function useAppModal() {
 export default function Layout() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const navigate = useNavigate();
+  const { showToast } = useToast();
+  const { locale } = useI18n();
 
   const handleCreateApplication = async (data: CreateApplicationInput) => {
     const created = await api.createApplication(data);
+    showToast(
+      locale === "ar"
+        ? `تم إضافة طلب ${data.companyName} بنجاح`
+        : `Application for ${data.companyName} added successfully`,
+      "success",
+    );
     // Navigate to applications page to see the new addition
     navigate("/applications");
     return created;

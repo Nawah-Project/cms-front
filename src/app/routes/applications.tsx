@@ -9,7 +9,9 @@ import {
   TableIcon,
 } from "../components/Icons";
 import { KanbanView } from "../components/KanbanView";
+import { TableSkeleton } from "../components/TableSkeleton";
 import { TableView } from "../components/TableView";
+import { useToast } from "../components/Toast";
 import { api } from "../services/api";
 import type { Application, Outcome, Stage } from "../types";
 import { useI18n } from "../i18n";
@@ -23,7 +25,8 @@ export function meta() {
 
 export default function ApplicationsPage() {
   const { openAddModal } = useOutletContext<{ openAddModal: () => void }>();
-  const { t, tp } = useI18n();
+  const { showToast } = useToast();
+  const { t, tp, locale } = useI18n();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [applications, setApplications] = useState<Application[]>([]);
@@ -153,6 +156,11 @@ export default function ApplicationsPage() {
       setApplications((prev) =>
         prev.map((app) => (app.id === appId ? savedApplication : app)),
       );
+      showToast(
+        locale === "ar" ? "تم نقل الطلب بنجاح" : "Application moved successfully",
+        "success",
+        2500,
+      );
     } catch {
       // Roll back only this card, preserving other moves made meanwhile.
       setApplications((prev) => {
@@ -161,7 +169,7 @@ export default function ApplicationsPage() {
           ? [...next, previousApplication]
           : next;
       });
-      setMoveError(true);
+      showToast(t("applications.moveError"), "error");
     } finally {
       pendingMoves.current.delete(appId);
     }
@@ -362,21 +370,33 @@ export default function ApplicationsPage() {
 
       {/* Main Content Area: Loading, Error, Empty, or Data */}
       {isLoading ? (
-        <div className="py-20 flex flex-col items-center justify-center">
-          <SpinnerIcon className="w-6 h-6 text-neutral-500 mb-3" />
-          <p className="text-xs text-neutral-500">
-            {t("applications.loading")}
-          </p>
-        </div>
+        viewMode === "table" ? (
+          <TableSkeleton rows={6} />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-[460px] rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-xs"
+              >
+                <div className="h-5 w-24 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700 mb-4" />
+                <div className="space-y-3">
+                  <div className="h-24 animate-pulse rounded-xl bg-neutral-100 dark:bg-neutral-800" />
+                  <div className="h-24 animate-pulse rounded-xl bg-neutral-100 dark:bg-neutral-800" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )
       ) : error ? (
-        <div className="py-16 max-w-md mx-auto text-center">
-          <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs">
-            <p className="font-semibold mb-1">{t("applications.loadFailed")}</p>
-            <p>{error}</p>
+        <div className="py-12 max-w-md mx-auto text-center">
+          <div className="p-6 rounded-2xl bg-red-50/50 dark:bg-red-950/20 border border-red-200/80 dark:border-red-900/40 text-red-800 dark:text-red-300 text-xs shadow-xs">
+            <p className="font-semibold text-sm mb-1">{t("applications.loadFailed")}</p>
+            <p className="text-neutral-600 dark:text-neutral-400 mb-4 leading-relaxed">{error}</p>
             <button
               type="button"
               onClick={loadData}
-              className="mt-3 px-3 py-1.5 bg-red-600 text-white rounded-md font-medium text-xs hover:bg-red-700 transition-colors"
+              className="px-4 py-2 bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 rounded-lg font-medium text-xs hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors shadow-xs"
             >
               {t("common.retry")}
             </button>

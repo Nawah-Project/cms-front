@@ -71,6 +71,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     }
   }
 
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-app px-5 py-12 dark:bg-neutral-950">
       <section className="w-full max-w-md rounded-2xl border border-border-strong bg-surface px-7 py-8 shadow-sm sm:px-9 sm:py-10 dark:border-neutral-800 dark:bg-neutral-900">
@@ -131,30 +133,43 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           </label>
           <label className="block text-sm font-medium text-neutral-800 dark:text-neutral-200">
             {t("auth.password")}
-            <input
-              required
-              type="password"
-              minLength={8}
-              autoComplete={registering ? "new-password" : "current-password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={inputClass}
-            />
+            <div className="relative mt-2">
+              <input
+                required
+                type={showPassword ? "text" : "password"}
+                minLength={8}
+                autoComplete={registering ? "new-password" : "current-password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="field-control block w-full pe-10 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:focus:ring-neutral-800"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute end-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-1"
+                aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+              >
+                {showPassword ? (
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                  </svg>
+                ) : (
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
+              </button>
+            </div>
             <span className="mt-1.5 block text-xs font-normal text-neutral-500">
               {t("auth.passwordHint")}
             </span>
           </label>
-          <div className="space-y-4 pt-1">
-            <div className="flex items-center gap-3 text-xs text-neutral-500" aria-hidden="true">
-              <span className="h-px flex-1 bg-border" />
-              <span>{t("auth.continueWith")}</span>
-              <span className="h-px flex-1 bg-border" />
-            </div>
-            <SocialSignInButtons disabled={submitting} />
-          </div>
+
           <button
+            type="submit"
             disabled={submitting}
-            className="button-primary w-full dark:border-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+            className="button-primary w-full mt-2 dark:border-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
           >
             {submitting
               ? t("auth.wait")
@@ -162,6 +177,15 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                 ? t("auth.createAccount")
                 : t("auth.signIn")}
           </button>
+
+          <div className="space-y-4 pt-3">
+            <div className="flex items-center gap-3 text-xs text-neutral-500" aria-hidden="true">
+              <span className="h-px flex-1 bg-border" />
+              <span>{t("auth.continueWith")}</span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <SocialSignInButtons disabled={submitting} />
+          </div>
         </form>
         <p className="mt-7 text-center text-sm text-neutral-600 dark:text-neutral-400">
           {registering ? t("auth.alreadyHaveAccount") + " " : t("auth.newToApp") + " "}

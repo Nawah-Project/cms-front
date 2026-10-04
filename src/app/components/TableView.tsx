@@ -47,8 +47,14 @@ export function TableView({ applications }: TableViewProps) {
           {applications.map((app) => (
             <tr
               key={app.id}
+              tabIndex={0}
               onClick={() => navigate(`/applications/${app.id}`)}
-              className="data-table-row group cursor-pointer"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  navigate(`/applications/${app.id}`);
+                }
+              }}
+              className="data-table-row group cursor-pointer focus-visible:outline-2 focus-visible:outline-neutral-800 dark:focus-visible:outline-neutral-200 focus-visible:outline-offset-[-2px]"
             >
               {/* Company Name */}
               <td className="data-table-cell whitespace-nowrap font-medium text-neutral-900 dark:text-neutral-100">
