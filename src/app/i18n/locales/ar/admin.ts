@@ -125,4 +125,13 @@ export default {
   closeMemberDetails: "إغلاق تفاصيل العضو",
   loadingMemberDetails: "جارٍ تحميل تفاصيل العضو…",
   tryAgain: "حاول مرة أخرى",
+  uxGrowthSectionTitle: "مؤشرات الأهداف وتجربة المستخدم (UX & Growth Targets)",
+  acquisitionTarget: "هدف الاستحواذ (50 عضوًا في 5 مجموعات)",
+  acquisitionProgress: "{count} من 50 عضوًا ({percent}%)",
+  activeEngagementTarget: "معدل التفاعل النشط (الهدف: 70%)",
+  activeEngagementRate: "{percent}% نشطون ({active} من {total})",
+  abVariantSwitcher: "معاينة تخطيط الداشبورد (A/B Test)",
+  variantA: "النسخة أ (الترتيب الكلاسيكي)",
+  variantB: "النسخة ب (مركز التوجيه والمهام أولاً)",
+  currentExperimentVariant: "التخطيط المعتمد حالياً: {variant}",
 } as const;

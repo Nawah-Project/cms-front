@@ -128,4 +128,13 @@ export default {
   closeMemberDetails: "Close member details",
   loadingMemberDetails: "Loading member details…",
   tryAgain: "Try again",
+  uxGrowthSectionTitle: "UX & Growth Targets",
+  acquisitionTarget: "Acquisition Target (50 members in 5 groups)",
+  acquisitionProgress: "{count} of 50 members ({percent}%)",
+  activeEngagementTarget: "Active Engagement Rate (Target: 70%)",
+  activeEngagementRate: "{percent}% active ({active} of {total})",
+  abVariantSwitcher: "Dashboard Layout Preview (A/B Test)",
+  variantA: "Variant A (Classic Metrics First)",
+  variantB: "Variant B (Action-Oriented Companion First)",
+  currentExperimentVariant: "Active Layout: {variant}",
 } as const;

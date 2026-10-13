@@ -6,6 +6,8 @@ import { formatShortDate } from "../utils/date";
 import { ExternalLinkIcon, GripVerticalIcon } from "./Icons";
 import { StatusBadge } from "./StatusBadge";
 import { useI18n } from "../i18n";
+import { Modal } from "./ui/Modal";
+import { useToast } from "./ui/ToastProvider";
 
 interface KanbanViewProps {
   applications: Application[];
@@ -47,43 +49,44 @@ function getApplicationCardColor(app: Application) {
   if (app.stage === "CLOSED") {
     switch (app.outcome) {
       case "ACCEPTED":
-        return "border-[#829f8b] bg-[#d4e0d7] hover:bg-[#c7d7cb] dark:border-green-800 dark:bg-green-950/70 dark:hover:bg-green-900/80";
+        return "bg-surface border-border border-s-4 border-s-success-strong hover:border-border-hover";
       case "REJECTED":
-        return "border-red-400 bg-red-100 hover:bg-red-200 dark:border-red-700 dark:bg-red-900/50 dark:hover:bg-red-900/70";
+        return "bg-surface border-border border-s-4 border-s-danger-strong hover:border-border-hover";
       case "WITHDRAWN":
-        return "border-neutral-500 bg-neutral-300 hover:bg-neutral-400 dark:border-neutral-500 dark:bg-neutral-700 dark:hover:bg-neutral-600";
+        return "bg-surface border-border border-s-4 border-s-neutral-400 hover:border-border-hover";
       case "NO_RESPONSE":
-        return "border-warning-strong bg-warning-soft hover:bg-warning-hover dark:border-warning-strong dark:bg-amber-950/50 dark:hover:bg-amber-900/60";
+        return "bg-surface border-border border-s-4 border-s-warning-strong hover:border-border-hover";
       default:
-        return "border-neutral-400 bg-neutral-200 hover:bg-neutral-300 dark:border-neutral-600 dark:bg-neutral-800 dark:hover:bg-neutral-700";
+        return "bg-surface border-border border-s-4 border-s-neutral-400 hover:border-border-hover";
     }
   }
 
   switch (app.stage) {
     case "INTERVIEW":
-      return "border-blue-500 bg-blue-200 hover:bg-blue-300 dark:border-blue-600 dark:bg-blue-800/70 dark:hover:bg-blue-800/90";
+      return "bg-surface border-border border-s-4 border-s-info-strong hover:border-border-hover";
     case "DECISION":
-      return "border-amber-400 bg-amber-100 hover:bg-amber-200 dark:border-amber-700 dark:bg-amber-900/50 dark:hover:bg-amber-900/70";
+      return "bg-surface border-border border-s-4 border-s-warning-strong hover:border-border-hover";
     default:
-      return "border-neutral-400 bg-neutral-200 hover:bg-neutral-300 dark:border-neutral-600 dark:bg-neutral-800 dark:hover:bg-neutral-700";
+      return "bg-surface border-border border-s-4 border-s-neutral-400 hover:border-border-hover";
   }
 }
 
 function getColumnDotColor(stage: Stage) {
   switch (stage) {
     case "INTERVIEW":
-      return "bg-blue-600 dark:bg-blue-400";
+      return "bg-info-strong";
     case "DECISION":
-      return "bg-amber-500 dark:bg-amber-400";
+      return "bg-warning-strong";
     case "CLOSED":
-      return "bg-neutral-500 dark:bg-neutral-400";
+      return "bg-neutral-600";
     default:
-      return "bg-neutral-400 dark:bg-neutral-500";
+      return "bg-neutral-400";
   }
 }
 
 export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
   const { t, locale } = useI18n();
+  const { showToast } = useToast();
   const navigate = useNavigate();
 
   // Drag and drop state
@@ -171,6 +174,10 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
     // Active stages (APPLIED, INTERVIEW, DECISION): outcome is always NONE
     if (onStageChange) {
       await onStageChange(app.id, targetStage, "NONE");
+      showToast({
+        message: t("applications.applicationUpdated"),
+        variant: "success",
+      });
     }
   };
 
@@ -179,6 +186,10 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
     const app = pendingClosedApp;
     setPendingClosedApp(null);
     await onStageChange(app.id, "CLOSED", selectedClosedOutcome);
+    showToast({
+      message: t("applications.applicationUpdated"),
+      variant: "success",
+    });
   };
 
   return (
@@ -209,18 +220,10 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                 <div className="flex items-center justify-between px-2 py-2 mb-2.5 border-b border-neutral-300 dark:border-neutral-700">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`w-2 h-2 rounded-full ${getColumnDotColor(col.stage)}`}
-                      style={
-                        col.stage === "CLOSED"
-                          ? {
-                              background:
-                                "conic-gradient(#15803d 0deg 120deg, #dc2626 120deg 240deg, #52525b 240deg 360deg)",
-                            }
-                          : undefined
-                      }
+                      className={`w-2.5 h-2.5 rounded-full ${getColumnDotColor(col.stage)}`}
                       aria-hidden="true"
                     />
-                    <h3 className="text-xs font-semibold tracking-wider text-neutral-800 dark:text-neutral-200 uppercase">
+                    <h3 className="text-xs font-semibold tracking-wider text-text-primary uppercase">
                       {label}
                     </h3>
                   </div>
@@ -350,92 +353,82 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
       </div>
 
       {/* Outcome Selection Modal when moved to CLOSED stage */}
-      {pendingClosedApp && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
-        >
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl max-w-sm w-full p-5 shadow-xl space-y-4">
-            <div>
-              <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-                {t("applications.closeApplication")}
-              </h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                {t("applications.moveClosedPrompt", {
-                  company: pendingClosedApp.companyName,
-                })}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
-                {t("applications.selectOutcome")}
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  {
-                    value: "ACCEPTED" as Outcome,
-                    label: t("applications.accepted"),
-                    desc: t("applications.offer"),
-                    style:
-                      selectedClosedOutcome === "ACCEPTED"
-                        ? "bg-neutral-900 text-white border-neutral-900"
-                        : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50",
-                  },
-                  {
-                    value: "REJECTED" as Outcome,
-                    label: t("applications.rejected"),
-                    desc: t("applications.passed"),
-                    style:
-                      selectedClosedOutcome === "REJECTED"
-                        ? "bg-neutral-900 text-white border-neutral-900"
-                        : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50",
-                  },
-                  {
-                    value: "WITHDRAWN" as Outcome,
-                    label: t("applications.withdrawn"),
-                    desc: t("applications.optOut"),
-                    style:
-                      selectedClosedOutcome === "WITHDRAWN"
-                        ? "bg-neutral-900 text-white border-neutral-900"
-                        : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50",
-                  },
-                ].map((item) => (
-                  <button
-                    key={item.value}
-                    type="button"
-                    onClick={() => setSelectedClosedOutcome(item.value)}
-                    className={`p-2.5 rounded-xl border text-center transition-all ${item.style}`}
-                  >
-                    <div className="text-xs font-semibold">{item.label}</div>
-                    <div className="text-[10px] opacity-80 mt-0.5">
-                      {item.desc}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+      <Modal
+        isOpen={!!pendingClosedApp}
+        onClose={() => setPendingClosedApp(null)}
+        title={t("applications.closeApplication")}
+        subtitle={t("applications.moveClosedPrompt", {
+          company: pendingClosedApp?.companyName ?? "",
+        })}
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setPendingClosedApp(null)}
+              className="button-secondary text-sm"
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="button"
+              onClick={confirmClosedOutcome}
+              className="button-primary text-sm"
+            >
+              {t("applications.saveAndMove")}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <label className="field-label">
+            {t("applications.selectOutcome")}
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {[
+              {
+                value: "ACCEPTED" as Outcome,
+                label: t("applications.accepted"),
+                desc: t("applications.offer"),
+                style:
+                  selectedClosedOutcome === "ACCEPTED"
+                    ? "bg-neutral-900 text-white border-neutral-900 shadow-xs"
+                    : "bg-surface text-text-primary border-border hover:bg-surface-hover",
+              },
+              {
+                value: "REJECTED" as Outcome,
+                label: t("applications.rejected"),
+                desc: t("applications.passed"),
+                style:
+                  selectedClosedOutcome === "REJECTED"
+                    ? "bg-neutral-900 text-white border-neutral-900 shadow-xs"
+                    : "bg-surface text-text-primary border-border hover:bg-surface-hover",
+              },
+              {
+                value: "WITHDRAWN" as Outcome,
+                label: t("applications.withdrawn"),
+                desc: t("applications.optOut"),
+                style:
+                  selectedClosedOutcome === "WITHDRAWN"
+                    ? "bg-neutral-900 text-white border-neutral-900 shadow-xs"
+                    : "bg-surface text-text-primary border-border hover:bg-surface-hover",
+              },
+            ].map((item) => (
               <button
+                key={item.value}
                 type="button"
-                onClick={() => setPendingClosedApp(null)}
-                className="px-3.5 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+                onClick={() => setSelectedClosedOutcome(item.value)}
+                className={`p-3 rounded-xl border text-center transition-all ${item.style}`}
               >
-                {t("common.cancel")}
+                <div className="text-xs font-semibold">{item.label}</div>
+                <div className="text-[11px] opacity-75 mt-0.5">
+                  {item.desc}
+                </div>
               </button>
-              <button
-                type="button"
-                onClick={confirmClosedOutcome}
-                className="px-4 py-1.5 text-xs font-medium bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 rounded-lg shadow-xs transition-colors"
-              >
-                {t("applications.saveAndMove")}
-              </button>
-            </div>
+            ))}
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

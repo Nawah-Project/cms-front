@@ -29,6 +29,7 @@ export default function ApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pendingMoves = useRef(new Set<string>());
   const requestId = useRef(0);
@@ -74,32 +75,44 @@ export default function ApplicationsPage() {
   const loadData = async () => {
     const request = ++requestId.current;
     setError(null);
+    if (!isLoading) {
+      setIsRefreshing(true);
+    }
     try {
-      // Fetch full applications list to know totalCount
-      const allApps = await api.getApplications();
-      setTotalCount(allApps.length);
-
-      // Fetch with current stage/outcome/search filters
       const stageParam = currentStage === "ALL" ? undefined : currentStage;
       const outcomeParam =
         currentOutcome === "ALL" ? undefined : currentOutcome;
       const searchParam = debouncedSearch.trim() || undefined;
+      const isFilterActive = Boolean(stageParam || outcomeParam || searchParam);
 
-      const filtered = await api.getApplications({
-        stage: stageParam,
-        outcome: outcomeParam,
-        search: searchParam,
-      });
-
-      if (request !== requestId.current) return;
-
-      setApplications(filtered);
-      setTotalCount(allApps.length);
+      if (!isFilterActive) {
+        const data = await api.getApplications();
+        if (request !== requestId.current) return;
+        setApplications(data);
+        setTotalCount(data.length);
+      } else {
+        const [allData, filtered] = await Promise.all([
+          totalCount === 0 ? api.getApplications() : Promise.resolve(null),
+          api.getApplications({
+            stage: stageParam,
+            outcome: outcomeParam,
+            search: searchParam,
+          }),
+        ]);
+        if (request !== requestId.current) return;
+        setApplications(filtered);
+        if (allData) {
+          setTotalCount(allData.length);
+        }
+      }
     } catch {
       if (request !== requestId.current) return;
       setError(t("common.loadError"));
     } finally {
-      if (request === requestId.current) setIsLoading(false);
+      if (request === requestId.current) {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
     }
   };
 
@@ -238,10 +251,10 @@ export default function ApplicationsPage() {
           <button
             type="button"
             onClick={openAddModal}
-            className="button-primary inline-flex items-center gap-1.5 py-2 text-sm dark:border-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+            className="button-primary inline-flex items-center gap-1.5 py-2 text-sm"
           >
             <PlusIcon className="w-3.5 h-3.5" />
-            <span>+ {t("common.addApplication")}</span>
+            <span>{t("common.addApplication")}</span>
           </button>
         </div>
       </div>
@@ -280,7 +293,7 @@ export default function ApplicationsPage() {
           {/* Simple Search Field for companyName and jobTitle */}
           <form
             onSubmit={handleSearchSubmit}
-            className="relative min-w-[240px]"
+            className="relative min-w-[260px]"
           >
             <input
               type="text"
@@ -288,9 +301,9 @@ export default function ApplicationsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t("applications.search")}
-              className="w-full rounded-md border border-stone-300/80 bg-white/65 py-2 ps-8 pe-3 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-stone-300 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:ring-neutral-700"
+              className="field-control ps-9 py-2"
             />
-            <SearchIcon className="w-3.5 h-3.5 text-neutral-400 absolute start-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <SearchIcon className="w-4 h-4 text-text-muted absolute start-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </form>
         </div>
 
@@ -393,7 +406,7 @@ export default function ApplicationsPage() {
           />
         )
       ) : (
-        <div className="space-y-4">
+        <div className={`space-y-4 ${isRefreshing ? "opacity-60 transition-opacity duration-150" : "transition-opacity duration-150"}`}>
           <div className="flex items-center justify-between text-xs text-neutral-500 px-1">
             <span>
               {t("applications.showingCount", {

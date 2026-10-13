@@ -5,6 +5,7 @@ import type { RecentMemberProgress } from "../types/membersProgress.types";
 import { MemberAvatar } from "./MemberAvatar";
 import { relativeActivityTime } from "./LastUpdated";
 import { useI18n } from "../../../i18n";
+import { EmptyState } from "../../../components/EmptyState";
 
 function ActivityDescription({ event }: { event: RecentMemberProgress }) {
   const { t, locale } = useI18n();
@@ -161,7 +162,7 @@ export function RecentActivityList({
   const visibleEvents = events.slice(0, limit);
   if (visibleEvents.length === 0) {
     return (
-      <p className="py-8 text-sm text-neutral-500">{t("members.noRecentActivity")}</p>
+      <EmptyState compact description={t("members.noRecentActivity")} />
     );
   }
   return (

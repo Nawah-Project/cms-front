@@ -19,6 +19,8 @@ export default {
   closeNavigation: "إغلاق القائمة",
   close: "إغلاق",
   cancel: "إلغاء",
+  confirm: "تأكيد",
+  dismiss: "إغلاق",
   save: "حفظ",
   saving: "جارٍ الحفظ…",
   edit: "تعديل",

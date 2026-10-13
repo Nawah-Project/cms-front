@@ -20,4 +20,22 @@ export default {
   latestUpdates: "أحدث مستجداتك",
   viewAllApplications: "عرض كل الطلبات",
   addFirstApplication: "أضف أول طلب تقديم",
+  companionTitle: "مرشد نواة — خطوتك التالية",
+  companionStaleApps:
+    "لديك {count} طلبات توظيف لم يتم تحديثها منذ فترة أو انتقلت لعدم الرد. راجعها الآن لتحديث حالتها.",
+  companionUnreadFeedback:
+    "أرسل لك المينتور {count} ملاحظات جديدة. اطّلع عليها لتطوير خطواتك القادمة.",
+  companionFirstApp:
+    "لم تضف أي طلب توظيف بعد. ابدأ بإضافة أول وظيفة تقدمت إليها لننظم رحلتك معاً.",
+  companionAllGood:
+    "أداؤك ممتاز! استمر في تحديث تقديماتك ومراجعة تقدم زملائك في المجموعة.",
+  evaluationSectionTitle: "التقييم وقياس التقدم",
+  evaluationSectionDesc:
+    "توزيع طلباتك عبر مراحل التوظيف لمساعدتك على قياس معدل التحول للوصول للمقابلات.",
+  notificationsTitle: "التنبيهات والتذكيرات",
+  emailRemindersLabel: "تذكير عبر البريد عند عدم الرد أو الملاحظات الجديدة",
+  noNotifications: "لا توجد تنبيهات جديدة حالياً.",
+  viewStaleApps: "مراجعة الطلبات المعلقة",
+  viewFeedback: "عرض الملاحظات",
+  viewGroupProgress: "الاطلاع على نشاط المجموعة",
 } as const;

@@ -28,4 +28,15 @@ export default {
   sessionLoading: "Loading your session…",
   profileName: "Name",
   profileEmail: "Email",
+  heroBadge: "Nawah Mentoring & Career Platform",
+  heroTitle:
+    "Start your career journey with clear steps alongside your group and mentor",
+  heroDescription:
+    "Organize job applications, complete training tasks, and receive direct mentor feedback to reach your career goal.",
+  watchIntroTitle: "Watch how the platform works in 90 seconds",
+  watchIntroSubtitle:
+    "A quick walkthrough of your group journey and how to get the most out of Nawah",
+  featureTrackTitle: "Structured application tracking",
+  featureMentorTitle: "Mentor tasks & guidance",
+  featureGroupTitle: "Group progress & peer motivation",
 } as const;

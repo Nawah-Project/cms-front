@@ -15,9 +15,12 @@ import {
   PageHeading,
   relativeTime,
 } from "./components/AdminUI";
+import { SparklesIcon } from "../../components/Icons";
+import { useUxExperiment, getUxEvents } from "../../utils/uxAnalytics";
 
 export default function AdminOverviewPage() {
   const { t, tp, number, locale } = useI18n();
+  const { variant, setVariant } = useUxExperiment("dashboard_layout_v2");
   const [data, setData] = useState<{
     overview: AdminOverview;
     groups: AdminGroup[];
@@ -44,6 +47,17 @@ export default function AdminOverviewPage() {
   }, []);
   if (loading) return <LoadingState label={t("admin.loadingOverview")} />;
   if (error || !data) return <ErrorState onRetry={load} />;
+
+  const targetMembers = 50;
+  const acquisitionPercent = Math.min(
+    100,
+    Math.round((data.overview.usersCount / targetMembers) * 100),
+  );
+  const engagementRate =
+    data.overview.usersCount > 0
+      ? Math.round((data.overview.activeUsersCount / data.overview.usersCount) * 100)
+      : 0;
+
   const stat = (label: string, value: number, note?: string, tone = "") => (
     <div className="rounded-lg border border-border bg-surface p-4 sm:p-5">
       <p className="text-xs font-medium text-neutral-500">{label}</p>
@@ -60,6 +74,112 @@ export default function AdminOverviewPage() {
         title={t("admin.overviewTitle")}
         description={t("admin.overviewDescription")}
       />
+
+      {/* UX & Growth Targets Section */}
+      <section
+        aria-label={t("admin.uxGrowthSectionTitle")}
+        className="rounded-2xl border border-border bg-surface p-6 shadow-xs space-y-6"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-info-soft text-info-strong">
+              <SparklesIcon className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-text-primary">
+                {t("admin.uxGrowthSectionTitle")}
+              </h3>
+              <p className="text-xs text-text-secondary">
+                {t("admin.currentExperimentVariant", {
+                  variant: variant === "A" ? t("admin.variantA") : t("admin.variantB"),
+                })}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-text-secondary">
+              {t("admin.abVariantSwitcher")}:
+            </span>
+            <div className="inline-flex rounded-xl border border-border bg-neutral-100 p-0.5 text-xs font-medium">
+              <button
+                type="button"
+                onClick={() => setVariant("A")}
+                className={`rounded-lg px-3 py-1.5 transition ${
+                  variant === "A"
+                    ? "bg-surface text-text-primary shadow-xs"
+                    : "text-text-secondary hover:text-text-primary"
+                }`}
+              >
+                {t("admin.variantA")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setVariant("B")}
+                className={`rounded-lg px-3 py-1.5 transition ${
+                  variant === "B"
+                    ? "bg-surface text-text-primary shadow-xs"
+                    : "text-text-secondary hover:text-text-primary"
+                }`}
+              >
+                {t("admin.variantB")}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Target 1: Member Acquisition (50 users) */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs font-medium">
+              <span className="text-text-primary">{t("admin.acquisitionTarget")}</span>
+              <span className="text-info-strong font-semibold">
+                {data.overview.usersCount} / 50 ({acquisitionPercent}%)
+              </span>
+            </div>
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-100">
+              <div
+                className="h-full rounded-full bg-info-strong transition-all duration-500"
+                style={{ width: `${acquisitionPercent}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-text-secondary">
+              {t("admin.acquisitionProgress", {
+                count: number(data.overview.usersCount),
+                percent: number(acquisitionPercent),
+              })}
+            </p>
+          </div>
+
+          {/* Target 2: Active Engagement Rate (70%) */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs font-medium">
+              <span className="text-text-primary">{t("admin.activeEngagementTarget")}</span>
+              <span
+                className={`font-semibold ${
+                  engagementRate >= 70 ? "text-success-strong" : "text-warning-strong"
+                }`}
+              >
+                {engagementRate}% / 70%
+              </span>
+            </div>
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-100">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  engagementRate >= 70 ? "bg-success-strong" : "bg-warning-strong"
+                }`}
+                style={{ width: `${Math.min(100, engagementRate)}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-text-secondary">
+              {t("admin.activeEngagementRate", {
+                percent: number(engagementRate),
+                active: number(data.overview.activeUsersCount),
+                total: number(data.overview.usersCount),
+              })}
+            </p>
+          </div>
+        </div>
+      </section>
       <section
         aria-label={t("admin.workspaceTotals")}
         className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"

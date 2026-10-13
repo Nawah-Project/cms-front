@@ -1,5 +1,6 @@
 import React from "react";
 import type { Outcome, Stage } from "../types";
+import { CheckIcon } from "./Icons";
 import { StatusBadge } from "./StatusBadge";
 import { useI18n } from "../i18n";
 
@@ -52,21 +53,19 @@ export function PipelineTimeline({
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center font-medium text-xs transition-colors duration-200 ${
                   isCurrent
-                    ? "bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 ring-4 ring-neutral-100 dark:ring-neutral-800 font-semibold"
+                    ? "bg-neutral-900 text-white ring-4 ring-neutral-200 font-semibold"
                     : isCompleted
-                      ? "bg-neutral-900 text-white dark:bg-neutral-200 dark:text-neutral-900"
-                      : "bg-white text-neutral-400 border border-neutral-300 dark:bg-neutral-950 dark:border-neutral-700"
+                      ? "bg-neutral-900 text-white"
+                      : "bg-surface text-neutral-400 border border-border"
                 }`}
                 title={`${label}: ${isCurrent ? t("common.current") : isCompleted ? t("common.completed") : t("common.upcoming")}`}
               >
                 {isCompleted ? (
-                  <span className="text-sm">✓</span>
+                  <CheckIcon className="w-4 h-4" />
                 ) : isCurrent ? (
-                  <span className="text-xs">●</span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-current" />
                 ) : (
-                  <span className="text-xs text-neutral-400 dark:text-neutral-500">
-                    ○
-                  </span>
+                  <span className="w-2.5 h-2.5 rounded-full border-2 border-current" />
                 )}
               </div>
 

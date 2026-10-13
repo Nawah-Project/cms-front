@@ -18,6 +18,8 @@ import {
   StageCounts,
   timeTitle,
 } from "./components/AdminUI";
+import { Modal } from "../../components/ui/Modal";
+import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 
 const statuses: ActivityStatus[] = [
   "ACTIVE",
@@ -89,9 +91,11 @@ export default function AdminMembersPage() {
         setSelected({ ...selected, group: null });
       setRemoving(null);
       load();
-    } catch (err) {
+    } catch (err: any) {
       setActionError(
-        t("admin.actionFailed"),
+        err?.code === "PERMISSION_DENIED"
+          ? t("admin.permissionError")
+          : t("admin.actionFailed"),
       );
     } finally {
       setRemoveLoading(false);
@@ -108,9 +112,11 @@ export default function AdminMembersPage() {
         setSelected({ ...selected, group: result.group });
       setAssigning(null);
       load();
-    } catch (err) {
+    } catch (err: any) {
       setActionError(
-        t("admin.actionFailed"),
+        err?.code === "PERMISSION_DENIED"
+          ? t("admin.permissionError")
+          : t("admin.actionFailed"),
       );
     } finally {
       setAssignLoading(false);
@@ -368,68 +374,54 @@ export default function AdminMembersPage() {
         />
       )}
       {removing && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-neutral-950/45 p-4"
-          role="presentation"
-        >
-          <section
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="remove-member-title"
-            className="w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-xl"
-          >
-            <h2 id="remove-member-title" className="text-lg font-semibold">
-              {t("admin.removeTitle", { name: removing.name, group: removing.group?.name ?? "" })}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-              {t("admin.removeDescription")}
-            </p>
-            {actionError && (
-              <p role="alert" className="mt-3 text-sm text-danger-strong">
-                {actionError}
-              </p>
-            )}
-            <div className="mt-6 flex justify-end gap-2">
+        <ConfirmDialog
+          isOpen={!!removing}
+          onClose={() => setRemoving(null)}
+          onConfirm={() => void confirmRemoval()}
+          title={t("admin.removeTitle", {
+            name: removing.name,
+            group: removing.group?.name ?? "",
+          })}
+          message={t("admin.removeDescription")}
+          confirmLabel={t("admin.removeConfirm")}
+          cancelLabel={t("admin.cancel")}
+          isConfirming={removeLoading}
+          variant="danger"
+        />
+      )}
+      {assigning && (
+        <Modal
+          isOpen={!!assigning}
+          onClose={() => setAssigning(null)}
+          title={t("admin.assignTitle", { name: assigning.name })}
+          subtitle={t("admin.assignDescription")}
+          size="md"
+          disableClose={assignLoading}
+          footer={
+            <>
               <button
                 type="button"
-                disabled={removeLoading}
-                onClick={() => setRemoving(null)}
-                className="button-secondary"
+                disabled={assignLoading}
+                onClick={() => setAssigning(null)}
+                className="button-secondary text-sm"
               >
                 {t("admin.cancel")}
               </button>
               <button
                 type="button"
-                disabled={removeLoading}
-                onClick={() => void confirmRemoval()}
-                className="button-danger"
+                disabled={assignLoading || !targetGroupId}
+                onClick={() => void confirmAssignment()}
+                className="button-primary text-sm"
               >
-                {removeLoading ? t("admin.removing") : t("admin.removeConfirm")}
+                {assignLoading ? t("admin.adding") : t("admin.addToGroup")}
               </button>
-            </div>
-          </section>
-        </div>
-      )}
-      {assigning && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-neutral-950/45 p-4"
-          role="presentation"
+            </>
+          }
         >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="assign-member-title"
-            className="w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-xl"
-          >
-            <h2 id="assign-member-title" className="text-lg font-semibold">
-              {t("admin.assignTitle", { name: assigning.name })}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-              {t("admin.assignDescription")}
-            </p>
+          <div className="space-y-4">
             {availableGroups.length > 0 ? (
-              <label className="mt-5 grid gap-1.5 text-sm font-medium">
-                {t("admin.destinationGroup")}
+              <label className="grid gap-1.5 text-sm font-medium">
+                <span className="field-label">{t("admin.destinationGroup")}</span>
                 <select
                   className="field-control"
                   value={targetGroupId}
@@ -443,35 +435,17 @@ export default function AdminMembersPage() {
                 </select>
               </label>
             ) : (
-              <p className="mt-5 rounded-lg border border-warning-border bg-warning-soft px-3 py-2.5 text-sm text-warning-strong">
+              <p className="rounded-xl border border-warning-border bg-warning-soft px-3.5 py-2.5 text-sm text-warning-strong">
                 {t("admin.noCapacity")}
               </p>
             )}
             {actionError && (
-              <p role="alert" className="mt-3 text-sm text-danger-strong">
+              <p role="alert" className="text-sm text-danger-strong">
                 {actionError}
               </p>
             )}
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                type="button"
-                disabled={assignLoading}
-                onClick={() => setAssigning(null)}
-                className="button-secondary"
-              >
-                {t("admin.cancel")}
-              </button>
-              <button
-                type="button"
-                disabled={assignLoading || !targetGroupId}
-                onClick={() => void confirmAssignment()}
-                className="button-primary"
-              >
-                {assignLoading ? t("admin.adding") : t("admin.addToGroup")}
-              </button>
-            </div>
-          </section>
-        </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

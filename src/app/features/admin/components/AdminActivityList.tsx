@@ -25,7 +25,7 @@ export function AdminActivityList({ items }: { items: AdminActivity[] }) {
                 <span className="inline-flex items-center gap-1.5 align-middle">
                   <StatusBadge kind="stage" value={item.fromStage} />
                   <span aria-hidden="true" className="text-neutral-400">
-                    →
+                    {locale === "ar" ? "←" : "→"}
                   </span>
                   <StatusBadge kind="stage" value={item.toStage} />
                 </span>

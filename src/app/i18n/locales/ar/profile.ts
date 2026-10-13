@@ -41,4 +41,26 @@ export default {
   noProfessionalInfo: "لم يضف هذا العضو روابط مهنية بعد.",
   loadingCv: "جارٍ تحميل السيرة الذاتية…",
   cvUnavailable: "تعذر فتح هذه السيرة الذاتية. ربما لم تعد متاحة.",
+  savedSuccess: "تم حفظ ملفك المهني بنجاح.",
+  onboardingStep1Title: "١. كيف تعمل المنصة؟",
+  onboardingStep2Title: "٢. ملفك المهني",
+  onboardingStep3Title: "٣. خطوة الانطلاق",
+  onboardingWelcomeTitle: "أهلاً بك في مشروع نواة",
+  onboardingWelcomeSubtitle:
+    "لكي تحقق أقصى استفادة مع مجموعتك، إليك المطلوب منك ببساطة كل أسبوع:",
+  expectation1Title: "سجّل وحدّث طلبات التوظيف",
+  expectation1Desc:
+    "أضف كل وظيفة تتقدم إليها وحدّث مرحلتها عند إجراء مقابلة أو تلقي رد.",
+  expectation2Title: "أنجز مهام التطوير المهني",
+  expectation2Desc:
+    "تابع المهام التي يسندها لك المينتور وطبّق الملاحظات الموجهة لك.",
+  expectation3Title: "تفاعل مع مجموعتك",
+  expectation3Desc:
+    "اطّلع على تقدم زملائك في المجموعة وتعاونوا في الشركات المشتركة.",
+  nextToProfileSetup: "واضح، لنكمل إعداد الملف المهني",
+  onboardingReadyTitle: "اكتمل إعداد حسابك بنجاح!",
+  onboardingReadyDesc:
+    "ابدأ الآن بإضافة أول طلب توظيف لك أو استعرض مهامك التدريبية.",
+  startWithApplication: "إضافة أول طلب توظيف الآن",
+  exploreTasks: "استكشاف مهام التطوير المهني",
 } as const;

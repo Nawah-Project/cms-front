@@ -19,6 +19,8 @@ export default {
   closeNavigation: "Close navigation",
   close: "Close",
   cancel: "Cancel",
+  confirm: "Confirm",
+  dismiss: "Dismiss",
   save: "Save",
   saving: "Saving…",
   edit: "Edit",
