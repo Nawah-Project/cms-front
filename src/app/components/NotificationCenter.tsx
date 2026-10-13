@@ -61,9 +61,14 @@ export function NotificationCenter({ variant = "dark" }: NotificationCenterProps
   };
 
   // Calculate notifications
+  const expiringSoon = stats?.expiringSoonCount ?? 0;
+  const recentNoResponse = stats?.recentNoResponseCount ?? 0;
   const staleApplicationsCount = stats?.closed?.noResponse ?? 0;
   const totalNotifications =
-    (staleApplicationsCount > 0 ? 1 : 0) + (unreadFeedback > 0 ? 1 : 0);
+    (unreadFeedback > 0 ? 1 : 0) +
+    (expiringSoon > 0 ? 1 : 0) +
+    (recentNoResponse > 0 ? 1 : 0) +
+    (staleApplicationsCount > 0 && recentNoResponse === 0 && expiringSoon === 0 ? 1 : 0);
 
   return (
     <div className="relative inline-block" ref={containerRef}>
@@ -125,7 +130,51 @@ export function NotificationCenter({ variant = "dark" }: NotificationCenterProps
               </Link>
             )}
 
-            {staleApplicationsCount > 0 && (
+            {expiringSoon > 0 && (
+              <Link
+                to="/applications?stage=ACTIVE"
+                onClick={() => setOpen(false)}
+                className="flex items-start gap-3 p-2.5 rounded-xl transition hover:bg-neutral-50"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-warning-soft text-warning-strong">
+                  <ClockIcon className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-text-primary">
+                    {t("dashboard.companionExpiringSoon", {
+                      count: number(expiringSoon),
+                    })}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-text-secondary">
+                    {t("dashboard.viewAllApplications")}
+                  </p>
+                </div>
+              </Link>
+            )}
+
+            {recentNoResponse > 0 && (
+              <Link
+                to="/applications?stage=CLOSED"
+                onClick={() => setOpen(false)}
+                className="flex items-start gap-3 p-2.5 rounded-xl transition hover:bg-neutral-50"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-danger-soft text-danger-strong">
+                  <ClockIcon className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-text-primary">
+                    {t("dashboard.companionRecentNoResponse", {
+                      count: number(recentNoResponse),
+                    })}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-text-secondary">
+                    {t("dashboard.viewAllApplications")}
+                  </p>
+                </div>
+              </Link>
+            )}
+
+            {staleApplicationsCount > 0 && recentNoResponse === 0 && expiringSoon === 0 && (
               <Link
                 to="/applications"
                 onClick={() => setOpen(false)}

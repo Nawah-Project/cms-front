@@ -3,7 +3,7 @@ import { Link, useOutletContext } from "react-router";
 import { PlusIcon, SpinnerIcon } from "../components/Icons";
 import { StatusBadge } from "../components/StatusBadge";
 import { EmptyState } from "../components/EmptyState";
-import { CompanionCard } from "../components/CompanionCard";
+import { CompanionBanner } from "../components/CompanionBanner";
 import { useRecentMemberProgress } from "../features/members-progress/hooks/useRecentMemberProgress";
 import { RecentActivityList } from "../features/members-progress/components/RecentActivityList";
 import { api } from "../services/api";
@@ -260,16 +260,16 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Render sections in order according to A/B test variant */}
+      {/* Forefront: Smart Companion Guidance Banner */}
+      <CompanionBanner
+        stats={stats}
+        unreadFeedbackCount={unreadFeedbackCount}
+        onAddApplication={openAddModal}
+      />
+
+      {/* Render sections according to A/B test variant */}
       {variant === "B" ? (
         <>
-          {/* Section 1: Companion Guidance Card */}
-          <CompanionCard
-            stats={stats}
-            unreadFeedbackCount={unreadFeedbackCount}
-            onAddApplication={openAddModal}
-          />
-
           {/* Section 2: Professional Development & Feedback */}
           <ProfessionalDevelopmentSummary />
 
@@ -278,15 +278,8 @@ export default function DashboardPage() {
         </>
       ) : (
         <>
-          {/* Variant A (Classic Order): Metrics First */}
+          {/* Section 2: Evaluation & Pipeline Metrics */}
           {evaluationSection}
-
-          {/* Section 2: Companion Guidance Card */}
-          <CompanionCard
-            stats={stats}
-            unreadFeedbackCount={unreadFeedbackCount}
-            onAddApplication={openAddModal}
-          />
 
           {/* Section 3: Professional Development & Feedback */}
           <ProfessionalDevelopmentSummary />

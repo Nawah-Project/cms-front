@@ -8,6 +8,7 @@ import { ProtectedRoute } from "../features/auth/components/ProtectedRoute";
 import { ProfileCompletionGate } from "../features/profile/ProfileCompletionGate";
 import { useI18n } from "../i18n";
 import { useToast } from "../components/ui/ToastProvider";
+import { trackUxEvent } from "../utils/uxAnalytics";
 
 interface AppContextType {
   openAddModal: () => void;
@@ -33,6 +34,7 @@ export default function Layout() {
       message: t("applications.applicationCreated"),
       variant: "success",
     });
+    trackUxEvent("application_created", { company: created.companyName });
     // Navigate to applications page to see the new addition
     navigate("/applications");
     return created;

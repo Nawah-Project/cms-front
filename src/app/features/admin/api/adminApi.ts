@@ -29,6 +29,12 @@ export type AdminMember = {
   applicationsCount: number;
   currentStageCounts: StageCounts;
   avatar?: string | null;
+  development?: {
+    active: number;
+    inProgress: number;
+    overdue: number;
+    lastTaskAt: string | null;
+  };
 };
 export type AdminGroup = {
   id: string;
@@ -266,4 +272,6 @@ export const adminApi = {
       `/admin/feedback/${encodeURIComponent(feedbackId)}/archive`,
       { method: "POST" },
     ),
+  uxAnalytics: () =>
+    request<any>("/admin/monitoring/ux-analytics"),
 };

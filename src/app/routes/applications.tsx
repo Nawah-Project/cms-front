@@ -13,6 +13,8 @@ import { TableView } from "../components/TableView";
 import { api } from "../services/api";
 import type { Application, Outcome, Stage } from "../types";
 import { useI18n } from "../i18n";
+import { useToast } from "../components/ui/ToastProvider";
+import { trackUxEvent } from "../utils/uxAnalytics";
 
 export function meta() {
   return [
@@ -24,6 +26,7 @@ export function meta() {
 export default function ApplicationsPage() {
   const { openAddModal } = useOutletContext<{ openAddModal: () => void }>();
   const { t, tp } = useI18n();
+  const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [applications, setApplications] = useState<Application[]>([]);
@@ -83,28 +86,15 @@ export default function ApplicationsPage() {
       const outcomeParam =
         currentOutcome === "ALL" ? undefined : currentOutcome;
       const searchParam = debouncedSearch.trim() || undefined;
-      const isFilterActive = Boolean(stageParam || outcomeParam || searchParam);
+      const res = await api.getApplications({
+        stage: stageParam,
+        outcome: outcomeParam,
+        search: searchParam,
+      });
 
-      if (!isFilterActive) {
-        const data = await api.getApplications();
-        if (request !== requestId.current) return;
-        setApplications(data);
-        setTotalCount(data.length);
-      } else {
-        const [allData, filtered] = await Promise.all([
-          totalCount === 0 ? api.getApplications() : Promise.resolve(null),
-          api.getApplications({
-            stage: stageParam,
-            outcome: outcomeParam,
-            search: searchParam,
-          }),
-        ]);
-        if (request !== requestId.current) return;
-        setApplications(filtered);
-        if (allData) {
-          setTotalCount(allData.length);
-        }
-      }
+      if (request !== requestId.current) return;
+      setApplications(res.items);
+      setTotalCount(res.unfilteredTotal ?? res.total);
     } catch {
       if (request !== requestId.current) return;
       setError(t("common.loadError"));
@@ -166,6 +156,8 @@ export default function ApplicationsPage() {
       setApplications((prev) =>
         prev.map((app) => (app.id === appId ? savedApplication : app)),
       );
+      toast.success(t("applications.applicationUpdated"));
+      trackUxEvent("application_stage_updated", { appId, stage: newStage });
     } catch {
       // Roll back only this card, preserving other moves made meanwhile.
       setApplications((prev) => {
@@ -175,6 +167,7 @@ export default function ApplicationsPage() {
           : next;
       });
       setMoveError(true);
+      toast.error(t("common.unexpectedError"));
     } finally {
       pendingMoves.current.delete(appId);
     }
@@ -408,11 +401,16 @@ export default function ApplicationsPage() {
       ) : (
         <div className={`space-y-4 ${isRefreshing ? "opacity-60 transition-opacity duration-150" : "transition-opacity duration-150"}`}>
           <div className="flex items-center justify-between text-xs text-neutral-500 px-1">
-            <span>
-              {t("applications.showingCount", {
-                count: tp("common.applicationCount", applications.length),
-              })}
-            </span>
+            <div className="flex items-center gap-2">
+              <span>
+                {t("applications.showingCount", {
+                  count: tp("common.applicationCount", applications.length),
+                })}
+              </span>
+              {isRefreshing && (
+                <SpinnerIcon className="h-3.5 w-3.5 animate-spin text-neutral-400" />
+              )}
+            </div>
             {isFiltering && (
               <button
                 type="button"

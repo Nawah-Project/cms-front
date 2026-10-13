@@ -6,6 +6,7 @@ import type {
   Outcome,
   Stage,
   UpdateApplicationInput,
+  ApplicationsResponse,
 } from "../types";
 import { notifyAuthSessionExpired } from "../utils/authSession";
 import type {
@@ -135,12 +136,11 @@ export const api = {
     outcome?: string;
     search?: string;
     limit?: number;
-  }): Promise<Application[]> {
+  }): Promise<ApplicationsResponse> {
     const searchParams = new URLSearchParams();
-    const isActiveFilter = params?.stage === "ACTIVE";
 
-    // Forward valid backend stage enum to query params, avoid invalid "ACTIVE" string
-    if (params?.stage && !isActiveFilter) {
+    // The backend now natively supports stage=ACTIVE as well as individual stages
+    if (params?.stage) {
       searchParams.set("stage", params.stage);
     }
     if (params?.outcome) searchParams.set("outcome", params.outcome);
@@ -152,17 +152,30 @@ export const api = {
     const res = await request<any>(endpoint, { method: "GET" });
 
     let items: Application[] = [];
+    let total = 0;
+    let unfilteredTotal = 0;
+
     if (Array.isArray(res)) {
       items = res;
-    } else if (res && Array.isArray(res.data)) {
-      items = res.data;
+      total = res.length;
+      unfilteredTotal = res.length;
+    } else if (res && typeof res === "object") {
+      items = Array.isArray(res.items)
+        ? res.items
+        : Array.isArray(res.data)
+          ? res.data
+          : [];
+      total = typeof res.total === "number" ? res.total : items.length;
+      unfilteredTotal =
+        typeof res.unfilteredTotal === "number" ? res.unfilteredTotal : total;
     }
 
-    if (isActiveFilter) {
+    if (params?.stage === "ACTIVE" && items.some((app) => app.stage === "CLOSED")) {
       items = items.filter((app) => app.stage !== "CLOSED");
+      total = items.length;
     }
 
-    return items;
+    return { items, total, unfilteredTotal };
   },
 
   /**
@@ -282,6 +295,8 @@ export const api = {
           recentApplications: normalizeRecentApplications(
             data.recentApplications,
           ),
+          expiringSoonCount: Number(data.expiringSoonCount) || 0,
+          recentNoResponseCount: Number(data.recentNoResponseCount) || 0,
         };
       }
 
@@ -317,6 +332,8 @@ export const api = {
         recentApplications: normalizeRecentApplications(
           data.recentApplications,
         ),
+        expiringSoonCount: Number(data.expiringSoonCount) || 0,
+        recentNoResponseCount: Number(data.recentNoResponseCount) || 0,
       };
     }
 
@@ -329,6 +346,8 @@ export const api = {
         withdrawn: 0,
         noResponse: 0,
       },
+      expiringSoonCount: 0,
+      recentNoResponseCount: 0,
       recentApplications: [],
     };
   },

@@ -27,9 +27,9 @@ export function PipelineTimeline({
     <div className="w-full py-4">
       <div className="flex items-center justify-between relative">
         {/* Connecting line */}
-        <div className="absolute top-4 inset-x-6 h-0.5 bg-neutral-200 dark:bg-neutral-800 -z-0" />
+        <div className="absolute top-4 inset-x-6 h-0.5 bg-neutral-200 -z-0" />
         <div
-          className="absolute top-4 start-6 h-0.5 bg-neutral-900 dark:bg-neutral-100 -z-0 transition-all duration-300"
+          className="absolute top-4 start-6 h-0.5 bg-neutral-900 -z-0 transition-all duration-300"
           style={{
             width: `${Math.min(100, Math.max(0, (currentIndex / (ORDERED_STAGES.length - 1)) * 100))}%`,
           }}
@@ -73,10 +73,10 @@ export function PipelineTimeline({
                 <span
                   className={`text-xs font-medium block transition-colors ${
                     isCurrent
-                      ? "text-neutral-900 dark:text-neutral-100 font-semibold"
+                      ? "text-neutral-900 font-semibold"
                       : isCompleted
-                        ? "text-neutral-700 group-hover:text-neutral-950 dark:text-neutral-300 dark:group-hover:text-white"
-                        : "text-neutral-500 group-hover:text-neutral-800 dark:text-neutral-500 dark:group-hover:text-neutral-200"
+                        ? "text-neutral-700 group-hover:text-neutral-950"
+                        : "text-neutral-500 group-hover:text-neutral-800"
                   }`}
                 >
                   {label}

@@ -19,8 +19,11 @@ interface ToastItem extends ToastOptions {
   id: string;
 }
 
-interface ToastContextValue {
+export interface ToastContextValue {
   showToast: (options: ToastOptions) => void;
+  success: (message: string) => void;
+  error: (message: string) => void;
+  info: (message: string) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -44,7 +47,25 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     [removeToast],
   );
 
-  const value = useMemo(() => ({ showToast }), [showToast]);
+  const success = useCallback(
+    (message: string) => showToast({ message, variant: "success" }),
+    [showToast],
+  );
+
+  const error = useCallback(
+    (message: string) => showToast({ message, variant: "error" }),
+    [showToast],
+  );
+
+  const info = useCallback(
+    (message: string) => showToast({ message, variant: "info" }),
+    [showToast],
+  );
+
+  const value = useMemo(
+    () => ({ showToast, success, error, info }),
+    [showToast, success, error, info],
+  );
 
   return (
     <ToastContext.Provider value={value}>

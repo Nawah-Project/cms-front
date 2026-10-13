@@ -1,17 +1,22 @@
 import { useState, useEffect } from "react";
 
 export type UxEventName =
+  | "onboarding_started"
+  | "onboarding_video_watched"
+  | "onboarding_completed"
   | "onboarding_step_viewed"
   | "onboarding_video_opened"
-  | "onboarding_completed"
   | "companion_cta_clicked"
   | "application_created"
+  | "application_stage_updated"
   | "application_stage_changed"
+  | "task_status_changed"
   | "task_status_updated"
+  | "feedback_read"
   | "feedback_opened";
 
 export interface UxEventRecord {
-  event: UxEventName;
+  event: UxEventName | string;
   timestamp: string;
   metadata?: Record<string, string | number | boolean>;
 }
@@ -19,23 +24,46 @@ export interface UxEventRecord {
 const STORAGE_KEY = "nawah_ux_telemetry";
 
 export function trackUxEvent(
-  eventName: UxEventName,
+  eventName: UxEventName | string,
   metadata?: Record<string, string | number | boolean>,
 ): void {
   if (typeof window === "undefined") return;
+
+  const payload: UxEventRecord = {
+    event: eventName,
+    timestamp: new Date().toISOString(),
+    metadata,
+  };
+
+  // 1. Local backup storage
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const list: UxEventRecord[] = raw ? JSON.parse(raw) : [];
-    list.push({
-      event: eventName,
-      timestamp: new Date().toISOString(),
-      metadata,
-    });
-    // Keep last 100 events for storage optimization
+    list.push(payload);
     if (list.length > 100) list.shift();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
   } catch {
-    // Fallback for private browsing storage restrictions
+    // Ignore storage quota or private mode issues
+  }
+
+  // 2. Asynchronous backend delivery to POST /ux-analytics/events
+  try {
+    const apiBase =
+      typeof window !== "undefined" && (window as any).__API_BASE__
+        ? (window as any).__API_BASE__
+        : "";
+    void fetch(`${apiBase}/ux-analytics/events`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    }).catch(() => {
+      // Backend route might be unavailable or offline; swallow silently
+    });
+  } catch {
+    // Silently continue
   }
 }
 

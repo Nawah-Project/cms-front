@@ -21,6 +21,10 @@ export default {
   viewAllApplications: "View all applications",
   addFirstApplication: "Add your first application",
   companionTitle: "Nawah Companion — Your next step",
+  companionExpiringSoon:
+    "You have {count} applications without updates for 5+ days close to auto-closing. Review them now.",
+  companionRecentNoResponse:
+    "{count} applications were moved to No Response after 7 days. Review them to follow up.",
   companionStaleApps:
     "You have {count} applications with no recent updates or marked as no response. Review them now.",
   companionUnreadFeedback:

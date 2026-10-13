@@ -42,6 +42,14 @@ export interface DashboardStats {
     noResponse: number;
   };
   recentApplications?: DashboardApplication[];
+  expiringSoonCount?: number;
+  recentNoResponseCount?: number;
+}
+
+export interface ApplicationsResponse {
+  items: Application[];
+  total: number;
+  unfilteredTotal: number;
 }
 
 export interface DashboardApplication {

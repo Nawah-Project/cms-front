@@ -15,6 +15,7 @@ import { ProfessionalDevelopmentNav } from "../components/ProfessionalDevelopmen
 import { TaskFormDialog } from "../components/TaskFormDialog";
 import { PlusIcon } from "../../../components/Icons";
 import { useToast } from "../../../components/ui/ToastProvider";
+import { trackUxEvent } from "../../../utils/uxAnalytics";
 
 const COLUMNS: Array<{ status: TaskStatus; key: string }> = [
   { status: "TODO", key: "toDo" },
@@ -132,6 +133,7 @@ export default function TasksPage() {
         message: t("professionalDevelopment.taskUpdated"),
         variant: "success",
       });
+      trackUxEvent("task_status_changed", { taskId, status });
     } catch {
       setTasks((current) =>
         current.map((item) =>

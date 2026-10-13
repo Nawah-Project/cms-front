@@ -4,6 +4,7 @@ import { useAuth } from "../auth/store/authStore";
 import { useI18n } from "../../i18n";
 import { profileApi, type ProfessionalProfile } from "./profileApi";
 import { ProfileForm } from "./ProfileForm";
+import { trackUxEvent } from "../../utils/uxAnalytics";
 import { Modal } from "../../components/ui/Modal";
 import {
   SpinnerIcon,
@@ -35,7 +36,12 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
     void profileApi
       .get()
       .then((result) => {
-        if (active) setProfile(result);
+        if (active) {
+          setProfile(result);
+          if (!result.profileComplete) {
+            trackUxEvent("onboarding_started");
+          }
+        }
       })
       .catch(() => {
         if (active) setFailed(true);
@@ -162,9 +168,15 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
             <div
               role="button"
               tabIndex={0}
-              onClick={() => setVideoModalOpen(true)}
+              onClick={() => {
+                setVideoModalOpen(true);
+                trackUxEvent("onboarding_video_watched");
+              }}
               onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") setVideoModalOpen(true);
+                if (e.key === "Enter" || e.key === " ") {
+                  setVideoModalOpen(true);
+                  trackUxEvent("onboarding_video_watched");
+                }
               }}
               className="flex cursor-pointer items-center gap-4 rounded-xl border border-border bg-neutral-50 p-4 transition hover:bg-neutral-100"
             >
@@ -254,6 +266,7 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
               onSaved={(saved) => {
                 setProfile(saved);
                 if (user) setUser({ ...user, name: saved.name });
+                trackUxEvent("onboarding_completed");
                 setStep(3);
               }}
             />

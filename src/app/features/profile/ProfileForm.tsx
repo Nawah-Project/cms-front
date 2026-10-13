@@ -1,6 +1,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useI18n } from "../../i18n";
 import { DocumentPdfIcon } from "../../components/Icons";
+import { useToast } from "../../components/ui/ToastProvider";
 import type { ProfessionalProfile } from "./profileApi";
 import { isPdf, MAX_CV_BYTES, MAX_CV_SIZE_MB, profileApi } from "./profileApi";
 
@@ -18,6 +19,7 @@ export function ProfileForm({
   onboarding?: boolean;
 }) {
   const { t, locale } = useI18n();
+  const toast = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(initial.name);
   const [portfolio, setPortfolio] = useState(initial.portfolioUrl ?? "");
@@ -85,10 +87,12 @@ export function ProfileForm({
         setUploadState("uploaded");
       }
       if (!next.profileComplete) throw new Error("Profile is incomplete");
+      toast.success(t("profile.savedSuccess"));
       onSaved(next);
     } catch {
       setUploadState(file ? "error" : uploadState);
       setError(t("profile.saveError"));
+      toast.error(t("profile.saveError"));
     } finally {
       setSaving(false);
     }

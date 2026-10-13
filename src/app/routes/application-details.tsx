@@ -28,6 +28,7 @@ import { formatDisplayDate } from "../utils/date";
 import { useI18n } from "../i18n";
 import { Modal } from "../components/ui/Modal";
 import { useToast } from "../components/ui/ToastProvider";
+import { trackUxEvent } from "../utils/uxAnalytics";
 
 export function meta({ data }: { data?: { application?: Application } }) {
   if (data?.application) {
@@ -103,6 +104,10 @@ export default function ApplicationDetailsPage() {
         message: t("applications.applicationUpdated"),
         variant: "success",
       });
+      trackUxEvent("application_stage_updated", {
+        appId: application.id,
+        stage: newStage,
+      });
     } catch {
       showToast({
         message: t("common.unexpectedError"),
@@ -123,6 +128,11 @@ export default function ApplicationDetailsPage() {
       showToast({
         message: t("applications.applicationUpdated"),
         variant: "success",
+      });
+      trackUxEvent("application_stage_updated", {
+        appId: application.id,
+        stage: "CLOSED",
+        outcome: selectedOutcomeForClose,
       });
     } catch {
       showToast({

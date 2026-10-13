@@ -134,4 +134,11 @@ export default {
   variantA: "النسخة أ (الترتيب الكلاسيكي)",
   variantB: "النسخة ب (مركز التوجيه والمهام أولاً)",
   currentExperimentVariant: "التخطيط المعتمد حالياً: {variant}",
+  onboardingCompletionRate: "معدل إكمال التهيئة (Onboarding)",
+  videoWatchRate: "مشاهدة الفيديو التعريفي",
+  abMetricsComparison: "مقارنة معدلات التفاعل بين النسخة A والنسخة B",
+  variantAPerformance: "تفاعل النسخة أ (Metrics First)",
+  variantBPerformance: "تفاعل النسخة ب (Action First)",
+  funnelViews: "{count} مشاهدة",
+  funnelCompleted: "{count} مكتملة ({percent}%)",
 } as const;

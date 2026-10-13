@@ -21,6 +21,10 @@ export default {
   viewAllApplications: "عرض كل الطلبات",
   addFirstApplication: "أضف أول طلب تقديم",
   companionTitle: "مرشد نواة — خطوتك التالية",
+  companionExpiringSoon:
+    "لديك {count} وظائف مر عليها أكثر من 5 أيام وتقترب من التحول لخانة عدم الرد. راجعها الآن لتحديث حالتها.",
+  companionRecentNoResponse:
+    "تم نقل {count} طلبات توظيف تلقائياً لخانة عدم الرد بعد مرور 7 أيام. راجعها للمتابعة مع الشركات.",
   companionStaleApps:
     "لديك {count} طلبات توظيف لم يتم تحديثها منذ فترة أو انتقلت لعدم الرد. راجعها الآن لتحديث حالتها.",
   companionUnreadFeedback:

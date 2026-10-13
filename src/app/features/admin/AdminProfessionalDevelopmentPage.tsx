@@ -45,28 +45,15 @@ export default function AdminProfessionalDevelopmentPage() {
       ]);
       setGroups(groupResult.items);
       const users = result.items.filter((member) => member.role === "USER");
-      const withDevelopment = await Promise.all(
-        users.map(async (member) => {
-          const [detail, tasks] = await Promise.all([
-            adminApi.user(member.id),
-            adminApi.tasksForUser(member.id, 1, 50),
-          ]);
-          const lastTaskAt = tasks.items.reduce<string | null>(
-            (latest, task) =>
-              !latest || task.updatedAt > latest ? task.updatedAt : latest,
-            null,
-          );
-          return {
-            ...member,
-            development: {
-              active: detail.development.totalActiveTasks,
-              inProgress: detail.development.taskStatusCounts.IN_PROGRESS,
-              overdue: detail.development.overdueTasks,
-              lastTaskAt,
-            },
-          };
-        }),
-      );
+      const withDevelopment = users.map((member) => ({
+        ...member,
+        development: member.development ?? {
+          active: 0,
+          inProgress: 0,
+          overdue: 0,
+          lastTaskAt: null,
+        },
+      }));
       setMembers(withDevelopment);
       setTotalPages(result.totalPages);
     } catch {

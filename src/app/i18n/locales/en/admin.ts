@@ -137,4 +137,11 @@ export default {
   variantA: "Variant A (Classic Metrics First)",
   variantB: "Variant B (Action-Oriented Companion First)",
   currentExperimentVariant: "Active Layout: {variant}",
+  onboardingCompletionRate: "Onboarding Completion Rate",
+  videoWatchRate: "Intro Video Watched",
+  abMetricsComparison: "Interaction Comparison: Variant A vs Variant B",
+  variantAPerformance: "Variant A Interaction (Metrics First)",
+  variantBPerformance: "Variant B Interaction (Action First)",
+  funnelViews: "{count} views",
+  funnelCompleted: "{count} completed ({percent}%)",
 } as const;

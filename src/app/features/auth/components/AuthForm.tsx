@@ -63,15 +63,29 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         await login({ email: email.trim(), password });
         navigate(from, { replace: true });
       }
-    } catch (caught) {
+    } catch (caught: any) {
       const message = caught instanceof Error ? caught.message.toLowerCase() : "";
-      setError(
-        message.includes("invalid email or password")
-          ? t("auth.invalidCredentials")
-          : message.includes("failed to fetch") || message.includes("network")
-            ? t("common.connectionError")
-            : t("auth.authFailed"),
-      );
+      const status = caught?.status;
+      if (
+        status === 409 ||
+        message.includes("already exists") ||
+        message.includes("already registered") ||
+        message.includes("conflict")
+      ) {
+        setError(t("auth.emailAlreadyExists"));
+      } else if (status === 400 && registering) {
+        setError(t("auth.passwordRequirementsError"));
+      } else if (
+        message.includes("invalid email or password") ||
+        message.includes("unauthorized") ||
+        status === 401
+      ) {
+        setError(t("auth.invalidCredentials"));
+      } else if (message.includes("failed to fetch") || message.includes("network")) {
+        setError(t("common.connectionError"));
+      } else {
+        setError(t("auth.authFailed"));
+      }
     } finally {
       setSubmitting(false);
     }

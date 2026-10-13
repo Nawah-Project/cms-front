@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { ArrowDownIcon, ArrowUpIcon, EditIcon, PlusIcon, TrashIcon } from "../../../components/Icons";
+import { ArrowDownIcon, ArrowUpIcon, CheckCircleIcon, CircleIcon, EditIcon, PlusIcon, TrashIcon } from "../../../components/Icons";
 import { useI18n } from "../../../i18n";
 import { ConfirmDialog } from "../../../components/ui/ConfirmDialog";
 import type {
@@ -233,7 +233,11 @@ function AdminTaskRow({
               <ul className="space-y-2">
                 {task.checklist.map((item) => (
                   <li key={item.id} className="flex items-center gap-2 text-sm">
-                    <span aria-hidden="true">{item.completed ? "✓" : "○"}</span>
+                    {item.completed ? (
+                      <CheckCircleIcon className="h-4 w-4 text-success-strong shrink-0" />
+                    ) : (
+                      <CircleIcon className="h-4 w-4 text-neutral-400 shrink-0" />
+                    )}
                     <span>{item.title}</span>
                   </li>
                 ))}
