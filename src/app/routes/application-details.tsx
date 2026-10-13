@@ -26,6 +26,9 @@ import {
 } from "../types";
 import { formatDisplayDate } from "../utils/date";
 import { useI18n } from "../i18n";
+import { Modal } from "../components/ui/Modal";
+import { useToast } from "../components/ui/ToastProvider";
+import { trackUxEvent } from "../utils/uxAnalytics";
 
 export function meta({ data }: { data?: { application?: Application } }) {
   if (data?.application) {
@@ -44,6 +47,7 @@ export function meta({ data }: { data?: { application?: Application } }) {
 
 export default function ApplicationDetailsPage() {
   const { t, locale } = useI18n();
+  const { showToast } = useToast();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -96,8 +100,19 @@ export default function ApplicationDetailsPage() {
         outcome: "NONE",
       });
       setApplication(updated);
-    } catch (err: any) {
-      alert(t("common.unexpectedError"));
+      showToast({
+        message: t("applications.applicationUpdated"),
+        variant: "success",
+      });
+      trackUxEvent("application_stage_updated", {
+        appId: application.id,
+        stage: newStage,
+      });
+    } catch {
+      showToast({
+        message: t("common.unexpectedError"),
+        variant: "error",
+      });
     }
   };
 
@@ -110,8 +125,20 @@ export default function ApplicationDetailsPage() {
       });
       setApplication(updated);
       setIsPromptingClosedOutcome(false);
-    } catch (err: any) {
-      alert(t("common.unexpectedError"));
+      showToast({
+        message: t("applications.applicationUpdated"),
+        variant: "success",
+      });
+      trackUxEvent("application_stage_updated", {
+        appId: application.id,
+        stage: "CLOSED",
+        outcome: selectedOutcomeForClose,
+      });
+    } catch {
+      showToast({
+        message: t("common.unexpectedError"),
+        variant: "error",
+      });
     }
   };
 
@@ -121,12 +148,20 @@ export default function ApplicationDetailsPage() {
   ) => {
     const updated = await api.updateApplication(appId, updates);
     setApplication(updated);
+    showToast({
+      message: t("applications.applicationUpdated"),
+      variant: "success",
+    });
     return updated;
   };
 
   const handleDelete = async () => {
     if (!application) return;
     await api.deleteApplication(application.id);
+    showToast({
+      message: t("applications.applicationDeleted"),
+      variant: "success",
+    });
     navigate("/applications");
   };
 
@@ -339,58 +374,50 @@ export default function ApplicationDetailsPage() {
       </div>
 
       {/* Modal Prompt for Outcome when Stage is changed to CLOSED */}
-      {isPromptingClosedOutcome && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/40 backdrop-blur-xs">
-          <div
-            className="w-full max-w-sm bg-white dark:bg-neutral-900 rounded-xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6"
-            role="dialog"
-            aria-modal="true"
-          >
-            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              {t("applications.closeApplication")}
-            </h3>
-            <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
-              {t("applications.selectOutcome")}
-            </p>
-
-            <div className="grid grid-cols-3 gap-2 mt-4">
-              {(["ACCEPTED", "REJECTED", "WITHDRAWN"] as Outcome[]).map(
-                (opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => setSelectedOutcomeForClose(opt)}
-                    className={`px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
-                      selectedOutcomeForClose === opt
-                        ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900"
-                        : "bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100"
-                    }`}
-                  >
-                    {t(`applications.${opt.toLowerCase()}`)}
-                  </button>
-                ),
-              )}
-            </div>
-
-            <div className="flex items-center justify-end gap-2 mt-6">
+      <Modal
+        isOpen={isPromptingClosedOutcome}
+        onClose={() => setIsPromptingClosedOutcome(false)}
+        title={t("applications.closeApplication")}
+        subtitle={t("applications.selectOutcome")}
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setIsPromptingClosedOutcome(false)}
+              className="button-secondary text-sm"
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmClosedOutcome}
+              className="button-primary text-sm"
+            >
+              {t("applications.confirmClose")}
+            </button>
+          </>
+        }
+      >
+        <div className="grid grid-cols-3 gap-2">
+          {(["ACCEPTED", "REJECTED", "WITHDRAWN"] as Outcome[]).map(
+            (opt) => (
               <button
+                key={opt}
                 type="button"
-                onClick={() => setIsPromptingClosedOutcome(false)}
-                className="px-3 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                onClick={() => setSelectedOutcomeForClose(opt)}
+                className={`px-3 py-2 text-xs font-medium rounded-xl border transition-all ${
+                  selectedOutcomeForClose === opt
+                    ? "bg-neutral-900 text-white border-neutral-900 shadow-xs"
+                    : "bg-surface text-text-secondary border-border hover:bg-surface-hover"
+                }`}
               >
-                {t("common.cancel")}
+                {t(`applications.${opt.toLowerCase()}`)}
               </button>
-              <button
-                type="button"
-                onClick={handleConfirmClosedOutcome}
-                className="px-4 py-1.5 text-xs font-medium bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors shadow-xs"
-              >
-                {t("applications.confirmClose")}
-              </button>
-            </div>
-          </div>
+            ),
+          )}
         </div>
-      )}
+      </Modal>
 
       {/* Edit Modal */}
       <EditApplicationModal

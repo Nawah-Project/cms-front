@@ -5,6 +5,7 @@ import { adminApi } from "../../admin/api/adminApi";
 import { api } from "../../../services/api";
 import type { FeedbackPost } from "../types";
 import { FeedbackRichContent } from "./FeedbackRichContent";
+import { trackUxEvent } from "../../../utils/uxAnalytics";
 import {
   FeedbackContextTag,
   FeedbackResourceCard,
@@ -44,6 +45,7 @@ export function FeedbackDetailDrawer({
         result = { ...result, isRead: true, readAt: read.readAt };
         onRead?.(feedbackId);
       }
+      trackUxEvent("feedback_read", { feedbackId, admin });
       setFeedback(result);
     } catch {
       setError(true);

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router";
 import type { Application } from "../types";
 import { formatApplicationMethod } from "../types";
 import { formatDisplayDate } from "../utils/date";
-import { ExternalLinkIcon } from "./Icons";
+import { ExternalLinkIcon, ArrowLeftIcon } from "./Icons";
 import { StatusBadge } from "./StatusBadge";
 import { useI18n } from "../i18n";
 
@@ -111,8 +111,9 @@ export function TableView({ applications }: TableViewProps) {
 
               {/* Action */}
               <td className="data-table-cell whitespace-nowrap text-end">
-                <span className="text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-200 transition-colors text-xs font-medium">
-                  {t("applications.view")} →
+                <span className="inline-flex items-center gap-1 text-neutral-400 group-hover:text-neutral-800 transition-colors text-xs font-medium">
+                  <span>{t("applications.view")}</span>
+                  <ArrowLeftIcon className="w-3.5 h-3.5 rotate-180 rtl:rotate-0" />
                 </span>
               </td>
             </tr>

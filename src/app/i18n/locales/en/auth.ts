@@ -6,7 +6,9 @@ export default {
   name: "Name",
   email: "Email",
   password: "Password",
-  passwordHint: "Use at least 8 characters.",
+  passwordHint: "Must be at least 8 characters with uppercase, lowercase, number, and symbol (@#$...).",
+  emailAlreadyExists: "This email is already registered. Please sign in instead.",
+  passwordRequirementsError: "Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character (@#$...).",
   createAccount: "Create account",
   signIn: "Sign in",
   signingIn: "Signing in…",
@@ -28,4 +30,15 @@ export default {
   sessionLoading: "Loading your session…",
   profileName: "Name",
   profileEmail: "Email",
+  heroBadge: "Nawah Mentoring & Career Platform",
+  heroTitle:
+    "Start your career journey with clear steps alongside your group and mentor",
+  heroDescription:
+    "Organize job applications, complete training tasks, and receive direct mentor feedback to reach your career goal.",
+  watchIntroTitle: "Watch how the platform works in 90 seconds",
+  watchIntroSubtitle:
+    "A quick walkthrough of your group journey and how to get the most out of Nawah",
+  featureTrackTitle: "Structured application tracking",
+  featureMentorTitle: "Mentor tasks & guidance",
+  featureGroupTitle: "Group progress & peer motivation",
 } as const;

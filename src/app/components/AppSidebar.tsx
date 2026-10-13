@@ -4,6 +4,7 @@ import { useAuth } from "../features/auth/store/authStore";
 import { useLogout } from "../features/auth/hooks/useLogout";
 import { useI18n } from "../i18n";
 import { GlobeIcon } from "./Icons";
+import { NotificationCenter } from "./NotificationCenter";
 
 type NavItem = {
   labelKey: string;
@@ -207,7 +208,10 @@ export function AppSidebar() {
               </time>
             </span>
           </Link>
-          {localeToggle}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <NotificationCenter variant="dark" />
+            {localeToggle}
+          </div>
         </div>
         <nav aria-label={t("common.primaryNavigation")} className="space-y-1">
           {navLinks()}
@@ -242,6 +246,7 @@ export function AppSidebar() {
             {localeToggle}
           </div>
           <div className="flex items-center gap-2">
+            <NotificationCenter variant="light" />
             <button
               type="button"
               aria-label={

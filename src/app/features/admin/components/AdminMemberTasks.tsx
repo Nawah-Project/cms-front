@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { EditIcon, PlusIcon, TrashIcon } from "../../../components/Icons";
+import { ArrowDownIcon, ArrowUpIcon, CheckCircleIcon, CircleIcon, EditIcon, PlusIcon, TrashIcon } from "../../../components/Icons";
 import { useI18n } from "../../../i18n";
+import { ConfirmDialog } from "../../../components/ui/ConfirmDialog";
 import type {
   CreateTaskInput,
   ProfessionalTask,
@@ -41,6 +42,7 @@ function AdminTaskRow({
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState(false);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string; title: string } | null>(null);
 
   const loadFeedback = useCallback(async () => {
     setFeedbackLoading(true);
@@ -231,7 +233,11 @@ function AdminTaskRow({
               <ul className="space-y-2">
                 {task.checklist.map((item) => (
                   <li key={item.id} className="flex items-center gap-2 text-sm">
-                    <span aria-hidden="true">{item.completed ? "✓" : "○"}</span>
+                    {item.completed ? (
+                      <CheckCircleIcon className="h-4 w-4 text-success-strong shrink-0" />
+                    ) : (
+                      <CircleIcon className="h-4 w-4 text-neutral-400 shrink-0" />
+                    )}
                     <span>{item.title}</span>
                   </li>
                 ))}
@@ -316,9 +322,9 @@ function AdminTaskRow({
                           }),
                         )
                       }
-                      className="rounded px-1.5 text-xs text-neutral-500 disabled:opacity-30"
+                      className="rounded p-1 text-xs text-neutral-500 hover:bg-neutral-100 disabled:opacity-30"
                     >
-                      ↑
+                      <ArrowUpIcon className="w-3.5 h-3.5" />
                     </button>
                     <button
                       type="button"
@@ -331,9 +337,9 @@ function AdminTaskRow({
                           }),
                         )
                       }
-                      className="rounded px-1.5 text-xs text-neutral-500 disabled:opacity-30"
+                      className="rounded p-1 text-xs text-neutral-500 hover:bg-neutral-100 disabled:opacity-30"
                     >
-                      ↓
+                      <ArrowDownIcon className="w-3.5 h-3.5" />
                     </button>
                     <button
                       type="button"
@@ -349,16 +355,7 @@ function AdminTaskRow({
                       type="button"
                       disabled={busy}
                       aria-label={`${t("professionalDevelopment.deleteChecklistItem")}: ${item.title}`}
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            `${t("professionalDevelopment.deleteChecklistItem")}?`,
-                          )
-                        )
-                          void perform(() =>
-                            adminApi.deleteTaskChecklistItem(task.id, item.id),
-                          );
-                      }}
+                      onClick={() => setItemToDelete({ id: item.id, title: item.title })}
                       className="rounded-md p-1.5 text-neutral-500 hover:text-danger-strong"
                     >
                       <TrashIcon className="h-3.5 w-3.5" />
@@ -396,6 +393,23 @@ function AdminTaskRow({
           {mentorFeedbackSection}
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!itemToDelete}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={async () => {
+          if (!itemToDelete) return;
+          await perform(() =>
+            adminApi.deleteTaskChecklistItem(task.id, itemToDelete.id),
+          );
+          setItemToDelete(null);
+        }}
+        title={t("professionalDevelopment.deleteChecklistItem")}
+        message={`${t("professionalDevelopment.deleteChecklistItem")}?`}
+        confirmLabel={t("common.delete")}
+        cancelLabel={t("common.cancel")}
+        variant="danger"
+      />
     </article>
   );
 }
@@ -458,15 +472,23 @@ export function AdminMemberTasks({
     onChanged?.();
     await load();
   };
+  const [taskToDelete, setTaskToDelete] = useState<ProfessionalTask | null>(null);
+
   const deleteTask = async (task: ProfessionalTask) => {
-    if (!window.confirm(t("professionalDevelopment.deleteTaskConfirm"))) return;
+    setTaskToDelete(task);
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return;
     try {
-      await adminApi.deleteTask(task.id);
+      await adminApi.deleteTask(taskToDelete.id);
       setNotice(t("professionalDevelopment.taskDeleted"));
       onChanged?.();
       await load();
     } catch {
       setError(true);
+    } finally {
+      setTaskToDelete(null);
     }
   };
   const recentFeedback = tasks
@@ -650,6 +672,17 @@ export function AdminMemberTasks({
           )}
         </section>
       )}
+
+      <ConfirmDialog
+        isOpen={!!taskToDelete}
+        onClose={() => setTaskToDelete(null)}
+        onConfirm={confirmDeleteTask}
+        title={t("professionalDevelopment.deleteTask")}
+        message={t("professionalDevelopment.deleteTaskConfirm")}
+        confirmLabel={t("common.delete")}
+        cancelLabel={t("common.cancel")}
+        variant="danger"
+      />
     </section>
   );
 }

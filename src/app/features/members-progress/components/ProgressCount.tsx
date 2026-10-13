@@ -4,10 +4,10 @@ import { useI18n } from "../../../i18n";
 export type ProgressStage = keyof MemberProgressCounts;
 
 const STAGE_STYLES: Record<ProgressStage, string> = {
-  applied: "border-neutral-400 bg-neutral-200 text-neutral-900 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100",
-  interview: "border-[#c3d8ef] bg-[#e8f1fb] text-info-strong dark:border-blue-700 dark:bg-blue-900/60 dark:text-blue-100",
-  decision: "border-[#ead9a8] bg-[#fbf3df] text-[#74602f] dark:border-[#705d31] dark:bg-[#3a3324] dark:text-[#e7d9b2]",
-  closed: "border-[#d8c7b3] bg-[#eee6dc] text-[#6b5842] dark:border-[#6f5b43] dark:bg-[#3a3026] dark:text-[#e7d9c7]",
+  applied: "border-border bg-neutral-soft text-neutral-strong",
+  interview: "border-info-border bg-info-soft text-info-strong",
+  decision: "border-warning-border bg-warning-soft text-warning-strong",
+  closed: "border-border-strong bg-neutral-100 text-neutral-800",
 };
 
 export function ProgressStageIcon({ stage }: { stage: ProgressStage }) {

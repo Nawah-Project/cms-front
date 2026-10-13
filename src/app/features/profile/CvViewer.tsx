@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useI18n } from "../../i18n";
 import { profileApi } from "./profileApi";
 import { FocusDialog } from "./FocusDialog";
+import { SpinnerIcon } from "../../components/Icons";
 
 export function CvViewer({ userId, onClose }: { userId: string; onClose: () => void }) {
   const { t } = useI18n();
@@ -36,7 +37,10 @@ export function CvViewer({ userId, onClose }: { userId: string; onClose: () => v
       ) : error ? (
         <div role="alert" className="flex flex-1 items-center justify-center p-8 text-sm text-danger-strong">{t("profile.cvUnavailable")}</div>
       ) : (
-        <div role="status" className="flex flex-1 items-center justify-center p-8 text-sm text-neutral-500">{t("profile.loadingCv")}</div>
+        <div role="status" className="flex flex-1 items-center justify-center p-8 text-sm text-neutral-500">
+          <SpinnerIcon className="h-5 w-5 text-neutral-500 me-2" />
+          <span>{t("profile.loadingCv")}</span>
+        </div>
       )}
     </FocusDialog>
   );

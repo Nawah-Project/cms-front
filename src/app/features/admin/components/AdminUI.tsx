@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import type { ActivityStatus } from "../api/adminApi";
 import { useI18n } from "../../../i18n";
+import { SpinnerIcon, AlertCircleIcon } from "../../../components/Icons";
+import { EmptyState as BaseEmptyState } from "../../../components/EmptyState";
 
 export function relativeTime(value: string | null, locale: string): string {
   if (!value) return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(0, "second");
@@ -105,34 +107,55 @@ export function LoadingState({ label }: { label?: string }) {
   const { t } = useI18n();
   return (
     <div
-      className="flex min-h-40 items-center justify-center text-sm text-neutral-500"
+      className="flex min-h-40 items-center justify-center gap-2 text-sm text-neutral-500"
       role="status"
     >
-      {label ?? t("common.loading")}
+      <SpinnerIcon className="h-5 w-5 text-neutral-500" />
+      <span>{label ?? t("common.loading")}</span>
     </div>
   );
 }
-export function ErrorState({ onRetry }: { onRetry: () => void }) {
+export function ErrorState({ onRetry, message }: { onRetry?: () => void; message?: string }) {
   const { t } = useI18n();
   return (
     <div
-      className="rounded-lg border border-border bg-surface px-5 py-10 text-center"
+      className="rounded-xl border border-danger-border bg-danger-soft/30 px-5 py-8 text-center"
       role="alert"
     >
-      <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
-        {t("admin.loadSectionError")}
+      <AlertCircleIcon className="mx-auto mb-2 h-6 w-6 text-danger-strong" />
+      <p className="text-sm font-medium text-danger-strong">
+        {message ?? t("admin.loadSectionError")}
       </p>
-      <button type="button" onClick={onRetry} className="button-secondary mt-4">
-        {t("common.retry")}
-      </button>
+      {onRetry && (
+        <button type="button" onClick={onRetry} className="button-secondary mt-4">
+          {t("common.retry")}
+        </button>
+      )}
     </div>
   );
 }
-export function EmptyState({ children }: { children: ReactNode }) {
+export function EmptyState({
+  children,
+  icon,
+  actionLabel,
+  onActionClick,
+  compact = true,
+}: {
+  children?: ReactNode;
+  icon?: ReactNode;
+  actionLabel?: string;
+  onActionClick?: () => void;
+  compact?: boolean;
+}) {
   return (
-    <div className="rounded-lg border border-dashed border-border px-5 py-12 text-center text-sm text-neutral-500">
+    <BaseEmptyState
+      compact={compact}
+      icon={icon}
+      actionLabel={actionLabel}
+      onActionClick={onActionClick}
+    >
       {children}
-    </div>
+    </BaseEmptyState>
   );
 }
 

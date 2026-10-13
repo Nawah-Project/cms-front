@@ -4,6 +4,7 @@ import { useRecentMemberProgress } from "../hooks/useRecentMemberProgress";
 import { MembersProgressTable } from "../components/MembersProgressTable";
 import { RecentActivityList } from "../components/RecentActivityList";
 import { SpinnerIcon } from "../../../components/Icons";
+import { EmptyState } from "../../../components/EmptyState";
 import { useI18n } from "../../../i18n";
 
 export default function MembersProgressPage() {
@@ -13,25 +14,25 @@ export default function MembersProgressPage() {
   const activity = useRecentMemberProgress(50);
 
   return (
-    <section className="space-y-8">
-      <header className="border-b border-stone-300/80 pb-7 dark:border-neutral-800">
-        <h1 className="text-3xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-100 sm:text-4xl">
+    <section className="space-y-8 animate-in fade-in duration-200">
+      <header className="border-b border-border pb-7">
+        <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
           {t("members.title")}
         </h1>
-        <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="mt-2 text-sm text-neutral-500">
           {t("members.subtitle")}
         </p>
       </header>
 
       <section aria-labelledby="recent-activity-heading" className="space-y-3">
-        <header className="flex items-end justify-between border-b border-stone-300/80 pb-3 dark:border-neutral-800">
+        <header className="flex items-end justify-between border-b border-border pb-3">
           <div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs text-neutral-500">
               {t("members.sharedGroup")}
             </p>
             <h2
               id="recent-activity-heading"
-              className="mt-1 text-xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100"
+              className="mt-1 text-xl font-semibold tracking-tight text-neutral-900"
             >
               {t("members.recentActivity")}
             </h2>
@@ -44,7 +45,7 @@ export default function MembersProgressPage() {
               </span>
             )}
         </header>
-        <div className="rounded-xl border border-neutral-200 bg-white px-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:px-5">
+        <div className="rounded-xl border border-border bg-surface px-4 shadow-xs sm:px-5">
           <RecentActivityList
             events={activity.events}
             loading={activity.loading}
@@ -58,14 +59,14 @@ export default function MembersProgressPage() {
       </section>
 
       <section aria-labelledby="members-pipeline-heading" className="space-y-4">
-        <header className="flex items-end justify-between border-b border-stone-300/80 pb-3 dark:border-neutral-800">
+        <header className="flex items-end justify-between border-b border-border pb-3">
           <div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs text-neutral-500">
               {t("members.currentStageTotals")}
             </p>
             <h2
               id="members-pipeline-heading"
-              className="mt-1 text-xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100"
+              className="mt-1 text-xl font-semibold tracking-tight text-neutral-900"
             >
               {t("members.memberProgress")}
             </h2>
@@ -78,23 +79,23 @@ export default function MembersProgressPage() {
         </header>
         {loading ? (
           <div
-            className="flex min-h-56 flex-col items-center justify-center border-y border-stone-200 text-sm text-neutral-500 dark:border-neutral-800"
+            className="flex min-h-56 flex-col items-center justify-center border-y border-border text-sm text-neutral-500"
             role="status"
           >
-            <SpinnerIcon className="mb-3 h-6 w-6" />
+            <SpinnerIcon className="mb-3 h-6 w-6 animate-spin text-neutral-400" />
             <span>{t("members.loadingProgress")}</span>
           </div>
         ) : error ? (
           <div
-            className="border-y border-stone-200 py-8 text-center dark:border-neutral-800"
+            className="rounded-xl border border-danger-border bg-danger-soft/30 p-6 text-center"
             role="alert"
           >
-            <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+            <p className="text-sm font-semibold text-danger-strong">
               {error === "unassigned"
                 ? t("members.unassignedTitle")
                 : t("members.loadError")}
             </p>
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+            <p className="mt-1 text-xs text-neutral-600">
               {error === "unassigned"
                 ? t("members.unassignedHelp")
                 : t("members.retryHelp")}
@@ -103,23 +104,22 @@ export default function MembersProgressPage() {
               <button
                 type="button"
                 onClick={() => void retry()}
-                className="mt-4 rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+                className="button-primary mt-4 text-xs font-medium"
               >
                 {t("common.retry")}
               </button>
             )}
           </div>
         ) : members.length === 0 ? (
-          <div className="border-y border-stone-200 px-6 py-16 text-center dark:border-neutral-800">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              {t("members.noMembers")}
-            </p>
-          </div>
+          <EmptyState
+            title={t("members.noMembers")}
+            description={t("members.unassignedHelp")}
+          />
         ) : (
           <>
             {members.length === 1 &&
               (members[0].isCurrentUser || members[0].userId === user?.id) && (
-                <p className="border-s-2 border-neutral-300 ps-4 text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-300">
+                <p className="border-s-2 border-border ps-4 text-xs text-neutral-500">
                   {t("members.onlyMember")}
                 </p>
               )}

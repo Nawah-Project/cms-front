@@ -6,6 +6,9 @@ import { api } from "../services/api";
 import type { CreateApplicationInput } from "../types";
 import { ProtectedRoute } from "../features/auth/components/ProtectedRoute";
 import { ProfileCompletionGate } from "../features/profile/ProfileCompletionGate";
+import { useI18n } from "../i18n";
+import { useToast } from "../components/ui/ToastProvider";
+import { trackUxEvent } from "../utils/uxAnalytics";
 
 interface AppContextType {
   openAddModal: () => void;
@@ -20,11 +23,18 @@ export function useAppModal() {
 }
 
 export default function Layout() {
+  const { t } = useI18n();
+  const { showToast } = useToast();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleCreateApplication = async (data: CreateApplicationInput) => {
     const created = await api.createApplication(data);
+    showToast({
+      message: t("applications.applicationCreated"),
+      variant: "success",
+    });
+    trackUxEvent("application_created", { company: created.companyName });
     // Navigate to applications page to see the new addition
     navigate("/applications");
     return created;
@@ -36,7 +46,7 @@ export default function Layout() {
       <AppContext.Provider
         value={{ openAddModal: () => setIsAddModalOpen(true) }}
       >
-        <div className="min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200 dark:bg-neutral-950 dark:text-neutral-100 dark:selection:bg-neutral-800">
+        <div className="min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200">
           <AppSidebar />
 
           <div className="min-h-screen w-full lg:ps-64">

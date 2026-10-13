@@ -14,6 +14,8 @@ import { TaskCard, TaskSection } from "../components/TaskPresentation";
 import { ProfessionalDevelopmentNav } from "../components/ProfessionalDevelopmentNav";
 import { TaskFormDialog } from "../components/TaskFormDialog";
 import { PlusIcon } from "../../../components/Icons";
+import { useToast } from "../../../components/ui/ToastProvider";
+import { trackUxEvent } from "../../../utils/uxAnalytics";
 
 const COLUMNS: Array<{ status: TaskStatus; key: string }> = [
   { status: "TODO", key: "toDo" },
@@ -24,6 +26,7 @@ const COLUMNS: Array<{ status: TaskStatus; key: string }> = [
 
 export default function TasksPage() {
   const { t } = useI18n();
+  const { showToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedTaskId = searchParams.get("task");
   const activeFilter = searchParams.get("filter");
@@ -126,6 +129,11 @@ export default function TasksPage() {
       setTasks((current) =>
         current.map((item) => (item.id === taskId ? updated : item)),
       );
+      showToast({
+        message: t("professionalDevelopment.taskUpdated"),
+        variant: "success",
+      });
+      trackUxEvent("task_status_changed", { taskId, status });
     } catch {
       setTasks((current) =>
         current.map((item) =>
@@ -338,6 +346,10 @@ export default function TasksPage() {
           onClose={() => setTaskFormOpen(false)}
           onSave={async (input) => {
             await api.createTask(input as CreateTaskInput);
+            showToast({
+              message: t("professionalDevelopment.taskCreated"),
+              variant: "success",
+            });
             setTaskFormOpen(false);
             await load();
           }}

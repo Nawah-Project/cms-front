@@ -29,6 +29,12 @@ export type AdminMember = {
   applicationsCount: number;
   currentStageCounts: StageCounts;
   avatar?: string | null;
+  development?: {
+    active: number;
+    inProgress: number;
+    overdue: number;
+    lastTaskAt: string | null;
+  };
 };
 export type AdminGroup = {
   id: string;
@@ -133,8 +139,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       response.status === 401 || response.status === 403
         ? "You don’t have permission to access this admin page."
         : "We couldn’t complete that request. Please try again.",
-    ) as Error & { status?: number };
+    ) as Error & { status?: number; code?: string };
     error.status = response.status;
+    error.code =
+      response.status === 401 || response.status === 403
+        ? "PERMISSION_DENIED"
+        : "REQUEST_FAILED";
     throw error;
   }
   if (response.status === 204) return undefined as T;
@@ -262,4 +272,6 @@ export const adminApi = {
       `/admin/feedback/${encodeURIComponent(feedbackId)}/archive`,
       { method: "POST" },
     ),
+  uxAnalytics: () =>
+    request<any>("/admin/monitoring/ux-analytics"),
 };
