@@ -228,8 +228,8 @@ export default function DashboardPage() {
   );
 
   return (
-    <div className="w-full space-y-10">
-      <header className="border-b border-border pb-6">
+    <div className="flex w-full flex-col gap-10">
+      <header className="order-0 border-b border-border pb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl">
@@ -260,34 +260,36 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Forefront: Smart Companion Guidance Banner */}
-      <CompanionBanner
-        stats={stats}
-        unreadFeedbackCount={unreadFeedbackCount}
-        onAddApplication={openAddModal}
-      />
-
-      {/* Render sections according to A/B test variant */}
-      {variant === "B" ? (
-        <>
-          {/* Section 2: Professional Development & Feedback */}
-          <ProfessionalDevelopmentSummary />
-
-          {/* Section 3: Evaluation & Pipeline Metrics */}
-          {evaluationSection}
-        </>
-      ) : (
-        <>
-          {/* Section 2: Evaluation & Pipeline Metrics */}
-          {evaluationSection}
-
-          {/* Section 3: Professional Development & Feedback */}
-          <ProfessionalDevelopmentSummary />
-        </>
+      {variant !== "A" && (
+        <div className="order-1">
+          <CompanionBanner
+            stats={stats}
+            unreadFeedbackCount={unreadFeedbackCount}
+            onAddApplication={openAddModal}
+          />
+        </div>
       )}
 
-      {/* Section 4: Group Activity & Recent Applications */}
-      <div className="grid grid-cols-1 gap-8 border-t border-border pt-8 lg:grid-cols-2 lg:gap-10">
+      <div className={variant === "B" ? "order-3" : "order-2"}>
+        {evaluationSection}
+      </div>
+
+      <div
+        className={
+          variant === "A"
+            ? "order-3"
+            : variant === "B"
+              ? "order-2"
+              : "order-4"
+        }
+      >
+        <ProfessionalDevelopmentSummary />
+      </div>
+
+      {/* Group Activity & Recent Applications */}
+      <div
+        className={`${variant === "C" ? "order-3" : "order-4"} grid grid-cols-1 gap-8 border-t border-border pt-8 lg:grid-cols-2 lg:gap-10`}
+      >
         <section aria-labelledby="member-updates-heading" className="space-y-4">
           <header className="flex items-end justify-between gap-4 border-b border-border pb-3">
             <div>

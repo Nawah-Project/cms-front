@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+
+export type ExperimentVariant = "A" | "B" | "C";
 
 export type SupportedBackendUxEvent =
   | "onboarding_started"
@@ -20,15 +22,18 @@ export type UxEventName =
 
 export interface UxEventRecord {
   name: string;
-  variant?: "A" | "B";
+  variant?: ExperimentVariant;
   timestamp: string;
   metadata?: Record<string, string | number | boolean>;
 }
 
 const STORAGE_KEY = "nawah_ux_telemetry";
-const EXPERIMENT_KEY = "nawah_exp_dashboard_layout_v2";
+const ASSIGNED_VARIANT_KEY = "nawah_assigned_variant";
+const ADMIN_PREVIEW_VARIANT_KEY = "nawah_admin_preview_variant";
+const INTRO_VIDEO_CACHE_KEY = "nawah_intro_video_url";
+const VARIANT_CHANGE_EVENT = "nawah:ux-variant-changed";
 
-const BASE_URL = (
+export const UX_API_BASE_URL = (
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
   "http://localhost:3000"
 ).replace(/\/$/, "");
@@ -42,6 +47,10 @@ const SUPPORTED_BACKEND_EVENTS = new Set<SupportedBackendUxEvent>([
   "task_status_changed",
   "feedback_read",
 ]);
+
+export function isValidVariant(value: unknown): value is ExperimentVariant {
+  return value === "A" || value === "B" || value === "C";
+}
 
 function normalizeEventName(eventName: string): SupportedBackendUxEvent | null {
   switch (eventName) {
@@ -60,13 +69,37 @@ function normalizeEventName(eventName: string): SupportedBackendUxEvent | null {
   }
 }
 
-export function getActiveVariant(): "A" | "B" {
-  if (typeof window === "undefined") return "B";
+export function getAdminPreviewVariant(): ExperimentVariant | null {
+  if (typeof window === "undefined") return null;
   try {
-    const saved = localStorage.getItem(EXPERIMENT_KEY);
-    if (saved === "A" || saved === "B") return saved;
-    localStorage.setItem(EXPERIMENT_KEY, "B");
-    return "B";
+    const value = localStorage.getItem(ADMIN_PREVIEW_VARIANT_KEY);
+    return isValidVariant(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setAdminPreviewVariant(value: ExperimentVariant | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (value === null) {
+      localStorage.removeItem(ADMIN_PREVIEW_VARIANT_KEY);
+    } else {
+      localStorage.setItem(ADMIN_PREVIEW_VARIANT_KEY, value);
+    }
+    window.dispatchEvent(new Event(VARIANT_CHANGE_EVENT));
+  } catch {
+    // Ignore storage errors.
+  }
+}
+
+export function getActiveVariant(): ExperimentVariant {
+  if (typeof window === "undefined") return "B";
+  const preview = getAdminPreviewVariant();
+  if (preview) return preview;
+  try {
+    const saved = localStorage.getItem(ASSIGNED_VARIANT_KEY);
+    return isValidVariant(saved) ? saved : "B";
   } catch {
     return "B";
   }
@@ -80,7 +113,6 @@ export function trackUxEvent(
 
   const variant = getActiveVariant();
   const normalizedName = normalizeEventName(eventName);
-
   const localRecord: UxEventRecord = {
     name: normalizedName ?? eventName,
     variant,
@@ -88,22 +120,19 @@ export function trackUxEvent(
     metadata,
   };
 
-  // 1. Local fallback storage
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    const list: UxEventRecord[] = raw ? JSON.parse(raw) : [];
-    list.push(localRecord);
-    if (list.length > 100) list.shift();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    const events: UxEventRecord[] = raw ? JSON.parse(raw) : [];
+    events.push(localRecord);
+    if (events.length > 100) events.shift();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
   } catch {
-    // Ignore storage errors
+    // Ignore storage errors.
   }
 
-  // 2. Send strictly whitelisted DTO to Backend POST /ux-analytics/events
   if (!normalizedName) return;
-
   try {
-    void fetch(`${BASE_URL}/ux-analytics/events`, {
+    void fetch(`${UX_API_BASE_URL}/ux-analytics/events`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -115,11 +144,9 @@ export function trackUxEvent(
         variant,
         ...(metadata ? { metadata } : {}),
       }),
-    }).catch(() => {
-      // Silently ignore network errors for telemetry
-    });
+    }).catch(() => {});
   } catch {
-    // Silently ignore
+    // Ignore telemetry errors.
   }
 }
 
@@ -133,33 +160,106 @@ export function getUxEvents(): UxEventRecord[] {
   }
 }
 
-export function useUxExperiment(experimentId: "dashboard_layout_v2") {
-  const key = `nawah_exp_${experimentId}`;
-  const [variant, setVariantState] = useState<"A" | "B">(() => getActiveVariant());
+export function useUxExperiment(_experimentId = "dashboard_layout_v2") {
+  const [variant, setVariantState] = useState<ExperimentVariant>(() =>
+    getActiveVariant(),
+  );
+  const [adminPreview, setAdminPreviewState] =
+    useState<ExperimentVariant | null>(() => getAdminPreviewVariant());
+  const [introVideoUrl, setIntroVideoUrlState] = useState(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      return (
+        localStorage.getItem(INTRO_VIDEO_CACHE_KEY) ||
+        import.meta.env.VITE_INTRO_VIDEO_URL ||
+        ""
+      );
+    } catch {
+      return "";
+    }
+  });
+
+  const syncFromServer = useCallback(async () => {
+    if (typeof window === "undefined") return;
+    let assignmentLoaded = false;
+
+    try {
+      const response = await fetch(
+        `${UX_API_BASE_URL}/ux-analytics/my-assignment`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: { Accept: "application/json" },
+        },
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (isValidVariant(data.assignedVariant)) {
+          localStorage.setItem(ASSIGNED_VARIANT_KEY, data.assignedVariant);
+        }
+        if (typeof data.introVideoUrl === "string") {
+          localStorage.setItem(INTRO_VIDEO_CACHE_KEY, data.introVideoUrl);
+          setIntroVideoUrlState(data.introVideoUrl);
+        }
+        assignmentLoaded = true;
+      }
+    } catch {
+      // Try the public config below for unauthenticated screens.
+    }
+
+    if (!assignmentLoaded) {
+      try {
+        const response = await fetch(`${UX_API_BASE_URL}/ux-analytics/config`, {
+          headers: { Accept: "application/json" },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (isValidVariant(data.defaultVariant)) {
+            localStorage.setItem(ASSIGNED_VARIANT_KEY, data.defaultVariant);
+          }
+          if (typeof data.introVideoUrl === "string") {
+            localStorage.setItem(INTRO_VIDEO_CACHE_KEY, data.introVideoUrl);
+            setIntroVideoUrlState(data.introVideoUrl);
+          }
+        }
+      } catch {
+        // Keep cached values if the API is unavailable.
+      }
+    }
+
+    setVariantState(getActiveVariant());
+  }, []);
 
   useEffect(() => {
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === key && (e.newValue === "A" || e.newValue === "B")) {
-        setVariantState(e.newValue);
+    void syncFromServer();
+    const handleUpdate = () => {
+      setAdminPreviewState(getAdminPreviewVariant());
+      setVariantState(getActiveVariant());
+      try {
+        setIntroVideoUrlState(localStorage.getItem(INTRO_VIDEO_CACHE_KEY) || "");
+      } catch {
+        // Ignore storage errors.
       }
     };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, [key]);
+    window.addEventListener(VARIANT_CHANGE_EVENT, handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    return () => {
+      window.removeEventListener(VARIANT_CHANGE_EVENT, handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
+  }, [syncFromServer]);
 
-  const setVariant = (val: "A" | "B") => {
-    setVariantState(val);
-    try {
-      localStorage.setItem(key, val);
-    } catch {
-      // Ignore
-    }
+  const setVariant = (value: ExperimentVariant | null) => {
+    setAdminPreviewVariant(value);
+    setAdminPreviewState(value);
+    setVariantState(getActiveVariant());
   };
 
-  const toggleVariant = () => {
-    const next = variant === "A" ? "B" : "A";
-    setVariant(next);
+  return {
+    variant,
+    adminPreview,
+    setVariant,
+    introVideoUrl,
+    refreshAssignment: syncFromServer,
   };
-
-  return { variant, setVariant, toggleVariant };
 }

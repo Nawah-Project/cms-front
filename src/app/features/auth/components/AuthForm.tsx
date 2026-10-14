@@ -7,6 +7,7 @@ import { SocialSignInButtons } from "./SocialSignInButtons";
 import { useI18n } from "../../../i18n";
 import { LanguageSwitcher } from "../../../i18n/LanguageSwitcher";
 import { Modal } from "../../../components/ui/Modal";
+import { IntroVideoPlayer } from "../../../components/IntroVideoPlayer";
 import { CheckIcon, PlayCircleIcon, SparklesIcon } from "../../../components/Icons";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
@@ -306,11 +307,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         size="lg"
       >
         <div className="space-y-4">
-          <div className="aspect-video w-full rounded-xl bg-neutral-900 border border-border flex flex-col items-center justify-center text-center p-6 relative overflow-hidden">
-            <PlayCircleIcon className="w-16 h-16 text-info-soft mb-3 opacity-90" />
-            <h4 className="text-base font-semibold text-white">{t("auth.heroTitle")}</h4>
-            <p className="mt-1 text-xs text-neutral-400 max-w-md">{t("auth.heroDescription")}</p>
-          </div>
+          <IntroVideoPlayer />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
             <div className="rounded-xl border border-border p-3 bg-neutral-50/60">
               <p className="text-xs font-semibold text-text-primary">
