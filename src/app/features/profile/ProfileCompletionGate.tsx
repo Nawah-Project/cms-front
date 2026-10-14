@@ -107,7 +107,10 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
               const isPast = step > s.number;
               const isCurrent = step === s.number;
               return (
-                <div key={s.number} className="flex flex-1 items-center">
+                <div
+                  key={s.number}
+                  className={`flex items-center ${idx < steps.length - 1 ? "flex-1" : ""}`}
+                >
                   <div className="flex flex-col items-center sm:flex-row sm:gap-2.5">
                     <div
                       className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-colors ${

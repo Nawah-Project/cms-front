@@ -29,25 +29,16 @@ export default function ProfilePage() {
           {t("profile.title")}
         </h1>
         <p className="mt-2 text-sm text-neutral-600">
-          {t("profile.accountDetails")}
+          {t("profile.completeDescription")}
         </p>
       </header>
-      <dl className="divide-y divide-border rounded-xl border border-border bg-surface px-5 shadow-xs sm:px-7">
-        <div className="py-5">
-          <dt className="text-xs font-medium text-neutral-500">{t("profile.name")}</dt>
-          <dd className="mt-1.5 text-base font-medium text-neutral-900">
-            {user?.name}
-          </dd>
-        </div>
-        <div className="py-5">
-          <dt className="text-xs font-medium text-neutral-500">{t("profile.email")}</dt>
-          <dd className="mt-1.5 text-base text-neutral-800">{user?.email}</dd>
-        </div>
-      </dl>
       <section className="space-y-4 rounded-xl border border-border bg-surface p-5 shadow-xs sm:p-7">
-        <header>
+        <header className="flex flex-wrap items-start justify-between gap-4">
           <h2 className="text-lg font-semibold text-neutral-950">{t("profile.professionalProfile")}</h2>
-          <p className="mt-1 text-sm text-neutral-500">{t("profile.completeDescription")}</p>
+          <p className="min-w-0 text-xs text-neutral-500">
+            <span className="me-2 font-medium">{t("profile.email")}</span>
+            <span dir="ltr" className="text-sm text-neutral-800">{user?.email}</span>
+          </p>
         </header>
         {error ? <div role="alert" className="text-sm text-danger-strong">{t("profile.loadError")} <button type="button" onClick={load} className="ms-2 underline">{t("common.retry")}</button></div> : !profile ? <p role="status" className="text-sm text-neutral-500">{t("profile.loadingProfile")}</p> : <>
           <ProfileForm

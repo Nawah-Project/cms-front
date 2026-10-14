@@ -188,18 +188,18 @@ export function AppSidebar() {
   return (
     <>
       <aside className="fixed inset-y-0 start-0 z-40 hidden w-64 flex-col border-e border-neutral-800 bg-neutral-900 px-5 py-7 lg:flex">
-        <div className="mb-10 flex items-start justify-between gap-2 px-2">
+        <div className="mb-10 px-2">
           <Link
             to="/"
-            className="flex min-w-0 flex-1 items-start gap-3 text-sm font-semibold tracking-tight text-white"
+            className="flex min-w-0 items-start gap-3 text-sm font-semibold tracking-tight text-white"
           >
             <img
               src="/nawah-logo.svg"
               alt=""
               className="h-9 w-9 shrink-0 rounded-md object-contain"
             />
-            <span className="min-w-0 pt-0.5">
-              <span className="block whitespace-normal break-words leading-tight">{t("common.brand")}</span>
+            <span className="min-w-0 flex-1 pt-0.5">
+              <span className="block whitespace-nowrap leading-tight">{t("common.brand")}</span>
               <time
                 className="mt-1 block text-xs font-normal tracking-normal text-neutral-400"
                 dateTime={new Date().toISOString()}
@@ -208,7 +208,7 @@ export function AppSidebar() {
               </time>
             </span>
           </Link>
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="mt-3 flex items-center justify-end gap-1.5">
             <NotificationCenter variant="dark" />
             {localeToggle}
           </div>

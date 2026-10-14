@@ -185,9 +185,11 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                   onChange={(e) => setPassword(e.target.value)}
                   className="field-control"
                 />
-                <span className="mt-1.5 block text-xs font-normal text-neutral-500">
-                  {t("auth.passwordHint")}
-                </span>
+                {registering && (
+                  <span className="mt-1.5 block text-xs font-normal text-neutral-500">
+                    {t("auth.passwordHint")}
+                  </span>
+                )}
               </div>
 
               <button
@@ -233,7 +235,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         <div className="absolute -top-32 -end-32 w-96 h-96 rounded-full bg-info-strong/20 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -start-32 w-96 h-96 rounded-full bg-warning-strong/10 blur-3xl pointer-events-none" />
 
-        <div className="relative z-10">
+        <div className="relative z-10 mx-auto w-full max-w-lg">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1 text-xs font-medium text-info-soft backdrop-blur-sm">
             <SparklesIcon className="w-3.5 h-3.5" />
             <span>{t("auth.heroBadge")}</span>
@@ -273,7 +275,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         </div>
 
         {/* Feature Pills */}
-        <div className="relative z-10 pt-12 space-y-3">
+        <div className="relative z-10 mx-auto w-full max-w-lg space-y-3 pt-12">
           <div className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3">
             <div className="w-2 h-2 rounded-full bg-info-soft shrink-0" />
             <span className="text-sm font-medium text-neutral-200">

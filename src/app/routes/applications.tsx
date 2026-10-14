@@ -254,7 +254,7 @@ export default function ApplicationsPage() {
 
       {/* Filter and Search Bar */}
       <div className="space-y-3">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
           {/* Stage Filter Tabs */}
           <div className="flex items-center gap-1 overflow-x-auto border-b border-stone-200 pb-0.5 sm:pb-0 scrollbar-none dark:border-neutral-800">
             {[
@@ -283,21 +283,48 @@ export default function ApplicationsPage() {
             })}
           </div>
 
-          {/* Simple Search Field for companyName and jobTitle */}
-          <form
-            onSubmit={handleSearchSubmit}
-            className="relative min-w-[260px]"
-          >
-            <input
-              type="text"
-              aria-label={t("applications.search")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t("applications.search")}
-              className="field-control ps-9 py-2"
-            />
-            <SearchIcon className="w-4 h-4 text-text-muted absolute start-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </form>
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:flex-1">
+            {/* Simple Search Field for companyName and jobTitle */}
+            <form
+              onSubmit={handleSearchSubmit}
+              className="relative min-w-0 w-full sm:flex-1"
+            >
+              <input
+                type="text"
+                aria-label={t("applications.search")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t("applications.search")}
+                className="field-control ps-9 py-2"
+              />
+              <SearchIcon className="w-4 h-4 text-text-muted absolute start-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </form>
+
+            <div className="inline-flex w-fit shrink-0 items-center gap-1 rounded-lg border border-neutral-300 bg-white p-1 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+              <button
+                type="button"
+                onClick={() => handleViewModeChange("table")}
+                title={t("applications.viewTable")}
+                aria-label={t("applications.viewTable")}
+                aria-pressed={viewMode === "table"}
+                className={`inline-flex min-h-10 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${viewMode === "table" ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"}`}
+              >
+                <TableIcon className="h-4 w-4" />
+                <span>{t("applications.table")}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleViewModeChange("kanban")}
+                title={t("applications.viewBoard")}
+                aria-label={t("applications.viewBoard")}
+                aria-pressed={viewMode === "kanban"}
+                className={`inline-flex min-h-10 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${viewMode === "kanban" ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"}`}
+              >
+                <KanbanIcon className="h-4 w-4" />
+                <span>{t("applications.board")}</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Secondary Outcome Filter when Closed is selected */}
@@ -331,33 +358,6 @@ export default function ApplicationsPage() {
             })}
           </div>
         )}
-      </div>
-
-      <div className="flex justify-start">
-        <div className="inline-flex items-center gap-1 rounded-lg border border-neutral-300 bg-white p-1 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
-          <button
-            type="button"
-            onClick={() => handleViewModeChange("table")}
-            title={t("applications.viewTable")}
-            aria-label={t("applications.viewTable")}
-            aria-pressed={viewMode === "table"}
-            className={`inline-flex min-h-10 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${viewMode === "table" ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"}`}
-          >
-            <TableIcon className="h-4 w-4" />
-            <span>{t("applications.table")}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleViewModeChange("kanban")}
-            title={t("applications.viewBoard")}
-            aria-label={t("applications.viewBoard")}
-            aria-pressed={viewMode === "kanban"}
-            className={`inline-flex min-h-10 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${viewMode === "kanban" ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"}`}
-          >
-            <KanbanIcon className="h-4 w-4" />
-            <span>{t("applications.board")}</span>
-          </button>
-        </div>
       </div>
 
       {moveError && (
