@@ -188,7 +188,7 @@ export function AppSidebar() {
   return (
     <>
       <aside className="fixed inset-y-0 start-0 z-40 hidden w-64 flex-col border-e border-neutral-800 bg-neutral-900 px-5 py-7 lg:flex">
-        <div className="mb-10 px-2">
+        <div className="mb-8 px-1">
           <Link
             to="/"
             className="flex min-w-0 items-start gap-3 text-sm font-semibold tracking-tight text-white"

@@ -72,7 +72,7 @@ export function ProgressCount({
     return (
       <span
         aria-label={t("members.stageApplicationCount", { stage: label, count: number(count) })}
-        className="mx-auto flex h-10 w-16 items-center justify-center rounded-xl border border-border-subtle bg-neutral-50/60 text-sm font-medium tabular-nums text-neutral-400"
+        className="mx-auto flex min-h-11 w-16 items-center justify-center rounded-xl border border-border-subtle bg-neutral-50/70 text-base font-medium tabular-nums text-neutral-400"
       >
         {number(count)}
       </span>
@@ -87,7 +87,7 @@ export function ProgressCount({
   return (
     <span
       aria-label={t("members.stageApplicationCount", { stage: label, count: number(count) })}
-      className={`mx-auto flex h-10 w-16 max-w-20 items-center justify-center rounded-xl border text-sm font-semibold tabular-nums shadow-xs ${stageStyle}`}
+      className={`mx-auto flex h-11 w-16 max-w-20 items-center justify-center rounded-xl border text-sm font-semibold tabular-nums shadow-xs ${stageStyle}`}
     >
       {number(count)}
     </span>

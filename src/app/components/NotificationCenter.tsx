@@ -94,7 +94,7 @@ export function NotificationCenter({ variant = "dark" }: NotificationCenterProps
       </button>
 
       {open && (
-        <div className="absolute start-0 lg:start-0 max-lg:end-0 top-full mt-2 w-80 sm:w-88 rounded-2xl border border-border bg-surface p-4 shadow-xl z-50 text-text-primary">
+        <div className="absolute start-0 max-lg:start-auto max-lg:end-0 top-full mt-2 w-80 sm:w-88 rounded-2xl border border-border bg-surface p-4 shadow-xl z-50 text-text-primary">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
               <BellIcon className="h-4 w-4 text-info-strong" />

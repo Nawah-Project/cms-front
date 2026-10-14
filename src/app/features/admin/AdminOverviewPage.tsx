@@ -69,17 +69,19 @@ export default function AdminOverviewPage() {
   const localCount = (eventName: string) =>
     uxEvents.filter((e) => e.name === eventName || (e as any).event === eventName).length;
 
+  const backendOnboardingStartedCount =
+    data.uxMetrics?.uniqueUsersByEvent?.onboarding_started ??
+    data.uxMetrics?.totalsByEvent?.onboarding_started;
   const onboardingStartedCount =
-    data.uxMetrics?.uniqueUsersByEvent?.onboarding_started ||
-    data.uxMetrics?.totalsByEvent?.onboarding_started ||
-    localCount("onboarding_started") ||
-    data.overview.usersCount;
+    backendOnboardingStartedCount ??
+    (localCount("onboarding_started") || data.overview.usersCount);
 
+  const backendOnboardingCompletedCount =
+    data.uxMetrics?.uniqueUsersByEvent?.onboarding_completed ??
+    data.uxMetrics?.totalsByEvent?.onboarding_completed;
   const onboardingCompletedCount =
-    data.uxMetrics?.uniqueUsersByEvent?.onboarding_completed ||
-    data.uxMetrics?.totalsByEvent?.onboarding_completed ||
-    localCount("onboarding_completed") ||
-    data.overview.activeUsersCount;
+    backendOnboardingCompletedCount ??
+    (localCount("onboarding_completed") || data.overview.activeUsersCount);
 
   const videoWatchedCount =
     data.uxMetrics?.uniqueUsersByEvent?.onboarding_video_watched ??
@@ -183,96 +185,69 @@ export default function AdminOverviewPage() {
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {/* Target 1: Member Acquisition (50 users) */}
-          <div className="space-y-2 rounded-xl border border-border/80 bg-neutral-50/50 p-4">
-            <div className="flex items-center justify-between text-xs font-medium">
-              <span className="text-text-primary font-semibold">{t("admin.acquisitionTarget")}</span>
-              <span className="text-info-strong font-semibold">
-                {data.overview.usersCount} / 50 ({acquisitionPercent}%)
-              </span>
-            </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-200">
-              <div
-                className="h-full rounded-full bg-info-strong transition-all duration-500"
-                style={{ width: `${acquisitionPercent}%` }}
-              />
-            </div>
-            <p className="text-[11px] text-text-secondary">
-              {t("admin.acquisitionProgress", {
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[
+            {
+              title: t("admin.acquisitionTarget"),
+              value: `${number(data.overview.usersCount)} / 50`,
+              percent: acquisitionPercent,
+              subtitle: t("admin.acquisitionProgress", {
                 count: number(data.overview.usersCount),
                 percent: number(acquisitionPercent),
-              })}
-            </p>
-          </div>
-
-          {/* Target 2: Onboarding Completion Rate */}
-          <div className="space-y-2 rounded-xl border border-border/80 bg-neutral-50/50 p-4">
-            <div className="flex items-center justify-between text-xs font-medium">
-              <span className="text-text-primary font-semibold">{t("admin.onboardingCompletionRate")}</span>
-              <span className="text-success-strong font-semibold">
-                {onboardingCompletionPercent}%
-              </span>
-            </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-200">
-              <div
-                className="h-full rounded-full bg-success-strong transition-all duration-500"
-                style={{ width: `${onboardingCompletionPercent}%` }}
-              />
-            </div>
-            <p className="text-[11px] text-text-secondary">
-              {t("admin.funnelCompleted", {
+              }),
+              color: "bg-info-strong",
+            },
+            {
+              title: t("admin.onboardingCompletionRate"),
+              value: `${number(onboardingCompletionPercent)}%`,
+              percent: onboardingCompletionPercent,
+              subtitle: t("admin.funnelCompleted", {
                 count: number(onboardingCompletedCount),
                 percent: number(onboardingCompletionPercent),
-              })}
-            </p>
-          </div>
-
-          {/* Target 3: Intro Video Watch Rate */}
-          <div className="space-y-2 rounded-xl border border-border/80 bg-neutral-50/50 p-4">
-            <div className="flex items-center justify-between text-xs font-medium">
-              <span className="text-text-primary font-semibold">{t("admin.videoWatchRate")}</span>
-              <span className="text-info-strong font-semibold">
-                {videoWatchPercent}%
-              </span>
-            </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-200">
-              <div
-                className="h-full rounded-full bg-info-strong transition-all duration-500"
-                style={{ width: `${Math.max(5, videoWatchPercent)}%` }}
-              />
-            </div>
-            <p className="text-[11px] text-text-secondary">
-              {t("admin.funnelViews", {
+              }),
+              color: "bg-success-strong",
+            },
+            {
+              title: t("admin.videoWatchRate"),
+              value: `${number(videoWatchPercent)}%`,
+              percent: videoWatchPercent,
+              subtitle: t("admin.funnelViews", {
                 count: number(videoWatchedCount),
-              })}
-            </p>
-          </div>
-
-          {/* Target 4: A/B Metrics Comparison */}
-          <div className="space-y-2 rounded-xl border border-border/80 bg-neutral-50/50 p-4">
-            <div className="flex items-center justify-between text-xs font-medium">
-              <span className="text-text-primary font-semibold">{t("admin.abMetricsComparison")}</span>
-              <span className="text-success-strong font-semibold">
-                B: {variantBShare}% vs A: {100 - variantBShare}%
-              </span>
-            </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-200 flex">
+              }),
+              color: "bg-info-strong",
+            },
+            {
+              title: t("admin.abMetricsComparison"),
+              value: `B: ${number(variantBShare)}% · A: ${number(100 - variantBShare)}%`,
+              percent: variantBShare,
+              subtitle: `${t("admin.variantBPerformance")}: ${number(variantBInteractions)} (${number(variantBShare)}%)`,
+              color: "bg-success-strong",
+            },
+          ].map((target) => (
+            <div
+              key={target.title}
+              className="space-y-2 rounded-xl border border-border/80 bg-neutral-50/50 p-4"
+            >
+              <p className="text-xs font-medium text-neutral-500">{target.title}</p>
+              <p className="mt-1.5 text-2xl font-bold tabular-nums text-neutral-900">
+                {target.value}
+              </p>
               <div
-                className="h-full bg-neutral-400 transition-all duration-500"
-                style={{ width: `${100 - variantBShare}%` }}
-                title={t("admin.variantAPerformance")}
-              />
-              <div
-                className="h-full bg-success-strong transition-all duration-500"
-                style={{ width: `${variantBShare}%` }}
-                title={t("admin.variantBPerformance")}
-              />
+                className="h-2 w-full overflow-hidden rounded-full bg-neutral-200"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={target.percent}
+                aria-label={target.title}
+              >
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${target.color}`}
+                  style={{ width: `${target.percent}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-neutral-500">{target.subtitle}</p>
             </div>
-            <p className="text-[11px] text-text-secondary truncate">
-              {t("admin.variantBPerformance")}: {number(variantBInteractions)} ({variantBShare}%)
-            </p>
-          </div>
+          ))}
         </div>
       </section>
       <section
@@ -368,6 +343,14 @@ export default function AdminOverviewPage() {
                   <p className="text-sm">
                     {t("admin.memberCapacity", { members: group.memberCount, capacity: group.capacity })}
                   </p>
+                  <div className="mt-2 h-1.5 w-36 max-w-full overflow-hidden rounded-full bg-neutral-200">
+                    <div
+                      className="h-full rounded-full bg-neutral-700"
+                      style={{
+                        width: `${Math.min(100, (group.memberCount / Math.max(1, group.capacity)) * 100)}%`,
+                      }}
+                    />
+                  </div>
                   <p
                     className={`text-xs ${group.availableSlots ? "text-success-strong" : "text-neutral-500"}`}
                   >
@@ -379,16 +362,22 @@ export default function AdminOverviewPage() {
                 <p className="text-xs text-neutral-500">
                   {t("admin.groupLastActivity", { time: relativeTime(group.lastActivityAt, locale) })}
                 </p>
-                <p className="text-xs text-neutral-600 dark:text-neutral-300">
-                  {tp("admin.statusCount", group.activeMembers, { status: t("admin.active") })} ·{" "}
-                  <span className="text-warning-strong">
+                <div className="flex flex-wrap gap-1.5 text-xs">
+                  <span className="status-badge status-success">
+                    {tp("admin.statusCount", group.activeMembers, { status: t("admin.active") })}
+                  </span>
+                  <span className="status-badge status-warning">
                     {tp("admin.statusCount", group.warningMembers, { status: t("admin.warning") })}
                   </span>{" "}
-                  ·{" "}
-                  <span className="text-danger-strong">
+                  <span className="status-badge status-danger">
                     {tp("admin.statusCount", group.criticalMembers, { status: t("admin.critical") })}
                   </span>
-                </p>
+                  {group.neverActiveMembers > 0 && (
+                    <span className="status-badge status-neutral">
+                      {tp("admin.statusCount", group.neverActiveMembers, { status: t("admin.neverActiveShort") })}
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
