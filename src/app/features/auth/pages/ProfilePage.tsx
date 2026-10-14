@@ -1,6 +1,5 @@
 import { useAuth } from "../store/authStore";
 import { useI18n } from "../../../i18n";
-import { useToast } from "../../../components/ui/ToastProvider";
 import { useCallback, useEffect, useState } from "react";
 import { profileApi, type ProfessionalProfile } from "../../profile/profileApi";
 import { ProfileForm } from "../../profile/ProfileForm";
@@ -9,7 +8,6 @@ import { CvViewer } from "../../profile/CvViewer";
 export default function ProfilePage() {
   const { user, setUser } = useAuth();
   const { t } = useI18n();
-  const { showToast } = useToast();
   const [profile, setProfile] = useState<ProfessionalProfile | null>(null);
   const [error, setError] = useState(false);
   const [viewCv, setViewCv] = useState(false);
@@ -58,7 +56,6 @@ export default function ProfilePage() {
             onSaved={(saved) => {
               setProfile(saved);
               if (user) setUser({ ...user, name: saved.name });
-              showToast({ message: t("profile.savedSuccess"), variant: "success" });
             }}
           />
           <div className="flex flex-wrap gap-3">

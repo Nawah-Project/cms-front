@@ -126,6 +126,7 @@ export default function TasksPage() {
     );
     try {
       const updated = await api.updateTaskStatus(taskId, status);
+      trackUxEvent("task_status_changed", { status });
       setTasks((current) =>
         current.map((item) => (item.id === taskId ? updated : item)),
       );
@@ -133,7 +134,6 @@ export default function TasksPage() {
         message: t("professionalDevelopment.taskUpdated"),
         variant: "success",
       });
-      trackUxEvent("task_status_changed", { taskId, status });
     } catch {
       setTasks((current) =>
         current.map((item) =>

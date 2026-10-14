@@ -42,10 +42,10 @@ export function FeedbackDetailDrawer({
         : await api.getFeedbackItem(feedbackId);
       if (!admin && !result.isRead) {
         const read = await api.markFeedbackRead(feedbackId);
+        trackUxEvent("feedback_read", { feedbackId });
         result = { ...result, isRead: true, readAt: read.readAt };
         onRead?.(feedbackId);
       }
-      trackUxEvent("feedback_read", { feedbackId, admin });
       setFeedback(result);
     } catch {
       setError(true);

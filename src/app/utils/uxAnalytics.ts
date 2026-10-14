@@ -1,27 +1,76 @@
 import { useState, useEffect } from "react";
 
-export type UxEventName =
+export type SupportedBackendUxEvent =
   | "onboarding_started"
   | "onboarding_video_watched"
   | "onboarding_completed"
+  | "application_created"
+  | "application_stage_updated"
+  | "task_status_changed"
+  | "feedback_read";
+
+export type UxEventName =
+  | SupportedBackendUxEvent
   | "onboarding_step_viewed"
   | "onboarding_video_opened"
   | "companion_cta_clicked"
-  | "application_created"
-  | "application_stage_updated"
   | "application_stage_changed"
-  | "task_status_changed"
   | "task_status_updated"
-  | "feedback_read"
   | "feedback_opened";
 
 export interface UxEventRecord {
-  event: UxEventName | string;
+  name: string;
+  variant?: "A" | "B";
   timestamp: string;
   metadata?: Record<string, string | number | boolean>;
 }
 
 const STORAGE_KEY = "nawah_ux_telemetry";
+const EXPERIMENT_KEY = "nawah_exp_dashboard_layout_v2";
+
+const BASE_URL = (
+  (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
+  "http://localhost:3000"
+).replace(/\/$/, "");
+
+const SUPPORTED_BACKEND_EVENTS = new Set<SupportedBackendUxEvent>([
+  "onboarding_started",
+  "onboarding_video_watched",
+  "onboarding_completed",
+  "application_created",
+  "application_stage_updated",
+  "task_status_changed",
+  "feedback_read",
+]);
+
+function normalizeEventName(eventName: string): SupportedBackendUxEvent | null {
+  switch (eventName) {
+    case "onboarding_video_opened":
+      return "onboarding_video_watched";
+    case "application_stage_changed":
+      return "application_stage_updated";
+    case "task_status_updated":
+      return "task_status_changed";
+    case "feedback_opened":
+      return "feedback_read";
+    default:
+      return SUPPORTED_BACKEND_EVENTS.has(eventName as SupportedBackendUxEvent)
+        ? (eventName as SupportedBackendUxEvent)
+        : null;
+  }
+}
+
+export function getActiveVariant(): "A" | "B" {
+  if (typeof window === "undefined") return "B";
+  try {
+    const saved = localStorage.getItem(EXPERIMENT_KEY);
+    if (saved === "A" || saved === "B") return saved;
+    localStorage.setItem(EXPERIMENT_KEY, "B");
+    return "B";
+  } catch {
+    return "B";
+  }
+}
 
 export function trackUxEvent(
   eventName: UxEventName | string,
@@ -29,41 +78,48 @@ export function trackUxEvent(
 ): void {
   if (typeof window === "undefined") return;
 
-  const payload: UxEventRecord = {
-    event: eventName,
+  const variant = getActiveVariant();
+  const normalizedName = normalizeEventName(eventName);
+
+  const localRecord: UxEventRecord = {
+    name: normalizedName ?? eventName,
+    variant,
     timestamp: new Date().toISOString(),
     metadata,
   };
 
-  // 1. Local backup storage
+  // 1. Local fallback storage
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const list: UxEventRecord[] = raw ? JSON.parse(raw) : [];
-    list.push(payload);
+    list.push(localRecord);
     if (list.length > 100) list.shift();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
   } catch {
-    // Ignore storage quota or private mode issues
+    // Ignore storage errors
   }
 
-  // 2. Asynchronous backend delivery to POST /ux-analytics/events
+  // 2. Send strictly whitelisted DTO to Backend POST /ux-analytics/events
+  if (!normalizedName) return;
+
   try {
-    const apiBase =
-      typeof window !== "undefined" && (window as any).__API_BASE__
-        ? (window as any).__API_BASE__
-        : "";
-    void fetch(`${apiBase}/ux-analytics/events`, {
+    void fetch(`${BASE_URL}/ux-analytics/events`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Accept: "application/json",
       },
       credentials: "include",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        name: normalizedName,
+        variant,
+        ...(metadata ? { metadata } : {}),
+      }),
     }).catch(() => {
-      // Backend route might be unavailable or offline; swallow silently
+      // Silently ignore network errors for telemetry
     });
   } catch {
-    // Silently continue
+    // Silently ignore
   }
 }
 
@@ -79,11 +135,7 @@ export function getUxEvents(): UxEventRecord[] {
 
 export function useUxExperiment(experimentId: "dashboard_layout_v2") {
   const key = `nawah_exp_${experimentId}`;
-  const [variant, setVariantState] = useState<"A" | "B">(() => {
-    if (typeof window === "undefined") return "B";
-    const saved = localStorage.getItem(key);
-    return saved === "A" || saved === "B" ? saved : "B"; // Default to Variant B
-  });
+  const [variant, setVariantState] = useState<"A" | "B">(() => getActiveVariant());
 
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
@@ -97,7 +149,11 @@ export function useUxExperiment(experimentId: "dashboard_layout_v2") {
 
   const setVariant = (val: "A" | "B") => {
     setVariantState(val);
-    localStorage.setItem(key, val);
+    try {
+      localStorage.setItem(key, val);
+    } catch {
+      // Ignore
+    }
   };
 
   const toggleVariant = () => {

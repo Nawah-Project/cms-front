@@ -66,52 +66,48 @@ export default function AdminOverviewPage() {
       : 0;
 
   const uxEvents = getUxEvents();
+  const localCount = (eventName: string) =>
+    uxEvents.filter((e) => e.name === eventName || (e as any).event === eventName).length;
+
   const onboardingStartedCount =
-    data.uxMetrics?.onboardingStarted ??
-    Math.max(
-      data.overview.usersCount,
-      uxEvents.filter((e) => e.event === "onboarding_started").length,
-    );
+    data.uxMetrics?.uniqueUsersByEvent?.onboarding_started ||
+    data.uxMetrics?.totalsByEvent?.onboarding_started ||
+    localCount("onboarding_started") ||
+    data.overview.usersCount;
+
   const onboardingCompletedCount =
-    data.uxMetrics?.onboardingCompleted ??
-    Math.max(
-      data.overview.activeUsersCount,
-      uxEvents.filter((e) => e.event === "onboarding_completed").length,
-    );
+    data.uxMetrics?.uniqueUsersByEvent?.onboarding_completed ||
+    data.uxMetrics?.totalsByEvent?.onboarding_completed ||
+    localCount("onboarding_completed") ||
+    data.overview.activeUsersCount;
+
   const videoWatchedCount =
-    data.uxMetrics?.videoWatched ??
-    uxEvents.filter(
-      (e) =>
-        e.event === "onboarding_video_watched" ||
-        e.event === "onboarding_video_opened",
-    ).length;
+    data.uxMetrics?.uniqueUsersByEvent?.onboarding_video_watched ??
+    data.uxMetrics?.totalsByEvent?.onboarding_video_watched ??
+    localCount("onboarding_video_watched");
 
   const onboardingCompletionPercent =
     onboardingStartedCount > 0
       ? Math.min(
           100,
-          Math.round(
-            (onboardingCompletedCount / onboardingStartedCount) * 100,
-          ),
+          Math.round((onboardingCompletedCount / onboardingStartedCount) * 100),
         )
-      : 100;
+      : 0;
 
   const videoWatchPercent =
     data.overview.usersCount > 0
       ? Math.min(
           100,
-          Math.round(
-            (videoWatchedCount / Math.max(1, data.overview.usersCount)) * 100,
-          ),
+          Math.round((videoWatchedCount / Math.max(1, data.overview.usersCount)) * 100),
         )
       : 0;
 
   const variantAInteractions =
-    data.uxMetrics?.variantAInteractions ??
-    Math.max(12, uxEvents.filter((e) => e.metadata?.variant === "A").length);
+    data.uxMetrics?.abTestSummary?.A?.interactionsCount ??
+    uxEvents.filter((e) => e.variant === "A").length;
   const variantBInteractions =
-    data.uxMetrics?.variantBInteractions ??
-    Math.max(28, uxEvents.filter((e) => e.metadata?.variant === "B").length);
+    data.uxMetrics?.abTestSummary?.B?.interactionsCount ??
+    uxEvents.filter((e) => e.variant === "B").length;
   const totalAbInteractions = variantAInteractions + variantBInteractions;
   const variantBShare =
     totalAbInteractions > 0

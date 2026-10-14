@@ -7,7 +7,6 @@ import { ExternalLinkIcon, GripVerticalIcon } from "./Icons";
 import { StatusBadge } from "./StatusBadge";
 import { useI18n } from "../i18n";
 import { Modal } from "./ui/Modal";
-import { useToast } from "./ui/ToastProvider";
 
 interface KanbanViewProps {
   applications: Application[];
@@ -86,7 +85,6 @@ function getColumnDotColor(stage: Stage) {
 
 export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
   const { t, locale } = useI18n();
-  const { showToast } = useToast();
   const navigate = useNavigate();
 
   // Drag and drop state
@@ -174,10 +172,6 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
     // Active stages (APPLIED, INTERVIEW, DECISION): outcome is always NONE
     if (onStageChange) {
       await onStageChange(app.id, targetStage, "NONE");
-      showToast({
-        message: t("applications.applicationUpdated"),
-        variant: "success",
-      });
     }
   };
 
@@ -186,10 +180,6 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
     const app = pendingClosedApp;
     setPendingClosedApp(null);
     await onStageChange(app.id, "CLOSED", selectedClosedOutcome);
-    showToast({
-      message: t("applications.applicationUpdated"),
-      variant: "success",
-    });
   };
 
   return (
