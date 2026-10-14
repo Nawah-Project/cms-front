@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useAuth } from "../../auth/store/authStore";
 import { PageHeading } from "../../admin/components/AdminUI";
+import { EmptyState } from "../../../components/EmptyState";
 import { adminApi } from "../../admin/api/adminApi";
 import type { FeedbackContext, FeedbackPost, FeedbackScope } from "../types";
 import { api } from "../../../services/api";
@@ -33,7 +34,7 @@ function MemberFeedbackPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawScope = searchParams.get("scope");
   const scope: "all" | FeedbackScope =
-    rawScope === "all" ? "all" : rawScope === "shared" ? "shared" : "for-you";
+    rawScope === "for-you" ? "for-you" : rawScope === "shared" ? "shared" : "all";
   const feedbackId = searchParams.get("feedback");
   const [posts, setPosts] = useState<FeedbackPost[]>([]);
   const [page, setPage] = useState(1);
@@ -247,17 +248,16 @@ function MemberFeedbackPage() {
                 </button>
               </div>
             ) : !visiblePosts.length ? (
-              <section className="rounded-xl border border-dashed border-border bg-surface px-6 py-14 text-center">
-                <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-                  {t(
-                    contextFilter !== "ALL" || search.trim()
-                      ? "professionalDevelopment.noFilteredFeedback"
-                      : scope === "for-you"
-                        ? "professionalDevelopment.noDirectFeedback"
-                        : "professionalDevelopment.noSharedInsights",
-                  )}
-                </h2>
-              </section>
+              <EmptyState
+                compact
+                title={t(
+                  contextFilter !== "ALL" || search.trim()
+                    ? "professionalDevelopment.noFilteredFeedback"
+                    : scope === "for-you"
+                      ? "professionalDevelopment.noDirectFeedback"
+                      : "professionalDevelopment.noSharedInsights",
+                )}
+              />
             ) : (
               <div className="space-y-4">
                 {visiblePosts.map((post) => (

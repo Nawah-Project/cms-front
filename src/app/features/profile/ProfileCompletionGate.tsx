@@ -4,7 +4,8 @@ import { useAuth } from "../auth/store/authStore";
 import { useI18n } from "../../i18n";
 import { profileApi, type ProfessionalProfile } from "./profileApi";
 import { ProfileForm } from "./ProfileForm";
-import { trackUxEvent } from "../../utils/uxAnalytics";
+import { trackUxEvent, useUxExperiment } from "../../utils/uxAnalytics";
+import { IntroVideoPlayer } from "../../components/IntroVideoPlayer";
 import { Modal } from "../../components/ui/Modal";
 import {
   SpinnerIcon,
@@ -18,12 +19,15 @@ import {
 export function ProfileCompletionGate({ children }: { children: React.ReactNode }) {
   const { authenticated, user, setUser } = useAuth();
   const { t } = useI18n();
+  const { variant } = useUxExperiment();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfessionalProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(() =>
+    variant === "A" ? 2 : 1,
+  );
   const [completed, setCompleted] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
 
@@ -53,6 +57,12 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
       active = false;
     };
   }, [authenticated, user?.id, attempt]);
+
+  useEffect(() => {
+    if (variant === "A" && profile && !profile.profileComplete) {
+      setStep(2);
+    }
+  }, [variant, profile]);
 
   if (!authenticated) return children;
   if (loading) {
@@ -84,7 +94,7 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
   }
 
   // If already complete and not in the middle of onboarding wizard step 3
-  if (profile.profileComplete && (completed || step === 1)) {
+  if (profile.profileComplete && (completed || step === 1 || variant === "A")) {
     return children;
   }
 
@@ -107,7 +117,10 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
               const isPast = step > s.number;
               const isCurrent = step === s.number;
               return (
-                <div key={s.number} className="flex flex-1 items-center">
+                <div
+                  key={s.number}
+                  className={`flex items-center ${idx < steps.length - 1 ? "flex-1" : ""}`}
+                >
                   <div className="flex flex-col items-center sm:flex-row sm:gap-2.5">
                     <div
                       className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
@@ -267,7 +280,8 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
                 setProfile(saved);
                 if (user) setUser({ ...user, name: saved.name });
                 trackUxEvent("onboarding_completed");
-                setStep(3);
+                if (variant === "A") setCompleted(true);
+                else setStep(3);
               }}
             />
           </div>
@@ -327,11 +341,7 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
           size="lg"
         >
           <div className="space-y-4">
-            <div className="aspect-video w-full rounded-xl bg-neutral-900 border border-border flex flex-col items-center justify-center text-center p-6 relative overflow-hidden">
-              <PlayCircleIcon className="w-16 h-16 text-info-soft mb-3 opacity-90" />
-              <h4 className="text-base font-semibold text-white">{t("auth.heroTitle")}</h4>
-              <p className="mt-1 text-xs text-neutral-400 max-w-md">{t("auth.heroDescription")}</p>
-            </div>
+            <IntroVideoPlayer />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
               <div className="rounded-xl border border-border p-3 bg-neutral-50/60">
                 <p className="text-xs font-semibold text-text-primary">

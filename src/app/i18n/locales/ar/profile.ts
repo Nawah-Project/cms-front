@@ -42,9 +42,9 @@ export default {
   loadingCv: "جارٍ تحميل السيرة الذاتية…",
   cvUnavailable: "تعذر فتح هذه السيرة الذاتية. ربما لم تعد متاحة.",
   savedSuccess: "تم حفظ ملفك المهني بنجاح.",
-  onboardingStep1Title: "١. كيف تعمل المنصة؟",
-  onboardingStep2Title: "٢. ملفك المهني",
-  onboardingStep3Title: "٣. خطوة الانطلاق",
+  onboardingStep1Title: "كيف تعمل المنصة؟",
+  onboardingStep2Title: "ملفك المهني",
+  onboardingStep3Title: "خطوة الانطلاق",
   onboardingWelcomeTitle: "أهلاً بك في مشروع نواة",
   onboardingWelcomeSubtitle:
     "لكي تحقق أقصى استفادة مع مجموعتك، إليك المطلوب منك ببساطة كل أسبوع:",

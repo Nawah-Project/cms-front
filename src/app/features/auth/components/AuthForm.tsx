@@ -7,6 +7,7 @@ import { SocialSignInButtons } from "./SocialSignInButtons";
 import { useI18n } from "../../../i18n";
 import { LanguageSwitcher } from "../../../i18n/LanguageSwitcher";
 import { Modal } from "../../../components/ui/Modal";
+import { IntroVideoPlayer } from "../../../components/IntroVideoPlayer";
 import { CheckIcon, PlayCircleIcon, SparklesIcon } from "../../../components/Icons";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
@@ -185,9 +186,11 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                   onChange={(e) => setPassword(e.target.value)}
                   className="field-control"
                 />
-                <span className="mt-1.5 block text-xs font-normal text-neutral-500">
-                  {t("auth.passwordHint")}
-                </span>
+                {registering && (
+                  <span className="mt-1.5 block text-xs font-normal text-neutral-500">
+                    {t("auth.passwordHint")}
+                  </span>
+                )}
               </div>
 
               <button
@@ -233,7 +236,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         <div className="absolute -top-32 -end-32 w-96 h-96 rounded-full bg-info-strong/20 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -start-32 w-96 h-96 rounded-full bg-warning-strong/10 blur-3xl pointer-events-none" />
 
-        <div className="relative z-10">
+        <div className="relative z-10 mx-auto w-full max-w-lg">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1 text-xs font-medium text-info-soft backdrop-blur-sm">
             <SparklesIcon className="w-3.5 h-3.5" />
             <span>{t("auth.heroBadge")}</span>
@@ -273,7 +276,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         </div>
 
         {/* Feature Pills */}
-        <div className="relative z-10 pt-12 space-y-3">
+        <div className="relative z-10 mx-auto w-full max-w-lg space-y-3 pt-12">
           <div className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3">
             <div className="w-2 h-2 rounded-full bg-info-soft shrink-0" />
             <span className="text-sm font-medium text-neutral-200">
@@ -304,11 +307,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         size="lg"
       >
         <div className="space-y-4">
-          <div className="aspect-video w-full rounded-xl bg-neutral-900 border border-border flex flex-col items-center justify-center text-center p-6 relative overflow-hidden">
-            <PlayCircleIcon className="w-16 h-16 text-info-soft mb-3 opacity-90" />
-            <h4 className="text-base font-semibold text-white">{t("auth.heroTitle")}</h4>
-            <p className="mt-1 text-xs text-neutral-400 max-w-md">{t("auth.heroDescription")}</p>
-          </div>
+          <IntroVideoPlayer />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
             <div className="rounded-xl border border-border p-3 bg-neutral-50/60">
               <p className="text-xs font-semibold text-text-primary">

@@ -67,15 +67,15 @@ export function ProfessionalDevelopmentSummary() {
     >
       <header className="flex flex-wrap items-end justify-between gap-3 border-b border-stone-200 pb-3 dark:border-neutral-800">
         <div>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            {t("professionalDevelopment.title")}
-          </p>
           <h2
             id="professional-development-summary-title"
-            className="mt-1 text-lg font-medium tracking-tight text-neutral-900 dark:text-neutral-100"
+            className="text-lg font-medium tracking-tight text-neutral-900 dark:text-neutral-100"
           >
             {t("professionalDevelopment.dashboard")}
           </h2>
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+            {t("professionalDevelopment.subtitle")}
+          </p>
         </div>
         <Link
           to="/professional-development"

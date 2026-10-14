@@ -211,7 +211,11 @@ export default function AdminMembersPage() {
               </thead>
               <tbody>
                 {filtered.map((member) => (
-                  <tr key={member.id} className="data-table-row">
+                  <tr
+                    key={member.id}
+                    onClick={() => setSelected(member)}
+                    className="data-table-row cursor-pointer"
+                  >
                     <td className="data-table-cell">
                       <button
                         type="button"
@@ -247,7 +251,10 @@ export default function AdminMembersPage() {
                         days={member.inactivityDays}
                       />
                     </td>
-                    <td className="data-table-cell">
+                    <td
+                      className="data-table-cell"
+                      onClick={(event) => event.stopPropagation()}
+                    >
                       {member.group ? (
                         <button
                           type="button"
@@ -255,7 +262,7 @@ export default function AdminMembersPage() {
                             setActionError("");
                             setRemoving(member);
                           }}
-                          className="button-danger px-3 py-2 text-xs"
+                          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:border-danger-border hover:bg-danger-soft hover:text-danger-strong"
                         >
                           {t("admin.removeFromGroup")}
                         </button>

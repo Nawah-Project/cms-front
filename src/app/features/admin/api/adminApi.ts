@@ -12,6 +12,12 @@ import type { Stage } from "../../../types";
 import { notifyAuthSessionExpired } from "../../../utils/authSession";
 
 export type ActivityStatus = "ACTIVE" | "WARNING" | "CRITICAL" | "NEVER_ACTIVE";
+export type ExperimentVariant = "A" | "B" | "C";
+export type UxConfig = {
+  defaultVariant: ExperimentVariant;
+  groupVariants: Record<string, ExperimentVariant>;
+  introVideoUrl: string;
+};
 export type StageCounts = {
   applied: number;
   interview: number;
@@ -274,4 +280,13 @@ export const adminApi = {
     ),
   uxAnalytics: () =>
     request<any>("/admin/monitoring/ux-analytics"),
+  updateUxConfig: (input: {
+    defaultVariant?: ExperimentVariant;
+    groupVariants?: Record<string, ExperimentVariant>;
+    introVideoUrl?: string;
+  }) =>
+    request<UxConfig>("/admin/monitoring/ux-config", {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }),
 };

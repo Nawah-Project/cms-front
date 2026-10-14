@@ -16,11 +16,19 @@ import {
   relativeTime,
 } from "./components/AdminUI";
 import { SparklesIcon } from "../../components/Icons";
-import { useUxExperiment, getUxEvents } from "../../utils/uxAnalytics";
+import { useToast } from "../../components/ui/ToastProvider";
+import {
+  useUxExperiment,
+  getUxEvents,
+  isValidVariant,
+  type ExperimentVariant,
+} from "../../utils/uxAnalytics";
 
 export default function AdminOverviewPage() {
   const { t, tp, number, locale } = useI18n();
-  const { variant, setVariant } = useUxExperiment("dashboard_layout_v2");
+  const { variant, adminPreview, setVariant, refreshAssignment } =
+    useUxExperiment("dashboard_layout_v2");
+  const toast = useToast();
   const [data, setData] = useState<{
     overview: AdminOverview;
     groups: AdminGroup[];
@@ -29,6 +37,13 @@ export default function AdminOverviewPage() {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [videoUrlInput, setVideoUrlInput] = useState("");
+  const [groupVariants, setGroupVariants] = useState<
+    Record<string, ExperimentVariant>
+  >({});
+  const [defaultVariant, setDefaultVariant] =
+    useState<ExperimentVariant>("B");
+  const [savingConfig, setSavingConfig] = useState(false);
   const load = () => {
     setLoading(true);
     setError(false);
@@ -52,6 +67,19 @@ export default function AdminOverviewPage() {
   useEffect(() => {
     load();
   }, []);
+  useEffect(() => {
+    const config = data?.uxMetrics?.config;
+    if (!config) return;
+    setVideoUrlInput(
+      typeof config.introVideoUrl === "string" ? config.introVideoUrl : "",
+    );
+    if (isValidVariant(config.defaultVariant)) {
+      setDefaultVariant(config.defaultVariant);
+    }
+    if (config.groupVariants && typeof config.groupVariants === "object") {
+      setGroupVariants(config.groupVariants);
+    }
+  }, [data]);
   if (loading) return <LoadingState label={t("admin.loadingOverview")} />;
   if (error || !data) return <ErrorState onRetry={load} />;
 
@@ -60,63 +88,146 @@ export default function AdminOverviewPage() {
     100,
     Math.round((data.overview.usersCount / targetMembers) * 100),
   );
-  const engagementRate =
-    data.overview.usersCount > 0
-      ? Math.round((data.overview.activeUsersCount / data.overview.usersCount) * 100)
-      : 0;
-
   const uxEvents = getUxEvents();
+  const localCount = (eventName: string) =>
+    uxEvents.filter((e) => e.name === eventName || (e as any).event === eventName).length;
+
+  const backendOnboardingStartedCount =
+    data.uxMetrics?.uniqueUsersByEvent?.onboarding_started ??
+    data.uxMetrics?.totalsByEvent?.onboarding_started;
   const onboardingStartedCount =
-    data.uxMetrics?.onboardingStarted ??
-    Math.max(
-      data.overview.usersCount,
-      uxEvents.filter((e) => e.event === "onboarding_started").length,
-    );
+    backendOnboardingStartedCount ??
+    (localCount("onboarding_started") || data.overview.usersCount);
+
+  const backendOnboardingCompletedCount =
+    data.uxMetrics?.uniqueUsersByEvent?.onboarding_completed ??
+    data.uxMetrics?.totalsByEvent?.onboarding_completed;
   const onboardingCompletedCount =
-    data.uxMetrics?.onboardingCompleted ??
-    Math.max(
-      data.overview.activeUsersCount,
-      uxEvents.filter((e) => e.event === "onboarding_completed").length,
-    );
+    backendOnboardingCompletedCount ??
+    (localCount("onboarding_completed") || data.overview.activeUsersCount);
+
   const videoWatchedCount =
-    data.uxMetrics?.videoWatched ??
-    uxEvents.filter(
-      (e) =>
-        e.event === "onboarding_video_watched" ||
-        e.event === "onboarding_video_opened",
-    ).length;
+    data.uxMetrics?.uniqueUsersByEvent?.onboarding_video_watched ??
+    data.uxMetrics?.totalsByEvent?.onboarding_video_watched ??
+    localCount("onboarding_video_watched");
 
   const onboardingCompletionPercent =
     onboardingStartedCount > 0
       ? Math.min(
           100,
-          Math.round(
-            (onboardingCompletedCount / onboardingStartedCount) * 100,
-          ),
+          Math.round((onboardingCompletedCount / onboardingStartedCount) * 100),
         )
-      : 100;
+      : 0;
 
   const videoWatchPercent =
     data.overview.usersCount > 0
       ? Math.min(
           100,
-          Math.round(
-            (videoWatchedCount / Math.max(1, data.overview.usersCount)) * 100,
-          ),
+          Math.round((videoWatchedCount / Math.max(1, data.overview.usersCount)) * 100),
         )
       : 0;
 
-  const variantAInteractions =
-    data.uxMetrics?.variantAInteractions ??
-    Math.max(12, uxEvents.filter((e) => e.metadata?.variant === "A").length);
-  const variantBInteractions =
-    data.uxMetrics?.variantBInteractions ??
-    Math.max(28, uxEvents.filter((e) => e.metadata?.variant === "B").length);
-  const totalAbInteractions = variantAInteractions + variantBInteractions;
-  const variantBShare =
-    totalAbInteractions > 0
-      ? Math.round((variantBInteractions / totalAbInteractions) * 100)
-      : 50;
+  const variants: ExperimentVariant[] = ["A", "B", "C"];
+  const variantLabels: Record<ExperimentVariant, string> = {
+    A: t("admin.variantA"),
+    B: t("admin.variantB"),
+    C: t("admin.variantC"),
+  };
+  const interactionEvents = new Set([
+    "application_created",
+    "task_status_changed",
+    "feedback_read",
+  ]);
+  const variantInteractions = Object.fromEntries(
+    variants.map((item) => [
+      item,
+      data.uxMetrics?.abTestSummary?.[item]?.interactionsCount ??
+        uxEvents.filter(
+          (event) => event.variant === item && interactionEvents.has(event.name),
+        ).length,
+    ]),
+  ) as Record<ExperimentVariant, number>;
+  const totalVariantInteractions = variants.reduce(
+    (total, item) => total + variantInteractions[item],
+    0,
+  );
+  const variantInteractionShares = Object.fromEntries(
+    variants.map((item) => [
+      item,
+      totalVariantInteractions > 0
+        ? Math.round(
+            (variantInteractions[item] / totalVariantInteractions) * 100,
+          )
+        : 0,
+    ]),
+  ) as Record<ExperimentVariant, number>;
+
+  const applySavedConfig = (config: {
+    defaultVariant: ExperimentVariant;
+    groupVariants: Record<string, ExperimentVariant>;
+    introVideoUrl: string;
+  }) => {
+    setDefaultVariant(config.defaultVariant);
+    setGroupVariants(config.groupVariants);
+    setVideoUrlInput(config.introVideoUrl);
+    setData((current) =>
+      current
+        ? {
+            ...current,
+            uxMetrics: { ...current.uxMetrics, config },
+          }
+        : current,
+    );
+  };
+
+  const saveDefaultVariant = async (next: ExperimentVariant) => {
+    setSavingConfig(true);
+    try {
+      const config = await adminApi.updateUxConfig({ defaultVariant: next });
+      applySavedConfig(config);
+      void refreshAssignment();
+      toast.success(t("admin.uxConfigSaved"));
+    } catch {
+      toast.error(t("admin.uxConfigSaveFailed"));
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
+  const saveGroupVariant = async (
+    groupId: string,
+    next: ExperimentVariant,
+  ) => {
+    setSavingConfig(true);
+    try {
+      const config = await adminApi.updateUxConfig({
+        groupVariants: { ...groupVariants, [groupId]: next },
+      });
+      applySavedConfig(config);
+      void refreshAssignment();
+      toast.success(t("admin.uxConfigSaved"));
+    } catch {
+      toast.error(t("admin.uxConfigSaveFailed"));
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
+  const saveIntroVideo = async () => {
+    setSavingConfig(true);
+    try {
+      const config = await adminApi.updateUxConfig({
+        introVideoUrl: videoUrlInput.trim(),
+      });
+      applySavedConfig(config);
+      void refreshAssignment();
+      toast.success(t("admin.uxConfigSaved"));
+    } catch {
+      toast.error(t("admin.uxConfigSaveFailed"));
+    } finally {
+      setSavingConfig(false);
+    }
+  };
 
   const stat = (label: string, value: number, note?: string, tone = "") => (
     <div className="rounded-lg border border-border bg-surface p-4 sm:p-5">
@@ -151,132 +262,216 @@ export default function AdminOverviewPage() {
               </h3>
               <p className="text-xs text-text-secondary">
                 {t("admin.currentExperimentVariant", {
-                  variant: variant === "A" ? t("admin.variantA") : t("admin.variantB"),
+                  variant: variantLabels[variant],
                 })}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-text-secondary">
-              {t("admin.abVariantSwitcher")}:
+              {t("admin.abVariantSwitcher")}: {variantLabels[variant]}
             </span>
-            <div className="inline-flex rounded-xl border border-border bg-neutral-100 p-0.5 text-xs font-medium">
-              <button
-                type="button"
-                onClick={() => setVariant("A")}
-                className={`rounded-lg px-3 py-1.5 transition ${
-                  variant === "A"
-                    ? "bg-surface text-text-primary shadow-xs"
-                    : "text-text-secondary hover:text-text-primary"
-                }`}
-              >
-                {t("admin.variantA")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setVariant("B")}
-                className={`rounded-lg px-3 py-1.5 transition ${
-                  variant === "B"
-                    ? "bg-surface text-text-primary shadow-xs"
-                    : "text-text-secondary hover:text-text-primary"
-                }`}
-              >
-                {t("admin.variantB")}
-              </button>
-            </div>
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {/* Target 1: Member Acquisition (50 users) */}
-          <div className="space-y-2 rounded-xl border border-border/80 bg-neutral-50/50 p-4">
-            <div className="flex items-center justify-between text-xs font-medium">
-              <span className="text-text-primary font-semibold">{t("admin.acquisitionTarget")}</span>
-              <span className="text-info-strong font-semibold">
-                {data.overview.usersCount} / 50 ({acquisitionPercent}%)
-              </span>
+        <div className="grid gap-4 lg:grid-cols-3">
+          <section className="space-y-3 rounded-xl border border-border bg-neutral-50/60 p-4">
+            <h4 className="text-sm font-semibold text-neutral-900">
+              {t("admin.adminPreviewTitle")}
+            </h4>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                aria-pressed={adminPreview === null}
+                onClick={() => setVariant(null)}
+                className={`rounded-lg border px-2 py-2 text-xs font-medium ${adminPreview === null ? "border-info-strong bg-info-soft text-info-strong" : "border-border bg-surface text-neutral-600"}`}
+              >
+                {t("admin.previewByGroup")}
+              </button>
+              {variants.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  aria-pressed={adminPreview === item}
+                  onClick={() => setVariant(item)}
+                  className={`rounded-lg border px-2 py-2 text-xs font-medium ${adminPreview === item ? "border-info-strong bg-info-soft text-info-strong" : "border-border bg-surface text-neutral-600"}`}
+                >
+                  {item}
+                </button>
+              ))}
             </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-200">
-              <div
-                className="h-full rounded-full bg-info-strong transition-all duration-500"
-                style={{ width: `${acquisitionPercent}%` }}
+          </section>
+
+          <section className="space-y-3 rounded-xl border border-border bg-neutral-50/60 p-4">
+            <h4 className="text-sm font-semibold text-neutral-900">
+              {t("admin.groupVariantsTitle")}
+            </h4>
+            <div className="max-h-72 space-y-2 overflow-y-auto">
+              {[
+                { id: "__default__", name: t("admin.defaultGroupVariant") },
+                ...data.groups.map((group) => ({
+                  id: group.id,
+                  name: group.name,
+                })),
+              ].map((item) => {
+                const selected =
+                  item.id === "__default__"
+                    ? defaultVariant
+                    : groupVariants[item.id] ?? defaultVariant;
+                return (
+                  <div
+                    key={item.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border-subtle bg-surface px-3 py-2"
+                  >
+                    <span className="min-w-0 flex-1 text-xs font-medium text-neutral-700">
+                      {item.name}
+                    </span>
+                    <div className="inline-flex shrink-0 rounded-lg border border-border bg-neutral-50 p-0.5">
+                      {variants.map((itemVariant) => (
+                        <button
+                          key={itemVariant}
+                          type="button"
+                          disabled={savingConfig}
+                          aria-label={`${item.name}: ${itemVariant}`}
+                          aria-pressed={selected === itemVariant}
+                          onClick={() =>
+                            item.id === "__default__"
+                              ? void saveDefaultVariant(itemVariant)
+                              : void saveGroupVariant(item.id, itemVariant)
+                          }
+                          className={`min-w-8 rounded-md px-2 py-1 text-xs font-semibold ${selected === itemVariant ? "bg-neutral-900 text-white" : "text-neutral-500 hover:bg-neutral-100"} disabled:opacity-50`}
+                        >
+                          {itemVariant}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="space-y-3 rounded-xl border border-border bg-neutral-50/60 p-4">
+            <h4 className="text-sm font-semibold text-neutral-900">
+              {t("admin.introVideoUrl")}
+            </h4>
+            <form
+              className="space-y-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void saveIntroVideo();
+              }}
+            >
+              <input
+                type="text"
+                dir="ltr"
+                value={videoUrlInput}
+                onChange={(event) => setVideoUrlInput(event.target.value)}
+                placeholder={t("admin.introVideoUrlPlaceholder")}
+                maxLength={2048}
+                className="field-control w-full text-sm"
               />
-            </div>
-            <p className="text-[11px] text-text-secondary">
-              {t("admin.acquisitionProgress", {
+              <button
+                type="submit"
+                disabled={savingConfig}
+                className="button-primary w-full px-3 py-2 text-sm disabled:opacity-50"
+              >
+                {t("admin.saveIntroVideo")}
+              </button>
+            </form>
+          </section>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[
+            {
+              title: t("admin.acquisitionTarget"),
+              value: `${number(data.overview.usersCount)} / 50`,
+              percent: acquisitionPercent,
+              subtitle: t("admin.acquisitionProgress", {
                 count: number(data.overview.usersCount),
                 percent: number(acquisitionPercent),
-              })}
-            </p>
-          </div>
-
-          {/* Target 2: Onboarding Completion Rate */}
-          <div className="space-y-2 rounded-xl border border-border/80 bg-neutral-50/50 p-4">
-            <div className="flex items-center justify-between text-xs font-medium">
-              <span className="text-text-primary font-semibold">{t("admin.onboardingCompletionRate")}</span>
-              <span className="text-success-strong font-semibold">
-                {onboardingCompletionPercent}%
-              </span>
-            </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-200">
-              <div
-                className="h-full rounded-full bg-success-strong transition-all duration-500"
-                style={{ width: `${onboardingCompletionPercent}%` }}
-              />
-            </div>
-            <p className="text-[11px] text-text-secondary">
-              {t("admin.funnelCompleted", {
+              }),
+              color: "bg-info-strong",
+              variantBreakdown: false,
+            },
+            {
+              title: t("admin.onboardingCompletionRate"),
+              value: `${number(onboardingCompletionPercent)}%`,
+              percent: onboardingCompletionPercent,
+              subtitle: t("admin.funnelCompleted", {
                 count: number(onboardingCompletedCount),
                 percent: number(onboardingCompletionPercent),
-              })}
-            </p>
-          </div>
-
-          {/* Target 3: Intro Video Watch Rate */}
-          <div className="space-y-2 rounded-xl border border-border/80 bg-neutral-50/50 p-4">
-            <div className="flex items-center justify-between text-xs font-medium">
-              <span className="text-text-primary font-semibold">{t("admin.videoWatchRate")}</span>
-              <span className="text-info-strong font-semibold">
-                {videoWatchPercent}%
-              </span>
-            </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-200">
-              <div
-                className="h-full rounded-full bg-info-strong transition-all duration-500"
-                style={{ width: `${Math.max(5, videoWatchPercent)}%` }}
-              />
-            </div>
-            <p className="text-[11px] text-text-secondary">
-              {t("admin.funnelViews", {
+              }),
+              color: "bg-success-strong",
+              variantBreakdown: false,
+            },
+            {
+              title: t("admin.videoWatchRate"),
+              value: `${number(videoWatchPercent)}%`,
+              percent: videoWatchPercent,
+              subtitle: t("admin.funnelViews", {
                 count: number(videoWatchedCount),
-              })}
-            </p>
-          </div>
-
-          {/* Target 4: A/B Metrics Comparison */}
-          <div className="space-y-2 rounded-xl border border-border/80 bg-neutral-50/50 p-4">
-            <div className="flex items-center justify-between text-xs font-medium">
-              <span className="text-text-primary font-semibold">{t("admin.abMetricsComparison")}</span>
-              <span className="text-success-strong font-semibold">
-                B: {variantBShare}% vs A: {100 - variantBShare}%
-              </span>
-            </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-200 flex">
+              }),
+              color: "bg-info-strong",
+              variantBreakdown: false,
+            },
+            {
+              title: t("admin.abMetricsComparison"),
+              value: number(totalVariantInteractions),
+              percent: totalVariantInteractions > 0 ? 100 : 0,
+              subtitle: t("admin.totalVariantInteractions"),
+              color: "bg-success-strong",
+              variantBreakdown: true,
+            },
+          ].map((target) => (
+            <div
+              key={target.title}
+              className="space-y-2 rounded-xl border border-border/80 bg-neutral-50/50 p-4"
+            >
+              <p className="text-xs font-medium text-neutral-500">{target.title}</p>
+              <p className="mt-1.5 text-2xl font-bold tabular-nums text-neutral-900">
+                {target.value}
+              </p>
               <div
-                className="h-full bg-neutral-400 transition-all duration-500"
-                style={{ width: `${100 - variantBShare}%` }}
-                title={t("admin.variantAPerformance")}
-              />
-              <div
-                className="h-full bg-success-strong transition-all duration-500"
-                style={{ width: `${variantBShare}%` }}
-                title={t("admin.variantBPerformance")}
-              />
+                className="flex h-2 w-full overflow-hidden rounded-full bg-neutral-200"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={target.percent}
+                aria-label={target.title}
+              >
+                {target.variantBreakdown ? (
+                  variants.map((item) => (
+                    <div
+                      key={item}
+                      className={`h-full transition-all duration-500 ${item === "A" ? "bg-neutral-500" : item === "B" ? "bg-success-strong" : "bg-info-strong"}`}
+                      style={{ width: `${variantInteractionShares[item]}%` }}
+                    />
+                  ))
+                ) : (
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${target.color}`}
+                    style={{ width: `${target.percent}%` }}
+                  />
+                )}
+              </div>
+              <p className="text-[11px] text-neutral-500">{target.subtitle}</p>
+              {target.variantBreakdown && (
+                <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                  {variants.map((item) => (
+                    <div
+                      key={item}
+                      className="rounded-md border border-border-subtle bg-surface px-1.5 py-1 text-center text-neutral-600"
+                    >
+                      <span className="font-semibold">{item}</span>{" "}
+                      {number(variantInteractions[item])} ({number(variantInteractionShares[item])}%)
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            <p className="text-[11px] text-text-secondary truncate">
-              {t("admin.variantBPerformance")}: {number(variantBInteractions)} ({variantBShare}%)
-            </p>
-          </div>
+          ))}
         </div>
       </section>
       <section
@@ -372,6 +567,14 @@ export default function AdminOverviewPage() {
                   <p className="text-sm">
                     {t("admin.memberCapacity", { members: group.memberCount, capacity: group.capacity })}
                   </p>
+                  <div className="mt-2 h-1.5 w-36 max-w-full overflow-hidden rounded-full bg-neutral-200">
+                    <div
+                      className="h-full rounded-full bg-neutral-700"
+                      style={{
+                        width: `${Math.min(100, (group.memberCount / Math.max(1, group.capacity)) * 100)}%`,
+                      }}
+                    />
+                  </div>
                   <p
                     className={`text-xs ${group.availableSlots ? "text-success-strong" : "text-neutral-500"}`}
                   >
@@ -383,16 +586,22 @@ export default function AdminOverviewPage() {
                 <p className="text-xs text-neutral-500">
                   {t("admin.groupLastActivity", { time: relativeTime(group.lastActivityAt, locale) })}
                 </p>
-                <p className="text-xs text-neutral-600 dark:text-neutral-300">
-                  {tp("admin.statusCount", group.activeMembers, { status: t("admin.active") })} ·{" "}
-                  <span className="text-warning-strong">
+                <div className="flex flex-wrap gap-1.5 text-xs">
+                  <span className="status-badge status-success">
+                    {tp("admin.statusCount", group.activeMembers, { status: t("admin.active") })}
+                  </span>
+                  <span className="status-badge status-warning">
                     {tp("admin.statusCount", group.warningMembers, { status: t("admin.warning") })}
                   </span>{" "}
-                  ·{" "}
-                  <span className="text-danger-strong">
+                  <span className="status-badge status-danger">
                     {tp("admin.statusCount", group.criticalMembers, { status: t("admin.critical") })}
                   </span>
-                </p>
+                  {group.neverActiveMembers > 0 && (
+                    <span className="status-badge status-neutral">
+                      {tp("admin.statusCount", group.neverActiveMembers, { status: t("admin.neverActiveShort") })}
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
           </div>

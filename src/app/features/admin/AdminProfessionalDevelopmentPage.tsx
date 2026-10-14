@@ -13,6 +13,7 @@ import {
 } from "./components/AdminUI";
 import { TaskFormDialog } from "../professional-development/components/TaskFormDialog";
 import type { CreateTaskInput } from "../professional-development/types";
+import { ArrowLeftIcon, PlusIcon } from "../../components/Icons";
 
 type DevelopmentMember = AdminMember & {
   development: {
@@ -71,7 +72,7 @@ export default function AdminProfessionalDevelopmentPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <PageHeading
-          eyebrow={t("admin.eyebrow")}
+          eyebrow={t("professionalDevelopment.title")}
           title={t("admin.professionalDevelopment")}
           description={t("professionalDevelopment.adminDevelopmentDescription")}
         />
@@ -79,8 +80,9 @@ export default function AdminProfessionalDevelopmentPage() {
           type="button"
           onClick={() => setAssignGroupOpen(true)}
           disabled={!groups.some((group) => group.memberCount > 0)}
-          className="button-primary px-4 py-2 text-sm disabled:opacity-50"
+          className="button-primary inline-flex items-center gap-1.5 px-4 py-2 text-sm disabled:opacity-50"
         >
+          <PlusIcon className="h-4 w-4" />
           {t("professionalDevelopment.assignGroupTask")}
         </button>
       </div>
@@ -113,23 +115,30 @@ export default function AdminProfessionalDevelopmentPage() {
                     {member.group?.name ?? t("common.unassigned")}
                   </span>
                 </div>
+                <ArrowLeftIcon className="h-4 w-4 shrink-0 rotate-180 text-neutral-400 rtl:rotate-0" />
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border-subtle pt-3 text-xs">
-                <span className="text-neutral-500">
-                  {t("professionalDevelopment.activeTasks")}{" "}
-                  <b className="ms-1 tabular-nums text-neutral-900 dark:text-neutral-100">
+              <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border-subtle pt-3">
+                <span className="rounded-lg border border-border-subtle bg-neutral-50 p-2 text-center">
+                  <span className="block text-[11px] text-neutral-500">
+                    {t("professionalDevelopment.activeTasks")}
+                  </span>
+                  <b className="mt-0.5 block text-base font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
                     {member.development.active}
                   </b>
                 </span>
-                <span className="text-neutral-500">
-                  {t("professionalDevelopment.inProgressCount")}{" "}
-                  <b className="ms-1 tabular-nums text-neutral-900 dark:text-neutral-100">
+                <span className="rounded-lg border border-border-subtle bg-neutral-50 p-2 text-center">
+                  <span className="block text-[11px] text-neutral-500">
+                    {t("professionalDevelopment.inProgressCount")}
+                  </span>
+                  <b className="mt-0.5 block text-base font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
                     {member.development.inProgress}
                   </b>
                 </span>
-                <span className="text-neutral-500">
-                  {t("professionalDevelopment.overdueCount")}{" "}
-                  <b className="ms-1 tabular-nums text-danger-strong">
+                <span className="rounded-lg border border-border-subtle bg-neutral-50 p-2 text-center">
+                  <span className="block text-[11px] text-neutral-500">
+                    {t("professionalDevelopment.overdueCount")}
+                  </span>
+                  <b className="mt-0.5 block text-base font-bold tabular-nums text-danger-strong">
                     {member.development.overdue}
                   </b>
                 </span>

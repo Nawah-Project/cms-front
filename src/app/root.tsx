@@ -48,11 +48,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <I18nProvider>
-      <ToastProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <ToastProvider>
           <Outlet />
-        </AuthProvider>
-      </ToastProvider>
+        </ToastProvider>
+      </AuthProvider>
     </I18nProvider>
   );
 }

@@ -42,9 +42,9 @@ export default {
   loadingCv: "Loading CV…",
   cvUnavailable: "Unable to open this CV. It may no longer be available.",
   savedSuccess: "Your professional profile has been saved.",
-  onboardingStep1Title: "1. How it works",
-  onboardingStep2Title: "2. Professional profile",
-  onboardingStep3Title: "3. First step",
+  onboardingStep1Title: "How it works",
+  onboardingStep2Title: "Professional profile",
+  onboardingStep3Title: "First step",
   onboardingWelcomeTitle: "Welcome to Nawah Project",
   onboardingWelcomeSubtitle:
     "To get the most out of your group, here is what is expected of you each week:",

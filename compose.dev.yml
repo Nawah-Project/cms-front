@@ -2,14 +2,19 @@ name: cms-development-frontend
 
 services:
   frontend:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile
       target: development-dependencies-env
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
     environment:
+      OBSERVABILITY_ENV: development
+      NODE_OPTIONS: --import=./monitoring/instrumentation.mjs
       VITE_API_URL: ${DEV_VITE_API_URL:?Set DEV_VITE_API_URL in development .env}
       VITE_CV_MAX_FILE_SIZE_BYTES: ${DEV_VITE_CV_MAX_FILE_SIZE_BYTES:-5242880}
+    env_file:
+      - /data/observability/secrets/app-metrics.env
     ports:
       - "${DEV_BIND_ADDRESS:-127.0.0.1}:${DEV_FRONTEND_HOST_PORT:?Set DEV_FRONTEND_HOST_PORT in development .env}:5173"
     volumes:
