@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router";
+import { Lock } from "lucide-react";
 import { useAuth } from "../features/auth/store/authStore";
 import { useLogout } from "../features/auth/hooks/useLogout";
 import { useI18n } from "../i18n";
 import { GlobeIcon } from "./Icons";
 import { NotificationCenter } from "./NotificationCenter";
+import { useJourneyState } from "../features/journey/api/journeyApi";
+import { canAccessGroupSection } from "../features/journey/lib/journey-policies";
 
 type NavItem = {
   labelKey: string;
@@ -122,6 +125,9 @@ export function AppSidebar() {
   const { user } = useAuth();
   const { t, locale, setLocale } = useI18n();
   const logout = useLogout();
+  const { data: journeyData } = useJourneyState({ enabled: Boolean(user) });
+  const isGroupUnlocked = canAccessGroupSection(journeyData, user);
+
   const today = new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
     new Date(),
   );
@@ -144,16 +150,42 @@ export function AppSidebar() {
       (item) => item.to !== "/admin" || user?.role === "ADMIN",
     ).map((item) => {
       const active = isActive(location.pathname, item);
+      const isLockedMembers =
+        item.to === "/members-progress" && Boolean(journeyData) && !isGroupUnlocked;
+
       return (
         <Link
           key={item.to}
           to={item.to}
           onClick={() => mobile && setMobileOpen(false)}
+          title={
+            isLockedMembers ? t("journey.groupLockedTooltip") : undefined
+          }
           aria-current={active ? "page" : undefined}
-          className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition duration-150 hover:scale-[1.01] ${mobile ? (active ? "bg-neutral-100 font-medium text-neutral-950 shadow-xs" : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900") : active ? "bg-neutral-700 font-medium text-white shadow-xs" : "text-neutral-300 hover:bg-neutral-800 hover:text-white"}`}
+          className={`flex items-center justify-between gap-3 rounded-lg px-3 py-3 text-sm transition duration-150 hover:scale-[1.01] ${
+            isLockedMembers ? "opacity-75" : ""
+          } ${
+            mobile
+              ? active
+                ? "bg-neutral-100 font-medium text-neutral-950 shadow-xs"
+                : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+              : active
+                ? "bg-neutral-700 font-medium text-white shadow-xs"
+                : "text-neutral-300 hover:bg-neutral-800 hover:text-white"
+          }`}
         >
-          <NavIcon name={item.icon} />
-          <span>{t(item.labelKey)}</span>
+          <span className="flex items-center gap-3 min-w-0">
+            <NavIcon name={item.icon} />
+            <span className="truncate">{t(item.labelKey)}</span>
+          </span>
+          {isLockedMembers && (
+            <span
+              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300"
+              aria-label={t("journey.lockedBadge")}
+            >
+              <Lock className="h-3 w-3" aria-hidden="true" />
+            </span>
+          )}
         </Link>
       );
     });
@@ -199,7 +231,9 @@ export function AppSidebar() {
               className="h-9 w-9 shrink-0 rounded-md object-contain"
             />
             <span className="min-w-0 flex-1 pt-0.5">
-              <span className="block whitespace-nowrap leading-tight">{t("common.brand")}</span>
+              <span className="block whitespace-nowrap leading-tight">
+                {t("common.brand")}
+              </span>
               <time
                 className="mt-1 block text-xs font-normal tracking-normal text-neutral-400"
                 dateTime={new Date().toISOString()}
@@ -234,7 +268,9 @@ export function AppSidebar() {
                 className="h-8 w-8 shrink-0 rounded-md object-contain"
               />
               <span className="min-w-0 pt-0.5">
-                <span className="block whitespace-normal break-words leading-tight">{t("common.brand")}</span>
+                <span className="block whitespace-normal break-words leading-tight">
+                  {t("common.brand")}
+                </span>
                 <time
                   className="mt-0.5 block text-[11px] font-normal tracking-normal text-neutral-500"
                   dateTime={new Date().toISOString()}

@@ -12,6 +12,12 @@ export type ApplicationMethod =
   | "DIRECT_CONTACT"
   | "OTHER";
 
+export interface PrepChecklistItem {
+  id: string;
+  label: string;
+  completed: boolean;
+}
+
 export interface Application {
   id: string;
   userId: string;
@@ -23,6 +29,13 @@ export interface Application {
   jobUrl: string | null;
   stage: Stage;
   outcome: Outcome;
+  isTailored?: boolean;
+  journeyWeek?: number;
+  hasAssignment?: boolean;
+  interviewDate?: string | null;
+  prepChecklist?: PrepChecklistItem[] | null;
+  interviewNotes?: string | null;
+  sharedWithGroup?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -69,6 +82,13 @@ export interface CreateApplicationInput {
   location?: string;
   applicationMethod?: ApplicationMethod | string;
   jobUrl?: string;
+  isTailored?: boolean;
+  journeyWeek?: number;
+  hasAssignment?: boolean;
+  interviewDate?: string;
+  prepChecklist?: PrepChecklistItem[];
+  interviewNotes?: string;
+  sharedWithGroup?: boolean;
 }
 
 export interface UpdateApplicationInput {
@@ -80,6 +100,12 @@ export interface UpdateApplicationInput {
   jobUrl?: string | null;
   stage?: Stage;
   outcome?: Outcome;
+  isTailored?: boolean;
+  hasAssignment?: boolean;
+  interviewDate?: string | null;
+  prepChecklist?: PrepChecklistItem[] | null;
+  interviewNotes?: string | null;
+  sharedWithGroup?: boolean;
 }
 
 export const APPLICATION_METHODS: {

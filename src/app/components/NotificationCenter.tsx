@@ -1,16 +1,25 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router";
+import { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router";
 import { useI18n } from "../i18n";
-import { BellIcon, ClockIcon, SparklesIcon } from "./Icons";
+import { BellIcon, CheckIcon, ClockIcon, SparklesIcon } from "./Icons";
 import { api } from "../services/api";
 import type { DashboardStats } from "../types";
+import {
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useNotifications,
+} from "../features/journey/api/journeyApi";
+import type { AppNotification } from "../features/journey/types";
 
 export interface NotificationCenterProps {
   variant?: "dark" | "light";
 }
 
-export function NotificationCenter({ variant = "dark" }: NotificationCenterProps) {
-  const { t, number } = useI18n();
+export function NotificationCenter({
+  variant = "dark",
+}: NotificationCenterProps) {
+  const { t, number, locale, date } = useI18n();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [emailReminders, setEmailReminders] = useState(() => {
     if (typeof window === "undefined") return true;
@@ -20,7 +29,11 @@ export function NotificationCenter({ variant = "dark" }: NotificationCenterProps
   const [unreadFeedback, setUnreadFeedback] = useState<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Load stats once to populate notifications
+  const { data: notificationsData } = useNotifications(30);
+  const markReadMutation = useMarkNotificationRead();
+  const markAllReadMutation = useMarkAllNotificationsRead();
+
+  // Load companion stats once
   useEffect(() => {
     let active = true;
     void Promise.all([
@@ -60,15 +73,31 @@ export function NotificationCenter({ variant = "dark" }: NotificationCenterProps
     localStorage.setItem("nawah_email_reminders", next ? "true" : "false");
   };
 
-  // Calculate notifications
+  const persistentItems = notificationsData?.items ?? [];
+  const persistentUnreadCount = notificationsData?.unreadCount ?? 0;
+
   const expiringSoon = stats?.expiringSoonCount ?? 0;
   const recentNoResponse = stats?.recentNoResponseCount ?? 0;
   const staleApplicationsCount = stats?.closed?.noResponse ?? 0;
-  const totalNotifications =
+  const companionAlertsCount =
     (unreadFeedback > 0 ? 1 : 0) +
     (expiringSoon > 0 ? 1 : 0) +
     (recentNoResponse > 0 ? 1 : 0) +
-    (staleApplicationsCount > 0 && recentNoResponse === 0 && expiringSoon === 0 ? 1 : 0);
+    (staleApplicationsCount > 0 && recentNoResponse === 0 && expiringSoon === 0
+      ? 1
+      : 0);
+
+  const totalUnread = persistentUnreadCount + companionAlertsCount;
+
+  const handleNotificationClick = (item: AppNotification) => {
+    if (!item.isRead) {
+      markReadMutation.mutate(item.id);
+    }
+    setOpen(false);
+    if (item.actionUrl) {
+      navigate(item.actionUrl);
+    }
+  };
 
   return (
     <div className="relative inline-block" ref={containerRef}>
@@ -85,29 +114,96 @@ export function NotificationCenter({ variant = "dark" }: NotificationCenterProps
         }`}
       >
         <BellIcon className="h-4 w-4" />
-        {totalNotifications > 0 && (
-          <span className="absolute top-1.5 end-1.5 flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger-strong opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-danger-strong" />
+        {totalUnread > 0 && (
+          <span className="absolute -top-1 -end-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-danger-strong px-1 text-[10px] font-bold text-white shadow-xs">
+            {number(totalUnread)}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute start-0 max-lg:start-auto max-lg:end-0 top-full mt-2 w-80 sm:w-88 rounded-2xl border border-border bg-surface p-4 shadow-xl z-50 text-text-primary">
+        <div className="absolute start-0 max-lg:start-auto max-lg:end-0 top-full mt-2 w-80 sm:w-96 rounded-2xl border border-border bg-surface p-4 shadow-xl z-50 text-text-primary">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
               <BellIcon className="h-4 w-4 text-info-strong" />
               <span>{t("dashboard.notificationsTitle")}</span>
             </h3>
-            {totalNotifications > 0 && (
-              <span className="rounded-full bg-info-soft px-2 py-0.5 text-xs font-semibold text-info-strong">
-                {number(totalNotifications)}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {persistentUnreadCount > 0 && (
+                <button
+                  type="button"
+                  disabled={markAllReadMutation.isPending}
+                  onClick={() => markAllReadMutation.mutate()}
+                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-info-strong transition-colors hover:bg-info-soft"
+                >
+                  <CheckIcon className="h-3 w-3" />
+                  <span>{t("journey.markAllRead")}</span>
+                </button>
+              )}
+              {totalUnread > 0 && (
+                <span className="rounded-full bg-info-soft px-2 py-0.5 text-xs font-semibold text-info-strong">
+                  {number(totalUnread)}
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="py-2 divide-y divide-border/60">
+          <div className="max-h-80 overflow-y-auto py-2 divide-y divide-border/60">
+            {/* Persistent V2 Journey & System Notifications */}
+            {persistentItems.map((item) => {
+              const title = locale === "ar" ? item.titleAr : item.titleEn;
+              const body = locale === "ar" ? item.bodyAr : item.bodyEn;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleNotificationClick(item)}
+                  className={`flex w-full items-start gap-3 p-2.5 rounded-xl text-start transition hover:bg-neutral-50 dark:hover:bg-neutral-800/60 ${
+                    !item.isRead
+                      ? "bg-info-soft/20 dark:bg-blue-950/20"
+                      : "opacity-80"
+                  }`}
+                >
+                  <div
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
+                      item.type.includes("UNLOCK") ||
+                      item.type.includes("COMPLETED")
+                        ? "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                        : "bg-info-soft text-info-strong"
+                    }`}
+                  >
+                    <SparklesIcon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate text-xs font-semibold text-text-primary">
+                        {title}
+                      </p>
+                      {!item.isRead && (
+                        <span
+                          className="h-2 w-2 shrink-0 rounded-full bg-info-strong"
+                          aria-hidden="true"
+                        />
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-[11px] leading-4 text-text-secondary">
+                      {body}
+                    </p>
+                    <time
+                      dateTime={item.createdAt}
+                      className="mt-1 block text-[10px] text-neutral-400"
+                    >
+                      {date(item.createdAt, {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </time>
+                  </div>
+                </button>
+              );
+            })}
+
+            {/* Companion Alerts */}
             {unreadFeedback > 0 && (
               <Link
                 to="/professional-development"
@@ -174,29 +270,31 @@ export function NotificationCenter({ variant = "dark" }: NotificationCenterProps
               </Link>
             )}
 
-            {staleApplicationsCount > 0 && recentNoResponse === 0 && expiringSoon === 0 && (
-              <Link
-                to="/applications"
-                onClick={() => setOpen(false)}
-                className="flex items-start gap-3 p-2.5 rounded-xl transition hover:bg-neutral-50"
-              >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-warning-soft text-warning-strong">
-                  <ClockIcon className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-text-primary">
-                    {t("dashboard.companionStaleApps", {
-                      count: number(staleApplicationsCount),
-                    })}
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-text-secondary">
-                    {t("dashboard.viewAllApplications")}
-                  </p>
-                </div>
-              </Link>
-            )}
+            {staleApplicationsCount > 0 &&
+              recentNoResponse === 0 &&
+              expiringSoon === 0 && (
+                <Link
+                  to="/applications"
+                  onClick={() => setOpen(false)}
+                  className="flex items-start gap-3 p-2.5 rounded-xl transition hover:bg-neutral-50"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-warning-soft text-warning-strong">
+                    <ClockIcon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-text-primary">
+                      {t("dashboard.companionStaleApps", {
+                        count: number(staleApplicationsCount),
+                      })}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-text-secondary">
+                      {t("dashboard.viewAllApplications")}
+                    </p>
+                  </div>
+                </Link>
+              )}
 
-            {totalNotifications === 0 && (
+            {persistentItems.length === 0 && companionAlertsCount === 0 && (
               <div className="py-6 text-center text-xs text-text-secondary">
                 {t("dashboard.noNotifications")}
               </div>

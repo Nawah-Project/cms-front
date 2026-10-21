@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useAuth } from "../../auth/store/authStore";
-import { PageHeading } from "../../admin/components/AdminUI";
+import { PageHeading } from "../../../components/ui/PageHeading";
+import { JourneyTieredInsights } from "../../journey/components/JourneyTieredInsights";
 import { EmptyState } from "../../../components/EmptyState";
 import { adminApi } from "../../admin/api/adminApi";
 import type { FeedbackContext, FeedbackPost, FeedbackScope } from "../types";
@@ -139,6 +140,9 @@ function MemberFeedbackPage() {
       <ProfessionalDevelopmentNav
         unreadCount={unreadCount.forYou + unreadCount.shared}
       />
+
+      {/* V4 Tiered Strategic Insights & Interactive AI Prompt Templates */}
+      <JourneyTieredInsights />
 
       <div className="space-y-4">
         <div className="space-y-3 rounded-xl border border-border bg-surface p-3 sm:p-4">

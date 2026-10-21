@@ -98,4 +98,46 @@ export default {
   closeApplication: "إغلاق الطلب",
   selectOutcome: "اختر النتيجة النهائية لهذا الطلب:",
   confirmClose: "تأكيد الإغلاق",
+  tableViewLockedTooltip:
+    "🔒 يفتح عرض الجدول المتقدم تلقائياً بعد إكمال المهمة الأولى في الأسبوع الأول (10 طلبات تقديم)",
+  isTailoredLabel:
+    "طلب تقديم مخصص لهذه الوظيفة (Tailored CV / Cover Letter)",
+  isTailoredHint:
+    "يُحتسب ضمن عداد الطلبات الخاصة المخصصة في مهام الأسابيع 2 و 3 و 4.",
+  sharedWithGroupLabel:
+    "مشاركة هذه الفرصة الوظيفية مع أعضاء مجموعتي ليستفيدوا منها",
+  sharedWithGroupHint:
+    "ستظهر الوظيفة في سجل أنشطة المجموعة مع زر يتيح لزملائك إضافتها لطلباتهم.",
+  tailoredBadge: "طلب مخصص (Tailored)",
+  tailoredShort: "مخصص",
+  compassTitle: "بوصلة سوق العمل الذكية (Job Market Compass)",
+  compassSubtitle:
+    "اختر السوق المستهدف وافتح البحث المفلتر في منصات التوظيف مع تجهيز مسودة الطلب تلقائياً.",
+  compassShow: "إظهار البوصلة",
+  compassHide: "إخفاء البوصلة",
+  compassTargetMarket: "السوق المستهدف",
+  locationEgypt: "مصر",
+  locationSaudi: "السعودية",
+  locationUAE: "الإمارات",
+  locationRemote: "عن بُعد (Remote)",
+  enableAssignmentPrep: "الشركة طلبت تاسك عملي / تفعيل مساحة التحضير",
+  prepWorkspaceBadge: "مساحة التحضير للمقابلة والتاسك العملي",
+  prepWorkspaceTitle: "غرفة التحضير والملاحظات (Interview & Assignment Prep)",
+  prepWorkspaceSubtitle:
+    "نظّم خطوات استعدادك للمقابلة أو التاسك العملي وسجّل ملاحظاتك لمراجعتها في محطة اليوم السابع.",
+  savePrepWorkspace: "حفظ التحضيرات",
+  hasAssignmentLabel: "الشركة طلبت تاسك عملي (Technical Assignment)",
+  hasAssignmentHint:
+    "تفعيل هذا الخيار يفتح قائمة فحص التحضير ويحتسب ضمن إنجازات التقدم للمقابلات.",
+  interviewDateLabel: "موعد المقابلة أو تسليم التاسك:",
+  prepChecklistLabel: "قائمة فحص الاستعداد (Preparation Checklist):",
+  addPrepStepPlaceholder: "أضف خطوة تحضير جديدة…",
+  addPrepStep: "إضافة",
+  interviewNotesLabel:
+    "ملاحظات ما بعد المقابلة / التاسك (لمراجعتها في اليوم السابع):",
+  interviewNotesHint:
+    "دوّن الأسئلة التي طُرحت عليك ونقاط القوة والتحسين لتستفيد منها في تقييم نهاية الأسبوع.",
+  interviewNotesPlaceholder:
+    "اكتب أهم الأسئلة التي طُرحت في المقابلة أو ملاحظاتك على التاسك العملي…",
+  day7SyncNotice: "تُحفظ هذه الملاحظات تلقائياً لمراجعتها في مختبر اليوم السابع.",
 } as const;

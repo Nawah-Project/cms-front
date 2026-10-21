@@ -3,6 +3,7 @@ import type { ActivityStatus } from "../api/adminApi";
 import { useI18n } from "../../../i18n";
 import { SpinnerIcon, AlertCircleIcon } from "../../../components/Icons";
 import { EmptyState as BaseEmptyState } from "../../../components/EmptyState";
+export { PageHeading } from "../../../components/ui/PageHeading";
 
 export function relativeTime(value: string | null, locale: string): string {
   if (!value) return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(0, "second");
@@ -156,30 +157,6 @@ export function EmptyState({
     >
       {children}
     </BaseEmptyState>
-  );
-}
-
-export function PageHeading({
-  eyebrow,
-  title,
-  description,
-}: {
-  eyebrow: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div>
-      <p className="text-xs font-medium uppercase tracking-[0.12em] text-neutral-500">
-        {eyebrow}
-      </p>
-      <h2 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-100">
-        {title}
-      </h2>
-      <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-        {description}
-      </p>
-    </div>
   );
 }
 

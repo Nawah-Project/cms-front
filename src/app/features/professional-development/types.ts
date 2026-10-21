@@ -39,6 +39,8 @@ export interface FeedbackPost {
   archivedAt: string | null;
   isRead?: boolean;
   readAt?: string | null;
+  unlockTriggerCode?: string | null;
+  promptTemplate?: string | null;
 }
 
 export interface FeedbackPage {

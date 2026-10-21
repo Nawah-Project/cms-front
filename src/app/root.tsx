@@ -7,11 +7,13 @@ import {
   ScrollRestoration,
 } from "react-router";
 
+import { QueryClientProvider } from "@tanstack/react-query";
 import type { Route } from "./+types/root";
 import "./app.css";
 import { AuthProvider } from "./features/auth/store/authStore";
 import { I18nProvider } from "./i18n";
 import { ToastProvider } from "./components/ui/ToastProvider";
+import { queryClient } from "./lib/react-query";
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", type: "image/svg+xml", href: "/nawah-logo.svg" },
@@ -47,13 +49,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <I18nProvider>
-      <AuthProvider>
-        <ToastProvider>
-          <Outlet />
-        </ToastProvider>
-      </AuthProvider>
-    </I18nProvider>
+    <QueryClientProvider client={queryClient}>
+      <I18nProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <Outlet />
+          </ToastProvider>
+        </AuthProvider>
+      </I18nProvider>
+    </QueryClientProvider>
   );
 }
 
