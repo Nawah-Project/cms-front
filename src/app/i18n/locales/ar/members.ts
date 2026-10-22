@@ -42,4 +42,10 @@ export default {
   tableCaption: "الأعضاء وعدد طلبات التقديم في كل مرحلة",
   stageApplicationCount: "{stage}: {count} طلبات تقديم",
   viewProfessionalProfile: "عرض الملف المهني لـ {name}",
+  publishedLinkedInPost: "نشر منشوراً مهنياً على",
+  completedWeeklyReview: "أتم محطة التقييم والتعديل للأسبوع {week}",
+  completedOutreachActivity: "أنجز عملية تواصل مهني مباشر (Outreach)",
+  sharedOpportunityBadge: "فرصة مشتركة مع المجموعة",
+  supportColleagueLinkedIn: "ادعم زميلك على LinkedIn ↗",
+  addSharedOpportunityBtn: "أضف هذه الفرصة لطلباتي +",
 } as const;

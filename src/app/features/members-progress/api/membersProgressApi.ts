@@ -7,12 +7,7 @@ import type {
   MemberSummary,
   RecentMemberProgress,
 } from "../types/membersProgress.types";
-import { notifyAuthSessionExpired } from "../../../utils/authSession";
-
-const BASE_URL = (
-  (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
-  "http://localhost:3000"
-).replace(/\/$/, "");
+import { apiClient } from "../../../lib/api-client";
 
 const STAGES: Stage[] = ["APPLIED", "INTERVIEW", "DECISION", "CLOSED"];
 const OUTCOMES: Exclude<Outcome, "NONE">[] = [
@@ -120,8 +115,14 @@ function normalizeRecentEvent(value: unknown): RecentMemberProgress {
     throw new Error("Invalid recent progress response");
   }
 
+  const sideTaskRaw = objectValue(event?.sideTask);
   return {
     id: event.id,
+    activityType:
+      typeof event.activityType === "string"
+        ? (event.activityType as RecentMemberProgress["activityType"])
+        : undefined,
+    sharedWithGroup: event.sharedWithGroup === true || application.sharedWithGroup === true,
     memberId: typeof event.memberId === "string" ? event.memberId : member.id,
     member: normalizeMemberSummary(member),
     application: {
@@ -134,7 +135,29 @@ function normalizeRecentEvent(value: unknown): RecentMemberProgress {
         typeof application.applicationMethod === "string"
           ? application.applicationMethod
           : null,
+      sharedWithGroup: application.sharedWithGroup === true,
+      isTailored: application.isTailored === true,
     },
+    sideTask: sideTaskRaw
+      ? {
+          id: String(sideTaskRaw.id ?? event.id),
+          type: String(sideTaskRaw.type ?? "LINKEDIN_POST"),
+          nodeCode: String(sideTaskRaw.nodeCode ?? ""),
+          journeyWeek: Number(sideTaskRaw.journeyWeek ?? 0),
+          postUrl:
+            typeof sideTaskRaw.postUrl === "string"
+              ? sideTaskRaw.postUrl
+              : null,
+          postTopic:
+            typeof sideTaskRaw.postTopic === "string"
+              ? sideTaskRaw.postTopic
+              : null,
+          reviewSummary:
+            typeof sideTaskRaw.reviewSummary === "string"
+              ? sideTaskRaw.reviewSummary
+              : null,
+        }
+      : null,
     fromStage: fromStage as Stage | null,
     toStage: event.toStage as Stage,
     outcome: outcome as RecentMemberProgress["outcome"],
@@ -191,18 +214,13 @@ function unwrapArray(payload: unknown, message: string): unknown[] {
 }
 
 async function get<T>(path: string, message: string): Promise<T> {
-  const response = await fetch(`${BASE_URL}${path}`, {
-    method: "GET",
-    credentials: "include",
-    headers: { Accept: "application/json" },
-  });
-  if (!response.ok) {
-    if (response.status === 401) notifyAuthSessionExpired();
+  try {
+    return await apiClient.get<T>(path);
+  } catch (err: any) {
     const error = new Error(message) as Error & { status?: number };
-    error.status = response.status;
+    error.status = err?.status;
     throw error;
   }
-  return response.json() as Promise<T>;
 }
 
 export const membersProgressApi = {

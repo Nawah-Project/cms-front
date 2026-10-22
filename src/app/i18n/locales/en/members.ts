@@ -42,4 +42,10 @@ export default {
   tableCaption: "Members and their application counts at each pipeline stage",
   stageApplicationCount: "{stage}: {count} applications",
   viewProfessionalProfile: "View {name}’s professional profile",
+  publishedLinkedInPost: "published a professional post on",
+  completedWeeklyReview: "completed Week {week} Review & Optimization Station",
+  completedOutreachActivity: "completed a direct professional outreach",
+  sharedOpportunityBadge: "Shared with Group",
+  supportColleagueLinkedIn: "Support colleague on LinkedIn ↗",
+  addSharedOpportunityBtn: "Add this opportunity to my applications +",
 } as const;

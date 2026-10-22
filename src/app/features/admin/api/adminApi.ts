@@ -9,7 +9,7 @@ import type {
   FeedbackPost,
 } from "../../professional-development/types";
 import type { Stage } from "../../../types";
-import { notifyAuthSessionExpired } from "../../../utils/authSession";
+import { apiClient } from "../../../lib/api-client";
 
 export type ActivityStatus = "ACTIVE" | "WARNING" | "CRITICAL" | "NEVER_ACTIVE";
 export type ExperimentVariant = "A" | "B" | "C";
@@ -119,42 +119,33 @@ export type AdminUserDetail = {
   }>;
 };
 
-const BASE_URL = (
-  (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
-  "http://localhost:3000"
-).replace(/\/$/, "");
-
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  let response: Response;
   try {
-    response = await fetch(`${BASE_URL}${path}`, {
-      ...init,
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-        ...(init?.body ? { "Content-Type": "application/json" } : {}),
-        ...init?.headers,
-      },
+    const method = (init?.method || "GET") as
+      | "GET"
+      | "POST"
+      | "PUT"
+      | "PATCH"
+      | "DELETE";
+    return await apiClient.request<T>(path, {
+      method,
+      body: init?.body,
+      headers: init?.headers as Record<string, string> | undefined,
     });
-  } catch {
-    throw new Error("We couldn’t reach the server. Please try again.");
-  }
-  if (!response.ok) {
-    if (response.status === 401) notifyAuthSessionExpired();
+  } catch (err: any) {
+    const status = err?.status;
     const error = new Error(
-      response.status === 401 || response.status === 403
+      status === 401 || status === 403
         ? "You don’t have permission to access this admin page."
         : "We couldn’t complete that request. Please try again.",
     ) as Error & { status?: number; code?: string };
-    error.status = response.status;
+    error.status = status;
     error.code =
-      response.status === 401 || response.status === 403
+      status === 401 || status === 403
         ? "PERMISSION_DENIED"
         : "REQUEST_FAILED";
     throw error;
   }
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
 }
 
 export const adminApi = {

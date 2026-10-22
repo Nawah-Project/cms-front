@@ -8,7 +8,7 @@ import type {
   UpdateApplicationInput,
   ApplicationsResponse,
 } from "../types";
-import { notifyAuthSessionExpired } from "../utils/authSession";
+import { apiClient } from "../lib/api-client";
 import type {
   ProfessionalDevelopmentSummary,
   ProfessionalTask,
@@ -22,27 +22,6 @@ import type {
   FeedbackScope,
   FeedbackUnreadCount,
 } from "../features/professional-development/types";
-
-/**
- * Clean API service layer for consuming the Job Application Tracking backend.
- * Uses VITE_API_URL (defaults to http://localhost:3000).
- */
-const BASE_URL = (
-  (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
-  "http://localhost:3000"
-).replace(/\/$/, "");
-
-class ApiError extends Error {
-  public status: number;
-  public details?: any;
-
-  constructor(message: string, status: number, details?: any) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-    this.details = details;
-  }
-}
 
 function normalizeRecentApplications(value: unknown): DashboardApplication[] {
   if (!Array.isArray(value)) return [];
@@ -82,47 +61,18 @@ async function request<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const url = `${BASE_URL}${endpoint}`;
-  const headers = new Headers(options.headers || {});
-
-  if (!headers.has("Accept")) {
-    headers.set("Accept", "application/json");
-  }
-
-  if (options.body && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
-  }
-
-  const response = await fetch(url, {
-    ...options,
-    credentials: "include",
-    headers,
+  const method = (options.method || "GET") as
+    | "GET"
+    | "POST"
+    | "PUT"
+    | "PATCH"
+    | "DELETE";
+  const result = await apiClient.request<T>(endpoint, {
+    method,
+    body: options.body,
+    headers: options.headers as Record<string, string> | undefined,
   });
-
-  if (!response.ok) {
-    if (response.status === 401) notifyAuthSessionExpired();
-    let errorMessage = `Request failed with status ${response.status}`;
-    let details: any;
-    try {
-      const errorJson = await response.json();
-      if (Array.isArray(errorJson.message)) {
-        errorMessage = errorJson.message.join(", ");
-      } else {
-        errorMessage = errorJson.message || errorJson.error || errorMessage;
-      }
-      details = errorJson;
-    } catch {
-      const text = await response.text();
-      if (text) errorMessage = text;
-    }
-    throw new ApiError(errorMessage, response.status, details);
-  }
-
-  if (response.status === 204) {
-    return {} as T;
-  }
-
-  return response.json() as Promise<T>;
+  return (result === undefined ? ({} as T) : result);
 }
 
 export const api = {
@@ -213,6 +163,27 @@ export const api = {
     if (input.jobUrl?.trim()) {
       payload.jobUrl = input.jobUrl.trim();
     }
+    if (input.isTailored !== undefined) {
+      payload.isTailored = input.isTailored;
+    }
+    if (input.journeyWeek !== undefined) {
+      payload.journeyWeek = input.journeyWeek;
+    }
+    if (input.hasAssignment !== undefined) {
+      payload.hasAssignment = input.hasAssignment;
+    }
+    if (input.interviewDate?.trim()) {
+      payload.interviewDate = input.interviewDate.trim();
+    }
+    if (input.prepChecklist !== undefined) {
+      payload.prepChecklist = input.prepChecklist;
+    }
+    if (input.interviewNotes?.trim()) {
+      payload.interviewNotes = input.interviewNotes.trim();
+    }
+    if (input.sharedWithGroup !== undefined) {
+      payload.sharedWithGroup = input.sharedWithGroup;
+    }
 
     const res = await request<any>("/applications", {
       method: "POST",
@@ -247,6 +218,26 @@ export const api = {
     if (input.jobUrl !== undefined) {
       payload.jobUrl =
         input.jobUrl && input.jobUrl.trim() ? input.jobUrl.trim() : null;
+    }
+    if (input.isTailored !== undefined) {
+      payload.isTailored = input.isTailored;
+    }
+    if (input.hasAssignment !== undefined) {
+      payload.hasAssignment = input.hasAssignment;
+    }
+    if (input.interviewDate !== undefined) {
+      payload.interviewDate = input.interviewDate || null;
+    }
+    if (input.prepChecklist !== undefined) {
+      payload.prepChecklist = input.prepChecklist;
+    }
+    if (input.interviewNotes !== undefined) {
+      payload.interviewNotes = input.interviewNotes
+        ? input.interviewNotes.trim()
+        : null;
+    }
+    if (input.sharedWithGroup !== undefined) {
+      payload.sharedWithGroup = input.sharedWithGroup;
     }
 
     const res = await request<any>(`/applications/${encodeURIComponent(id)}`, {

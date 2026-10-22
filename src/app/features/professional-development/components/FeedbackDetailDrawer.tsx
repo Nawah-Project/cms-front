@@ -5,6 +5,7 @@ import { adminApi } from "../../admin/api/adminApi";
 import { api } from "../../../services/api";
 import type { FeedbackPost } from "../types";
 import { FeedbackRichContent } from "./FeedbackRichContent";
+import { PromptCopyBox } from "../../journey/components/PromptCopyBox";
 import { trackUxEvent } from "../../../utils/uxAnalytics";
 import {
   FeedbackContextTag,
@@ -191,6 +192,12 @@ export function FeedbackDetailDrawer({
               <div className="border-t border-border pt-5">
                 <FeedbackRichContent content={feedback.content} />
               </div>
+
+              {feedback.promptTemplate && (
+                <div className="border-t border-border pt-4">
+                  <PromptCopyBox promptTemplate={feedback.promptTemplate} />
+                </div>
+              )}
 
               {feedback.resources.length > 0 && (
                 <section

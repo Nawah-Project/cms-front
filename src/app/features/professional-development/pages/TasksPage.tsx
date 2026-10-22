@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type DragEvent } from "react";
 import { useSearchParams } from "react-router";
-import { PageHeading } from "../../admin/components/AdminUI";
+import { PageHeading } from "../../../components/ui/PageHeading";
 import { useI18n } from "../../../i18n";
 import { api } from "../../../services/api";
 import type {
@@ -177,6 +177,15 @@ export default function TasksPage() {
       </header>
 
       <ProfessionalDevelopmentNav />
+
+      <div className="border-t border-border pt-6">
+        <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+          {t("journey.personalAndMentorTasksHeading")}
+        </h3>
+        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+          {t("journey.personalAndMentorTasksSubtitle")}
+        </p>
+      </div>
 
       {filterLabel && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-info-border bg-info-soft/50 px-4 py-3">

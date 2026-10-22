@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router";
 import { useAuth } from "../../auth/store/authStore";
 import { useMembersProgress } from "../hooks/useMembersProgress";
 import { useRecentMemberProgress } from "../hooks/useRecentMemberProgress";
@@ -6,8 +8,40 @@ import { RecentActivityList } from "../components/RecentActivityList";
 import { SpinnerIcon } from "../../../components/Icons";
 import { EmptyState } from "../../../components/EmptyState";
 import { useI18n } from "../../../i18n";
+import { useJourneyState } from "../../journey/api/journeyApi";
+import { canAccessGroupSection } from "../../journey/lib/journey-policies";
+import { useToast } from "../../../components/ui/ToastProvider";
 
 export default function MembersProgressPage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { info } = useToast();
+  const { t } = useI18n();
+  const { data: journeyData, isLoading: journeyLoading } = useJourneyState({
+    enabled: Boolean(user),
+  });
+  const isUnlocked = canAccessGroupSection(journeyData, user);
+  const redirectStarted = useRef(false);
+
+  useEffect(() => {
+    if (journeyLoading || isUnlocked || redirectStarted.current) return;
+    redirectStarted.current = true;
+    info(t("journey.groupUnavailableToast"));
+    navigate("/", { replace: true });
+  }, [info, isUnlocked, journeyLoading, navigate, t]);
+
+  if (journeyLoading || !isUnlocked) {
+    return (
+      <div className="flex min-h-56 items-center justify-center" role="status">
+        <SpinnerIcon className="h-6 w-6 animate-spin text-neutral-400" />
+      </div>
+    );
+  }
+
+  return <MembersProgressContent />;
+}
+
+function MembersProgressContent() {
   const { user } = useAuth();
   const { t, tp } = useI18n();
   const { members, loading, error, retry } = useMembersProgress();
@@ -16,7 +50,7 @@ export default function MembersProgressPage() {
   return (
     <section className="space-y-8 animate-in fade-in duration-200">
       <header className="border-b border-border pb-7">
-        <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
+        <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-4xl">
           {t("members.title")}
         </h1>
         <p className="mt-2 text-sm text-neutral-500">
@@ -32,7 +66,7 @@ export default function MembersProgressPage() {
             </p>
             <h2
               id="recent-activity-heading"
-              className="mt-1 text-xl font-semibold tracking-tight text-neutral-900"
+              className="mt-1 text-xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100"
             >
               {t("members.recentActivity")}
             </h2>
@@ -66,7 +100,7 @@ export default function MembersProgressPage() {
             </p>
             <h2
               id="members-pipeline-heading"
-              className="mt-1 text-xl font-semibold tracking-tight text-neutral-900"
+              className="mt-1 text-xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100"
             >
               {t("members.memberProgress")}
             </h2>

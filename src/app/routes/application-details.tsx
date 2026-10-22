@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
-import { EditApplicationModal } from "../components/EditApplicationModal";
+import { EditApplicationModal } from "../features/applications/components/EditApplicationModal";
+import { InterviewPrepWorkspace } from "../features/applications/components/InterviewPrepWorkspace";
 import {
   ArrowLeftIcon,
   BriefcaseIcon,
@@ -10,12 +12,21 @@ import {
   EditIcon,
   ExternalLinkIcon,
   MapPinIcon,
+  SparklesIcon,
   SpinnerIcon,
   TrashIcon,
 } from "../components/Icons";
-import { PipelineTimeline } from "../components/PipelineTimeline";
-import { StatusBadge } from "../components/StatusBadge";
-import { api } from "../services/api";
+import { PipelineTimeline } from "../features/applications/components/PipelineTimeline";
+import { StatusBadge } from "../features/applications/components/StatusBadge";
+import {
+  useApplication,
+  useDeleteApplication,
+  useUpdateApplication,
+} from "../features/applications/api/applicationsApi";
+import { journeyApi } from "../features/journey/api/journeyApi";
+import { journeyQueryKeys } from "../features/journey/config/query-keys";
+import { celebrateJourneyUnlocks } from "../features/journey/lib/celebrate-unlocks";
+import type { JourneyStateResponse } from "../features/journey/types";
 import {
   STAGES,
   formatApplicationMethod,
@@ -50,10 +61,15 @@ export default function ApplicationDetailsPage() {
   const { showToast } = useToast();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const [application, setApplication] = useState<Application | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: application,
+    isLoading,
+    isError,
+  } = useApplication(id);
+  const updateAppMutation = useUpdateApplication();
+  const deleteAppMutation = useDeleteApplication();
 
   // Modals state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -65,41 +81,43 @@ export default function ApplicationDetailsPage() {
   const [selectedOutcomeForClose, setSelectedOutcomeForClose] =
     useState<Outcome>("ACCEPTED");
 
-  const loadApplication = async () => {
-    if (!id) return;
-    setIsLoading(true);
-    setError(null);
+  const runUpdateWithCelebration = async (
+    appId: string,
+    updates: UpdateApplicationInput,
+  ) => {
+    const prevJourney = queryClient.getQueryData<JourneyStateResponse>(
+      journeyQueryKeys.state(),
+    );
+    const updated = await updateAppMutation.mutateAsync({
+      id: appId,
+      updates,
+    });
     try {
-      const data = await api.getApplication(id);
-      setApplication(data);
-    } catch (err: any) {
-      setError(t("common.loadError"));
-    } finally {
-      setIsLoading(false);
+      const nextJourney = await queryClient.fetchQuery({
+        queryKey: journeyQueryKeys.state(),
+        queryFn: () => journeyApi.getJourneyState(),
+      });
+      celebrateJourneyUnlocks(prevJourney, nextJourney, t, locale, showToast);
+    } catch {
+      // ignore
     }
+    return updated;
   };
-
-  useEffect(() => {
-    loadApplication();
-  }, [id]);
 
   const handleStageSelect = async (newStage: Stage) => {
     if (!application) return;
     if (newStage === application.stage) return;
 
     if (newStage === "CLOSED") {
-      // When stage becomes CLOSED, prompt for outcome
       setIsPromptingClosedOutcome(true);
       return;
     }
 
-    // Active stage: set stage and outcome to NONE (do not ask for outcome)
     try {
-      const updated = await api.updateApplication(application.id, {
+      await runUpdateWithCelebration(application.id, {
         stage: newStage,
         outcome: "NONE",
       });
-      setApplication(updated);
       showToast({
         message: t("applications.applicationUpdated"),
         variant: "success",
@@ -119,11 +137,10 @@ export default function ApplicationDetailsPage() {
   const handleConfirmClosedOutcome = async () => {
     if (!application) return;
     try {
-      const updated = await api.updateApplication(application.id, {
+      await runUpdateWithCelebration(application.id, {
         stage: "CLOSED",
         outcome: selectedOutcomeForClose,
       });
-      setApplication(updated);
       setIsPromptingClosedOutcome(false);
       showToast({
         message: t("applications.applicationUpdated"),
@@ -146,8 +163,7 @@ export default function ApplicationDetailsPage() {
     appId: string,
     updates: UpdateApplicationInput,
   ) => {
-    const updated = await api.updateApplication(appId, updates);
-    setApplication(updated);
+    const updated = await runUpdateWithCelebration(appId, updates);
     showToast({
       message: t("applications.applicationUpdated"),
       variant: "success",
@@ -157,7 +173,7 @@ export default function ApplicationDetailsPage() {
 
   const handleDelete = async () => {
     if (!application) return;
-    await api.deleteApplication(application.id);
+    await deleteAppMutation.mutateAsync(application.id);
     showToast({
       message: t("applications.applicationDeleted"),
       variant: "success",
@@ -176,12 +192,12 @@ export default function ApplicationDetailsPage() {
     );
   }
 
-  if (error || !application) {
+  if (isError || !application) {
     return (
       <div className="py-16 max-w-md mx-auto text-center">
         <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs">
           <p className="font-semibold mb-1">{t("applications.notFound")}</p>
-          <p>{error || t("common.pageNotFound")}</p>
+          <p>{t("common.pageNotFound")}</p>
           <div className="mt-4 flex items-center justify-center gap-3">
             <Link
               to="/applications"
@@ -194,6 +210,9 @@ export default function ApplicationDetailsPage() {
       </div>
     );
   }
+
+  const showPrepWorkspace =
+    application.stage === "INTERVIEW" || Boolean(application.hasAssignment);
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-200">
@@ -231,27 +250,48 @@ export default function ApplicationDetailsPage() {
       <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-              {application.jobTitle}
-            </h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+                {application.jobTitle}
+              </h1>
+              {application.isTailored && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-200">
+                  <SparklesIcon className="h-3 w-3" />
+                  <span>{t("applications.tailoredBadge")}</span>
+                </span>
+              )}
+            </div>
             <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mt-1 flex items-center gap-2">
               <BuildingIcon className="w-4 h-4 text-neutral-400" />
               <span>{application.companyName}</span>
             </p>
           </div>
 
-          {/* Job posting link button if jobUrl exists */}
-          {application.jobUrl && (
-            <a
-              href={application.jobUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors shrink-0"
-            >
-              <span>{t("applications.viewPosting")}</span>
-              <ExternalLinkIcon className="w-3.5 h-3.5" />
-            </a>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {!showPrepWorkspace && (
+              <button
+                type="button"
+                onClick={() =>
+                  void handleSaveEdit(application.id, { hasAssignment: true })
+                }
+                className="inline-flex items-center gap-1.5 rounded-lg border border-info-border bg-info-soft px-3 py-1.5 text-xs font-semibold text-info-strong transition-colors hover:opacity-90"
+              >
+                <SparklesIcon className="h-3.5 w-3.5" />
+                <span>{t("applications.enableAssignmentPrep")}</span>
+              </button>
+            )}
+            {application.jobUrl && (
+              <a
+                href={application.jobUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors shrink-0"
+              >
+                <span>{t("applications.viewPosting")}</span>
+                <ExternalLinkIcon className="w-3.5 h-3.5" />
+              </a>
+            )}
+          </div>
         </div>
 
         {/* Visual Pipeline Timeline */}
@@ -292,12 +332,22 @@ export default function ApplicationDetailsPage() {
                     : "bg-neutral-50 dark:bg-neutral-800/40 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                 }`}
               >
-                {t(`applications.${s.key === "APPLIED" ? "submitted" : s.key.toLowerCase()}`)}
+                {t(
+                  `applications.${s.key === "APPLIED" ? "submitted" : s.key.toLowerCase()}`,
+                )}
               </button>
             );
           })}
         </div>
       </div>
+
+      {/* Interview & Assignment Preparation Workspace (V2) */}
+      {showPrepWorkspace && (
+        <InterviewPrepWorkspace
+          application={application}
+          onSave={handleSaveEdit}
+        />
+      )}
 
       {/* Application Metadata Details */}
       <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-xs divide-y divide-neutral-100 dark:divide-neutral-800">
@@ -400,22 +450,20 @@ export default function ApplicationDetailsPage() {
         }
       >
         <div className="grid grid-cols-3 gap-2">
-          {(["ACCEPTED", "REJECTED", "WITHDRAWN"] as Outcome[]).map(
-            (opt) => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => setSelectedOutcomeForClose(opt)}
-                className={`px-3 py-2 text-xs font-medium rounded-xl border transition-all ${
-                  selectedOutcomeForClose === opt
-                    ? "bg-neutral-900 text-white border-neutral-900 shadow-xs"
-                    : "bg-surface text-text-secondary border-border hover:bg-surface-hover"
-                }`}
-              >
-                {t(`applications.${opt.toLowerCase()}`)}
-              </button>
-            ),
-          )}
+          {(["ACCEPTED", "REJECTED", "WITHDRAWN"] as Outcome[]).map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => setSelectedOutcomeForClose(opt)}
+              className={`px-3 py-2 text-xs font-medium rounded-xl border transition-all ${
+                selectedOutcomeForClose === opt
+                  ? "bg-neutral-900 text-white border-neutral-900 shadow-xs"
+                  : "bg-surface text-text-secondary border-border hover:bg-surface-hover"
+              }`}
+            >
+              {t(`applications.${opt.toLowerCase()}`)}
+            </button>
+          ))}
         </div>
       </Modal>
 

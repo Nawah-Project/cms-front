@@ -74,6 +74,17 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         message.includes("conflict")
       ) {
         setError(t("auth.emailAlreadyExists"));
+      } else if (
+        message.includes("disposable") ||
+        message.includes("temporary email")
+      ) {
+        setError(t("auth.disposableEmailError"));
+      } else if (
+        message.includes("domain does not exist") ||
+        message.includes("cannot receive mail") ||
+        message.includes("invalid email address format")
+      ) {
+        setError(t("auth.invalidEmailDomainError"));
       } else if (status === 400 && registering) {
         setError(t("auth.passwordRequirementsError"));
       } else if (
