@@ -56,6 +56,8 @@ export interface UserJourneyState {
   currentNodeStartedAt: string;
   weekStartedAt: string;
   isGroupUnlocked: boolean;
+  canUseTableView?: boolean;
+  hasUnlockedAdvPrep?: boolean;
   unlockedInsightCodes: string[];
   completedNodeCodes: string[];
   updatedAt: string;

@@ -41,16 +41,20 @@ export function canAccessGroupSection(
 }
 
 /**
- * Advanced Table View in `/applications` is unlocked after completing `W1_M1` (or for ADMINs).
+ * Advanced Table View in `/applications` is unlocked when the user has 10+ total applications,
+ * or `canUseTableView === true`, or after completing `W1_M1` (or for ADMINs).
  */
 export function canUseApplicationsTableView(
   journeyState?: JourneyStateLike,
   user?: { role?: string } | null,
+  totalAppsCount?: number,
 ): boolean {
   if (user?.role === "ADMIN") return true;
+  if (typeof totalAppsCount === "number" && totalAppsCount >= 10) return true;
   const state = extractState(journeyState);
   if (!state) return false;
   return (
+    state.canUseTableView === true ||
     (state.completedNodeCodes ?? []).includes("W1_M1") ||
     state.currentWeek >= 2
   );

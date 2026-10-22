@@ -99,7 +99,7 @@ export default {
   selectOutcome: "Select the final outcome for this application:",
   confirmClose: "Confirm and close",
   tableViewLockedTooltip:
-    "🔒 Advanced Table View unlocks automatically after completing Week 1 Quest 1 (10 applications)",
+    "🔒 {remaining} more application(s) needed to reach 10 and unlock Advanced Table View ({current}/10)",
   isTailoredLabel:
     "Tailored Application for this role (Custom CV / Cover Letter)",
   isTailoredHint:

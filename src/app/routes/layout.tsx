@@ -6,6 +6,7 @@ import { AppSidebar } from "../components/AppSidebar";
 import { JourneyTasksPanel } from "../components/JourneyTasksPanel";
 import type { CreateApplicationInput } from "../types";
 import { ProtectedRoute } from "../features/auth/components/ProtectedRoute";
+import { EmailVerificationGate } from "../features/auth/components/EmailVerificationGate";
 import { ProfileCompletionGate } from "../features/profile/ProfileCompletionGate";
 import { useI18n } from "../i18n";
 import { useToast } from "../components/ui/ToastProvider";
@@ -70,30 +71,32 @@ export default function Layout() {
 
   return (
     <ProtectedRoute>
-      <ProfileCompletionGate>
-        <AppContext.Provider value={{ openAddModal }}>
-          <div className="min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200">
-            <AppSidebar />
-            <JourneyTasksPanel />
+      <EmailVerificationGate>
+        <ProfileCompletionGate>
+          <AppContext.Provider value={{ openAddModal }}>
+            <div className="min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200">
+              <AppSidebar />
+              <JourneyTasksPanel />
 
-            <div className="min-h-screen w-full lg:ps-64">
-              <main className="w-full px-5 py-7 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 lg:py-10">
-                <Outlet context={{ openAddModal }} />
-              </main>
+              <div className="min-h-screen w-full lg:ps-64">
+                <main className="w-full px-5 py-7 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 lg:py-10">
+                  <Outlet context={{ openAddModal }} />
+                </main>
+              </div>
+
+              <AddApplicationModal
+                isOpen={isAddModalOpen}
+                initialValues={draftValues}
+                onClose={() => {
+                  setIsAddModalOpen(false);
+                  setDraftValues(null);
+                }}
+                onSubmit={handleCreateApplication}
+              />
             </div>
-
-            <AddApplicationModal
-              isOpen={isAddModalOpen}
-              initialValues={draftValues}
-              onClose={() => {
-                setIsAddModalOpen(false);
-                setDraftValues(null);
-              }}
-              onSubmit={handleCreateApplication}
-            />
-          </div>
-        </AppContext.Provider>
-      </ProfileCompletionGate>
+          </AppContext.Provider>
+        </ProfileCompletionGate>
+      </EmailVerificationGate>
     </ProtectedRoute>
   );
 }

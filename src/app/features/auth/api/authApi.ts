@@ -3,6 +3,12 @@ import { API_BASE_URL, apiClient } from "../../../lib/api-client";
 
 export const AUTH_API_BASE_URL = API_BASE_URL;
 
+export interface ResendVerificationResponse {
+  sent: boolean;
+  emailVerified: boolean;
+  cooldownSeconds: number;
+}
+
 function normalizeUser(payload: any): User {
   const user = payload?.user ?? payload?.data?.user ?? payload?.data ?? payload;
   if (
@@ -18,6 +24,7 @@ function normalizeUser(payload: any): User {
     name: user.name,
     email: user.email,
     role: user.role === "ADMIN" ? "ADMIN" : "USER",
+    emailVerified: user.emailVerified !== false,
   };
 }
 
@@ -27,6 +34,15 @@ export const authApi = {
   },
   async register(input: RegistrationInput): Promise<void> {
     await apiClient.post("/auth/register", input, { skipAuthRefresh: true });
+  },
+  async verifyEmail(code: string): Promise<User> {
+    const response = await apiClient.post("/auth/verify-email", { code });
+    return normalizeUser(response);
+  },
+  async resendVerification(): Promise<ResendVerificationResponse> {
+    return apiClient.post<ResendVerificationResponse>(
+      "/auth/resend-verification",
+    );
   },
   async logout(): Promise<void> {
     await apiClient.post("/auth/logout", undefined, { skipAuthRefresh: true });

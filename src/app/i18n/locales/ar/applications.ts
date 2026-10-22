@@ -99,7 +99,7 @@ export default {
   selectOutcome: "اختر النتيجة النهائية لهذا الطلب:",
   confirmClose: "تأكيد الإغلاق",
   tableViewLockedTooltip:
-    "🔒 يفتح عرض الجدول المتقدم تلقائياً بعد إكمال المهمة الأولى في الأسبوع الأول (10 طلبات تقديم)",
+    "🔒 يتبقى لك {remaining} طلبات للوصول إلى 10 طلبات وفتح عرض الجدول المتقدم ({current}/10)",
   isTailoredLabel:
     "طلب تقديم مخصص لهذه الوظيفة (Tailored CV / Cover Letter)",
   isTailoredHint:

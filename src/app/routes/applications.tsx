@@ -53,12 +53,6 @@ export default function ApplicationsPage() {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const { data: journeyData } = useJourneyState({ enabled: Boolean(user) });
-  const canUseTableView = canUseApplicationsTableView(journeyData, user);
-
-  // Default view mode is 'kanban' in V2; 'table' is unlocked after W1_M1
-  const [viewMode, setViewMode] = useState<"table" | "kanban">("kanban");
-
   // Read filters from search params
   const currentStage = searchParams.get("stage") || "ALL";
   const currentOutcome = searchParams.get("outcome") || "ALL";
@@ -74,6 +68,41 @@ export default function ApplicationsPage() {
     );
     return () => window.clearTimeout(timeout);
   }, [searchQuery]);
+
+  const stageParam = currentStage === "ALL" ? undefined : currentStage;
+  const outcomeParam = currentOutcome === "ALL" ? undefined : currentOutcome;
+  const searchParam = debouncedSearch.trim() || undefined;
+
+  const {
+    data: applicationsData,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useApplications({
+    stage: stageParam,
+    outcome: outcomeParam,
+    search: searchParam,
+  });
+
+  const rawApplications = applicationsData?.items ?? [];
+  const totalCount =
+    applicationsData?.unfilteredTotal ?? applicationsData?.total ?? 0;
+
+  const { data: journeyData } = useJourneyState({ enabled: Boolean(user) });
+  const canUseTableView = canUseApplicationsTableView(
+    journeyData,
+    user,
+    totalCount,
+  );
+  const remainingForTableView = Math.max(1, 10 - totalCount);
+  const tableViewLockedMessage = t("applications.tableViewLockedTooltip", {
+    remaining: remainingForTableView,
+    current: totalCount,
+  });
+
+  // Default view mode is 'kanban' in V2; 'table' is unlocked after reaching 10 total applications or W1_M1
+  const [viewMode, setViewMode] = useState<"table" | "kanban">("kanban");
 
   // Initialize view mode from localStorage (only allow 'table' if unlocked)
   useEffect(() => {
@@ -98,7 +127,7 @@ export default function ApplicationsPage() {
   const handleViewModeChange = (mode: "table" | "kanban") => {
     if (mode === "table" && !canUseTableView) {
       toast.showToast({
-        message: t("applications.tableViewLockedTooltip"),
+        message: tableViewLockedMessage,
         variant: "info",
       });
       return;
@@ -111,32 +140,12 @@ export default function ApplicationsPage() {
     }
   };
 
-  const stageParam = currentStage === "ALL" ? undefined : currentStage;
-  const outcomeParam = currentOutcome === "ALL" ? undefined : currentOutcome;
-  const searchParam = debouncedSearch.trim() || undefined;
-
-  const {
-    data: applicationsData,
-    isLoading,
-    isFetching,
-    isError,
-    refetch,
-  } = useApplications({
-    stage: stageParam,
-    outcome: outcomeParam,
-    search: searchParam,
-  });
-
   const updateAppMutation = useUpdateApplication();
   const [optimisticOverrides, setOptimisticOverrides] = useState<
     Record<string, { stage: Stage; outcome: Outcome }>
   >({});
   const pendingMoves = useRef(new Set<string>());
   const [moveError, setMoveError] = useState(false);
-
-  const rawApplications = applicationsData?.items ?? [];
-  const totalCount =
-    applicationsData?.unfilteredTotal ?? applicationsData?.total ?? 0;
 
   const matchesCurrentFilters = (app: Application) => {
     const matchesStage =
@@ -370,7 +379,7 @@ export default function ApplicationsPage() {
                 title={
                   canUseTableView
                     ? t("applications.viewTable")
-                    : t("applications.tableViewLockedTooltip")
+                    : tableViewLockedMessage
                 }
                 aria-label={t("applications.viewTable")}
                 aria-pressed={viewMode === "table"}
