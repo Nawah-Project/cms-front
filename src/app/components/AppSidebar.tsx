@@ -248,7 +248,7 @@ export function AppSidebar() {
 
   return (
     <>
-      <aside className="fixed inset-y-0 start-0 z-40 hidden w-64 flex-col border-e border-neutral-800 bg-neutral-900 px-5 py-7 lg:flex">
+      <aside className="fixed inset-y-0 start-0 z-[65] hidden w-64 flex-col border-e border-neutral-800 bg-neutral-900 px-5 py-7 lg:flex">
         <div className="mb-8 px-1">
           <Link
             to="/"
@@ -284,7 +284,7 @@ export function AppSidebar() {
         </div>
       </aside>
 
-      <header className="sticky top-0 z-40 border-b border-border bg-surface/95 px-5 py-3.5 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95 lg:hidden">
+      <header className="sticky top-0 z-[65] border-b border-border bg-surface/95 px-5 py-3.5 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95 lg:hidden">
         <div className="flex items-center justify-between">
           <div className="flex min-w-0 items-start gap-3">
             <Link
