@@ -1,4 +1,5 @@
-import { Lock, Plus, Sparkles } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router";
 import { useAuth } from "../../auth/store/authStore";
 import { useMembersProgress } from "../hooks/useMembersProgress";
 import { useRecentMemberProgress } from "../hooks/useRecentMemberProgress";
@@ -9,75 +10,42 @@ import { EmptyState } from "../../../components/EmptyState";
 import { useI18n } from "../../../i18n";
 import { useJourneyState } from "../../journey/api/journeyApi";
 import { canAccessGroupSection } from "../../journey/lib/journey-policies";
-import { useAppModal } from "../../../routes/layout";
+import { useToast } from "../../../components/ui/ToastProvider";
 
 export default function MembersProgressPage() {
   const { user } = useAuth();
-  const { t, tp } = useI18n();
-  const { openAddModal } = useAppModal();
+  const navigate = useNavigate();
+  const { info } = useToast();
+  const { t } = useI18n();
   const { data: journeyData, isLoading: journeyLoading } = useJourneyState({
     enabled: Boolean(user),
   });
   const isUnlocked = canAccessGroupSection(journeyData, user);
+  const redirectStarted = useRef(false);
 
-  const { members, loading, error, retry } = useMembersProgress();
-  const activity = useRecentMemberProgress(50);
+  useEffect(() => {
+    if (journeyLoading || isUnlocked || redirectStarted.current) return;
+    redirectStarted.current = true;
+    info(t("journey.groupUnavailableToast"));
+    navigate("/", { replace: true });
+  }, [info, isUnlocked, journeyLoading, navigate, t]);
 
-  // Motivational Lock Screen before completing Task 0 (first 5 applications)
-  if (!journeyLoading && journeyData && !isUnlocked) {
-    const task0Node = journeyData.nodes.find((n) => n.code === "TASK_0");
-    const currentApps = task0Node?.progress.apps.current ?? 0;
-    const requiredApps = task0Node?.requiredAppsCount ?? 5;
-    const pct = Math.min(100, Math.round((currentApps / requiredApps) * 100));
-
+  if (journeyLoading || !isUnlocked) {
     return (
-      <section className="mx-auto max-w-2xl py-12 animate-in fade-in duration-200">
-        <div className="rounded-3xl border border-amber-300/80 bg-gradient-to-b from-amber-50/70 via-white to-white p-8 text-center shadow-sm dark:border-amber-800/60 dark:from-amber-950/30 dark:via-neutral-900 dark:to-neutral-900">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-sm">
-            <Lock className="h-7 w-7" aria-hidden="true" />
-          </div>
-
-          <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900 dark:bg-amber-900/60 dark:text-amber-200">
-            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>{t("journey.groupLockBadge")}</span>
-          </span>
-
-          <h1 className="mt-3 text-2xl font-bold tracking-tight text-neutral-950 dark:text-neutral-100 sm:text-3xl">
-            {t("journey.groupLockTitle")}
-          </h1>
-          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-            {t("journey.groupLockDescription")}
-          </p>
-
-          <div className="mx-auto mt-6 max-w-md rounded-2xl border border-border bg-neutral-50 p-4 text-start dark:bg-neutral-800/60">
-            <div className="flex items-center justify-between text-xs font-semibold text-neutral-800 dark:text-neutral-200">
-              <span>{t("journey.task0ProgressLabel")}</span>
-              <span className="tabular-nums">
-                {currentApps} / {requiredApps} ({pct}%)
-              </span>
-            </div>
-            <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
-              <div
-                className="h-full rounded-full bg-amber-500 transition-all duration-300"
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="mt-6 flex justify-center">
-            <button
-              type="button"
-              onClick={() => openAddModal()}
-              className="button-primary inline-flex items-center gap-2 px-5 py-2.5 text-sm"
-            >
-              <Plus className="h-4 w-4" aria-hidden="true" />
-              <span>{t("common.addApplication")}</span>
-            </button>
-          </div>
-        </div>
-      </section>
+      <div className="flex min-h-56 items-center justify-center" role="status">
+        <SpinnerIcon className="h-6 w-6 animate-spin text-neutral-400" />
+      </div>
     );
   }
+
+  return <MembersProgressContent />;
+}
+
+function MembersProgressContent() {
+  const { user } = useAuth();
+  const { t, tp } = useI18n();
+  const { members, loading, error, retry } = useMembersProgress();
+  const activity = useRecentMemberProgress(50);
 
   return (
     <section className="space-y-8 animate-in fade-in duration-200">

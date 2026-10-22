@@ -1,9 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "../../../lib/api-client";
-import {
-  journeyQueryKeys,
-  notificationQueryKeys,
-} from "../config/query-keys";
+import { journeyQueryKeys, notificationQueryKeys } from "../config/query-keys";
 import type {
   AppNotification,
   CreateSideTaskInput,
@@ -11,6 +8,7 @@ import type {
   JourneyStateResponse,
   NotificationsListResponse,
   SideTaskSubmission,
+  UserJourneyState,
 } from "../types";
 
 export const journeyApi = {
@@ -18,12 +16,13 @@ export const journeyApi = {
     return apiClient.get<JourneyStateResponse>("/journey/state");
   },
 
-  submitSideTask(
-    input: CreateSideTaskInput,
-  ): Promise<{ submission: SideTaskSubmission; state: JourneyStateResponse }> {
+  submitSideTask(input: CreateSideTaskInput): Promise<{
+    submission: SideTaskSubmission;
+    journeyState: UserJourneyState;
+  }> {
     return apiClient.post<{
       submission: SideTaskSubmission;
-      state: JourneyStateResponse;
+      journeyState: UserJourneyState;
     }>("/journey/side-tasks", input);
   },
 
@@ -144,4 +143,3 @@ export function useMarkAllNotificationsRead() {
     },
   });
 }
-

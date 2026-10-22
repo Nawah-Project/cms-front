@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { AddApplicationModal } from "../features/applications/components/AddApplicationModal";
 import { AppSidebar } from "../components/AppSidebar";
+import { JourneyTasksPanel } from "../components/JourneyTasksPanel";
 import type { CreateApplicationInput } from "../types";
 import { ProtectedRoute } from "../features/auth/components/ProtectedRoute";
 import { ProfileCompletionGate } from "../features/profile/ProfileCompletionGate";
@@ -73,6 +74,7 @@ export default function Layout() {
         <AppContext.Provider value={{ openAddModal }}>
           <div className="min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200">
             <AppSidebar />
+            <JourneyTasksPanel />
 
             <div className="min-h-screen w-full lg:ps-64">
               <main className="w-full px-5 py-7 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 lg:py-10">

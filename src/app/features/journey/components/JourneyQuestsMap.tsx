@@ -66,9 +66,7 @@ function ProgressBar({
       <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800">
         <div
           className={`h-full rounded-full transition-all duration-300 ${
-            isDone
-              ? "bg-emerald-600"
-              : "bg-neutral-900 dark:bg-neutral-100"
+            isDone ? "bg-emerald-600" : "bg-neutral-900 dark:bg-neutral-100"
           }`}
           style={{ width: `${clamped}%` }}
         />
@@ -85,9 +83,11 @@ function ProgressBar({
 function ActiveNodeSideTaskForms({
   node,
   onSubmitted,
+  compact,
 }: {
   node: EnrichedJourneyNode;
   onSubmitted: (nextState: JourneyStateResponse) => void;
+  compact: boolean;
 }) {
   const { t } = useI18n();
   const { showToast } = useToast();
@@ -102,19 +102,17 @@ function ActiveNodeSideTaskForms({
   const [contactRole, setContactRole] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [contactMethod, setContactMethod] = useState("LinkedIn");
-  const [outreachStatus, setOutreachStatus] =
-    useState<OutreachStatus>("SENT");
+  const [outreachStatus, setOutreachStatus] = useState<OutreachStatus>("SENT");
 
   const handleLinkedInSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!postUrl.trim()) return;
     try {
-      const result = await submitMutation.mutateAsync({
+      await submitMutation.mutateAsync({
         nodeCode: node.code,
-        weekNumber: node.weekNumber,
         type: "LINKEDIN_POST",
         postUrl: postUrl.trim(),
-        postSummary: postSummary.trim() || undefined,
+        postTopic: postSummary.trim() || undefined,
       });
       setPostUrl("");
       setPostSummary("");
@@ -122,7 +120,7 @@ function ActiveNodeSideTaskForms({
         message: t("journey.linkedInPostSaved"),
         variant: "success",
       });
-      onSubmitted(result.state);
+      onSubmitted(await journeyApi.getJourneyState());
     } catch {
       showToast({
         message: t("common.unexpectedError"),
@@ -135,15 +133,14 @@ function ActiveNodeSideTaskForms({
     e.preventDefault();
     if (!contactName.trim() || !companyName.trim()) return;
     try {
-      const result = await submitMutation.mutateAsync({
+      await submitMutation.mutateAsync({
         nodeCode: node.code,
-        weekNumber: node.weekNumber,
         type: "OUTREACH_CONTACT",
         contactName: contactName.trim(),
         contactRole: contactRole.trim() || undefined,
         companyName: companyName.trim(),
         contactMethod: contactMethod.trim() || "LinkedIn",
-        outreachStatus,
+        outreachState: outreachStatus,
       });
       setContactName("");
       setContactRole("");
@@ -152,7 +149,7 @@ function ActiveNodeSideTaskForms({
         message: t("journey.outreachSaved"),
         variant: "success",
       });
-      onSubmitted(result.state);
+      onSubmitted(await journeyApi.getJourneyState());
     } catch {
       showToast({
         message: t("common.unexpectedError"),
@@ -177,7 +174,7 @@ function ActiveNodeSideTaskForms({
                 {node.progress.posts.current}/{node.requiredPostsCount}
               </span>
             </div>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            <div className={`grid grid-cols-1 gap-2.5 ${compact ? "" : "sm:grid-cols-2"}`}>
               <input
                 type="url"
                 required
@@ -219,7 +216,7 @@ function ActiveNodeSideTaskForms({
                 {node.progress.outreach.current}/{node.requiredOutreachCount}
               </span>
             </div>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className={`grid grid-cols-1 gap-2.5 ${compact ? "" : "sm:grid-cols-2 lg:grid-cols-4"}`}>
               <input
                 type="text"
                 required
@@ -279,10 +276,12 @@ function ReviewStationCard({
   node,
   journeyData,
   onSubmitted,
+  compact,
 }: {
   node: EnrichedJourneyNode;
   journeyData: JourneyStateResponse;
   onSubmitted: (nextState: JourneyStateResponse) => void;
+  compact: boolean;
 }) {
   const { t, locale } = useI18n();
   const { showToast } = useToast();
@@ -323,24 +322,20 @@ function ReviewStationCard({
   const handleCompleteReview = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const result = await submitMutation.mutateAsync({
+      await submitMutation.mutateAsync({
         nodeCode: node.code,
-        weekNumber: node.weekNumber,
         type: "WEEKLY_REVIEW",
-        notes:
+        reviewSummary:
           notes.trim() ||
           `Completed Week ${node.weekNumber} Review & Optimization`,
-        metadata: {
-          cvUpdated: Boolean(cvUploadedName),
-          conversionRate: stats.conversionRate,
-        },
+        newCvUploaded: Boolean(cvUploadedName),
       });
       setNotes("");
       showToast({
         message: t("journey.reviewCompletedToast"),
         variant: "success",
       });
-      onSubmitted(result.state);
+      onSubmitted(await journeyApi.getJourneyState());
     } catch {
       showToast({
         message: t("common.unexpectedError"),
@@ -392,7 +387,7 @@ function ReviewStationCard({
 
           {node.unlocksInsightCode && (isCompleted || isActive) && (
             <Link
-              to="/professional-development/feedback-insights"
+              to="/professional-development/feedback"
               className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 shadow-2xs transition hover:bg-amber-50 dark:border-amber-700 dark:bg-neutral-800 dark:text-amber-200"
             >
               <Sparkles className="h-3.5 w-3.5 text-amber-600" />
@@ -404,7 +399,7 @@ function ReviewStationCard({
 
         {/* Weekly Conversion Metrics */}
         {(isActive || isCompleted) && (
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className={`mt-4 grid grid-cols-2 gap-3 ${compact ? "" : "sm:grid-cols-4"}`}>
             <div className="rounded-xl border border-amber-200/80 bg-white/90 p-3 dark:border-neutral-800 dark:bg-neutral-900/80">
               <span className="block text-[11px] text-neutral-500">
                 {t("journey.statWeekApps")}
@@ -500,7 +495,7 @@ function ReviewStationCard({
   );
 }
 
-export function JourneyQuestsMap() {
+export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
   const { t, locale } = useI18n();
   const { showToast } = useToast();
   const { openAddModal } = useAppModal();
@@ -539,19 +534,54 @@ export function JourneyQuestsMap() {
       ? Math.round((completedInWeek / weekNodes.length) * 100)
       : 0;
 
+  const selectWeek = (weekNum: number) => {
+    if (weekNum > currentWeek) {
+      // Week 0 is an entry check, not the start of the weekly schedule.
+      // The backend resets weekStartedAt when TASK_0 completes and Week 1 begins.
+      if (currentWeek === 0) {
+        showToast({
+          message: t("journey.weekZeroGateNotice"),
+          variant: "info",
+        });
+        return;
+      }
+
+      const daysUntilAvailable = (weekNum - currentWeek) * 7;
+      const availableAt = new Date(
+        new Date(journeyData.state.weekStartedAt).getTime() +
+          daysUntilAvailable * 24 * 60 * 60 * 1000,
+      );
+      const availableDate = new Intl.DateTimeFormat(locale, {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }).format(availableAt);
+
+      showToast({
+        message: t("journey.weekUnavailable", {
+          week: weekNum,
+          date: availableDate,
+        }),
+        variant: "info",
+      });
+      return;
+    }
+
+    setSelectedWeek(weekNum);
+  };
+
   const handleSideTaskSubmitted = (nextState: JourneyStateResponse) => {
     celebrateJourneyUnlocks(journeyData, nextState, t, locale, showToast);
     queryClient.setQueryData(["journey", "state"], nextState);
-    void journeyApi.getJourneyState();
   };
 
   return (
     <section
       aria-labelledby="journey-map-heading"
-      className="space-y-5 rounded-2xl border border-border bg-surface p-5 shadow-xs sm:p-6"
+      className={`space-y-5 rounded-2xl ${compact ? "border-0 bg-transparent p-0 shadow-none" : "border border-border bg-surface p-5 shadow-xs sm:p-6"}`}
     >
       {/* Top Header & Week Tabs */}
-      <div className="flex flex-col gap-4 border-b border-border pb-5 lg:flex-row lg:items-center lg:justify-between">
+      <div className={`flex flex-col gap-4 border-b border-border pb-5 ${compact ? "" : "lg:flex-row lg:items-center lg:justify-between"}`}>
         <div>
           <div className="inline-flex items-center gap-2 rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200">
             <Compass className="h-3.5 w-3.5" aria-hidden="true" />
@@ -573,7 +603,7 @@ export function JourneyQuestsMap() {
         </div>
 
         {/* Week Selector Pills */}
-        <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-border bg-neutral-50 p-1.5 dark:bg-neutral-900">
+        <div className={`flex items-center gap-1.5 rounded-xl border border-border bg-neutral-50 p-1.5 dark:bg-neutral-900 ${compact ? "max-w-full flex-nowrap overflow-x-auto" : "flex-wrap"}`}>
           {[0, 1, 2, 3, 4].map((weekNum) => {
             const isSelected = selectedWeek === weekNum;
             const isFutureWeek = weekNum > journeyData.state.currentWeek;
@@ -581,8 +611,8 @@ export function JourneyQuestsMap() {
               <button
                 key={weekNum}
                 type="button"
-                onClick={() => setSelectedWeek(weekNum)}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                onClick={() => selectWeek(weekNum)}
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
                   isSelected
                     ? "bg-neutral-900 text-white shadow-2xs dark:bg-white dark:text-neutral-900"
                     : "text-neutral-600 hover:bg-white dark:text-neutral-300 dark:hover:bg-neutral-800"
@@ -637,6 +667,7 @@ export function JourneyQuestsMap() {
                 node={node}
                 journeyData={journeyData}
                 onSubmitted={handleSideTaskSubmitted}
+                compact={compact}
               />
             );
           }
@@ -711,7 +742,7 @@ export function JourneyQuestsMap() {
 
                     {node.unlocksInsightCode && isCompleted && (
                       <Link
-                        to="/professional-development/feedback-insights"
+                        to="/professional-development/feedback"
                         className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-white px-3 py-1.5 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 dark:bg-neutral-800 dark:text-neutral-200"
                       >
                         <Sparkles className="h-3.5 w-3.5 text-amber-600" />
@@ -722,7 +753,7 @@ export function JourneyQuestsMap() {
                 </div>
 
                 {/* Progress Bars */}
-                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className={`mt-4 grid grid-cols-1 gap-4 ${compact ? "" : "sm:grid-cols-2"}`}>
                   <ProgressBar
                     label={t("journey.reqGeneralApps")}
                     current={node.progress.apps.current}
@@ -762,6 +793,7 @@ export function JourneyQuestsMap() {
                   <ActiveNodeSideTaskForms
                     node={node}
                     onSubmitted={handleSideTaskSubmitted}
+                    compact={compact}
                   />
                 )}
               </div>

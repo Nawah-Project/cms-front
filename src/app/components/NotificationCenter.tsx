@@ -10,6 +10,7 @@ import {
   useNotifications,
 } from "../features/journey/api/journeyApi";
 import type { AppNotification } from "../features/journey/types";
+import { openJourneyTasksPanel } from "./journeyTasksPanelEvents";
 
 export interface NotificationCenterProps {
   variant?: "dark" | "light";
@@ -95,6 +96,11 @@ export function NotificationCenter({
     }
     setOpen(false);
     if (item.actionUrl) {
+      const actionPath = new URL(item.actionUrl, window.location.origin).pathname;
+      if (actionPath.replace(/\/$/, "") === "/professional-development") {
+        openJourneyTasksPanel();
+        return;
+      }
       navigate(item.actionUrl);
     }
   };
@@ -205,10 +211,13 @@ export function NotificationCenter({
 
             {/* Companion Alerts */}
             {unreadFeedback > 0 && (
-              <Link
-                to="/professional-development"
-                onClick={() => setOpen(false)}
-                className="flex items-start gap-3 p-2.5 rounded-xl transition hover:bg-neutral-50"
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  openJourneyTasksPanel();
+                }}
+                className="flex w-full items-start gap-3 rounded-xl p-2.5 text-start transition hover:bg-neutral-50"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-info-soft text-info-strong">
                   <BellIcon className="h-4 w-4" />
@@ -223,7 +232,7 @@ export function NotificationCenter({
                     {t("common.navProfessionalDevelopment")}
                   </p>
                 </div>
-              </Link>
+              </button>
             )}
 
             {expiringSoon > 0 && (

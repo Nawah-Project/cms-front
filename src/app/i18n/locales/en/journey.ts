@@ -1,6 +1,11 @@
 export default {
+  panelTitle: "Tasks",
+  panelSubtitle: "Journey tasks that unlock the next stages",
+  closePanel: "Close tasks panel",
   groupLockedTooltip:
     "🔒 Complete Task 0 (first 5 applications) to unlock your group and share progress with peers",
+  groupUnavailableToast:
+    "Group Progress is unavailable right now. Complete Task 0 to unlock it.",
   lockedBadge: "Locked",
   markAllRead: "Mark all as read",
   toastGroupUnlocked:
@@ -17,6 +22,10 @@ export default {
     "Complete the active quest requirements to lift the Fog of War on upcoming stages and unlock strategic insights.",
   weekZeroTab: "Week 0: Onboarding",
   weekNumberTab: "Week {week}",
+  weekUnavailable:
+    "Week {week} isn't available yet. Expected availability: {date}.",
+  weekZeroGateNotice:
+    "Week 0 is an onboarding step. Week 1 starts after you add 5 applications, and weekly dates are counted from that day.",
   weekZeroProgressTitle: "Onboarding Quest Progress (Task 0)",
   weekProgressTitle: "Week {week} Quests Progress",
   completedStatus: "Completed",

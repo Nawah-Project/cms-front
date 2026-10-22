@@ -1,6 +1,11 @@
 export default {
+  panelTitle: "المهام",
+  panelSubtitle: "مهام الرحلة التي تفتح المراحل التالية",
+  closePanel: "إغلاق لوحة المهام",
   groupLockedTooltip:
     "🔒 أكمل المهمة صفر (أول 5 طلبات تقديم) لفتح مجموعتك ومشاركة التقدم مع زملائك",
+  groupUnavailableToast:
+    "قسم تقدم المجموعة غير متاح حالياً. أكمل المهمة صفر لفتحه.",
   lockedBadge: "مقفل",
   markAllRead: "تحديد الكل كمقروء",
   toastGroupUnlocked:
@@ -16,6 +21,10 @@ export default {
     "أكمل متطلبات المرحلة النشطة لكشف الضباب عن المهام التالية وفتح الرؤى الاستراتيجية.",
   weekZeroTab: "الأسبوع 0: التهيئة",
   weekNumberTab: "الأسبوع {week}",
+  weekUnavailable:
+    "الأسبوع {week} لسه مش متاح. الموعد المتوقع لإتاحته: {date}.",
+  weekZeroGateNotice:
+    "الأسبوع صفر مرحلة تهيئة فقط. يبدأ الأسبوع الأول بعد إضافة 5 طلبات تقديم، ويبدأ حساب مواعيد الأسابيع من ذلك اليوم.",
   weekZeroProgressTitle: "تقدم مرحلة التهيئة (المهمة صفر)",
   weekProgressTitle: "إنجاز مهام الأسبوع {week}",
   completedStatus: "مكتملة",

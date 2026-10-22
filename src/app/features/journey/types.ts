@@ -8,9 +8,7 @@ export type JourneyNodeType =
   | "FINAL_REPORT";
 
 export type SideTaskType =
-  | "LINKEDIN_POST"
-  | "OUTREACH_CONTACT"
-  | "WEEKLY_REVIEW";
+  "LINKEDIN_POST" | "OUTREACH_CONTACT" | "WEEKLY_REVIEW";
 
 export type OutreachStatus = "SENT" | "REPLIED" | "REFERRED" | "NO_RESPONSE";
 
@@ -94,35 +92,39 @@ export interface JobMarketCompassResponse {
 }
 
 export interface CreateSideTaskInput {
-  nodeCode: string;
-  weekNumber: number;
+  nodeCode?: string;
   type: SideTaskType;
   postUrl?: string;
-  postSummary?: string;
+  postTopic?: string;
   contactName?: string;
   contactRole?: string;
   companyName?: string;
   contactMethod?: string;
-  outreachStatus?: OutreachStatus;
-  notes?: string;
-  metadata?: Record<string, unknown>;
+  contactUrl?: string;
+  outreachState?: OutreachStatus;
+  reviewSummary?: string;
+  newCvUploaded?: boolean;
+  sharedInGroup?: boolean;
 }
 
 export interface SideTaskSubmission {
   id: string;
   userId: string;
   nodeCode: string;
-  weekNumber: number;
+  journeyWeek: number;
   type: SideTaskType;
   postUrl: string | null;
-  postSummary: string | null;
+  postTopic: string | null;
+  applicationId: string | null;
   contactName: string | null;
   contactRole: string | null;
   companyName: string | null;
   contactMethod: string | null;
-  outreachStatus: OutreachStatus | null;
-  notes: string | null;
-  metadata: Record<string, unknown> | null;
+  contactUrl: string | null;
+  outreachState: OutreachStatus | null;
+  reviewSummary: string | null;
+  newCvUploaded: boolean;
+  sharedInGroup: boolean;
   createdAt: string;
 }
 
@@ -144,4 +146,3 @@ export interface NotificationsListResponse {
   items: AppNotification[];
   unreadCount: number;
 }
-

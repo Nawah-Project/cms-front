@@ -8,6 +8,7 @@ import { GlobeIcon } from "./Icons";
 import { NotificationCenter } from "./NotificationCenter";
 import { useJourneyState } from "../features/journey/api/journeyApi";
 import { canAccessGroupSection } from "../features/journey/lib/journey-policies";
+import { useToast } from "./ui/ToastProvider";
 
 type NavItem = {
   labelKey: string;
@@ -125,8 +126,12 @@ export function AppSidebar() {
   const { user } = useAuth();
   const { t, locale, setLocale } = useI18n();
   const logout = useLogout();
-  const { data: journeyData } = useJourneyState({ enabled: Boolean(user) });
+  const {
+    data: journeyData,
+    isLoading: journeyLoading,
+  } = useJourneyState({ enabled: Boolean(user) });
   const isGroupUnlocked = canAccessGroupSection(journeyData, user);
+  const { info } = useToast();
 
   const today = new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
     new Date(),
@@ -151,30 +156,25 @@ export function AppSidebar() {
     ).map((item) => {
       const active = isActive(location.pathname, item);
       const isLockedMembers =
-        item.to === "/members-progress" && Boolean(journeyData) && !isGroupUnlocked;
+        item.to === "/members-progress" && !journeyLoading && !isGroupUnlocked;
 
-      return (
-        <Link
-          key={item.to}
-          to={item.to}
-          onClick={() => mobile && setMobileOpen(false)}
-          title={
-            isLockedMembers ? t("journey.groupLockedTooltip") : undefined
-          }
-          aria-current={active ? "page" : undefined}
-          className={`flex items-center justify-between gap-3 rounded-lg px-3 py-3 text-sm transition duration-150 hover:scale-[1.01] ${
-            isLockedMembers ? "opacity-75" : ""
-          } ${
-            mobile
-              ? active
-                ? "bg-neutral-100 font-medium text-neutral-950 shadow-xs"
-                : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
-              : active
-                ? "bg-neutral-700 font-medium text-white shadow-xs"
-                : "text-neutral-300 hover:bg-neutral-800 hover:text-white"
-          }`}
-        >
-          <span className="flex items-center gap-3 min-w-0">
+      const className = `flex items-center justify-between gap-3 rounded-lg px-3 py-3 text-sm transition duration-150 hover:scale-[1.01] ${
+        mobile
+          ? active && !isLockedMembers
+            ? "bg-neutral-100 font-medium text-neutral-950 shadow-xs"
+            : isLockedMembers
+              ? "text-neutral-400 hover:bg-neutral-50/60 hover:text-neutral-500"
+              : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+          : active && !isLockedMembers
+            ? "bg-neutral-700 font-medium text-white shadow-xs"
+            : isLockedMembers
+              ? "text-neutral-500 hover:bg-neutral-800/60 hover:text-neutral-400"
+              : "text-neutral-300 hover:bg-neutral-800 hover:text-white"
+      }`;
+
+      const content = (
+        <>
+          <span className="flex min-w-0 items-center gap-3">
             <NavIcon name={item.icon} />
             <span className="truncate">{t(item.labelKey)}</span>
           </span>
@@ -186,6 +186,35 @@ export function AppSidebar() {
               <Lock className="h-3 w-3" aria-hidden="true" />
             </span>
           )}
+        </>
+      );
+
+      if (isLockedMembers) {
+        return (
+          <button
+            key={item.to}
+            type="button"
+            onClick={() => {
+              if (mobile) setMobileOpen(false);
+              info(t("journey.groupUnavailableToast"));
+            }}
+            title={t("journey.groupUnavailableToast")}
+            className={`${className} w-full text-start`}
+          >
+            {content}
+          </button>
+        );
+      }
+
+      return (
+        <Link
+          key={item.to}
+          to={item.to}
+          onClick={() => mobile && setMobileOpen(false)}
+          aria-current={active ? "page" : undefined}
+          className={className}
+        >
+          {content}
         </Link>
       );
     });

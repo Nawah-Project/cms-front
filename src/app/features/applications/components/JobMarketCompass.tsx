@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Compass, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { useI18n } from "../../../i18n";
 import { useJobMarketCompass } from "../../journey/api/journeyApi";
-import type { CreateApplicationInput } from "../../../types";
+import type {
+  ApplicationMethod,
+  CreateApplicationInput,
+} from "../../../types";
 
 const LOCATION_PRESETS = [
   { key: "Egypt", labelKey: "applications.locationEgypt" },
@@ -11,12 +14,12 @@ const LOCATION_PRESETS = [
   { key: "Remote", labelKey: "applications.locationRemote" },
 ] as const;
 
-const PLATFORM_METHOD_MAP: Record<string, string> = {
+const PLATFORM_METHOD_MAP: Record<string, ApplicationMethod> = {
   linkedin: "LINKEDIN",
-  wuzzuf: "JOB_BOARD",
-  bayt: "JOB_BOARD",
-  wellfound: "JOB_BOARD",
-  remoteok: "JOB_BOARD",
+  wuzzuf: "RECRUITMENT_PLATFORM",
+  bayt: "RECRUITMENT_PLATFORM",
+  wellfound: "RECRUITMENT_PLATFORM",
+  remoteok: "RECRUITMENT_PLATFORM",
 };
 
 interface JobMarketCompassProps {
@@ -41,7 +44,8 @@ export function JobMarketCompass({ onLaunchDraft }: JobMarketCompassProps) {
     onLaunchDraft({
       jobTitle: targetJobTitle,
       location: currentLocation,
-      applicationMethod: PLATFORM_METHOD_MAP[platform.id] || "JOB_BOARD",
+      applicationMethod:
+        PLATFORM_METHOD_MAP[platform.id] || "RECRUITMENT_PLATFORM",
       jobUrl: platform.url,
     });
   };
