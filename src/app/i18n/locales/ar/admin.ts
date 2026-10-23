@@ -184,6 +184,7 @@ export default {
   tabOverviewJourney: "الرحلة والملف",
   tabTasks: "المهام والتطوير ({count})",
   tabActivityApps: "الطلبات والنشاط ({count})",
+  groupMembers: "أعضاء المجموعة",
   openInMembersTable: "عرض وإدارة في جدول الأعضاء ←",
   noMembersInGroup: "لا يوجد أعضاء في هذه المجموعة حالياً.",
   clickGroupHint: "انقر على أي مجموعة لعرض أعضائها وإدارتهم",

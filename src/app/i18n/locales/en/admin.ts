@@ -187,6 +187,7 @@ export default {
   tabOverviewJourney: "Journey & Profile",
   tabTasks: "Tasks & Coaching ({count})",
   tabActivityApps: "Applications & Activity ({count})",
+  groupMembers: "Group Members",
   openInMembersTable: "Open and manage in members table →",
   noMembersInGroup: "No members in this group currently.",
   clickGroupHint: "Click any group to inspect and manage its members",
