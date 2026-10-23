@@ -95,7 +95,7 @@ export const api = {
     }
     if (params?.outcome) searchParams.set("outcome", params.outcome);
     if (params?.search) searchParams.set("search", params.search);
-    searchParams.set("limit", String(params?.limit ?? 100));
+    searchParams.set("limit", String(Math.min(params?.limit ?? 100, 1000)));
 
     const query = searchParams.toString();
     const endpoint = `/applications${query ? `?${query}` : ""}`;

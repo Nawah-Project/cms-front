@@ -120,7 +120,7 @@ export default function ReportsPage() {
     setError(null);
     try {
       const [appsRes, statsRes] = await Promise.all([
-        api.getApplications({ limit: 200 }),
+        api.getApplications({ limit: 1000 }),
         api.getDashboardStats(),
       ]);
       setApplications(appsRes.items ?? []);
