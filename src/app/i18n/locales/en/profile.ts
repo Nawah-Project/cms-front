@@ -41,4 +41,26 @@ export default {
   noProfessionalInfo: "This member has not added professional links yet.",
   loadingCv: "Loading CV…",
   cvUnavailable: "Unable to open this CV. It may no longer be available.",
+  savedSuccess: "Your professional profile has been saved.",
+  onboardingStep1Title: "How it works",
+  onboardingStep2Title: "Professional profile",
+  onboardingStep3Title: "First step",
+  onboardingWelcomeTitle: "Welcome to Nawah Project",
+  onboardingWelcomeSubtitle:
+    "To get the most out of your group, here is what is expected of you each week:",
+  expectation1Title: "Log and update job applications",
+  expectation1Desc:
+    "Add every job you apply for and update its stage as you interview or hear back.",
+  expectation2Title: "Complete professional development tasks",
+  expectation2Desc:
+    "Follow tasks assigned by your mentor and apply their feedback.",
+  expectation3Title: "Engage with your group",
+  expectation3Desc:
+    "Check your peers' progress and collaborate on shared target companies.",
+  nextToProfileSetup: "Got it, let's set up my profile",
+  onboardingReadyTitle: "Your account setup is complete!",
+  onboardingReadyDesc:
+    "Start now by adding your first job application or reviewing your tasks.",
+  startWithApplication: "Add first application now",
+  exploreTasks: "Explore development tasks",
 } as const;

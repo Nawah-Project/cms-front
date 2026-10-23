@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useOutletContext, useSearchParams } from "react-router";
+import { Lock } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { EmptyState } from "../components/EmptyState";
 import {
   KanbanIcon,
@@ -8,13 +10,33 @@ import {
   SpinnerIcon,
   TableIcon,
 } from "../components/Icons";
-import { KanbanView } from "../components/KanbanView";
-import { TableSkeleton } from "../components/TableSkeleton";
-import { TableView } from "../components/TableView";
-import { useToast } from "../components/Toast";
-import { api } from "../services/api";
-import type { Application, Outcome, Stage } from "../types";
+import { KanbanView } from "../features/applications/components/KanbanView";
+import { TableView } from "../features/applications/components/TableView";
+import { JobMarketCompass } from "../features/applications/components/JobMarketCompass";
+import {
+  useApplications,
+  useUpdateApplication,
+} from "../features/applications/api/applicationsApi";
+import {
+  journeyApi,
+  useJourneyState,
+} from "../features/journey/api/journeyApi";
+import { journeyQueryKeys } from "../features/journey/config/query-keys";
+import { canUseApplicationsTableView } from "../features/journey/lib/journey-policies";
+import { celebrateJourneyUnlocks } from "../features/journey/lib/celebrate-unlocks";
+import type { JourneyStateResponse } from "../features/journey/types";
+import { useAuth } from "../features/auth/store/authStore";
+import type {
+  Application,
+  CreateApplicationInput,
+  Outcome,
+  Stage,
+} from "../types";
 import { useI18n } from "../i18n";
+import { useToast } from "../components/ui/ToastProvider";
+import { trackUxEvent } from "../utils/uxAnalytics";
+import { ContextualLockBubble } from "../components/ui/ContextualLockBubble";
+import { openJourneyTasksPanel } from "../components/journeyTasksPanelEvents";
 
 export function meta() {
   return [
@@ -24,21 +46,14 @@ export function meta() {
 }
 
 export default function ApplicationsPage() {
-  const { openAddModal } = useOutletContext<{ openAddModal: () => void }>();
-  const { showToast } = useToast();
+  const { openAddModal } = useOutletContext<{
+    openAddModal: (initialValues?: Partial<CreateApplicationInput>) => void;
+  }>();
   const { t, tp, locale } = useI18n();
+  const toast = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
-
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [totalCount, setTotalCount] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const pendingMoves = useRef(new Set<string>());
-  const requestId = useRef(0);
-  const [moveError, setMoveError] = useState(false);
-
-  // View mode: 'table' | 'kanban', persisted locally
-  const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
 
   // Read filters from search params
   const currentStage = searchParams.get("stage") || "ALL";
@@ -49,23 +64,75 @@ export default function ApplicationsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    const timeout = window.setTimeout(
+      () => setDebouncedSearch(searchQuery),
+      300,
+    );
     return () => window.clearTimeout(timeout);
   }, [searchQuery]);
 
-  // Initialize view mode from localStorage
+  const stageParam = currentStage === "ALL" ? undefined : currentStage;
+  const outcomeParam = currentOutcome === "ALL" ? undefined : currentOutcome;
+  const searchParam = debouncedSearch.trim() || undefined;
+
+  const {
+    data: applicationsData,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useApplications({
+    stage: stageParam,
+    outcome: outcomeParam,
+    search: searchParam,
+  });
+
+  const rawApplications = applicationsData?.items ?? [];
+  const totalCount =
+    applicationsData?.unfilteredTotal ?? applicationsData?.total ?? 0;
+
+  const { data: journeyData } = useJourneyState({ enabled: Boolean(user) });
+  const canUseTableView = canUseApplicationsTableView(
+    journeyData,
+    user,
+    totalCount,
+  );
+  const remainingForTableView = Math.max(1, 10 - totalCount);
+  const tableViewLockedMessage = t("applications.tableViewLockedTooltip", {
+    remaining: remainingForTableView,
+    current: totalCount,
+  });
+
+  // Default view mode is 'kanban' in V2; 'table' is unlocked after reaching 10 total applications or W1_M1
+  const [viewMode, setViewMode] = useState<"table" | "kanban">("kanban");
+  const [tableLockBubbleOpen, setTableLockBubbleOpen] = useState(false);
+
+  // Initialize view mode from localStorage (only allow 'table' if unlocked)
   useEffect(() => {
     try {
       const saved = localStorage.getItem("job_tracker_view_mode");
-      if (saved === "table" || saved === "kanban") {
-        setViewMode(saved);
+      if (saved === "table" && canUseTableView) {
+        setViewMode("table");
+      } else if (saved === "kanban") {
+        setViewMode("kanban");
       }
     } catch {
       // localStorage may not be available in private mode
     }
-  }, []);
+  }, [canUseTableView]);
+
+  useEffect(() => {
+    if (!canUseTableView && viewMode === "table") {
+      setViewMode("kanban");
+    }
+  }, [canUseTableView, viewMode]);
 
   const handleViewModeChange = (mode: "table" | "kanban") => {
+    if (mode === "table" && !canUseTableView) {
+      setTableLockBubbleOpen((prev) => !prev);
+      return;
+    }
+    setTableLockBubbleOpen(false);
     setViewMode(mode);
     try {
       localStorage.setItem("job_tracker_view_mode", mode);
@@ -74,110 +141,94 @@ export default function ApplicationsPage() {
     }
   };
 
-  const loadData = async () => {
-    const request = ++requestId.current;
-    setError(null);
-    try {
-      // Fetch full applications list to know totalCount
-      const allApps = await api.getApplications();
-      setTotalCount(allApps.length);
+  const updateAppMutation = useUpdateApplication();
+  const [optimisticOverrides, setOptimisticOverrides] = useState<
+    Record<string, { stage: Stage; outcome: Outcome }>
+  >({});
+  const pendingMoves = useRef(new Set<string>());
+  const [moveError, setMoveError] = useState(false);
 
-      // Fetch with current stage/outcome/search filters
-      const stageParam = currentStage === "ALL" ? undefined : currentStage;
-      const outcomeParam =
-        currentOutcome === "ALL" ? undefined : currentOutcome;
-      const searchParam = debouncedSearch.trim() || undefined;
-
-      const filtered = await api.getApplications({
-        stage: stageParam,
-        outcome: outcomeParam,
-        search: searchParam,
-      });
-
-      if (request !== requestId.current) return;
-
-      setApplications(filtered);
-      setTotalCount(allApps.length);
-    } catch {
-      if (request !== requestId.current) return;
-      setError(t("common.loadError"));
-    } finally {
-      if (request === requestId.current) setIsLoading(false);
-    }
+  const matchesCurrentFilters = (app: Application) => {
+    const matchesStage =
+      currentStage === "ALL" ||
+      (currentStage === "ACTIVE"
+        ? app.stage !== "CLOSED"
+        : app.stage === currentStage);
+    const matchesOutcome =
+      currentOutcome === "ALL" ||
+      (app.stage === "CLOSED" && app.outcome === currentOutcome);
+    return matchesStage && matchesOutcome;
   };
+
+  const applications = rawApplications
+    .map((app) =>
+      optimisticOverrides[app.id]
+        ? {
+            ...app,
+            stage: optimisticOverrides[app.id].stage,
+            outcome: optimisticOverrides[app.id].outcome,
+          }
+        : app,
+    )
+    .filter(matchesCurrentFilters);
 
   const handleKanbanStageChange = async (
     appId: string,
     newStage: Stage,
     outcome?: Outcome,
   ) => {
-    // Update the visible board immediately; persist in the background.
     if (pendingMoves.current.has(appId)) return;
     pendingMoves.current.add(appId);
 
-    const previousApplication = applications.find((app) => app.id === appId);
-    if (!previousApplication) {
-      pendingMoves.current.delete(appId);
-      return;
-    }
-
     const nextOutcome = outcome || "NONE";
     setMoveError(false);
-    const matchesCurrentFilters = (app: Application) => {
-      const matchesStage =
-        currentStage === "ALL" ||
-        (currentStage === "ACTIVE"
-          ? app.stage !== "CLOSED"
-          : app.stage === currentStage);
-      const matchesOutcome =
-        currentOutcome === "ALL" ||
-        (app.stage === "CLOSED" && app.outcome === currentOutcome);
-      return matchesStage && matchesOutcome;
-    };
+    setOptimisticOverrides((prev) => ({
+      ...prev,
+      [appId]: { stage: newStage, outcome: nextOutcome },
+    }));
 
-    const optimisticApplication = {
-      ...previousApplication,
-      stage: newStage,
-      outcome: nextOutcome,
-    };
-
-    setApplications((prev) => {
-      const next = prev.filter((app) => app.id !== appId);
-      return matchesCurrentFilters(optimisticApplication)
-        ? [...next, optimisticApplication]
-        : next;
-    });
+    const prevJourney = queryClient.getQueryData<JourneyStateResponse>(
+      journeyQueryKeys.state(),
+    );
 
     try {
-      const savedApplication = await api.updateApplication(appId, {
-        stage: newStage,
-        outcome: nextOutcome,
+      await updateAppMutation.mutateAsync({
+        id: appId,
+        updates: {
+          stage: newStage,
+          outcome: nextOutcome,
+        },
       });
-      setApplications((prev) =>
-        prev.map((app) => (app.id === appId ? savedApplication : app)),
-      );
-      showToast(
-        locale === "ar" ? "تم نقل الطلب بنجاح" : "Application moved successfully",
-        "success",
-        2500,
-      );
+      toast.success(t("applications.applicationUpdated"));
+      trackUxEvent("application_stage_updated", { appId, stage: newStage });
+
+      try {
+        const nextJourney = await queryClient.fetchQuery({
+          queryKey: journeyQueryKeys.state(),
+          queryFn: () => journeyApi.getJourneyState(),
+        });
+        celebrateJourneyUnlocks(
+          prevJourney,
+          nextJourney,
+          t,
+          locale,
+          toast.showToast,
+        );
+      } catch {
+        // ignore
+      }
     } catch {
-      // Roll back only this card, preserving other moves made meanwhile.
-      setApplications((prev) => {
-        const next = prev.filter((app) => app.id !== appId);
-        return matchesCurrentFilters(previousApplication)
-          ? [...next, previousApplication]
-          : next;
-      });
-      showToast(t("applications.moveError"), "error");
+      setMoveError(true);
+      toast.error(t("common.unexpectedError"));
     } finally {
       pendingMoves.current.delete(appId);
+      setOptimisticOverrides((prev) => {
+        const copy = { ...prev };
+        delete copy[appId];
+        return copy;
+      });
     }
   };
-
-  useEffect(() => {
-    loadData();
-  }, [currentStage, currentOutcome, debouncedSearch]);
 
   useEffect(() => {
     const searchFromUrl = searchParams.get("search") || "";
@@ -229,8 +280,10 @@ export default function ApplicationsPage() {
     currentOutcome !== "ALL" ||
     Boolean(searchQuery.trim());
 
+  const isRefreshing = isFetching && !isLoading;
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-200">
+    <div className="space-y-7 animate-in fade-in duration-200">
       {/* Page Header */}
       <div className="flex flex-col gap-4 border-b border-stone-300/80 pb-7 sm:flex-row sm:items-end sm:justify-between dark:border-neutral-800">
         <div>
@@ -245,18 +298,21 @@ export default function ApplicationsPage() {
         <div>
           <button
             type="button"
-            onClick={openAddModal}
-            className="button-primary inline-flex items-center gap-1.5 py-2 text-sm dark:border-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+            onClick={() => openAddModal()}
+            className="button-primary inline-flex items-center gap-1.5 py-2 text-sm"
           >
             <PlusIcon className="w-3.5 h-3.5" />
-            <span>+ {t("common.addApplication")}</span>
+            <span>{t("common.addApplication")}</span>
           </button>
         </div>
       </div>
 
+      {/* Job Market Compass (V2 Smart Launcher) */}
+      <JobMarketCompass onLaunchDraft={(draft) => openAddModal(draft)} />
+
       {/* Filter and Search Bar */}
       <div className="space-y-3">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
           {/* Stage Filter Tabs */}
           <div className="flex items-center gap-1 overflow-x-auto border-b border-stone-200 pb-0.5 sm:pb-0 scrollbar-none dark:border-neutral-800">
             {[
@@ -285,21 +341,78 @@ export default function ApplicationsPage() {
             })}
           </div>
 
-          {/* Simple Search Field for companyName and jobTitle */}
-          <form
-            onSubmit={handleSearchSubmit}
-            className="relative min-w-[240px]"
-          >
-            <input
-              type="text"
-              aria-label={t("applications.search")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t("applications.search")}
-              className="w-full rounded-md border border-stone-300/80 bg-white/65 py-2 ps-8 pe-3 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-stone-300 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:ring-neutral-700"
-            />
-            <SearchIcon className="w-3.5 h-3.5 text-neutral-400 absolute start-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </form>
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:flex-1">
+            <form
+              onSubmit={handleSearchSubmit}
+              className="relative min-w-0 w-full sm:flex-1"
+            >
+              <input
+                type="text"
+                aria-label={t("applications.search")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t("applications.search")}
+                className="field-control ps-9 py-2"
+              />
+              <SearchIcon className="w-4 h-4 text-text-muted absolute start-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </form>
+
+            <div className="inline-flex w-fit shrink-0 items-center gap-1 rounded-lg border border-neutral-300 bg-white p-1 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+              <button
+                type="button"
+                onClick={() => handleViewModeChange("kanban")}
+                title={t("applications.viewBoard")}
+                aria-label={t("applications.viewBoard")}
+                aria-pressed={viewMode === "kanban"}
+                className={`inline-flex min-h-10 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${
+                  viewMode === "kanban"
+                    ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+                    : "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                }`}
+              >
+                <KanbanIcon className="h-4 w-4" />
+                <span>{t("applications.board")}</span>
+              </button>
+
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => handleViewModeChange("table")}
+                  title={
+                    canUseTableView
+                      ? t("applications.viewTable")
+                      : tableViewLockedMessage
+                  }
+                  aria-label={t("applications.viewTable")}
+                  aria-pressed={viewMode === "table"}
+                  aria-disabled={!canUseTableView}
+                  aria-expanded={tableLockBubbleOpen}
+                  className={`inline-flex min-h-10 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${
+                    !canUseTableView
+                      ? "cursor-pointer opacity-75 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                      : viewMode === "table"
+                        ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+                        : "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                  }`}
+                >
+                  <TableIcon className="h-4 w-4" />
+                  <span>{t("applications.table")}</span>
+                  {!canUseTableView && (
+                    <Lock className="h-3.5 w-3.5 text-amber-600" aria-hidden="true" />
+                  )}
+                </button>
+                <ContextualLockBubble
+                  isOpen={tableLockBubbleOpen}
+                  onClose={() => setTableLockBubbleOpen(false)}
+                  title={t("applications.viewTable")}
+                  requirement={tableViewLockedMessage}
+                  ctaLabel={t("journey.panelTitle")}
+                  onCtaClick={() => openJourneyTasksPanel()}
+                  placement="bottom"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Secondary Outcome Filter when Closed is selected */}
@@ -335,68 +448,32 @@ export default function ApplicationsPage() {
         )}
       </div>
 
-      <div className="flex justify-start">
-        <div className="inline-flex items-center gap-1 rounded-lg border border-neutral-300 bg-white p-1 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
-          <button
-            type="button"
-            onClick={() => handleViewModeChange("table")}
-            title={t("applications.viewTable")}
-            aria-label={t("applications.viewTable")}
-            aria-pressed={viewMode === "table"}
-            className={`inline-flex min-h-10 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${viewMode === "table" ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"}`}
-          >
-            <TableIcon className="h-4 w-4" />
-            <span>{t("applications.table")}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleViewModeChange("kanban")}
-            title={t("applications.viewBoard")}
-            aria-label={t("applications.viewBoard")}
-            aria-pressed={viewMode === "kanban"}
-            className={`inline-flex min-h-10 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${viewMode === "kanban" ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"}`}
-          >
-            <KanbanIcon className="h-4 w-4" />
-            <span>{t("applications.board")}</span>
-          </button>
-        </div>
-      </div>
-
       {moveError && (
-        <p role="alert" className="rounded-lg border border-danger-border bg-danger-soft px-3 py-2 text-sm text-danger-strong">
+        <p
+          role="alert"
+          className="rounded-lg border border-danger-border bg-danger-soft px-3 py-2 text-sm text-danger-strong"
+        >
           {t("applications.moveError")}
         </p>
       )}
 
       {/* Main Content Area: Loading, Error, Empty, or Data */}
       {isLoading ? (
-        viewMode === "table" ? (
-          <TableSkeleton rows={6} />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-[460px] rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 shadow-xs"
-              >
-                <div className="h-5 w-24 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700 mb-4" />
-                <div className="space-y-3">
-                  <div className="h-24 animate-pulse rounded-xl bg-neutral-100 dark:bg-neutral-800" />
-                  <div className="h-24 animate-pulse rounded-xl bg-neutral-100 dark:bg-neutral-800" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )
-      ) : error ? (
-        <div className="py-12 max-w-md mx-auto text-center">
-          <div className="p-6 rounded-2xl bg-red-50/50 dark:bg-red-950/20 border border-red-200/80 dark:border-red-900/40 text-red-800 dark:text-red-300 text-xs shadow-xs">
-            <p className="font-semibold text-sm mb-1">{t("applications.loadFailed")}</p>
-            <p className="text-neutral-600 dark:text-neutral-400 mb-4 leading-relaxed">{error}</p>
+        <div className="py-20 flex flex-col items-center justify-center">
+          <SpinnerIcon className="w-6 h-6 text-neutral-500 mb-3" />
+          <p className="text-xs text-neutral-500">
+            {t("applications.loading")}
+          </p>
+        </div>
+      ) : isError ? (
+        <div className="py-16 max-w-md mx-auto text-center">
+          <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs">
+            <p className="font-semibold mb-1">{t("applications.loadFailed")}</p>
+            <p>{t("common.loadError")}</p>
             <button
               type="button"
-              onClick={loadData}
-              className="px-4 py-2 bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 rounded-lg font-medium text-xs hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors shadow-xs"
+              onClick={() => void refetch()}
+              className="mt-3 px-3 py-1.5 bg-red-600 text-white rounded-md font-medium text-xs hover:bg-red-700 transition-colors"
             >
               {t("common.retry")}
             </button>
@@ -404,22 +481,33 @@ export default function ApplicationsPage() {
         </div>
       ) : applications.length === 0 ? (
         totalCount === 0 ? (
-          <EmptyState onAddClick={openAddModal} />
+          <EmptyState onAddClick={() => openAddModal()} />
         ) : (
           <EmptyState
             isFiltered
-            onAddClick={openAddModal}
+            onAddClick={() => openAddModal()}
             onClearFilters={clearAllFilters}
           />
         )
       ) : (
-        <div className="space-y-4">
+        <div
+          className={`space-y-4 ${
+            isRefreshing
+              ? "opacity-60 transition-opacity duration-150"
+              : "transition-opacity duration-150"
+          }`}
+        >
           <div className="flex items-center justify-between text-xs text-neutral-500 px-1">
-            <span>
-              {t("applications.showingCount", {
-                count: tp("common.applicationCount", applications.length),
-              })}
-            </span>
+            <div className="flex items-center gap-2">
+              <span>
+                {t("applications.showingCount", {
+                  count: tp("common.applicationCount", applications.length),
+                })}
+              </span>
+              {isRefreshing && (
+                <SpinnerIcon className="h-3.5 w-3.5 animate-spin text-neutral-400" />
+              )}
+            </div>
             {isFiltering && (
               <button
                 type="button"
@@ -431,7 +519,7 @@ export default function ApplicationsPage() {
             )}
           </div>
 
-          {viewMode === "table" ? (
+          {viewMode === "table" && canUseTableView ? (
             <TableView applications={applications} />
           ) : (
             <KanbanView

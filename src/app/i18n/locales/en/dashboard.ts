@@ -20,4 +20,98 @@ export default {
   latestUpdates: "Your latest updates",
   viewAllApplications: "View all applications",
   addFirstApplication: "Add your first application",
+  companionTitle: "Nawah Companion — Your next step",
+  companionExpiringSoon:
+    "You have {count} applications without updates for 5+ days close to auto-closing. Review them now.",
+  companionRecentNoResponse:
+    "{count} applications were moved to No Response after 7 days. Review them to follow up.",
+  companionStaleApps:
+    "You have {count} applications with no recent updates or marked as no response. Review them now.",
+  companionUnreadFeedback:
+    "Your mentor sent {count} new feedback items. Review them to guide your next steps.",
+  companionFirstApp:
+    "You haven't added any applications yet. Add your first job application to start tracking.",
+  companionAllGood:
+    "Great momentum! Keep updating your applications and checking your group's progress.",
+  evaluationSectionTitle: "Evaluation & Pipeline Measurement",
+  evaluationSectionDesc:
+    "Your application distribution across stages to help measure interview conversion.",
+  notificationsTitle: "Notifications & Reminders",
+  emailRemindersLabel:
+    "Email reminders for no-response jobs & new feedback",
+  noNotifications: "No new notifications right now.",
+  viewStaleApps: "Review pending applications",
+  viewFeedback: "View feedback",
+  viewGroupProgress: "View group progress",
+
+  // New Performance Analytics & Experimentation Lab keys
+  reportsTitle: "Reports & Performance Analytics",
+  reportsSubtitle:
+    "Performance analytics lab, conversion funnel, and weekly pivot impact log integrated with Nawah Journey.",
+  scopeAll: "All Journey (Overview)",
+  scopeW0: "Week 0: Warmup (5 apps)",
+  scopeW1: "Week 1: Identity & Foundation (100 apps)",
+  scopeW2: "Week 2: Tailored Strategy (125 apps)",
+  scopeW3: "Week 3: Content & Proof of Work (135 apps)",
+  scopeW4: "Week 4: Networking & Referrals (140 apps)",
+  activeCvVersion: "Active Version: {version}",
+  diagnosisTitle: "Nawah Companion — Intelligent Bottleneck Diagnosis",
+  diagnosisCase1:
+    "You are in the baseline building phase. Focus on finishing your active application quota to establish a statistically significant conversion baseline.",
+  diagnosisCase2:
+    "Performance Diagnosis: Strong application volume, but the bottleneck is initial resume screening. At the next review station (Day 7), focus on tailoring resumes and keywords.",
+  diagnosisCase3:
+    "Performance Diagnosis: Your resume successfully passes screening and lands interviews! The bottleneck is the interview/assignment stage. Review post-interview feedback and preparation guides.",
+  diagnosisCase4:
+    "Performance Diagnosis: Excellent response rate! Continue with this strategy while expanding tailored applications and professional visibility to multiply offers.",
+  responseRatioTitle: "True Response Ratio",
+  responseRatioDesc: "Golden metric for market traction",
+  responseRatioFormat: "1 response per {count} applications",
+  noResponsesYet: "0 responses recorded yet",
+  noResponsesHint: "Ratio computed automatically upon recording first interview or assignment",
+  interviewRateTitle: "Interview Conversion Rate",
+  interviewRateDesc: "Of total sent applications",
+  tailoredImpactTitle: "Tailored vs. General Impact",
+  tailoredImpactDesc: "Measurable impact of AI-assisted tailoring",
+  tailoredCountBadge: "{count} tailored apps",
+  velocityTitle: "Weekly Velocity & Quota",
+  velocityDesc: "Required daily pace to finish on time",
+  dailyPaceRequired: "{count} apps/day needed before Day 7",
+  funnelTitle: "Visual Conversion Funnel",
+  funnelDesc: "Application flow from initial submission to final job offers",
+  momentumTitle: "4-Week Momentum & Skill Accumulation",
+  momentumDesc: "Weekly quota progression alongside stacked skill artifacts",
+  pivotLogTitle: "Weekly Pivot & Impact Log (Experimentation Lab)",
+  pivotLogDesc:
+    "Track how each weekend resume pivot and tool upgrade impacts your response rate in subsequent weeks.",
+  day7CardTitle: "Day 7 Strategic Review Station & Final Report",
+
+  // Change Impact Tracker & Progressive Charts keys
+  changeTrackerTitle: "Change Impact Tracker & Experiment Log",
+  changeTrackerSubtitle:
+    "Monitor how each update to your resume, portfolio, or outreach strategy drives employer response traction.",
+  recordNewChange: "+ Log New Tooling Pivot / Change",
+  tractionChartTitle: "Market Traction & Growth Curve",
+  growthCumulative: "Cumulative Growth",
+  periodPerformance: "Period Performance",
+  metricVolume: "Applications & Responses",
+  metricRate: "Conversion Rate (%)",
+  distributionTitle: "Application Stage & Outcome Distribution",
+  distributionSubtitle: "Breakdown of stage progression and closed application outcomes",
+  eraComparisonTitle: "Performance Comparison by Tooling Iterations",
+  eraComparisonSubtitle: "Quantifying response rate changes across each tooling iteration",
+  baselineEraTitle: "Initial Setup (CV v1)",
+  nextEraLocked: "Next Iteration (Unlocks after current milestone)",
+  filterLockedHint: "Unlocks on Day 7 at the evaluation & review station",
+  categoryCv: "Resume Update (CV Update)",
+  categoryPortfolio: "Portfolio / GitHub Projects Update",
+  categoryLinkedIn: "LinkedIn Optimization",
+  categoryPitch: "Pitch Message / Outreach Strategy Update",
+  changeModalTitle: "Log a New Iteration / Tooling Update",
+  changeModalSubtitle: "Log your recent adjustment to link it to subsequent applications and measure its impact.",
+  fieldCategory: "Change Category",
+  fieldChangeTitle: "Short Change Headline",
+  fieldChangeNote: "What specifically did you change? (Short note)",
+  fieldNewCv: "This update includes a new CV version (v+1)",
+  btnSaveChange: "Save Change & Add to Impact Tracker",
 } as const;

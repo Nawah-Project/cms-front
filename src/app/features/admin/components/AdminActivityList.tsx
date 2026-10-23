@@ -12,35 +12,33 @@ export function AdminActivityList({ items }: { items: AdminActivity[] }) {
         <li key={item.id} className="flex gap-3 py-4 first:pt-1 last:pb-1">
           <Initials name={item.user.name} avatar={item.user.avatar} />
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                 {item.user.name}
               </span>
               <span className="text-xs text-neutral-500">
                 {item.group?.name ?? t("common.unassigned")}
               </span>
+              <span className="inline-flex items-center gap-1.5">
+                {item.type === "APPLICATION_STAGE_CHANGED" && item.fromStage ? (
+                  <>
+                    <StatusBadge kind="stage" value={item.fromStage} />
+                    <span aria-hidden="true" className="text-neutral-400">
+                      {locale === "ar" ? "←" : "→"}
+                    </span>
+                    <StatusBadge kind="stage" value={item.toStage} />
+                  </>
+                ) : (
+                  <span className="text-xs text-neutral-600 dark:text-neutral-300">
+                    {item.type === "APPLICATION_CREATED"
+                      ? t("admin.appliedTo")
+                      : t("admin.updated")}
+                  </span>
+                )}
+              </span>
             </div>
             <p className="mt-1 truncate text-sm text-neutral-700 dark:text-neutral-300">
-              {item.type === "APPLICATION_STAGE_CHANGED" && item.fromStage ? (
-                <span className="inline-flex items-center gap-1.5 align-middle">
-                  <StatusBadge kind="stage" value={item.fromStage} />
-                  <span aria-hidden="true" className="text-neutral-400">
-                    →
-                  </span>
-                  <StatusBadge kind="stage" value={item.toStage} />
-                </span>
-              ) : item.type === "APPLICATION_CREATED" ? (
-                t("admin.appliedTo")
-              ) : (
-                t("admin.updated")
-              )}{" "}
-              <span className="font-medium">
-                {item.application.companyName}
-              </span>
-              <span className="text-neutral-500">
-                {" "}
-                · {item.application.jobTitle}
-              </span>
+              {item.application.jobTitle} · {item.application.companyName}
             </p>
           </div>
           <time

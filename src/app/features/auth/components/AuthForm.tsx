@@ -6,6 +6,9 @@ import { useRegister } from "../hooks/useRegister";
 import { SocialSignInButtons } from "./SocialSignInButtons";
 import { useI18n } from "../../../i18n";
 import { LanguageSwitcher } from "../../../i18n/LanguageSwitcher";
+import { Modal } from "../../../components/ui/Modal";
+import { IntroVideoPlayer } from "../../../components/IntroVideoPlayer";
+import { CheckIcon, PlayCircleIcon, SparklesIcon } from "../../../components/Icons";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const registering = mode === "register";
@@ -15,12 +18,14 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
   const login = useLogin();
   const register = useRegister();
   const { loading, authenticated } = useMe();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from || "/";
+  const notice = (location.state as { notice?: string } | null)?.notice;
   const socialError = getSocialError(new URLSearchParams(location.search).get("socialError"), t);
 
   useEffect(() => {
@@ -59,150 +64,316 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         await login({ email: email.trim(), password });
         navigate(from, { replace: true });
       }
-    } catch (caught) {
+    } catch (caught: any) {
       const message = caught instanceof Error ? caught.message.toLowerCase() : "";
-      setError(message.includes("invalid email or password")
-        ? t("auth.invalidCredentials")
-        : message.includes("failed to fetch") || message.includes("network")
-          ? t("common.connectionError")
-          : t("auth.authFailed"));
+      const status = caught?.status;
+      if (
+        status === 409 ||
+        message.includes("already exists") ||
+        message.includes("already registered") ||
+        message.includes("conflict")
+      ) {
+        setError(t("auth.emailAlreadyExists"));
+      } else if (
+        message.includes("disposable") ||
+        message.includes("temporary email")
+      ) {
+        setError(t("auth.disposableEmailError"));
+      } else if (
+        message.includes("domain does not exist") ||
+        message.includes("cannot receive mail") ||
+        message.includes("invalid email address format")
+      ) {
+        setError(t("auth.invalidEmailDomainError"));
+      } else if (status === 400 && registering) {
+        setError(t("auth.passwordRequirementsError"));
+      } else if (
+        message.includes("invalid email or password") ||
+        message.includes("unauthorized") ||
+        status === 401
+      ) {
+        setError(t("auth.invalidCredentials"));
+      } else if (message.includes("failed to fetch") || message.includes("network")) {
+        setError(t("common.connectionError"));
+      } else {
+        setError(t("auth.authFailed"));
+      }
     } finally {
       setSubmitting(false);
     }
   }
 
-  const [showPassword, setShowPassword] = useState(false);
+  const isEmailError =
+    error === t("auth.emailAlreadyExists") ||
+    error === t("auth.disposableEmailError") ||
+    error === t("auth.invalidEmailDomainError");
+  const isPasswordError = error === t("auth.passwordRequirementsError");
+  const generalAlert =
+    socialError ||
+    (error && !isEmailError && !isPasswordError ? error : "");
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-app px-5 py-12 dark:bg-neutral-950">
-      <section className="w-full max-w-md rounded-2xl border border-border-strong bg-surface px-7 py-8 shadow-sm sm:px-9 sm:py-10 dark:border-neutral-800 dark:bg-neutral-900">
-        <div className="flex items-center justify-between gap-3">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-neutral-900 dark:text-white"
-          >
-            <img
-              src="/nawah-logo.svg"
-              alt=""
-              aria-hidden="true"
-              className="h-10 w-10 shrink-0 rounded-md border border-neutral-200 object-cover dark:border-neutral-700"
-            />
-            {t("common.brand")}
-          </Link>
-          <LanguageSwitcher />
-        </div>
-        <h1 className="mt-9 text-3xl font-semibold leading-tight tracking-tight text-neutral-950 dark:text-neutral-100">
-          {registering ? t("auth.registerTitle") : t("auth.loginTitle")}
-        </h1>
-        <p className="mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-400">
-          {registering
-            ? t("auth.registerSubtitle")
-            : t("auth.loginSubtitle")}
-        </p>
-        {(error || socialError) && (
-          <p
-            role="alert"
-            className="mt-5 rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
-          >
-            {error || socialError}
-          </p>
-        )}
-        <form className="mt-7 space-y-5" onSubmit={submit}>
-          {registering && (
-            <label className="block text-sm font-medium text-neutral-800 dark:text-neutral-200">
-              {t("auth.name")}
-              <input
-                required
-                autoComplete="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={inputClass}
-              />
-            </label>
-          )}
-          <label className="block text-sm font-medium text-neutral-800 dark:text-neutral-200">
-            {t("auth.email")}
-            <input
-              required
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={inputClass}
-            />
-          </label>
-          <label className="block text-sm font-medium text-neutral-800 dark:text-neutral-200">
-            {t("auth.password")}
-            <div className="relative mt-2">
-              <input
-                required
-                type={showPassword ? "text" : "password"}
-                minLength={8}
-                autoComplete={registering ? "new-password" : "current-password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="field-control block w-full pe-10 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:focus:ring-neutral-800"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute end-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-1"
-                aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
-              >
-                {showPassword ? (
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
-                  </svg>
-                ) : (
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                )}
-              </button>
-            </div>
-            <span className="mt-1.5 block text-xs font-normal text-neutral-500">
-              {t("auth.passwordHint")}
+    <main className="grid min-h-screen lg:grid-cols-2 bg-app">
+      {/* Side 1: Form Card */}
+      <div className="flex flex-col justify-center items-center px-6 py-12 lg:px-12">
+        <div className="w-full max-w-md">
+          {/* Mobile Value Banner */}
+          <div className="lg:hidden mb-6 rounded-2xl bg-neutral-900 p-5 text-white shadow-sm">
+            <span className="inline-block rounded-full bg-info-soft/20 text-info-soft px-3 py-1 text-xs font-semibold mb-2">
+              {t("auth.heroBadge")}
             </span>
-          </label>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="button-primary w-full mt-2 dark:border-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
-          >
-            {submitting
-              ? t("auth.wait")
-              : registering
-                ? t("auth.createAccount")
-                : t("auth.signIn")}
-          </button>
-
-          <div className="space-y-4 pt-3">
-            <div className="flex items-center gap-3 text-xs text-neutral-500" aria-hidden="true">
-              <span className="h-px flex-1 bg-border" />
-              <span>{t("auth.continueWith")}</span>
-              <span className="h-px flex-1 bg-border" />
-            </div>
-            <SocialSignInButtons disabled={submitting} />
+            <h2 className="text-base font-semibold leading-snug">{t("auth.heroTitle")}</h2>
           </div>
-        </form>
-        <p className="mt-7 text-center text-sm text-neutral-600 dark:text-neutral-400">
-          {registering ? t("auth.alreadyHaveAccount") + " " : t("auth.newToApp") + " "}
-          <Link
-            className="font-medium text-neutral-900 underline-offset-4 hover:underline dark:text-white"
-            to={registering ? "/auth/login" : "/auth/register"}
+
+          <div className="rounded-2xl border border-border-strong bg-surface p-7 sm:p-9 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <Link
+                to="/"
+                className="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-neutral-900"
+              >
+                <img
+                  src="/nawah-logo.svg"
+                  alt=""
+                  aria-hidden="true"
+                  className="h-10 w-10 shrink-0 rounded-md border border-neutral-200 object-cover"
+                />
+                {t("common.brand")}
+              </Link>
+              <LanguageSwitcher />
+            </div>
+
+            <h1 className="mt-8 text-2xl sm:text-3xl font-semibold leading-tight tracking-tight text-neutral-950">
+              {registering ? t("auth.registerTitle") : t("auth.loginTitle")}
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-neutral-600">
+              {registering ? t("auth.registerSubtitle") : t("auth.loginSubtitle")}
+            </p>
+
+            {/* Notice Banner */}
+            {notice && !registering && (
+              <div
+                role="status"
+                className="mt-5 rounded-xl border border-success-border bg-success-soft px-3.5 py-3 text-sm text-success-strong flex items-center gap-2"
+              >
+                <CheckIcon className="w-4 h-4 shrink-0" />
+                <span>{notice}</span>
+              </div>
+            )}
+
+            {/* Error Banner (General / Network / Social Only) */}
+            {generalAlert && (
+              <p
+                role="alert"
+                className="mt-5 rounded-xl border border-danger-border bg-danger-soft px-3.5 py-3 text-sm text-danger-strong"
+              >
+                {generalAlert}
+              </p>
+            )}
+
+            {/* Form */}
+            <form className="mt-6 space-y-4" onSubmit={submit}>
+              {registering && (
+                <div>
+                  <label className="field-label">{t("auth.name")}</label>
+                  <input
+                    required
+                    autoComplete="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="field-control"
+                  />
+                </div>
+              )}
+              <div>
+                <label className="field-label">{t("auth.email")}</label>
+                <input
+                  required
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (isEmailError) setError("");
+                  }}
+                  className={`field-control ${isEmailError ? "border-danger-strong ring-1 ring-danger-strong/30" : ""}`}
+                />
+                {isEmailError && (
+                  <span role="alert" className="mt-1.5 block text-xs font-medium text-danger-strong">
+                    {error}
+                  </span>
+                )}
+              </div>
+              <div>
+                <label className="field-label">{t("auth.password")}</label>
+                <input
+                  required
+                  type="password"
+                  minLength={8}
+                  autoComplete={registering ? "new-password" : "current-password"}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (isPasswordError) setError("");
+                  }}
+                  className={`field-control ${isPasswordError ? "border-danger-strong ring-1 ring-danger-strong/30" : ""}`}
+                />
+                {isPasswordError ? (
+                  <span role="alert" className="mt-1.5 block text-xs font-medium text-danger-strong">
+                    {error}
+                  </span>
+                ) : registering ? (
+                  <span className="mt-1.5 block text-xs font-normal text-neutral-500">
+                    {t("auth.passwordHint")}
+                  </span>
+                ) : null}
+              </div>
+
+              <button
+                disabled={submitting}
+                className="button-primary w-full py-2.5 mt-2"
+              >
+                {submitting
+                  ? t("auth.wait")
+                  : registering
+                    ? t("auth.createAccount")
+                    : t("auth.signIn")}
+              </button>
+
+              <div className="space-y-4 pt-2">
+                <div
+                  className="flex items-center gap-3 text-xs text-neutral-500"
+                  aria-hidden="true"
+                >
+                  <span className="h-px flex-1 bg-border" />
+                  <span>{t("auth.continueWith")}</span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                <SocialSignInButtons disabled={submitting} />
+              </div>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-neutral-600">
+              {registering ? t("auth.alreadyHaveAccount") + " " : t("auth.newToApp") + " "}
+              <Link
+                className="font-medium text-neutral-900 underline-offset-4 hover:underline"
+                to={registering ? "/auth/login" : "/auth/register"}
+              >
+                {registering ? t("auth.signInLink") : t("auth.createAccountLink")}
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Side 2: Value Proposition & Video Preview Panel */}
+      <div className="hidden lg:flex flex-col justify-between bg-neutral-900 text-white p-12 xl:p-16 relative overflow-hidden">
+        {/* Background glow decoration */}
+        <div className="absolute -top-32 -end-32 w-96 h-96 rounded-full bg-info-strong/20 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -start-32 w-96 h-96 rounded-full bg-warning-strong/10 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 mx-auto w-full max-w-lg">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1 text-xs font-medium text-info-soft backdrop-blur-sm">
+            <SparklesIcon className="w-3.5 h-3.5" />
+            <span>{t("auth.heroBadge")}</span>
+          </div>
+          <h2 className="mt-6 text-3xl xl:text-4xl font-bold leading-tight tracking-tight">
+            {t("auth.heroTitle")}
+          </h2>
+          <p className="mt-4 text-base leading-relaxed text-neutral-300 max-w-xl">
+            {t("auth.heroDescription")}
+          </p>
+
+          {/* Onboarding Video Card */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => setVideoModalOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") setVideoModalOpen(true);
+            }}
+            className="mt-8 bg-white/10 border border-white/15 rounded-2xl p-5 flex items-center gap-4 hover:bg-white/15 transition cursor-pointer backdrop-blur-md group"
           >
-            {registering ? t("auth.signInLink") : t("auth.createAccountLink")}
-          </Link>
-        </p>
-      </section>
+            <div className="w-12 h-12 rounded-xl bg-info-soft/20 text-info-soft flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <PlayCircleIcon className="w-8 h-8" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <span>{t("auth.watchIntroTitle")}</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-info-soft/20 text-info-soft">
+                  90s
+                </span>
+              </h3>
+              <p className="text-xs text-neutral-300 mt-0.5 line-clamp-1">
+                {t("auth.watchIntroSubtitle")}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Feature Pills */}
+        <div className="relative z-10 mx-auto w-full max-w-lg space-y-3 pt-12">
+          <div className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+            <div className="w-2 h-2 rounded-full bg-info-soft shrink-0" />
+            <span className="text-sm font-medium text-neutral-200">
+              {t("auth.featureTrackTitle")}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+            <div className="w-2 h-2 rounded-full bg-warning-soft shrink-0" />
+            <span className="text-sm font-medium text-neutral-200">
+              {t("auth.featureMentorTitle")}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+            <div className="w-2 h-2 rounded-full bg-success-soft shrink-0" />
+            <span className="text-sm font-medium text-neutral-200">
+              {t("auth.featureGroupTitle")}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Intro Video / Walkthrough Modal */}
+      <Modal
+        isOpen={videoModalOpen}
+        onClose={() => setVideoModalOpen(false)}
+        title={t("auth.watchIntroTitle")}
+        subtitle={t("auth.watchIntroSubtitle")}
+        size="lg"
+      >
+        <div className="space-y-4">
+          <IntroVideoPlayer />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <div className="rounded-xl border border-border p-3 bg-neutral-50/60">
+              <p className="text-xs font-semibold text-text-primary">
+                1. {t("auth.featureTrackTitle")}
+              </p>
+              <p className="text-[11px] text-text-secondary mt-1">
+                {t("profile.expectation1Desc")}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border p-3 bg-neutral-50/60">
+              <p className="text-xs font-semibold text-text-primary">
+                2. {t("auth.featureMentorTitle")}
+              </p>
+              <p className="text-[11px] text-text-secondary mt-1">
+                {t("profile.expectation2Desc")}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border p-3 bg-neutral-50/60">
+              <p className="text-xs font-semibold text-text-primary">
+                3. {t("auth.featureGroupTitle")}
+              </p>
+              <p className="text-[11px] text-text-secondary mt-1">
+                {t("profile.expectation3Desc")}
+              </p>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </main>
   );
 }
-
-const inputClass =
-  "field-control mt-2 block w-full dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:focus:ring-neutral-800";
 
 function getSocialError(code: string | null, t: (key: string) => string): string {
   switch (code) {
@@ -214,3 +385,4 @@ function getSocialError(code: string | null, t: (key: string) => string): string
       return "";
   }
 }
+

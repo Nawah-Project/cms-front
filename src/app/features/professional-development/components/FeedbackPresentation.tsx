@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ExternalLinkIcon } from "../../../components/Icons";
 import { useI18n } from "../../../i18n";
 import { FeedbackRichContent } from "./FeedbackRichContent";
+import { PromptCopyBox } from "../../journey/components/PromptCopyBox";
 import type { FeedbackContext, FeedbackPost, FeedbackTag } from "../types";
 
 const CONTEXT_KEYS: Record<FeedbackContext, string> = {
@@ -212,6 +213,11 @@ export function FeedbackCard({
           </button>
         )}
       </div>
+      {post.promptTemplate && (
+        <div className="px-4 pb-4 sm:px-5">
+          <PromptCopyBox promptTemplate={post.promptTemplate} />
+        </div>
+      )}
       {post.resources[0] && (
         <div className="px-4 pb-4 sm:px-5 sm:pb-5">
           <FeedbackResourceCard resource={post.resources[0]} />

@@ -6,6 +6,7 @@ import {
   EmptyState,
   ErrorState,
   Initials,
+  JourneyBadge,
   LoadingState,
   PageHeading,
   relativeTime,
@@ -13,6 +14,8 @@ import {
 } from "./components/AdminUI";
 import { TaskFormDialog } from "../professional-development/components/TaskFormDialog";
 import type { CreateTaskInput } from "../professional-development/types";
+import { ArrowLeftIcon, PlusIcon } from "../../components/Icons";
+import { useToast } from "../../components/ui/ToastProvider";
 
 type DevelopmentMember = AdminMember & {
   development: {
@@ -25,56 +28,63 @@ type DevelopmentMember = AdminMember & {
 
 export default function AdminProfessionalDevelopmentPage() {
   const { t, tp, locale } = useI18n();
+  const toast = useToast();
   const [members, setMembers] = useState<DevelopmentMember[]>([]);
   const [selected, setSelected] = useState<AdminMember | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [groups, setGroups] = useState<AdminGroup[]>([]);
+  const [groupFilter, setGroupFilter] = useState("ALL");
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [assignGroupOpen, setAssignGroupOpen] = useState(false);
   const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchInput.trim());
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
+
+  const PAGE_SIZE = 12;
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(false);
     try {
       const [result, groupResult] = await Promise.all([
-        adminApi.users({ page, limit: 20 }),
+        adminApi.users({
+          page,
+          limit: PAGE_SIZE,
+          ...(groupFilter === "ALL" ? {} : { groupId: groupFilter }),
+          ...(debouncedSearch ? { search: debouncedSearch } : {}),
+        }),
         adminApi.groups(),
       ]);
       setGroups(groupResult.items);
       const users = result.items.filter((member) => member.role === "USER");
-      const withDevelopment = await Promise.all(
-        users.map(async (member) => {
-          const [detail, tasks] = await Promise.all([
-            adminApi.user(member.id),
-            adminApi.tasksForUser(member.id, 1, 50),
-          ]);
-          const lastTaskAt = tasks.items.reduce<string | null>(
-            (latest, task) =>
-              !latest || task.updatedAt > latest ? task.updatedAt : latest,
-            null,
-          );
-          return {
-            ...member,
-            development: {
-              active: detail.development.totalActiveTasks,
-              inProgress: detail.development.taskStatusCounts.IN_PROGRESS,
-              overdue: detail.development.overdueTasks,
-              lastTaskAt,
-            },
-          };
-        }),
-      );
+      const withDevelopment = users.map((member) => ({
+        ...member,
+        development: member.development ?? {
+          active: 0,
+          inProgress: 0,
+          overdue: 0,
+          lastTaskAt: null,
+        },
+      }));
       setMembers(withDevelopment);
       setTotalPages(result.totalPages);
+      setTotalCount(result.total);
     } catch {
       setError(true);
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, groupFilter, debouncedSearch]);
 
   useEffect(() => {
     void load();
@@ -84,7 +94,7 @@ export default function AdminProfessionalDevelopmentPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <PageHeading
-          eyebrow={t("admin.eyebrow")}
+          eyebrow={t("professionalDevelopment.title")}
           title={t("admin.professionalDevelopment")}
           description={t("professionalDevelopment.adminDevelopmentDescription")}
         />
@@ -92,15 +102,52 @@ export default function AdminProfessionalDevelopmentPage() {
           type="button"
           onClick={() => setAssignGroupOpen(true)}
           disabled={!groups.some((group) => group.memberCount > 0)}
-          className="button-primary px-4 py-2 text-sm disabled:opacity-50"
+          className="button-primary inline-flex items-center gap-1.5 px-4 py-2 text-sm disabled:opacity-50"
         >
+          <PlusIcon className="h-4 w-4" />
           {t("professionalDevelopment.assignGroupTask")}
         </button>
       </div>
       {notice && <p role="status" className="text-sm text-success-strong">{notice}</p>}
-      <p className="text-xs text-neutral-500">
-        {tp("common.memberCount", members.length)}
-      </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-wrap items-end gap-3 flex-1">
+          <label className="grid gap-1 text-xs text-neutral-500 min-w-60 flex-1 max-w-xs">
+            {t("admin.member")}
+            <input
+              type="search"
+              value={searchInput}
+              onChange={(event) => {
+                setSearchInput(event.target.value);
+                setPage(1);
+              }}
+              placeholder={t("admin.searchPlaceholder")}
+              className="field-control w-full"
+            />
+          </label>
+          <label className="grid gap-1 text-xs text-neutral-500">
+            {t("admin.groupFilter")}
+            <select
+              className="field-control min-w-40"
+              value={groupFilter}
+              onChange={(event) => {
+                setGroupFilter(event.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="ALL">{t("admin.allGroups")}</option>
+              {groups.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+              <option value="UNASSIGNED">{t("common.unassigned")}</option>
+            </select>
+          </label>
+        </div>
+        <p className="text-xs text-neutral-500">
+          {tp("common.memberCount", totalCount || members.length)}
+        </p>
+      </div>
       {loading ? (
         <LoadingState label={t("admin.loadingMembers")} />
       ) : error ? (
@@ -126,23 +173,33 @@ export default function AdminProfessionalDevelopmentPage() {
                     {member.group?.name ?? t("common.unassigned")}
                   </span>
                 </div>
+                <ArrowLeftIcon className="h-4 w-4 shrink-0 rotate-180 text-neutral-400 rtl:rotate-0" />
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border-subtle pt-3 text-xs">
-                <span className="text-neutral-500">
-                  {t("professionalDevelopment.activeTasks")}{" "}
-                  <b className="ms-1 tabular-nums text-neutral-900 dark:text-neutral-100">
+              <div className="mt-3">
+                <JourneyBadge journey={member.journey} compact />
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border-subtle pt-3">
+                <span className="rounded-lg border border-border-subtle bg-neutral-50 p-2 text-center">
+                  <span className="block text-[11px] text-neutral-500">
+                    {t("professionalDevelopment.activeTasks")}
+                  </span>
+                  <b className="mt-0.5 block text-base font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
                     {member.development.active}
                   </b>
                 </span>
-                <span className="text-neutral-500">
-                  {t("professionalDevelopment.inProgressCount")}{" "}
-                  <b className="ms-1 tabular-nums text-neutral-900 dark:text-neutral-100">
+                <span className="rounded-lg border border-border-subtle bg-neutral-50 p-2 text-center">
+                  <span className="block text-[11px] text-neutral-500">
+                    {t("professionalDevelopment.inProgressCount")}
+                  </span>
+                  <b className="mt-0.5 block text-base font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
                     {member.development.inProgress}
                   </b>
                 </span>
-                <span className="text-neutral-500">
-                  {t("professionalDevelopment.overdueCount")}{" "}
-                  <b className="ms-1 tabular-nums text-danger-strong">
+                <span className="rounded-lg border border-border-subtle bg-neutral-50 p-2 text-center">
+                  <span className="block text-[11px] text-neutral-500">
+                    {t("professionalDevelopment.overdueCount")}
+                  </span>
+                  <b className="mt-0.5 block text-base font-bold tabular-nums text-danger-strong">
                     {member.development.overdue}
                   </b>
                 </span>
@@ -202,12 +259,12 @@ export default function AdminProfessionalDevelopmentPage() {
               input as CreateTaskInput,
             );
             setAssignGroupOpen(false);
-            setNotice(
-              t("professionalDevelopment.groupTaskCreated", {
-                count: result.assignedCount,
-                group: result.groupName,
-              }),
-            );
+            const msg = t("professionalDevelopment.groupTaskCreated", {
+              count: result.assignedCount,
+              group: result.groupName,
+            });
+            setNotice(msg);
+            toast.success(msg);
             void load();
           }}
         />

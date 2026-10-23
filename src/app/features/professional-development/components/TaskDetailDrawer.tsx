@@ -8,6 +8,8 @@ import {
 import { CloseIcon, PlusIcon, TrashIcon } from "../../../components/Icons";
 import { api } from "../../../services/api";
 import { useI18n } from "../../../i18n";
+import { ConfirmDialog } from "../../../components/ui/ConfirmDialog";
+import { useToast } from "../../../components/ui/ToastProvider";
 import type { ProfessionalTask, TaskChecklistItem, TaskStatus } from "../types";
 import type { UpdateTaskInput } from "../types";
 import { TaskFormDialog } from "./TaskFormDialog";
@@ -36,6 +38,7 @@ export function TaskDetailDrawer({
   onChanged?: () => void;
 }) {
   const { t, date, locale } = useI18n();
+  const { showToast } = useToast();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const previousFocus = useRef<HTMLElement | null>(null);
@@ -49,6 +52,8 @@ export function TaskDetailDrawer({
   const [editedTitle, setEditedTitle] = useState("");
   const [personalNote, setPersonalNote] = useState("");
   const [editOpen, setEditOpen] = useState(false);
+  const [isDeleteTaskConfirmOpen, setIsDeleteTaskConfirmOpen] = useState(false);
+  const [checklistToDelete, setChecklistToDelete] = useState<{ id: string; title: string } | null>(null);
 
   const load = useCallback(async (showLoading = true) => {
     if (!taskId) return;
@@ -229,11 +234,7 @@ export function TaskDetailDrawer({
                     <button type="button" disabled={busy} onClick={() => setEditOpen(true)} className="button-secondary px-3 py-2 text-xs">
                       {t("professionalDevelopment.editTask")}
                     </button>
-                    <button type="button" disabled={busy} onClick={async () => {
-                      if (!window.confirm(t("professionalDevelopment.deleteTaskConfirm"))) return;
-                      try { await api.deletePersonalTask(task.id); onChanged?.(); onClose(); }
-                      catch { setActionError(t("professionalDevelopment.saveError")); }
-                    }} className="rounded-lg border border-danger-border px-3 py-2 text-xs font-medium text-danger-strong hover:bg-danger-soft">
+                    <button type="button" disabled={busy} onClick={() => setIsDeleteTaskConfirmOpen(true)} className="rounded-lg border border-danger-border px-3 py-2 text-xs font-medium text-danger-strong hover:bg-danger-soft">
                       {t("professionalDevelopment.deleteTask")}
                     </button>
                   </div>
@@ -400,19 +401,7 @@ export function TaskDetailDrawer({
                           type="button"
                           disabled={busy}
                           aria-label={`${t("professionalDevelopment.deleteChecklistItem")}: ${item.title}`}
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                t(
-                                  "professionalDevelopment.deleteChecklistItem",
-                                ) + "?",
-                              ) &&
-                              taskId
-                            )
-                              void refreshDetails(() =>
-                                api.deleteChecklistItem(taskId, item.id),
-                              );
-                          }}
+                          onClick={() => setChecklistToDelete({ id: item.id, title: item.title })}
                           className="rounded-md p-2 text-neutral-500 hover:bg-danger-soft hover:text-danger-strong"
                         >
                           <TrashIcon className="h-4 w-4" />
@@ -582,10 +571,60 @@ export function TaskDetailDrawer({
         onClose={() => setEditOpen(false)}
         onSave={async (input) => {
           await api.updatePersonalTask(task.id, input as UpdateTaskInput);
+          showToast({
+            message: t("professionalDevelopment.taskUpdated"),
+            variant: "success",
+          });
           setEditOpen(false);
           await load();
           onChanged?.();
         }}
+      />
+    )}
+
+    {task && (
+      <ConfirmDialog
+        isOpen={isDeleteTaskConfirmOpen}
+        onClose={() => setIsDeleteTaskConfirmOpen(false)}
+        onConfirm={async () => {
+          try {
+            await api.deletePersonalTask(task.id);
+            showToast({
+              message: t("professionalDevelopment.taskDeleted"),
+              variant: "success",
+            });
+            onChanged?.();
+            onClose();
+          } catch {
+            setActionError(t("professionalDevelopment.saveError"));
+          } finally {
+            setIsDeleteTaskConfirmOpen(false);
+          }
+        }}
+        title={t("professionalDevelopment.deleteTask")}
+        message={t("professionalDevelopment.deleteTaskConfirm")}
+        confirmLabel={t("common.delete")}
+        cancelLabel={t("common.cancel")}
+        variant="danger"
+      />
+    )}
+
+    {taskId && (
+      <ConfirmDialog
+        isOpen={!!checklistToDelete}
+        onClose={() => setChecklistToDelete(null)}
+        onConfirm={async () => {
+          if (!checklistToDelete) return;
+          await refreshDetails(() =>
+            api.deleteChecklistItem(taskId, checklistToDelete.id),
+          );
+          setChecklistToDelete(null);
+        }}
+        title={t("professionalDevelopment.deleteChecklistItem")}
+        message={`${t("professionalDevelopment.deleteChecklistItem")}?`}
+        confirmLabel={t("common.delete")}
+        cancelLabel={t("common.cancel")}
+        variant="danger"
       />
     )}
     </>

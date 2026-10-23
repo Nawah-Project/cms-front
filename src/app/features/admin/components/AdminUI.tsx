@@ -1,6 +1,13 @@
 import type { ReactNode } from "react";
-import type { ActivityStatus } from "../api/adminApi";
+import type {
+  ActivityStatus,
+  AttentionReason,
+  JourneySnapshot,
+} from "../api/adminApi";
 import { useI18n } from "../../../i18n";
+import { SpinnerIcon, AlertCircleIcon } from "../../../components/Icons";
+import { EmptyState as BaseEmptyState } from "../../../components/EmptyState";
+export { PageHeading } from "../../../components/ui/PageHeading";
 
 export function relativeTime(value: string | null, locale: string): string {
   if (!value) return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(0, "second");
@@ -105,61 +112,176 @@ export function LoadingState({ label }: { label?: string }) {
   const { t } = useI18n();
   return (
     <div
-      className="flex min-h-40 items-center justify-center text-sm text-neutral-500"
+      className="flex min-h-40 items-center justify-center gap-2 text-sm text-neutral-500"
       role="status"
     >
-      {label ?? t("common.loading")}
+      <SpinnerIcon className="h-5 w-5 text-neutral-500" />
+      <span>{label ?? t("common.loading")}</span>
     </div>
   );
 }
-export function ErrorState({ onRetry }: { onRetry: () => void }) {
+export function ErrorState({ onRetry, message }: { onRetry?: () => void; message?: string }) {
   const { t } = useI18n();
   return (
     <div
-      className="rounded-lg border border-border bg-surface px-5 py-10 text-center"
+      className="rounded-xl border border-danger-border bg-danger-soft/30 px-5 py-8 text-center"
       role="alert"
     >
-      <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
-        {t("admin.loadSectionError")}
+      <AlertCircleIcon className="mx-auto mb-2 h-6 w-6 text-danger-strong" />
+      <p className="text-sm font-medium text-danger-strong">
+        {message ?? t("admin.loadSectionError")}
       </p>
-      <button type="button" onClick={onRetry} className="button-secondary mt-4">
-        {t("common.retry")}
-      </button>
+      {onRetry && (
+        <button type="button" onClick={onRetry} className="button-secondary mt-4">
+          {t("common.retry")}
+        </button>
+      )}
     </div>
   );
 }
-export function EmptyState({ children }: { children: ReactNode }) {
-  return (
-    <div className="rounded-lg border border-dashed border-border px-5 py-12 text-center text-sm text-neutral-500">
-      {children}
-    </div>
-  );
-}
-
-export function PageHeading({
-  eyebrow,
-  title,
-  description,
+export function EmptyState({
+  children,
+  icon,
+  actionLabel,
+  onActionClick,
+  compact = true,
 }: {
-  eyebrow: string;
-  title: string;
-  description: string;
+  children?: ReactNode;
+  icon?: ReactNode;
+  actionLabel?: string;
+  onActionClick?: () => void;
+  compact?: boolean;
 }) {
   return (
-    <div>
-      <p className="text-xs font-medium uppercase tracking-[0.12em] text-neutral-500">
-        {eyebrow}
-      </p>
-      <h2 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-100">
-        {title}
-      </h2>
-      <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-        {description}
-      </p>
-    </div>
+    <BaseEmptyState
+      compact={compact}
+      icon={icon}
+      actionLabel={actionLabel}
+      onActionClick={onActionClick}
+    >
+      {children}
+    </BaseEmptyState>
   );
 }
 
 export function timeTitle(value: string | null, locale: string) {
   return value ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(0, "second");
+}
+
+export function JourneyBadge({
+  journey,
+  compact = false,
+}: {
+  journey?: JourneySnapshot | null;
+  compact?: boolean;
+}) {
+  const { t, locale, number } = useI18n();
+  if (!journey) {
+    return (
+      <span className="status-badge status-neutral">
+        {t("admin.journeyNotStartedBadge")}
+      </span>
+    );
+  }
+  const isTask0 = journey.nodeCode === "TASK_0";
+  const isFinished = journey.nodeCode === "FINAL_REPORT";
+  const isNotStarted = isTask0 && journey.nodeApps === 0;
+  const title =
+    (locale === "ar" ? journey.titleAr : journey.titleEn) ?? journey.nodeCode;
+  const weekLabel =
+    journey.week === 0
+      ? t("admin.journeyWeek0")
+      : t("admin.journeyWeekN", { week: number(journey.week) });
+  const required = Math.max(0, journey.requiredApps);
+  const current = Math.min(
+    required > 0 ? required : journey.nodeApps,
+    Math.max(0, journey.nodeApps),
+  );
+  const pct =
+    required > 0 ? Math.min(100, Math.round((current / required) * 100)) : 100;
+
+  const badgeTone = isFinished
+    ? "status-success"
+    : isNotStarted
+      ? "status-warning"
+      : "status-info";
+
+  if (compact) {
+    return (
+      <span className={`status-badge ${badgeTone}`}>
+        {isFinished
+          ? t("admin.journeyCompletedBadge")
+          : `${weekLabel} · ${number(current)}/${number(required)}`}
+      </span>
+    );
+  }
+
+  return (
+    <div className="space-y-1.5 min-w-40">
+      <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs">
+        <span className={`status-badge ${badgeTone}`}>
+          {isFinished ? t("admin.journeyCompletedBadge") : weekLabel}
+        </span>
+        {!isFinished && required > 0 && (
+          <span className="font-semibold tabular-nums text-neutral-700 dark:text-neutral-200">
+            {number(current)} / {number(required)}
+          </span>
+        )}
+      </div>
+      <p className="truncate text-[11px] text-neutral-500" title={title}>
+        {title}
+      </p>
+      {!isFinished && required > 0 && (
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800">
+          <div
+            className={`h-full rounded-full transition-all ${isNotStarted ? "bg-warning-strong" : "bg-info-strong"}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function AttentionReasonBadges({
+  reasons,
+}: {
+  reasons: AttentionReason[];
+}) {
+  const { t, number } = useI18n();
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {reasons.map((reason) => {
+        const label =
+          reason.code === "PROFILE_INCOMPLETE"
+            ? t("admin.reasonProfileIncomplete")
+            : reason.code === "JOURNEY_NOT_STARTED"
+              ? t("admin.reasonJourneyNotStarted", {
+                  days: number(reason.days ?? 0),
+                })
+              : reason.code === "JOURNEY_STALLED"
+                ? t("admin.reasonJourneyStalled", {
+                    days: number(reason.days ?? 0),
+                  })
+                : reason.code === "OVERDUE_TASKS"
+                  ? t("admin.reasonOverdueTasks", {
+                      count: number(reason.count ?? 0),
+                    })
+                  : t("admin.reasonInactive", {
+                      days: number(reason.days ?? 0),
+                    });
+        const tone =
+          reason.severity >= 4
+            ? "status-danger"
+            : reason.severity >= 3
+              ? "status-warning"
+              : "status-neutral";
+        return (
+          <span key={reason.code} className={`status-badge ${tone}`}>
+            {label}
+          </span>
+        );
+      })}
+    </div>
+  );
 }

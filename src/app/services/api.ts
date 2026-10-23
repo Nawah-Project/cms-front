@@ -6,8 +6,9 @@ import type {
   Outcome,
   Stage,
   UpdateApplicationInput,
+  ApplicationsResponse,
 } from "../types";
-import { notifyAuthSessionExpired } from "../utils/authSession";
+import { apiClient } from "../lib/api-client";
 import type {
   ProfessionalDevelopmentSummary,
   ProfessionalTask,
@@ -21,27 +22,6 @@ import type {
   FeedbackScope,
   FeedbackUnreadCount,
 } from "../features/professional-development/types";
-
-/**
- * Clean API service layer for consuming the Job Application Tracking backend.
- * Uses VITE_API_URL (defaults to http://localhost:3000).
- */
-const BASE_URL = (
-  (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
-  "http://localhost:3000"
-).replace(/\/$/, "");
-
-class ApiError extends Error {
-  public status: number;
-  public details?: any;
-
-  constructor(message: string, status: number, details?: any) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-    this.details = details;
-  }
-}
 
 function normalizeRecentApplications(value: unknown): DashboardApplication[] {
   if (!Array.isArray(value)) return [];
@@ -81,47 +61,18 @@ async function request<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const url = `${BASE_URL}${endpoint}`;
-  const headers = new Headers(options.headers || {});
-
-  if (!headers.has("Accept")) {
-    headers.set("Accept", "application/json");
-  }
-
-  if (options.body && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
-  }
-
-  const response = await fetch(url, {
-    ...options,
-    credentials: "include",
-    headers,
+  const method = (options.method || "GET") as
+    | "GET"
+    | "POST"
+    | "PUT"
+    | "PATCH"
+    | "DELETE";
+  const result = await apiClient.request<T>(endpoint, {
+    method,
+    body: options.body,
+    headers: options.headers as Record<string, string> | undefined,
   });
-
-  if (!response.ok) {
-    if (response.status === 401) notifyAuthSessionExpired();
-    let errorMessage = `Request failed with status ${response.status}`;
-    let details: any;
-    try {
-      const errorJson = await response.json();
-      if (Array.isArray(errorJson.message)) {
-        errorMessage = errorJson.message.join(", ");
-      } else {
-        errorMessage = errorJson.message || errorJson.error || errorMessage;
-      }
-      details = errorJson;
-    } catch {
-      const text = await response.text();
-      if (text) errorMessage = text;
-    }
-    throw new ApiError(errorMessage, response.status, details);
-  }
-
-  if (response.status === 204) {
-    return {} as T;
-  }
-
-  return response.json() as Promise<T>;
+  return (result === undefined ? ({} as T) : result);
 }
 
 export const api = {
@@ -135,12 +86,11 @@ export const api = {
     outcome?: string;
     search?: string;
     limit?: number;
-  }): Promise<Application[]> {
+  }): Promise<ApplicationsResponse> {
     const searchParams = new URLSearchParams();
-    const isActiveFilter = params?.stage === "ACTIVE";
 
-    // Forward valid backend stage enum to query params, avoid invalid "ACTIVE" string
-    if (params?.stage && !isActiveFilter) {
+    // The backend now natively supports stage=ACTIVE as well as individual stages
+    if (params?.stage) {
       searchParams.set("stage", params.stage);
     }
     if (params?.outcome) searchParams.set("outcome", params.outcome);
@@ -152,17 +102,30 @@ export const api = {
     const res = await request<any>(endpoint, { method: "GET" });
 
     let items: Application[] = [];
+    let total = 0;
+    let unfilteredTotal = 0;
+
     if (Array.isArray(res)) {
       items = res;
-    } else if (res && Array.isArray(res.data)) {
-      items = res.data;
+      total = res.length;
+      unfilteredTotal = res.length;
+    } else if (res && typeof res === "object") {
+      items = Array.isArray(res.items)
+        ? res.items
+        : Array.isArray(res.data)
+          ? res.data
+          : [];
+      total = typeof res.total === "number" ? res.total : items.length;
+      unfilteredTotal =
+        typeof res.unfilteredTotal === "number" ? res.unfilteredTotal : total;
     }
 
-    if (isActiveFilter) {
+    if (params?.stage === "ACTIVE" && items.some((app) => app.stage === "CLOSED")) {
       items = items.filter((app) => app.stage !== "CLOSED");
+      total = items.length;
     }
 
-    return items;
+    return { items, total, unfilteredTotal };
   },
 
   /**
@@ -200,6 +163,27 @@ export const api = {
     if (input.jobUrl?.trim()) {
       payload.jobUrl = input.jobUrl.trim();
     }
+    if (input.isTailored !== undefined) {
+      payload.isTailored = input.isTailored;
+    }
+    if (input.journeyWeek !== undefined) {
+      payload.journeyWeek = input.journeyWeek;
+    }
+    if (input.hasAssignment !== undefined) {
+      payload.hasAssignment = input.hasAssignment;
+    }
+    if (input.interviewDate?.trim()) {
+      payload.interviewDate = input.interviewDate.trim();
+    }
+    if (input.prepChecklist !== undefined) {
+      payload.prepChecklist = input.prepChecklist;
+    }
+    if (input.interviewNotes?.trim()) {
+      payload.interviewNotes = input.interviewNotes.trim();
+    }
+    if (input.sharedWithGroup !== undefined) {
+      payload.sharedWithGroup = input.sharedWithGroup;
+    }
 
     const res = await request<any>("/applications", {
       method: "POST",
@@ -234,6 +218,26 @@ export const api = {
     if (input.jobUrl !== undefined) {
       payload.jobUrl =
         input.jobUrl && input.jobUrl.trim() ? input.jobUrl.trim() : null;
+    }
+    if (input.isTailored !== undefined) {
+      payload.isTailored = input.isTailored;
+    }
+    if (input.hasAssignment !== undefined) {
+      payload.hasAssignment = input.hasAssignment;
+    }
+    if (input.interviewDate !== undefined) {
+      payload.interviewDate = input.interviewDate || null;
+    }
+    if (input.prepChecklist !== undefined) {
+      payload.prepChecklist = input.prepChecklist;
+    }
+    if (input.interviewNotes !== undefined) {
+      payload.interviewNotes = input.interviewNotes
+        ? input.interviewNotes.trim()
+        : null;
+    }
+    if (input.sharedWithGroup !== undefined) {
+      payload.sharedWithGroup = input.sharedWithGroup;
     }
 
     const res = await request<any>(`/applications/${encodeURIComponent(id)}`, {
@@ -282,6 +286,8 @@ export const api = {
           recentApplications: normalizeRecentApplications(
             data.recentApplications,
           ),
+          expiringSoonCount: Number(data.expiringSoonCount) || 0,
+          recentNoResponseCount: Number(data.recentNoResponseCount) || 0,
         };
       }
 
@@ -317,6 +323,8 @@ export const api = {
         recentApplications: normalizeRecentApplications(
           data.recentApplications,
         ),
+        expiringSoonCount: Number(data.expiringSoonCount) || 0,
+        recentNoResponseCount: Number(data.recentNoResponseCount) || 0,
       };
     }
 
@@ -329,6 +337,8 @@ export const api = {
         withdrawn: 0,
         noResponse: 0,
       },
+      expiringSoonCount: 0,
+      recentNoResponseCount: 0,
       recentApplications: [],
     };
   },

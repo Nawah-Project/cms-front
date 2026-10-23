@@ -10,8 +10,9 @@ export default [
   route("auth/register", "features/auth/pages/RegisterPage.tsx"),
   // UI layout and pages
   layout("routes/layout.tsx", [
-    index("routes/dashboard.tsx"),
+    index("routes/IndexRedirect.tsx"),
     route("applications", "routes/applications.tsx"),
+    route("reports", "features/reports/pages/ReportsPage.tsx"),
     route(
       "professional-development",
       "features/professional-development/pages/TasksPage.tsx",
@@ -35,6 +36,7 @@ export default [
       ),
       route("groups", "features/admin/AdminGroupsPage.tsx"),
       route("activity", "features/admin/AdminActivityPage.tsx"),
+      route("notifications", "features/admin/AdminNotificationsPage.tsx"),
     ]),
   ]),
 ] satisfies RouteConfig;

@@ -98,4 +98,46 @@ export default {
   closeApplication: "Close application",
   selectOutcome: "Select the final outcome for this application:",
   confirmClose: "Confirm and close",
+  tableViewLockedTooltip:
+    "🔒 {remaining} more application(s) needed to reach 10 and unlock Advanced Table View ({current}/10)",
+  isTailoredLabel:
+    "Tailored Application for this role (Custom CV / Cover Letter)",
+  isTailoredHint:
+    "Counts toward your Tailored Applications quota in Weeks 2, 3, and 4.",
+  sharedWithGroupLabel:
+    "Share this job opportunity with my cohort group members",
+  sharedWithGroupHint:
+    "Appears in your group's Recent Activity feed with a 1-click button for peers to apply.",
+  tailoredBadge: "Tailored Application",
+  tailoredShort: "Tailored",
+  compassTitle: "Smart Job Market Compass",
+  compassSubtitle:
+    "Select a target market and launch pre-filtered job board searches while auto-drafting your application.",
+  compassShow: "Show Compass",
+  compassHide: "Hide Compass",
+  compassTargetMarket: "Target Market",
+  locationEgypt: "Egypt",
+  locationSaudi: "Saudi Arabia",
+  locationUAE: "UAE",
+  locationRemote: "Remote",
+  enableAssignmentPrep: "Company requested an assignment / Open Prep Workspace",
+  prepWorkspaceBadge: "Interview & Assignment Prep Workspace",
+  prepWorkspaceTitle: "Interview & Technical Assignment Preparation",
+  prepWorkspaceSubtitle:
+    "Track your preparation checklist, interview date, and post-interview reflections for your Day 7 Review.",
+  savePrepWorkspace: "Save Prep Notes",
+  hasAssignmentLabel: "Company requested a Technical Assignment",
+  hasAssignmentHint:
+    "Enabling this activates the prep workspace and counts toward interview/assignment milestones.",
+  interviewDateLabel: "Interview Date / Assignment Deadline:",
+  prepChecklistLabel: "Preparation Checklist:",
+  addPrepStepPlaceholder: "Add a preparation step…",
+  addPrepStep: "Add",
+  interviewNotesLabel:
+    "Post-Interview / Assignment Reflections (For Day 7 Review):",
+  interviewNotesHint:
+    "Log questions asked, key takeaways, and areas to improve for your end-of-week optimization lab.",
+  interviewNotesPlaceholder:
+    "Write down key interview questions, technical trade-offs discussed, or feedback…",
+  day7SyncNotice: "Saved automatically for your Day 7 Review Station.",
 } as const;

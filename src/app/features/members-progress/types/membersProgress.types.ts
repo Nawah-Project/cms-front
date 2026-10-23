@@ -29,6 +29,12 @@ export interface MemberProgress {
 
 export interface RecentMemberProgress {
   id: string;
+  activityType?:
+    | "APPLICATION"
+    | "SHARED_APPLICATION"
+    | "STAGE_TRANSITION"
+    | "SIDE_TASK";
+  sharedWithGroup?: boolean;
   memberId: string;
   member: MemberSummary;
   application: {
@@ -37,7 +43,18 @@ export interface RecentMemberProgress {
     jobTitle: string;
     jobUrl: string | null;
     applicationMethod: string | null;
+    sharedWithGroup?: boolean;
+    isTailored?: boolean;
   };
+  sideTask?: {
+    id: string;
+    type: string;
+    nodeCode: string;
+    journeyWeek: number;
+    postUrl: string | null;
+    postTopic: string | null;
+    reviewSummary: string | null;
+  } | null;
   fromStage: Stage | null;
   toStage: Stage;
   outcome: Exclude<Outcome, "NONE"> | null;

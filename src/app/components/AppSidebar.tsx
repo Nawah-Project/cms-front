@@ -1,10 +1,18 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router";
+import { Lock } from "lucide-react";
 import { useAuth } from "../features/auth/store/authStore";
 import { useLogout } from "../features/auth/hooks/useLogout";
 import { useI18n } from "../i18n";
-import { ThemeToggle } from "../theme/ThemeToggle";
 import { GlobeIcon } from "./Icons";
+import { NotificationCenter } from "./NotificationCenter";
+import { useJourneyState } from "../features/journey/api/journeyApi";
+import {
+  canAccessGroupSection,
+  canAccessProfessionalDevelopment,
+} from "../features/journey/lib/journey-policies";
+import { ContextualLockBubble } from "./ui/ContextualLockBubble";
+import { openJourneyTasksPanel } from "./journeyTasksPanelEvents";
 
 type NavItem = {
   labelKey: string;
@@ -12,17 +20,22 @@ type NavItem = {
   icon:
     | "dashboard"
     | "applications"
+    | "reports"
     | "development"
     | "members"
     | "profile"
     | "admin";
 };
 const NAV_ITEMS: NavItem[] = [
-  { labelKey: "common.navDashboard", to: "/", icon: "dashboard" },
   {
     labelKey: "common.navApplications",
     to: "/applications",
     icon: "applications",
+  },
+  {
+    labelKey: "common.navReports",
+    to: "/reports",
+    icon: "reports",
   },
   {
     labelKey: "common.navProfessionalDevelopment",
@@ -59,6 +72,16 @@ function NavIcon({ name }: { name: NavItem["icon"] }) {
           strokeLinecap="round"
           strokeLinejoin="round"
           d="M8 5.5h-2A2.5 2.5 0 0 0 3.5 8v10A2.5 2.5 0 0 0 6 20.5h12a2.5 2.5 0 0 0 2.5-2.5V8A2.5 2.5 0 0 0 18 5.5h-2M8 5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5m-8 0h8m-8 5h8m-8 4h5"
+        />
+      </svg>
+    );
+  if (name === "reports")
+    return (
+      <svg {...common}>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"
         />
       </svg>
     );
@@ -111,8 +134,8 @@ function NavIcon({ name }: { name: NavItem["icon"] }) {
 }
 
 function isActive(pathname: string, item: NavItem) {
-  if (item.to === "/") return pathname === "/";
-  if (item.to === "/applications") return pathname.startsWith("/applications");
+  if (item.to === "/applications")
+    return pathname === "/applications" || pathname.startsWith("/applications/");
   return pathname === item.to || pathname.startsWith(`${item.to}/`);
 }
 
@@ -122,6 +145,16 @@ export function AppSidebar() {
   const { user } = useAuth();
   const { t, locale, setLocale } = useI18n();
   const logout = useLogout();
+  const {
+    data: journeyData,
+    isLoading: journeyLoading,
+  } = useJourneyState({ enabled: Boolean(user) });
+  const isGroupUnlocked = canAccessGroupSection(journeyData, user);
+  const isProfDevUnlocked = canAccessProfessionalDevelopment(journeyData, user);
+  const [openLockedBubbleKey, setOpenLockedBubbleKey] = useState<string | null>(
+    null,
+  );
+
   const today = new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
     new Date(),
   );
@@ -135,7 +168,7 @@ export function AppSidebar() {
       className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-neutral-700 px-2.5 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-info-strong"
     >
       <GlobeIcon className="h-4 w-4" />
-      <span>{locale === "ar" ? "English" : "العربية"}</span>
+      <span>{locale === "ar" ? "ع" : "EN"}</span>
     </button>
   );
 
@@ -144,16 +177,94 @@ export function AppSidebar() {
       (item) => item.to !== "/admin" || user?.role === "ADMIN",
     ).map((item) => {
       const active = isActive(location.pathname, item);
+      const isLocked =
+        !journeyLoading &&
+        ((item.to === "/members-progress" && !isGroupUnlocked) ||
+          (item.to === "/professional-development" && !isProfDevUnlocked));
+
+      const className = `flex items-center justify-between gap-3 rounded-lg px-3 py-3 text-sm transition duration-150 hover:scale-[1.01] ${
+        mobile
+          ? active && !isLocked
+            ? "bg-neutral-100 font-medium text-neutral-950 shadow-xs"
+            : isLocked
+              ? "text-neutral-400 hover:bg-neutral-50/60 hover:text-neutral-500"
+              : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+          : active && !isLocked
+            ? "bg-neutral-700 font-medium text-white shadow-xs"
+            : isLocked
+              ? "text-neutral-500 hover:bg-neutral-800/60 hover:text-neutral-400"
+              : "text-neutral-300 hover:bg-neutral-800 hover:text-white"
+      }`;
+
+      const content = (
+        <>
+          <span className="flex min-w-0 items-center gap-3">
+            <NavIcon name={item.icon} />
+            <span className="truncate">{t(item.labelKey)}</span>
+          </span>
+          {isLocked && (
+            <span
+              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300"
+              aria-label={t("journey.lockedBadge")}
+            >
+              <Lock className="h-3 w-3" aria-hidden="true" />
+            </span>
+          )}
+        </>
+      );
+
+      if (isLocked) {
+        const bubbleKey = `${mobile ? "m" : "d"}-${item.to}`;
+        const isBubbleOpen = openLockedBubbleKey === bubbleKey;
+        const lockTitle =
+          item.to === "/professional-development"
+            ? t("common.navProfessionalDevelopment")
+            : t("common.navMembersProgress");
+        const lockRequirement =
+          item.to === "/professional-development"
+            ? t("journey.profDevLockedTooltip")
+            : t("journey.groupLockedTooltip");
+
+        return (
+          <div key={item.to} className="relative">
+            <button
+              type="button"
+              onClick={() =>
+                setOpenLockedBubbleKey((prev) =>
+                  prev === bubbleKey ? null : bubbleKey,
+                )
+              }
+              aria-expanded={isBubbleOpen}
+              className={`${className} w-full text-start cursor-pointer`}
+            >
+              {content}
+            </button>
+            <ContextualLockBubble
+              isOpen={isBubbleOpen}
+              onClose={() => setOpenLockedBubbleKey(null)}
+              title={lockTitle}
+              requirement={lockRequirement}
+              ctaLabel={t("journey.panelTitle")}
+              onCtaClick={() => {
+                if (mobile) setMobileOpen(false);
+                setOpenLockedBubbleKey(null);
+                openJourneyTasksPanel();
+              }}
+              placement={mobile ? "bottom" : "inline-end"}
+            />
+          </div>
+        );
+      }
+
       return (
         <Link
           key={item.to}
           to={item.to}
           onClick={() => mobile && setMobileOpen(false)}
           aria-current={active ? "page" : undefined}
-          className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition duration-150 hover:scale-[1.01] ${mobile ? (active ? "bg-neutral-100 font-medium text-neutral-950 shadow-xs" : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900") : active ? "bg-neutral-700 font-medium text-white shadow-xs" : "text-neutral-300 hover:bg-neutral-800 hover:text-white"}`}
+          className={className}
         >
-          <NavIcon name={item.icon} />
-          <span>{t(item.labelKey)}</span>
+          {content}
         </Link>
       );
     });
@@ -187,19 +298,21 @@ export function AppSidebar() {
 
   return (
     <>
-      <aside className="fixed inset-y-0 start-0 z-40 hidden w-64 flex-col border-e border-neutral-800 bg-neutral-900 px-5 py-7 lg:flex">
-        <div className="mb-10 flex items-start justify-between gap-2 px-2">
+      <aside className="fixed inset-y-0 start-0 z-[65] hidden w-64 flex-col border-e border-neutral-800 bg-neutral-900 px-5 py-7 lg:flex">
+        <div className="mb-8 px-1">
           <Link
             to="/"
-            className="flex min-w-0 flex-1 items-start gap-3 text-sm font-semibold tracking-tight text-white"
+            className="flex min-w-0 items-start gap-3 text-sm font-semibold tracking-tight text-white"
           >
             <img
               src="/nawah-logo.svg"
               alt=""
               className="h-9 w-9 shrink-0 rounded-md object-contain"
             />
-            <span className="min-w-0 pt-0.5">
-              <span className="block whitespace-normal break-words leading-tight">{t("common.brand")}</span>
+            <span className="min-w-0 flex-1 pt-0.5">
+              <span className="block whitespace-nowrap leading-tight">
+                {t("common.brand")}
+              </span>
               <time
                 className="mt-1 block text-xs font-normal tracking-normal text-neutral-400"
                 dateTime={new Date().toISOString()}
@@ -208,9 +321,9 @@ export function AppSidebar() {
               </time>
             </span>
           </Link>
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="mt-3 flex items-center justify-end gap-1.5">
+            <NotificationCenter variant="dark" />
             {localeToggle}
-            <ThemeToggle />
           </div>
         </div>
         <nav aria-label={t("common.primaryNavigation")} className="space-y-1">
@@ -221,7 +334,7 @@ export function AppSidebar() {
         </div>
       </aside>
 
-      <header className="sticky top-0 z-40 border-b border-border bg-surface/95 px-5 py-3.5 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95 lg:hidden">
+      <header className="sticky top-0 z-[65] border-b border-border bg-surface/95 px-5 py-3.5 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95 lg:hidden">
         <div className="flex items-center justify-between">
           <div className="flex min-w-0 items-start gap-3">
             <Link
@@ -234,7 +347,9 @@ export function AppSidebar() {
                 className="h-8 w-8 shrink-0 rounded-md object-contain"
               />
               <span className="min-w-0 pt-0.5">
-                <span className="block whitespace-normal break-words leading-tight">{t("common.brand")}</span>
+                <span className="block whitespace-normal break-words leading-tight">
+                  {t("common.brand")}
+                </span>
                 <time
                   className="mt-0.5 block text-[11px] font-normal tracking-normal text-neutral-500"
                   dateTime={new Date().toISOString()}
@@ -243,12 +358,10 @@ export function AppSidebar() {
                 </time>
               </span>
             </Link>
-            <div className="flex items-center gap-1.5 shrink-0">
-              {localeToggle}
-              <ThemeToggle />
-            </div>
+            {localeToggle}
           </div>
           <div className="flex items-center gap-2">
+            <NotificationCenter variant="light" />
             <button
               type="button"
               aria-label={

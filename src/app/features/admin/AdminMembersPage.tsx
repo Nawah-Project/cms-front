@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router";
 import {
   adminApi,
   type ActivityStatus,
@@ -7,18 +8,21 @@ import {
 } from "./api/adminApi";
 import { AdminMemberDetail } from "./components/AdminMemberDetail";
 import { useI18n } from "../../i18n";
-import { useToast } from "../../components/Toast";
 import {
   ActivityBadge,
   EmptyState,
   ErrorState,
   Initials,
+  JourneyBadge,
   LoadingState,
   PageHeading,
   relativeTime,
   StageCounts,
   timeTitle,
 } from "./components/AdminUI";
+import { Modal } from "../../components/ui/Modal";
+import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { useToast } from "../../components/ui/ToastProvider";
 
 const statuses: ActivityStatus[] = [
   "ACTIVE",
@@ -27,16 +31,21 @@ const statuses: ActivityStatus[] = [
   "NEVER_ACTIVE",
 ];
 export default function AdminMembersPage() {
-  const { t, tp, locale } = useI18n();
-  const { showToast } = useToast();
+  const { t, tp, locale, number } = useI18n();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialGroup = searchParams.get("group") || "ALL";
+  const toast = useToast();
   const [members, setMembers] = useState<AdminMember[]>([]);
   const [groups, setGroups] = useState<AdminGroup[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [status, setStatus] = useState<"ALL" | ActivityStatus>("ALL");
-  const [group, setGroup] = useState("ALL");
+  const [group, setGroup] = useState(initialGroup);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selected, setSelected] = useState<AdminMember | null>(null);
   const [removing, setRemoving] = useState<AdminMember | null>(null);
   const [assigning, setAssigning] = useState<AdminMember | null>(null);
@@ -45,20 +54,41 @@ export default function AdminMembersPage() {
   const [assignLoading, setAssignLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [actionError, setActionError] = useState("");
+
+  const PAGE_SIZE = 12;
+
+  useEffect(() => {
+    const urlGroup = searchParams.get("group") || "ALL";
+    if (urlGroup !== group) {
+      setGroup(urlGroup);
+      setPage(1);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchInput.trim());
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
+
   const load = () => {
     setLoading(true);
     setError(false);
     void Promise.all([
       adminApi.users({
         page,
-        limit: 100,
+        limit: PAGE_SIZE,
         ...(status === "ALL" ? {} : { activityStatus: status }),
+        ...(group === "ALL" ? {} : { groupId: group }),
+        ...(debouncedSearch ? { search: debouncedSearch } : {}),
       }),
       adminApi.groups(),
     ])
       .then(([result, groupResult]) => {
         setMembers(result.items);
         setTotalPages(result.totalPages);
+        setTotalCount(result.total);
         setGroups(groupResult.items);
       })
       .catch(() => setError(true))
@@ -66,13 +96,8 @@ export default function AdminMembersPage() {
   };
   useEffect(() => {
     load();
-  }, [page, status]);
-  const filtered = members.filter(
-    (member) =>
-      (status === "ALL" || member.activityStatus === status) &&
-      (group === "ALL" ||
-        (group === "UNASSIGNED" ? !member.group : member.group?.id === group)),
-  );
+  }, [page, status, group, debouncedSearch]);
+  const filtered = members;
   const availableGroups = groups.filter((item) => item.availableSlots > 0);
   const openAssignment = (member: AdminMember) => {
     setActionError("");
@@ -85,18 +110,22 @@ export default function AdminMembersPage() {
     setActionError("");
     try {
       await adminApi.removeFromGroup(removing.group.id, removing.id);
-      const successMsg = t("admin.removedSuccess", { name: removing.name, group: removing.group.name });
+      const successMsg = t("admin.removedSuccess", {
+        name: removing.name,
+        group: removing.group.name,
+      });
       setMessage(successMsg);
-      showToast(successMsg, "success");
-      setGroup("UNASSIGNED");
+      toast.success(successMsg);
       if (selected?.id === removing.id)
         setSelected({ ...selected, group: null });
       setRemoving(null);
       load();
-    } catch (err) {
-      const errText = t("admin.actionFailed");
-      setActionError(errText);
-      showToast(errText, "error");
+    } catch (err: any) {
+      setActionError(
+        err?.code === "PERMISSION_DENIED"
+          ? t("admin.permissionError")
+          : t("admin.actionFailed"),
+      );
     } finally {
       setRemoveLoading(false);
     }
@@ -107,17 +136,22 @@ export default function AdminMembersPage() {
     setActionError("");
     try {
       const result = await adminApi.assignToGroup(assigning.id, targetGroupId);
-      const successMsg = t("admin.assignedSuccess", { name: assigning.name, group: result.group.name });
+      const successMsg = t("admin.assignedSuccess", {
+        name: assigning.name,
+        group: result.group.name,
+      });
       setMessage(successMsg);
-      showToast(successMsg, "success");
+      toast.success(successMsg);
       if (selected?.id === assigning.id)
         setSelected({ ...selected, group: result.group });
       setAssigning(null);
       load();
-    } catch (err) {
-      const errText = t("admin.actionFailed");
-      setActionError(errText);
-      showToast(errText, "error");
+    } catch (err: any) {
+      setActionError(
+        err?.code === "PERMISSION_DENIED"
+          ? t("admin.permissionError")
+          : t("admin.actionFailed"),
+      );
     } finally {
       setAssignLoading(false);
     }
@@ -145,7 +179,20 @@ export default function AdminMembersPage() {
         </div>
       )}
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-end gap-3 flex-1">
+          <label className="grid gap-1 text-xs text-neutral-500 min-w-60 flex-1 max-w-xs">
+            {t("admin.member")}
+            <input
+              type="search"
+              value={searchInput}
+              onChange={(event) => {
+                setSearchInput(event.target.value);
+                setPage(1);
+              }}
+              placeholder={t("admin.searchPlaceholder")}
+              className="field-control w-full"
+            />
+          </label>
           <label className="grid gap-1 text-xs text-neutral-500">
             {t("admin.statusFilter")}
             <select
@@ -169,7 +216,17 @@ export default function AdminMembersPage() {
             <select
               className="field-control min-w-40"
               value={group}
-              onChange={(event) => setGroup(event.target.value)}
+              onChange={(event) => {
+                const next = event.target.value;
+                setGroup(next);
+                setPage(1);
+                setSearchParams((prev) => {
+                  const updated = new URLSearchParams(prev);
+                  if (next === "ALL") updated.delete("group");
+                  else updated.set("group", next);
+                  return updated;
+                });
+              }}
             >
               <option value="ALL">{t("admin.allGroups")}</option>
               {groups.map((item) => (
@@ -182,7 +239,7 @@ export default function AdminMembersPage() {
           </label>
         </div>
         <p className="text-xs text-neutral-500">
-          {tp("common.memberCount", filtered.length)}
+          {tp("common.memberCount", totalCount || filtered.length)}
         </p>
       </div>
       {loading ? (
@@ -203,6 +260,7 @@ export default function AdminMembersPage() {
                 <tr>
                   <th className="data-table-cell">{t("admin.member")}</th>
                   <th className="data-table-cell">{t("admin.group")}</th>
+                  <th className="data-table-cell">{t("admin.journeyStage")}</th>
                   <th className="data-table-cell">{t("admin.applicationsProgress")}</th>
                   <th className="data-table-cell">{t("admin.lastActivity")}</th>
                   <th className="data-table-cell">{t("admin.status")}</th>
@@ -211,23 +269,49 @@ export default function AdminMembersPage() {
               </thead>
               <tbody>
                 {filtered.map((member) => (
-                  <tr key={member.id} className="data-table-row">
+                  <tr
+                    key={member.id}
+                    onClick={() => setSelected(member)}
+                    className="data-table-row cursor-pointer"
+                  >
                     <td className="data-table-cell">
                       <button
                         type="button"
                         onClick={() => setSelected(member)}
-                        className="flex items-center gap-3 rounded text-start focus-visible:outline-2 focus-visible:outline-info-strong"
+                        className="flex items-start gap-3 rounded text-start focus-visible:outline-2 focus-visible:outline-info-strong"
                       >
                         <Initials name={member.name} avatar={member.avatar} />
-                        <span className="font-medium text-neutral-900 dark:text-neutral-100">
-                          {member.name}
-                        </span>
+                        <div className="min-w-0">
+                          <span className="block font-medium text-neutral-900 dark:text-neutral-100">
+                            {member.name}
+                          </span>
+                          {member.email && (
+                            <span className="block truncate text-xs text-neutral-500">
+                              {member.email}
+                            </span>
+                          )}
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {member.profileComplete === false && (
+                              <span className="status-badge status-warning text-[10px]">
+                                {t("admin.profileIncompleteBadge")}
+                              </span>
+                            )}
+                            {member.emailVerified === false && (
+                              <span className="status-badge status-neutral text-[10px]">
+                                {t("admin.emailUnverifiedBadge")}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </button>
                     </td>
                     <td className="data-table-cell text-sm">
                       {member.group?.name ?? (
                         <span className="text-neutral-500">{t("common.unassigned")}</span>
                       )}
+                    </td>
+                    <td className="data-table-cell">
+                      <JourneyBadge journey={member.journey} />
                     </td>
                     <td className="data-table-cell">
                       <p className="mb-2 text-sm font-medium">
@@ -247,7 +331,10 @@ export default function AdminMembersPage() {
                         days={member.inactivityDays}
                       />
                     </td>
-                    <td className="data-table-cell">
+                    <td
+                      className="data-table-cell"
+                      onClick={(event) => event.stopPropagation()}
+                    >
                       {member.group ? (
                         <button
                           type="button"
@@ -255,7 +342,7 @@ export default function AdminMembersPage() {
                             setActionError("");
                             setRemoving(member);
                           }}
-                          className="button-danger px-3 py-2 text-xs"
+                          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:border-danger-border hover:bg-danger-soft hover:text-danger-strong"
                         >
                           {t("admin.removeFromGroup")}
                         </button>
@@ -287,13 +374,21 @@ export default function AdminMembersPage() {
                     className="flex min-w-0 items-center gap-3 text-start"
                   >
                     <Initials name={member.name} avatar={member.avatar} />
-                    <span className="truncate font-medium">{member.name}</span>
+                    <div className="min-w-0">
+                      <span className="block truncate font-medium">{member.name}</span>
+                      {member.email && (
+                        <span className="block truncate text-xs text-neutral-500">
+                          {member.email}
+                        </span>
+                      )}
+                    </div>
                   </button>
                   <ActivityBadge
                     status={member.activityStatus}
                     days={member.inactivityDays}
                   />
                 </div>
+                <JourneyBadge journey={member.journey} />
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-xs text-neutral-500">{t("admin.group")}</p>
@@ -374,68 +469,54 @@ export default function AdminMembersPage() {
         />
       )}
       {removing && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-neutral-950/45 p-4"
-          role="presentation"
-        >
-          <section
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="remove-member-title"
-            className="w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-xl"
-          >
-            <h2 id="remove-member-title" className="text-lg font-semibold">
-              {t("admin.removeTitle", { name: removing.name, group: removing.group?.name ?? "" })}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-              {t("admin.removeDescription")}
-            </p>
-            {actionError && (
-              <p role="alert" className="mt-3 text-sm text-danger-strong">
-                {actionError}
-              </p>
-            )}
-            <div className="mt-6 flex justify-end gap-2">
+        <ConfirmDialog
+          isOpen={!!removing}
+          onClose={() => setRemoving(null)}
+          onConfirm={() => void confirmRemoval()}
+          title={t("admin.removeTitle", {
+            name: removing.name,
+            group: removing.group?.name ?? "",
+          })}
+          message={t("admin.removeDescription")}
+          confirmLabel={t("admin.removeConfirm")}
+          cancelLabel={t("admin.cancel")}
+          isConfirming={removeLoading}
+          variant="danger"
+        />
+      )}
+      {assigning && (
+        <Modal
+          isOpen={!!assigning}
+          onClose={() => setAssigning(null)}
+          title={t("admin.assignTitle", { name: assigning.name })}
+          subtitle={t("admin.assignDescription")}
+          size="md"
+          disableClose={assignLoading}
+          footer={
+            <>
               <button
                 type="button"
-                disabled={removeLoading}
-                onClick={() => setRemoving(null)}
-                className="button-secondary"
+                disabled={assignLoading}
+                onClick={() => setAssigning(null)}
+                className="button-secondary text-sm"
               >
                 {t("admin.cancel")}
               </button>
               <button
                 type="button"
-                disabled={removeLoading}
-                onClick={() => void confirmRemoval()}
-                className="button-danger"
+                disabled={assignLoading || !targetGroupId}
+                onClick={() => void confirmAssignment()}
+                className="button-primary text-sm"
               >
-                {removeLoading ? t("admin.removing") : t("admin.removeConfirm")}
+                {assignLoading ? t("admin.adding") : t("admin.addToGroup")}
               </button>
-            </div>
-          </section>
-        </div>
-      )}
-      {assigning && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-neutral-950/45 p-4"
-          role="presentation"
+            </>
+          }
         >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="assign-member-title"
-            className="w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-xl"
-          >
-            <h2 id="assign-member-title" className="text-lg font-semibold">
-              {t("admin.assignTitle", { name: assigning.name })}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-              {t("admin.assignDescription")}
-            </p>
+          <div className="space-y-4">
             {availableGroups.length > 0 ? (
-              <label className="mt-5 grid gap-1.5 text-sm font-medium">
-                {t("admin.destinationGroup")}
+              <label className="grid gap-1.5 text-sm font-medium">
+                <span className="field-label">{t("admin.destinationGroup")}</span>
                 <select
                   className="field-control"
                   value={targetGroupId}
@@ -449,35 +530,17 @@ export default function AdminMembersPage() {
                 </select>
               </label>
             ) : (
-              <p className="mt-5 rounded-lg border border-warning-border bg-warning-soft px-3 py-2.5 text-sm text-warning-strong">
+              <p className="rounded-xl border border-warning-border bg-warning-soft px-3.5 py-2.5 text-sm text-warning-strong">
                 {t("admin.noCapacity")}
               </p>
             )}
             {actionError && (
-              <p role="alert" className="mt-3 text-sm text-danger-strong">
+              <p role="alert" className="text-sm text-danger-strong">
                 {actionError}
               </p>
             )}
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                type="button"
-                disabled={assignLoading}
-                onClick={() => setAssigning(null)}
-                className="button-secondary"
-              >
-                {t("admin.cancel")}
-              </button>
-              <button
-                type="button"
-                disabled={assignLoading || !targetGroupId}
-                onClick={() => void confirmAssignment()}
-                className="button-primary"
-              >
-                {assignLoading ? t("admin.adding") : t("admin.addToGroup")}
-              </button>
-            </div>
-          </section>
-        </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

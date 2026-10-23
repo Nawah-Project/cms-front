@@ -9,19 +9,53 @@ import type {
   FeedbackPost,
 } from "../../professional-development/types";
 import type { Stage } from "../../../types";
-import { notifyAuthSessionExpired } from "../../../utils/authSession";
+import { apiClient } from "../../../lib/api-client";
 
 export type ActivityStatus = "ACTIVE" | "WARNING" | "CRITICAL" | "NEVER_ACTIVE";
+export type ExperimentVariant = "A" | "B" | "C";
+export type UxConfig = {
+  defaultVariant: ExperimentVariant;
+  groupVariants: Record<string, ExperimentVariant>;
+  introVideoUrl: string;
+};
 export type StageCounts = {
   applied: number;
   interview: number;
   decision: number;
   closed: number;
 };
+export type JourneySnapshot = {
+  nodeCode: string;
+  week: number;
+  started: boolean;
+  nodeStartedAt: string | null;
+  completedNodes: number;
+  requiredApps: number;
+  nodeApps: number;
+  titleAr: string | null;
+  titleEn: string | null;
+  daysInNode: number | null;
+};
+export type AttentionReasonCode =
+  | "JOURNEY_NOT_STARTED"
+  | "JOURNEY_STALLED"
+  | "OVERDUE_TASKS"
+  | "PROFILE_INCOMPLETE"
+  | "INACTIVE";
+export type AttentionReason = {
+  code: AttentionReasonCode;
+  severity: number;
+  days?: number;
+  count?: number;
+};
 export type AdminMember = {
   id: string;
   name: string;
+  email?: string | null;
   role: "USER" | "ADMIN";
+  emailVerified?: boolean | null;
+  registeredAt?: string | null;
+  profileComplete?: boolean | null;
   group: { id: string; name: string } | null;
   lastActivityAt: string | null;
   inactivityDays: number | null;
@@ -29,6 +63,18 @@ export type AdminMember = {
   applicationsCount: number;
   currentStageCounts: StageCounts;
   avatar?: string | null;
+  development?: {
+    active: number;
+    inProgress: number;
+    overdue: number;
+    lastTaskAt: string | null;
+  };
+  journey?: JourneySnapshot | null;
+};
+export type AttentionItem = {
+  member: AdminMember;
+  reasons: AttentionReason[];
+  score: number;
 };
 export type AdminGroup = {
   id: string;
@@ -64,6 +110,12 @@ export type AdminOverview = {
   criticalUsersCount: number;
   neverActiveUsersCount: number;
   applicationsCount: number;
+  journey?: {
+    weeks: Array<{ week: number; members: number }>;
+    notStartedCount: number;
+    startedCount: number;
+    finishedCount: number;
+  };
 };
 export type AdminUserDetail = {
   user: {
@@ -71,11 +123,15 @@ export type AdminUserDetail = {
     name: string;
     email: string;
     role: "USER" | "ADMIN";
+    emailVerified?: boolean;
+    targetJobTitle?: string | null;
+    preferredLocations?: string[];
     createdAt: string;
     portfolioUrl: string | null;
     hasCv: boolean;
     group: { id: string; name: string } | null;
   };
+  journey?: JourneySnapshot | null;
   lastActivityAt: string | null;
   inactivityDays: number | null;
   activityStatus: ActivityStatus;
@@ -107,47 +163,48 @@ export type AdminUserDetail = {
   }>;
 };
 
-const BASE_URL = (
-  (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
-  "http://localhost:3000"
-).replace(/\/$/, "");
-
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  let response: Response;
   try {
-    response = await fetch(`${BASE_URL}${path}`, {
-      ...init,
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-        ...(init?.body ? { "Content-Type": "application/json" } : {}),
-        ...init?.headers,
-      },
+    const method = (init?.method || "GET") as
+      | "GET"
+      | "POST"
+      | "PUT"
+      | "PATCH"
+      | "DELETE";
+    return await apiClient.request<T>(path, {
+      method,
+      body: init?.body,
+      headers: init?.headers as Record<string, string> | undefined,
     });
-  } catch {
-    throw new Error("We couldn’t reach the server. Please try again.");
-  }
-  if (!response.ok) {
-    if (response.status === 401) notifyAuthSessionExpired();
+  } catch (err: any) {
+    const status = err?.status;
     const error = new Error(
-      response.status === 401 || response.status === 403
+      status === 401 || status === 403
         ? "You don’t have permission to access this admin page."
         : "We couldn’t complete that request. Please try again.",
-    ) as Error & { status?: number };
-    error.status = response.status;
+    ) as Error & { status?: number; code?: string };
+    error.status = status;
+    error.code =
+      status === 401 || status === 403
+        ? "PERMISSION_DENIED"
+        : "REQUEST_FAILED";
     throw error;
   }
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
 }
 
 export const adminApi = {
   overview: () => request<AdminOverview>("/admin/monitoring/overview"),
+  attention: (limit = 20) =>
+    request<{ total: number; items: AttentionItem[] }>(
+      `/admin/monitoring/attention?limit=${limit}`,
+    ),
   users: (
     params: {
       page?: number;
       limit?: number;
       activityStatus?: ActivityStatus;
+      search?: string;
+      groupId?: string;
     } = {},
   ) => {
     const query = new URLSearchParams();
@@ -155,6 +212,9 @@ export const adminApi = {
     if (params.limit) query.set("limit", String(params.limit));
     if (params.activityStatus)
       query.set("activityStatus", params.activityStatus);
+    if (params.search?.trim()) query.set("search", params.search.trim());
+    if (params.groupId && params.groupId !== "ALL")
+      query.set("groupId", params.groupId);
     return request<{
       items: AdminMember[];
       total: number;
@@ -164,10 +224,17 @@ export const adminApi = {
     }>(`/admin/monitoring/users?${query}`);
   },
   groups: () => request<{ items: AdminGroup[] }>("/admin/monitoring/groups"),
-  activity: (limit = 20) =>
-    request<{ items: AdminActivity[] }>(
-      `/admin/monitoring/activity?limit=${limit}`,
-    ),
+  activity: (params: number | { page?: number; limit?: number } = 20) => {
+    const page = typeof params === "number" ? 1 : params.page || 1;
+    const limit = typeof params === "number" ? params : params.limit || 20;
+    return request<{
+      items: AdminActivity[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }>(`/admin/monitoring/activity?page=${page}&limit=${limit}`);
+  },
   user: (id: string) =>
     request<AdminUserDetail>(
       `/admin/monitoring/users/${encodeURIComponent(id)}`,
@@ -262,4 +329,177 @@ export const adminApi = {
       `/admin/feedback/${encodeURIComponent(feedbackId)}/archive`,
       { method: "POST" },
     ),
+  uxAnalytics: () =>
+    request<any>("/admin/monitoring/ux-analytics"),
+  updateUxConfig: (input: {
+    defaultVariant?: ExperimentVariant;
+    groupVariants?: Record<string, ExperimentVariant>;
+    introVideoUrl?: string;
+  }) =>
+    request<UxConfig>("/admin/monitoring/ux-config", {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }),
+  notificationStats: () =>
+    request<NotificationStats>("/admin/notifications/stats"),
+  sendTestEmail: () =>
+    request<{ success: boolean; message: string }>(
+      "/admin/notifications/test-email",
+      { method: "POST" },
+    ),
+  previewRecipients: (input: {
+    targetType: "MEMBERS" | "GROUP" | "SMART_SEGMENT";
+    memberIds?: string[];
+    groupId?: string;
+    smartSegment?:
+      | "TASK_0_STALLED"
+      | "INACTIVE_7_DAYS"
+      | "OVERDUE_TASKS"
+      | "UNASSIGNED_GROUP";
+  }) =>
+    request<PreviewRecipientsResult>(
+      "/admin/notifications/preview-recipients",
+      {
+        method: "POST",
+        body: JSON.stringify(input),
+      },
+    ),
+  sendCustomNotification: (input: SendCustomNotificationInput) =>
+    request<{
+      success: boolean;
+      totalTargeted: number;
+      emailSentCount: number;
+      bellSentCount: number;
+      failedCount: number;
+      message: string;
+    }>("/admin/notifications/send", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  notificationLogs: (page = 1, limit = 20, filter = "ALL") =>
+    request<NotificationLogsPage>(
+      `/admin/notifications/logs?page=${page}&limit=${limit}&filter=${encodeURIComponent(filter)}`,
+    ),
+  retryNotificationLog: (logId: string) =>
+    request<{ success: boolean; message?: string }>(
+      `/admin/notifications/retry/${encodeURIComponent(logId)}`,
+      { method: "POST" },
+    ),
+  updateNotificationConfig: (input: UpdateNotificationConfigInput) =>
+    request<NotificationStats["config"]>("/admin/notifications/config", {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }),
+  remindUnverifiedUsers: () =>
+    request<{
+      success: boolean;
+      totalTargeted: number;
+      sentCount: number;
+      failedCount: number;
+      message: string;
+    }>("/admin/notifications/remind-unverified", { method: "POST" }),
+};
+
+export type NotificationSmtpStatus = {
+  configured: boolean;
+  active: boolean;
+  host?: string;
+  port?: number;
+  user?: string;
+  from?: string;
+  error?: string;
+};
+
+export type NotificationStats = {
+  smtp: NotificationSmtpStatus;
+  config: {
+    id: string;
+    dailyEmailLimit: number;
+    monthlyEmailLimit: number;
+    otpSafeReserve: number;
+    otpSafeReserveEnabled: boolean;
+    updatedAt: string;
+  };
+  daily: {
+    sent: number;
+    limit: number;
+    remaining: number;
+    percentUsed: number;
+    otpSafeReserve: number;
+    safeAvailableForBulk: number;
+  };
+  monthly: {
+    sent: number;
+    limit: number;
+    remaining: number;
+    percentUsed: number;
+  };
+  verification: {
+    verifiedUsers: number;
+    totalUsers: number;
+    unverifiedUsers: number;
+    verifiedPercent: number;
+  };
+};
+
+export type NotificationLogItem = {
+  id: string;
+  type: "VERIFICATION_OTP" | "MENTOR_DIRECT" | "SYSTEM_ANNOUNCEMENT";
+  recipientEmail: string;
+  recipientName: string | null;
+  userId: string | null;
+  subject: string;
+  status: "DELIVERED" | "FAILED" | "PENDING" | "SKIPPED";
+  errorMessage: string | null;
+  channel: string;
+  createdAt: string;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+};
+
+export type NotificationLogsPage = {
+  items: NotificationLogItem[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+};
+
+export type NotificationRecipient = {
+  id: string;
+  name: string;
+  email: string;
+  groupName: string | null;
+  currentQuestTitle: string | null;
+};
+
+export type PreviewRecipientsResult = {
+  count: number;
+  recipients: NotificationRecipient[];
+};
+
+export type SendCustomNotificationInput = {
+  targetType: "MEMBERS" | "GROUP" | "SMART_SEGMENT";
+  memberIds?: string[];
+  groupId?: string;
+  smartSegment?:
+    | "TASK_0_STALLED"
+    | "INACTIVE_7_DAYS"
+    | "OVERDUE_TASKS"
+    | "UNASSIGNED_GROUP";
+  channel: "EMAIL_AND_BELL" | "EMAIL_ONLY" | "BELL_ONLY";
+  subject: string;
+  body: string;
+  ctaLink?: string;
+  ctaText?: string;
+};
+
+export type UpdateNotificationConfigInput = {
+  dailyEmailLimit?: number;
+  monthlyEmailLimit?: number;
+  otpSafeReserve?: number;
+  otpSafeReserveEnabled?: boolean;
 };

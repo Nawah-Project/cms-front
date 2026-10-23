@@ -123,15 +123,21 @@ export function FeedbackFormDialog({
   const [lookupError, setLookupError] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [sendEmailNotification, setSendEmailNotification] = useState(true);
+  const [emailQuotaRemaining, setEmailQuotaRemaining] = useState<number | null>(null);
 
   const loadLookups = useCallback(async () => {
     setLookupLoading(true);
     setLookupError(false);
     try {
-      const [users, groupResult] = await Promise.all([
+      const [users, groupResult, notifStats] = await Promise.all([
         adminApi.users({ page: 1, limit: 100 }),
         adminApi.groups(),
+        adminApi.notificationStats().catch(() => null),
       ]);
+      if (notifStats?.daily?.remaining !== undefined) {
+        setEmailQuotaRemaining(notifStats.daily.remaining);
+      }
       const memberItems = users.items.filter(
         (member) => member.role === "USER",
       );
@@ -276,6 +282,7 @@ export function FeedbackFormDialog({
               : {}),
           }
         : null,
+      sendEmailNotification,
     };
 
     setBusy(true);
@@ -663,6 +670,29 @@ export function FeedbackFormDialog({
               </label>
             </div>
           </fieldset>
+
+          {!post && (
+            <div className="rounded-xl border border-border/80 bg-neutral-50/50 p-3.5 dark:bg-neutral-900/40">
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={sendEmailNotification}
+                  onChange={(e) => setSendEmailNotification(e.target.checked)}
+                  className="h-4 w-4 rounded border-border text-neutral-900 accent-neutral-900 focus:ring-neutral-900"
+                />
+                <div className="text-xs">
+                  <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                    إرسال نسخة تنبيهية إلى البريد الإلكتروني للعضو
+                  </span>
+                  {emailQuotaRemaining !== null && (
+                    <span className="text-neutral-500 mr-1 tabular-nums">
+                      (المتبقي اليوم: {emailQuotaRemaining} رسالة)
+                    </span>
+                  )}
+                </div>
+              </label>
+            </div>
+          )}
 
           <footer className="flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end">
             <button

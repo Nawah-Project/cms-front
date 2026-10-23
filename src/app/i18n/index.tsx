@@ -15,6 +15,7 @@ import arMembers from "./locales/ar/members";
 import arAdmin from "./locales/ar/admin";
 import arProfile from "./locales/ar/profile";
 import arProfessionalDevelopment from "./locales/ar/professionalDevelopment";
+import arJourney from "./locales/ar/journey";
 import enCommon from "./locales/en/common";
 import enAuth from "./locales/en/auth";
 import enApplications from "./locales/en/applications";
@@ -23,6 +24,7 @@ import enMembers from "./locales/en/members";
 import enAdmin from "./locales/en/admin";
 import enProfile from "./locales/en/profile";
 import enProfessionalDevelopment from "./locales/en/professionalDevelopment";
+import enJourney from "./locales/en/journey";
 
 export type Locale = "ar" | "en";
 export type Message = string | Partial<Record<Intl.LDMLPluralRule, string>>;
@@ -34,7 +36,8 @@ type Domain =
   | "members"
   | "admin"
   | "profile"
-  | "professionalDevelopment";
+  | "professionalDevelopment"
+  | "journey";
 type DomainMessages = Record<string, Message>;
 type Catalog = Record<Domain, DomainMessages>;
 
@@ -48,6 +51,7 @@ const catalogs: Record<Locale, Catalog> = {
     admin: arAdmin,
     profile: arProfile,
     professionalDevelopment: arProfessionalDevelopment,
+    journey: arJourney,
   },
   en: {
     common: enCommon,
@@ -58,6 +62,7 @@ const catalogs: Record<Locale, Catalog> = {
     admin: enAdmin,
     profile: enProfile,
     professionalDevelopment: enProfessionalDevelopment,
+    journey: enJourney,
   },
 };
 

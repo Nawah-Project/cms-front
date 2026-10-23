@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { useAuth } from "../../auth/store/authStore";
-import { PageHeading } from "../../admin/components/AdminUI";
+import { PageHeading } from "../../../components/ui/PageHeading";
+import { JourneyTieredInsights } from "../../journey/components/JourneyTieredInsights";
+import { EmptyState } from "../../../components/EmptyState";
 import { adminApi } from "../../admin/api/adminApi";
 import type { FeedbackContext, FeedbackPost, FeedbackScope } from "../types";
 import { api } from "../../../services/api";
 import { useI18n } from "../../../i18n";
+import { useJourneyState } from "../../journey/api/journeyApi";
+import { canAccessProfessionalDevelopment } from "../../journey/lib/journey-policies";
+import { LockedStateView } from "../../../components/ui/LockedStateView";
+import { openJourneyTasksPanel } from "../../../components/journeyTasksPanelEvents";
+import { SpinnerIcon } from "../../../components/Icons";
 import { ProfessionalDevelopmentNav } from "../components/ProfessionalDevelopmentNav";
 import { FeedbackCard } from "../components/FeedbackPresentation";
 import { FeedbackDetailDrawer } from "../components/FeedbackDetailDrawer";
@@ -33,7 +40,7 @@ function MemberFeedbackPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawScope = searchParams.get("scope");
   const scope: "all" | FeedbackScope =
-    rawScope === "all" ? "all" : rawScope === "shared" ? "shared" : "for-you";
+    rawScope === "for-you" ? "for-you" : rawScope === "shared" ? "shared" : "all";
   const feedbackId = searchParams.get("feedback");
   const [posts, setPosts] = useState<FeedbackPost[]>([]);
   const [page, setPage] = useState(1);
@@ -138,6 +145,9 @@ function MemberFeedbackPage() {
       <ProfessionalDevelopmentNav
         unreadCount={unreadCount.forYou + unreadCount.shared}
       />
+
+      {/* V4 Tiered Strategic Insights & Interactive AI Prompt Templates */}
+      <JourneyTieredInsights />
 
       <div className="space-y-4">
         <div className="space-y-3 rounded-xl border border-border bg-surface p-3 sm:p-4">
@@ -247,17 +257,16 @@ function MemberFeedbackPage() {
                 </button>
               </div>
             ) : !visiblePosts.length ? (
-              <section className="rounded-xl border border-dashed border-border bg-surface px-6 py-14 text-center">
-                <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-                  {t(
-                    contextFilter !== "ALL" || search.trim()
-                      ? "professionalDevelopment.noFilteredFeedback"
-                      : scope === "for-you"
-                        ? "professionalDevelopment.noDirectFeedback"
-                        : "professionalDevelopment.noSharedInsights",
-                  )}
-                </h2>
-              </section>
+              <EmptyState
+                compact
+                title={t(
+                  contextFilter !== "ALL" || search.trim()
+                    ? "professionalDevelopment.noFilteredFeedback"
+                    : scope === "for-you"
+                      ? "professionalDevelopment.noDirectFeedback"
+                      : "professionalDevelopment.noSharedInsights",
+                )}
+              />
             ) : (
               <div className="space-y-4">
                 {visiblePosts.map((post) => (
@@ -593,9 +602,55 @@ function AdminFeedbackPage() {
 
 export default function FeedbackInsightsPage() {
   const { user } = useAuth();
-  return user?.role === "ADMIN" ? (
-    <AdminFeedbackPage />
-  ) : (
-    <MemberFeedbackPage />
-  );
+  const navigate = useNavigate();
+  const { t } = useI18n();
+  const { data: journeyData, isLoading: journeyLoading } = useJourneyState({
+    enabled: Boolean(user),
+  });
+  const isUnlocked = canAccessProfessionalDevelopment(journeyData, user);
+
+  if (user?.role === "ADMIN") {
+    return <AdminFeedbackPage />;
+  }
+
+  if (journeyLoading) {
+    return (
+      <div className="flex min-h-56 items-center justify-center" role="status">
+        <SpinnerIcon className="h-6 w-6 animate-spin text-neutral-400" />
+      </div>
+    );
+  }
+
+  if (!isUnlocked) {
+    const taskZeroNode = journeyData?.nodes.find((n) => n.code === "TASK_0");
+    const currentApps = taskZeroNode?.progress?.apps?.current ?? 0;
+    const requiredApps = taskZeroNode?.progress?.apps?.required ?? 5;
+
+    return (
+      <main className="space-y-6">
+        <header className="space-y-1">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900">
+            {t("common.navProfessionalDevelopment")}
+          </h1>
+          <p className="text-sm text-neutral-500">
+            {t("professionalDevelopment.subtitle")}
+          </p>
+        </header>
+
+        <LockedStateView
+          title={t("journey.profDevLockedTitle")}
+          subtitle={t("journey.lockedBadge")}
+          description={t("journey.profDevLockedTooltip")}
+          progressCurrent={currentApps}
+          progressTotal={requiredApps}
+          primaryActionLabel={t("common.addApplication")}
+          onPrimaryAction={() => navigate("/applications")}
+          secondaryActionLabel={t("journey.panelTitle")}
+          onSecondaryAction={() => openJourneyTasksPanel()}
+        />
+      </main>
+    );
+  }
+
+  return <MemberFeedbackPage />;
 }

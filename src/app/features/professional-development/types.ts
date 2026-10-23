@@ -39,6 +39,8 @@ export interface FeedbackPost {
   archivedAt: string | null;
   isRead?: boolean;
   readAt?: string | null;
+  unlockTriggerCode?: string | null;
+  promptTemplate?: string | null;
 }
 
 export interface FeedbackPage {
@@ -87,6 +89,7 @@ export interface CreateFeedbackInput {
     type?: string;
     description?: string;
   } | null;
+  sendEmailNotification?: boolean;
 }
 
 export interface TaskChecklistItem {

@@ -5,6 +5,8 @@ import { adminApi } from "../../admin/api/adminApi";
 import { api } from "../../../services/api";
 import type { FeedbackPost } from "../types";
 import { FeedbackRichContent } from "./FeedbackRichContent";
+import { PromptCopyBox } from "../../journey/components/PromptCopyBox";
+import { trackUxEvent } from "../../../utils/uxAnalytics";
 import {
   FeedbackContextTag,
   FeedbackResourceCard,
@@ -41,6 +43,7 @@ export function FeedbackDetailDrawer({
         : await api.getFeedbackItem(feedbackId);
       if (!admin && !result.isRead) {
         const read = await api.markFeedbackRead(feedbackId);
+        trackUxEvent("feedback_read", { feedbackId });
         result = { ...result, isRead: true, readAt: read.readAt };
         onRead?.(feedbackId);
       }
@@ -189,6 +192,12 @@ export function FeedbackDetailDrawer({
               <div className="border-t border-border pt-5">
                 <FeedbackRichContent content={feedback.content} />
               </div>
+
+              {feedback.promptTemplate && (
+                <div className="border-t border-border pt-4">
+                  <PromptCopyBox promptTemplate={feedback.promptTemplate} />
+                </div>
+              )}
 
               {feedback.resources.length > 0 && (
                 <section

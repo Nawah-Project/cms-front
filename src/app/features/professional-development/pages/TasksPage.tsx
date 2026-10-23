@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useMemo, useState, type DragEvent } from "react";
-import { useSearchParams } from "react-router";
-import { PageHeading } from "../../admin/components/AdminUI";
+import { useNavigate, useSearchParams } from "react-router";
+import { PageHeading } from "../../../components/ui/PageHeading";
 import { useI18n } from "../../../i18n";
 import { api } from "../../../services/api";
+import { useAuth } from "../../auth/store/authStore";
+import { useJourneyState } from "../../journey/api/journeyApi";
+import { canAccessProfessionalDevelopment } from "../../journey/lib/journey-policies";
+import { LockedStateView } from "../../../components/ui/LockedStateView";
+import { openJourneyTasksPanel } from "../../../components/journeyTasksPanelEvents";
 import type {
   CreateTaskInput,
   ProfessionalTask,
@@ -13,7 +18,9 @@ import { TaskDetailDrawer } from "../components/TaskDetailDrawer";
 import { TaskCard, TaskSection } from "../components/TaskPresentation";
 import { ProfessionalDevelopmentNav } from "../components/ProfessionalDevelopmentNav";
 import { TaskFormDialog } from "../components/TaskFormDialog";
-import { PlusIcon } from "../../../components/Icons";
+import { PlusIcon, SpinnerIcon } from "../../../components/Icons";
+import { useToast } from "../../../components/ui/ToastProvider";
+import { trackUxEvent } from "../../../utils/uxAnalytics";
 
 const COLUMNS: Array<{ status: TaskStatus; key: string }> = [
   { status: "TODO", key: "toDo" },
@@ -24,6 +31,14 @@ const COLUMNS: Array<{ status: TaskStatus; key: string }> = [
 
 export default function TasksPage() {
   const { t } = useI18n();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+  const { data: journeyData, isLoading: journeyLoading } = useJourneyState({
+    enabled: Boolean(user),
+  });
+  const isUnlocked = canAccessProfessionalDevelopment(journeyData, user);
+
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedTaskId = searchParams.get("task");
   const activeFilter = searchParams.get("filter");
@@ -52,8 +67,10 @@ export default function TasksPage() {
   }, [page]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (isUnlocked) {
+      void load();
+    }
+  }, [load, isUnlocked]);
 
   const filteredTasks = useMemo(() => {
     if (!activeFilter || activeFilter === "active") {
@@ -123,9 +140,14 @@ export default function TasksPage() {
     );
     try {
       const updated = await api.updateTaskStatus(taskId, status);
+      trackUxEvent("task_status_changed", { status });
       setTasks((current) =>
         current.map((item) => (item.id === taskId ? updated : item)),
       );
+      showToast({
+        message: t("professionalDevelopment.taskUpdated"),
+        variant: "success",
+      });
     } catch {
       setTasks((current) =>
         current.map((item) =>
@@ -150,6 +172,45 @@ export default function TasksPage() {
     if (taskId) void moveTask(taskId, status);
   };
 
+  if (journeyLoading) {
+    return (
+      <div className="flex min-h-56 items-center justify-center" role="status">
+        <SpinnerIcon className="h-6 w-6 animate-spin text-neutral-400" />
+      </div>
+    );
+  }
+
+  if (!isUnlocked) {
+    const taskZeroNode = journeyData?.nodes.find((n) => n.code === "TASK_0");
+    const currentApps = taskZeroNode?.progress?.apps?.current ?? 0;
+    const requiredApps = taskZeroNode?.progress?.apps?.required ?? 5;
+
+    return (
+      <main className="space-y-6">
+        <header className="space-y-1">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900">
+            {t("common.navProfessionalDevelopment")}
+          </h1>
+          <p className="text-sm text-neutral-500">
+            {t("professionalDevelopment.subtitle")}
+          </p>
+        </header>
+
+        <LockedStateView
+          title={t("journey.profDevLockedTitle")}
+          subtitle={t("journey.lockedBadge")}
+          description={t("journey.profDevLockedTooltip")}
+          progressCurrent={currentApps}
+          progressTotal={requiredApps}
+          primaryActionLabel={t("common.addApplication")}
+          onPrimaryAction={() => navigate("/applications")}
+          secondaryActionLabel={t("journey.panelTitle")}
+          onSecondaryAction={() => openJourneyTasksPanel()}
+        />
+      </main>
+    );
+  }
+
   return (
     <div className="space-y-7">
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -169,6 +230,15 @@ export default function TasksPage() {
       </header>
 
       <ProfessionalDevelopmentNav />
+
+      <div className="border-t border-border pt-6">
+        <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+          {t("journey.personalAndMentorTasksHeading")}
+        </h3>
+        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+          {t("journey.personalAndMentorTasksSubtitle")}
+        </p>
+      </div>
 
       {filterLabel && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-info-border bg-info-soft/50 px-4 py-3">
@@ -338,6 +408,10 @@ export default function TasksPage() {
           onClose={() => setTaskFormOpen(false)}
           onSave={async (input) => {
             await api.createTask(input as CreateTaskInput);
+            showToast({
+              message: t("professionalDevelopment.taskCreated"),
+              variant: "success",
+            });
             setTaskFormOpen(false);
             await load();
           }}
