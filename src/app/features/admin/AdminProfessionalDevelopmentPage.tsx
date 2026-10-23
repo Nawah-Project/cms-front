@@ -50,6 +50,8 @@ export default function AdminProfessionalDevelopmentPage() {
     return () => window.clearTimeout(timer);
   }, [searchInput]);
 
+  const PAGE_SIZE = 12;
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(false);
@@ -57,7 +59,7 @@ export default function AdminProfessionalDevelopmentPage() {
       const [result, groupResult] = await Promise.all([
         adminApi.users({
           page,
-          limit: 20,
+          limit: PAGE_SIZE,
           ...(groupFilter === "ALL" ? {} : { groupId: groupFilter }),
           ...(debouncedSearch ? { search: debouncedSearch } : {}),
         }),

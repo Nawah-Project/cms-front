@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router";
 import {
   adminApi,
   type ActivityStatus,
@@ -30,7 +31,9 @@ const statuses: ActivityStatus[] = [
   "NEVER_ACTIVE",
 ];
 export default function AdminMembersPage() {
-  const { t, tp, locale } = useI18n();
+  const { t, tp, locale, number } = useI18n();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialGroup = searchParams.get("group") || "ALL";
   const toast = useToast();
   const [members, setMembers] = useState<AdminMember[]>([]);
   const [groups, setGroups] = useState<AdminGroup[]>([]);
@@ -40,7 +43,7 @@ export default function AdminMembersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [status, setStatus] = useState<"ALL" | ActivityStatus>("ALL");
-  const [group, setGroup] = useState("ALL");
+  const [group, setGroup] = useState(initialGroup);
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selected, setSelected] = useState<AdminMember | null>(null);
@@ -51,6 +54,16 @@ export default function AdminMembersPage() {
   const [assignLoading, setAssignLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [actionError, setActionError] = useState("");
+
+  const PAGE_SIZE = 12;
+
+  useEffect(() => {
+    const urlGroup = searchParams.get("group") || "ALL";
+    if (urlGroup !== group) {
+      setGroup(urlGroup);
+      setPage(1);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -65,7 +78,7 @@ export default function AdminMembersPage() {
     void Promise.all([
       adminApi.users({
         page,
-        limit: 50,
+        limit: PAGE_SIZE,
         ...(status === "ALL" ? {} : { activityStatus: status }),
         ...(group === "ALL" ? {} : { groupId: group }),
         ...(debouncedSearch ? { search: debouncedSearch } : {}),
@@ -204,8 +217,15 @@ export default function AdminMembersPage() {
               className="field-control min-w-40"
               value={group}
               onChange={(event) => {
-                setGroup(event.target.value);
+                const next = event.target.value;
+                setGroup(next);
                 setPage(1);
+                setSearchParams((prev) => {
+                  const updated = new URLSearchParams(prev);
+                  if (next === "ALL") updated.delete("group");
+                  else updated.set("group", next);
+                  return updated;
+                });
               }}
             >
               <option value="ALL">{t("admin.allGroups")}</option>

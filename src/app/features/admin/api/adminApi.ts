@@ -224,10 +224,17 @@ export const adminApi = {
     }>(`/admin/monitoring/users?${query}`);
   },
   groups: () => request<{ items: AdminGroup[] }>("/admin/monitoring/groups"),
-  activity: (limit = 20) =>
-    request<{ items: AdminActivity[] }>(
-      `/admin/monitoring/activity?limit=${limit}`,
-    ),
+  activity: (params: number | { page?: number; limit?: number } = 20) => {
+    const page = typeof params === "number" ? 1 : params.page || 1;
+    const limit = typeof params === "number" ? params : params.limit || 20;
+    return request<{
+      items: AdminActivity[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }>(`/admin/monitoring/activity?page=${page}&limit=${limit}`);
+  },
   user: (id: string) =>
     request<AdminUserDetail>(
       `/admin/monitoring/users/${encodeURIComponent(id)}`,
