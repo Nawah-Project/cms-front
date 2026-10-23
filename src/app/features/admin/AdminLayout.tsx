@@ -26,20 +26,24 @@ export default function AdminLayout() {
       </div>
     );
   return (
-    <section className="space-y-7">
-      <header className="border-b border-stone-300/80 pb-5 dark:border-neutral-800">
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-neutral-500">
-          {t("admin.eyebrow")}
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-100">
-          {t("admin.title")}
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm text-neutral-500 dark:text-neutral-400">
-          {t("admin.description")}
-        </p>
+    <section className="space-y-6">
+      <header className="border-b border-stone-300/80 pb-3 dark:border-neutral-800">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-neutral-500">
+              {t("admin.eyebrow")}
+            </p>
+            <h1 className="mt-0.5 text-xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-100">
+              {t("admin.title")}
+            </h1>
+          </div>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            {t("admin.description")}
+          </p>
+        </div>
         <nav
           aria-label={t("admin.sections")}
-          className="mt-5 flex gap-1 overflow-x-auto"
+          className="mt-3 flex gap-1 overflow-x-auto"
         >
           {tabs.map(([label, to]) => {
             const active =

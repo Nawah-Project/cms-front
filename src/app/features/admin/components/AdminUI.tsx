@@ -1,5 +1,9 @@
 import type { ReactNode } from "react";
-import type { ActivityStatus } from "../api/adminApi";
+import type {
+  ActivityStatus,
+  AttentionReason,
+  JourneySnapshot,
+} from "../api/adminApi";
 import { useI18n } from "../../../i18n";
 import { SpinnerIcon, AlertCircleIcon } from "../../../components/Icons";
 import { EmptyState as BaseEmptyState } from "../../../components/EmptyState";
@@ -162,4 +166,122 @@ export function EmptyState({
 
 export function timeTitle(value: string | null, locale: string) {
   return value ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(0, "second");
+}
+
+export function JourneyBadge({
+  journey,
+  compact = false,
+}: {
+  journey?: JourneySnapshot | null;
+  compact?: boolean;
+}) {
+  const { t, locale, number } = useI18n();
+  if (!journey) {
+    return (
+      <span className="status-badge status-neutral">
+        {t("admin.journeyNotStartedBadge")}
+      </span>
+    );
+  }
+  const isTask0 = journey.nodeCode === "TASK_0";
+  const isFinished = journey.nodeCode === "FINAL_REPORT";
+  const isNotStarted = isTask0 && journey.nodeApps === 0;
+  const title =
+    (locale === "ar" ? journey.titleAr : journey.titleEn) ?? journey.nodeCode;
+  const weekLabel =
+    journey.week === 0
+      ? t("admin.journeyWeek0")
+      : t("admin.journeyWeekN", { week: number(journey.week) });
+  const required = Math.max(0, journey.requiredApps);
+  const current = Math.min(
+    required > 0 ? required : journey.nodeApps,
+    Math.max(0, journey.nodeApps),
+  );
+  const pct =
+    required > 0 ? Math.min(100, Math.round((current / required) * 100)) : 100;
+
+  const badgeTone = isFinished
+    ? "status-success"
+    : isNotStarted
+      ? "status-warning"
+      : "status-info";
+
+  if (compact) {
+    return (
+      <span className={`status-badge ${badgeTone}`}>
+        {isFinished
+          ? t("admin.journeyCompletedBadge")
+          : `${weekLabel} · ${number(current)}/${number(required)}`}
+      </span>
+    );
+  }
+
+  return (
+    <div className="space-y-1.5 min-w-40">
+      <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs">
+        <span className={`status-badge ${badgeTone}`}>
+          {isFinished ? t("admin.journeyCompletedBadge") : weekLabel}
+        </span>
+        {!isFinished && required > 0 && (
+          <span className="font-semibold tabular-nums text-neutral-700 dark:text-neutral-200">
+            {number(current)} / {number(required)}
+          </span>
+        )}
+      </div>
+      <p className="truncate text-[11px] text-neutral-500" title={title}>
+        {title}
+      </p>
+      {!isFinished && required > 0 && (
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800">
+          <div
+            className={`h-full rounded-full transition-all ${isNotStarted ? "bg-warning-strong" : "bg-info-strong"}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function AttentionReasonBadges({
+  reasons,
+}: {
+  reasons: AttentionReason[];
+}) {
+  const { t, number } = useI18n();
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {reasons.map((reason) => {
+        const label =
+          reason.code === "PROFILE_INCOMPLETE"
+            ? t("admin.reasonProfileIncomplete")
+            : reason.code === "JOURNEY_NOT_STARTED"
+              ? t("admin.reasonJourneyNotStarted", {
+                  days: number(reason.days ?? 0),
+                })
+              : reason.code === "JOURNEY_STALLED"
+                ? t("admin.reasonJourneyStalled", {
+                    days: number(reason.days ?? 0),
+                  })
+                : reason.code === "OVERDUE_TASKS"
+                  ? t("admin.reasonOverdueTasks", {
+                      count: number(reason.count ?? 0),
+                    })
+                  : t("admin.reasonInactive", {
+                      days: number(reason.days ?? 0),
+                    });
+        const tone =
+          reason.severity >= 4
+            ? "status-danger"
+            : reason.severity >= 3
+              ? "status-warning"
+              : "status-neutral";
+        return (
+          <span key={reason.code} className={`status-badge ${tone}`}>
+            {label}
+          </span>
+        );
+      })}
+    </div>
+  );
 }
