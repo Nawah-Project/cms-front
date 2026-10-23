@@ -25,6 +25,8 @@ export default {
     "الأسبوع {week} لسه مش متاح. الموعد المتوقع لإتاحته: {date}.",
   weekZeroGateNotice:
     "الأسبوع صفر مرحلة تهيئة فقط. يبدأ الأسبوع الأول بعد إضافة 5 طلبات تقديم، ويبدأ حساب مواعيد الأسابيع من ذلك اليوم.",
+  nodeAvailableOn: "تُفتح هذه المهمة يوم {date} بعد حلول موعدها.",
+  completePreviousFirst: "أكمل المهمة السابقة أولاً لفتح هذه المهمة.",
   weekZeroProgressTitle: "تقدم مرحلة التهيئة (المهمة صفر)",
   weekProgressTitle: "إنجاز مهام الأسبوع {week}",
   completedStatus: "مكتملة",

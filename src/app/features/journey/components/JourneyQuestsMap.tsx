@@ -18,6 +18,7 @@ import {
   useJourneyState,
   useSubmitSideTask,
 } from "../api/journeyApi";
+import { journeyQueryKeys } from "../config/query-keys";
 import { isNodeInteractive } from "../lib/journey-policies";
 import { celebrateJourneyUnlocks } from "../lib/celebrate-unlocks";
 import type {
@@ -29,6 +30,54 @@ import { useI18n } from "../../../i18n";
 import { useToast } from "../../../components/ui/ToastProvider";
 import { useAppModal } from "../../../routes/layout";
 import { profileApi } from "../../profile/profileApi";
+import { useAuth } from "../../auth/store/authStore";
+
+function getNodeAvailableAt(
+  node: EnrichedJourneyNode,
+  journeyData: JourneyStateResponse,
+) {
+  const elapsedDays = journeyData.nodes
+    .filter(
+      (candidate) =>
+        candidate.weekNumber === node.weekNumber &&
+        candidate.orderIndex < node.orderIndex,
+    )
+    .reduce((days, candidate) => days + candidate.durationDays, 0);
+  const weeksAfterCurrent = Math.max(
+    0,
+    node.weekNumber - journeyData.state.currentWeek,
+  );
+  return new Date(
+    new Date(journeyData.state.weekStartedAt).getTime() +
+      (weeksAfterCurrent * 7 + elapsedDays) * 24 * 60 * 60 * 1000,
+  );
+}
+
+function getLockedNodeMessage(
+  node: EnrichedJourneyNode,
+  journeyData: JourneyStateResponse,
+  locale: string,
+  isAdmin: boolean,
+  t: (key: string, values?: Record<string, string | number>) => string,
+) {
+  if (isAdmin) return t("journey.fogOfWarOverlay");
+
+  const incompletePreviousNode = journeyData.nodes.some(
+    (candidate) =>
+      candidate.weekNumber === node.weekNumber &&
+      candidate.orderIndex < node.orderIndex &&
+      candidate.status !== "COMPLETED",
+  );
+  if (incompletePreviousNode) return t("journey.completePreviousFirst");
+
+  const availableAt = getNodeAvailableAt(node, journeyData);
+  const availableDate = new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(availableAt);
+  return t("journey.nodeAvailableOn", { date: availableDate });
+}
 
 function ProgressBar({
   label,
@@ -284,6 +333,7 @@ function ReviewStationCard({
   compact: boolean;
 }) {
   const { t, locale } = useI18n();
+  const { user } = useAuth();
   const { showToast } = useToast();
   const submitMutation = useSubmitSideTask();
   const [notes, setNotes] = useState("");
@@ -293,6 +343,13 @@ function ReviewStationCard({
   const isCompleted = node.status === "COMPLETED";
   const isActive = isNodeInteractive(node);
   const isLocked = node.status === "LOCKED_BLURRED";
+  const lockedMessage = getLockedNodeMessage(
+    node,
+    journeyData,
+    locale,
+    user?.role === "ADMIN",
+    t,
+  );
 
   const title = locale === "ar" ? node.titleAr : node.titleEn;
   const description = locale === "ar" ? node.descriptionAr : node.descriptionEn;
@@ -484,12 +541,17 @@ function ReviewStationCard({
 
       {/* Fog of War Lock Overlay */}
       {isLocked && (
-        <div className="absolute inset-0 flex items-center justify-center bg-neutral-950/10 p-4 backdrop-blur-[1px]">
+        <button
+          type="button"
+          onClick={() => showToast({ message: lockedMessage, variant: "info" })}
+          className="absolute inset-0 flex cursor-pointer items-center justify-center bg-neutral-950/10 p-4 backdrop-blur-[1px]"
+          aria-label={lockedMessage}
+        >
           <div className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white/95 px-4 py-2 text-xs font-semibold text-neutral-800 shadow-md dark:border-neutral-700 dark:bg-neutral-900/95 dark:text-neutral-100">
             <Lock className="h-3.5 w-3.5 text-amber-600" aria-hidden="true" />
-            <span>{t("journey.fogOfWarOverlay")}</span>
+            <span>{lockedMessage}</span>
           </div>
-        </div>
+        </button>
       )}
     </div>
   );
@@ -497,6 +559,7 @@ function ReviewStationCard({
 
 export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
   const { t, locale } = useI18n();
+  const { user } = useAuth();
   const { showToast } = useToast();
   const { openAddModal } = useAppModal();
   const queryClient = useQueryClient();
@@ -510,6 +573,36 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
       setSelectedWeek(journeyData.state.currentWeek);
     }
   }, [journeyData?.state.currentWeek]);
+
+  useEffect(() => {
+    if (!journeyData || user?.role === "ADMIN") return;
+
+    const now = Date.now();
+    const nextScheduledNode = journeyData.nodes
+      .filter((node) => {
+        if (node.status !== "LOCKED_BLURRED") return false;
+        return journeyData.nodes
+          .filter(
+            (candidate) =>
+              candidate.weekNumber === node.weekNumber &&
+              candidate.orderIndex < node.orderIndex,
+          )
+          .every((candidate) => candidate.status === "COMPLETED");
+      })
+      .map((node) => getNodeAvailableAt(node, journeyData).getTime())
+      .filter((timestamp) => timestamp > now)
+      .sort((a, b) => a - b)[0];
+
+    if (!nextScheduledNode) return;
+
+    const timer = window.setTimeout(() => {
+      void queryClient.invalidateQueries({
+        queryKey: journeyQueryKeys.state(),
+      });
+    }, nextScheduledNode - now + 250);
+
+    return () => window.clearTimeout(timer);
+  }, [journeyData, queryClient, user?.role]);
 
   if (isLoading || !journeyData) {
     return (
@@ -675,6 +768,13 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
           const isCompleted = node.status === "COMPLETED";
           const isActive = isNodeInteractive(node);
           const isLocked = node.status === "LOCKED_BLURRED";
+          const lockedMessage = getLockedNodeMessage(
+            node,
+            journeyData,
+            locale,
+            user?.role === "ADMIN",
+            t,
+          );
 
           const title = locale === "ar" ? node.titleAr : node.titleEn;
           const description =
@@ -800,15 +900,22 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
 
               {/* Fog of War Lock Overlay */}
               {isLocked && (
-                <div className="absolute inset-0 flex items-center justify-center bg-neutral-950/5 p-4 backdrop-blur-[1px]">
+                <button
+                  type="button"
+                  onClick={() =>
+                    showToast({ message: lockedMessage, variant: "info" })
+                  }
+                  className="absolute inset-0 flex cursor-pointer items-center justify-center bg-neutral-950/5 p-4 backdrop-blur-[1px]"
+                  aria-label={lockedMessage}
+                >
                   <div className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white/95 px-4 py-2 text-xs font-semibold text-neutral-800 shadow-md dark:border-neutral-700 dark:bg-neutral-900/95 dark:text-neutral-100">
                     <Lock
                       className="h-3.5 w-3.5 text-amber-600"
                       aria-hidden="true"
                     />
-                    <span>{t("journey.fogOfWarOverlay")}</span>
+                    <span>{lockedMessage}</span>
                   </div>
-                </div>
+                </button>
               )}
             </article>
           );
