@@ -26,6 +26,8 @@ export default {
     "Week {week} isn't available yet. Expected availability: {date}.",
   weekZeroGateNotice:
     "Week 0 is an onboarding step. Week 1 starts after you add 5 applications, and weekly dates are counted from that day.",
+  nodeAvailableOn: "This task unlocks on {date} when its scheduled day begins.",
+  completePreviousFirst: "Complete the previous task first to unlock this one.",
   weekZeroProgressTitle: "Onboarding Quest Progress (Task 0)",
   weekProgressTitle: "Week {week} Quests Progress",
   completedStatus: "Completed",
