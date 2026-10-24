@@ -129,7 +129,7 @@ export function ProfileForm({
           <span className="text-xs text-neutral-400 font-mono">Specialization</span>
         </div>
         <p className="text-xs text-neutral-500 leading-relaxed">
-          سيُستخدم هذا التخصص لتوجيهك تلقائياً إلى الوظائف المطابقة لمجالك في بوصلة سوق العمل الذكية.
+          سيُستخدم هذا التخصص لتوجيهك تلقائياً إلى الوظائف المطابقة لمجالك في مستكشف الوظائف.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { Check, ExternalLink, FileUp, Sparkles, AlertCircle, Eye, ShieldCheck, Mail } from "lucide-react";
+import { Check, ExternalLink, FileUp, Sparkles, AlertCircle, Eye, ShieldCheck, Mail, History } from "lucide-react";
 import { useAuth } from "../store/authStore";
 import { useI18n } from "../../../i18n";
 import { profileApi, isPdf, MAX_CV_BYTES, MAX_CV_SIZE_MB, type ProfessionalProfile } from "../../profile/profileApi";
@@ -23,6 +23,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [viewCv, setViewCv] = useState(false);
+  const [viewHistoryCv, setViewHistoryCv] = useState<{ id: string; version: number; name: string } | null>(null);
 
   // Form fields
   const [name, setName] = useState("");
@@ -176,6 +177,16 @@ export default function ProfilePage() {
     }
   };
 
+  if (viewHistoryCv) {
+    return (
+      <CvViewer
+        historyId={viewHistoryCv.id}
+        title={`CV v${viewHistoryCv.version} - ${viewHistoryCv.name}`}
+        onClose={() => setViewHistoryCv(null)}
+      />
+    );
+  }
+
   if (viewCv && user) {
     return <CvViewer userId={user.id} onClose={() => setViewCv(false)} />;
   }
@@ -257,7 +268,7 @@ export default function ProfilePage() {
               </h2>
               <p className="mt-0.5 text-xs text-neutral-500">
                 {isRtl
-                  ? "تأكد من دقة المسمى الوظيفي ورابط معرض الأعمال لمزامنتها مع بوصلة سوق العمل"
+                  ? "تأكد من دقة المسمى الوظيفي ورابط معرض الأعمال لمزامنتها مع مستكشف الوظائف"
                   : "Ensure specialization and portfolio accuracy for automated job matching"}
               </p>
             </div>
@@ -392,6 +403,74 @@ export default function ProfilePage() {
                     {uploadError}
                   </p>
                 )}
+              </div>
+
+              {/* CV History Section */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+                    <History className="h-3.5 w-3.5 text-neutral-500" />
+                    <span>{isRtl ? "سجل السير الذاتية (CV History)" : "CV History"}</span>
+                  </h4>
+                  <span className="text-[10px] text-neutral-400 font-medium">
+                    {profile.cvHistory && profile.cvHistory.length > 0 ? profile.cvHistory.length : profile.cv ? 1 : 0} {isRtl ? "نسخة" : "versions"}
+                  </span>
+                </div>
+
+                <div className="max-h-44 overflow-y-auto divide-y divide-border/60 rounded-xl border border-border/80 bg-neutral-50/50 dark:bg-neutral-900/40 px-3 py-1.5">
+                  {profile.cvHistory && profile.cvHistory.length > 0 ? (
+                    profile.cvHistory.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between py-2 text-xs">
+                        <div className="min-w-0 flex-1 pe-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-flex shrink-0 items-center rounded-full bg-neutral-200 dark:bg-neutral-700 px-2 py-0.5 text-[10px] font-bold text-neutral-800 dark:text-neutral-200">
+                              CV v{item.versionNumber}
+                              {item.versionNumber === 1 && (
+                                <span className="ms-1 font-normal opacity-75">
+                                  {isRtl ? "(التأسيسية)" : "(Baseline)"}
+                                </span>
+                              )}
+                            </span>
+                            <span className="truncate text-neutral-700 dark:text-neutral-300 font-medium max-w-[130px]">
+                              {item.originalName}
+                            </span>
+                          </div>
+                          <p className="mt-0.5 text-[10px] text-neutral-400">
+                            {new Date(item.uploadedAt).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US", { dateStyle: "medium" })}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setViewHistoryCv({ id: item.id, version: item.versionNumber, name: item.originalName })}
+                          className="p-1 rounded-md text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-neutral-800 transition-colors shrink-0"
+                          title={isRtl ? "معاينة النسخة" : "View version"}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))
+                  ) : profile.cv ? (
+                    <div className="py-2.5 text-xs text-start">
+                      <div className="flex items-center justify-between">
+                        <span className="inline-flex shrink-0 items-center rounded-full bg-neutral-200 dark:bg-neutral-700 px-2 py-0.5 text-[10px] font-bold text-neutral-800 dark:text-neutral-200">
+                          CV v{profile.cvVersionNumber || 1} {isRtl ? "(النسخة التأسيسية)" : "(Baseline)"}
+                        </span>
+                        <span className="truncate text-neutral-700 dark:text-neutral-300 font-medium text-xs max-w-[130px]">
+                          {profile.cv.originalName}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-[10px] text-neutral-400 leading-relaxed">
+                        {isRtl
+                          ? "ستُحفظ هنا جميع النسخ السابقة تلقائياً عند كل تحديث لسيرتك الذاتية."
+                          : "All previous versions will be automatically preserved here each time you update your CV."}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="py-3 text-center text-[11px] text-neutral-400">
+                      {isRtl ? "لا توجد نسخ سابقة" : "No CV history"}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 

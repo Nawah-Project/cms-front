@@ -144,23 +144,29 @@ export default function ApplicationsPage() {
 
   const updateAppMutation = useUpdateApplication();
 
-  const isGroupUnlocked = Boolean(journeyData?.state.isGroupUnlocked) || totalCount >= 5;
   const [isCompassModalOpen, setIsCompassModalOpen] = useState(false);
-
-  // One-time milestone celebration toast when compass is relocated to top header
-  useEffect(() => {
-    if (isGroupUnlocked) {
-      const alerted = localStorage.getItem("nawah_compass_relocated_toast");
-      if (!alerted) {
-        toast.info(
-          locale === "ar"
-            ? "🎉 رائع! لقد أتممت 5 طلبات تقديم وتم فتح التفاعل مع المجموعة. تم نقل بوصلة سوق العمل إلى الزر العلوي لتوفير مساحة لمهامك!"
-            : "🎉 Awesome! You completed 5 applications. Job Market Compass has moved to the top header to maximize workspace space!",
-        );
-        localStorage.setItem("nawah_compass_relocated_toast", "true");
-      }
+  const [showSpotlight, setShowSpotlight] = useState(() => {
+    try {
+      return (
+        localStorage.getItem("nawah_job_explorer_spotlight_seen") !== "true"
+      );
+    } catch {
+      return false;
     }
-  }, [isGroupUnlocked, locale, toast]);
+  });
+
+  const dismissSpotlight = (openExplorer = false) => {
+    try {
+      localStorage.setItem("nawah_job_explorer_spotlight_seen", "true");
+    } catch {
+      // ignore
+    }
+    setShowSpotlight(false);
+    if (openExplorer) {
+      setIsCompassModalOpen(true);
+    }
+  };
+
   const [optimisticOverrides, setOptimisticOverrides] = useState<
     Record<string, { stage: Stage; outcome: Outcome }>
   >({});
@@ -315,20 +321,27 @@ export default function ApplicationsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {isGroupUnlocked && (
+          <div className="relative inline-block">
             <button
               type="button"
-              onClick={() => setIsCompassModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 bg-white px-3.5 py-2 text-xs font-bold text-neutral-800 shadow-2xs hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 transition-colors"
+              onClick={() => {
+                if (showSpotlight) dismissSpotlight(true);
+                else setIsCompassModalOpen(true);
+              }}
+              className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all shadow-2xs ${
+                showSpotlight
+                  ? "relative z-[95] ring-4 ring-white/50 shadow-2xl bg-white text-neutral-950 border-white font-extrabold animate-pulse"
+                  : "border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              }`}
             >
-              <Compass className="h-4 w-4 text-neutral-600 dark:text-neutral-300" />
+              <Compass className={`h-4 w-4 ${showSpotlight ? "text-neutral-950" : "text-neutral-600 dark:text-neutral-300"}`} />
               <span>
                 {locale === "ar"
-                  ? "🧭 بوصلة سوق العمل الذكية"
-                  : "🧭 Job Market Compass"}
+                  ? "🧭 مستكشف الوظائف"
+                  : "🧭 Job Explorer"}
               </span>
             </button>
-          )}
+          </div>
 
           <button
             type="button"
@@ -340,11 +353,6 @@ export default function ApplicationsPage() {
           </button>
         </div>
       </div>
-
-      {/* Job Market Compass (Inline only before 5 applications / when group is locked) */}
-      {!isGroupUnlocked && (
-        <JobMarketCompass onLaunchDraft={(draft) => openAddModal(draft)} />
-      )}
 
       {/* Filter and Search Bar */}
       <div className="space-y-3">
@@ -567,13 +575,13 @@ export default function ApplicationsPage() {
         </div>
       )}
 
-      {/* Compass Modal (When opened after reaching 5 applications) */}
+      {/* Job Explorer Modal */}
       {isCompassModalOpen && (
         <Modal
           isOpen={true}
           onClose={() => setIsCompassModalOpen(false)}
-          title={locale === "ar" ? "بوصلة سوق العمل الذكية" : "Job Market Compass"}
-          size="xl"
+          title={locale === "ar" ? "مستكشف الوظائف" : "Job Explorer"}
+          size="2xl"
         >
           <div className="max-h-[80vh] overflow-y-auto -m-4 p-4 sm:-m-6 sm:p-6">
             <JobMarketCompass
@@ -585,6 +593,52 @@ export default function ApplicationsPage() {
             />
           </div>
         </Modal>
+      )}
+
+      {/* First-Visit Spotlight Overlay */}
+      {showSpotlight && (
+        <>
+          <div
+            onClick={() => dismissSpotlight(false)}
+            className="fixed inset-0 z-[90] bg-neutral-950/75 backdrop-blur-[2px] transition-opacity duration-300"
+            aria-hidden="true"
+          />
+
+          <div className="fixed top-28 end-4 sm:end-16 z-[95] max-w-sm rounded-3xl border border-neutral-700/80 bg-neutral-900/95 p-5 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">
+            {/* Curved SVG pointer pointing to the button */}
+            <div className="flex items-center justify-between pb-1">
+              <span className="text-sm font-bold text-white flex items-center gap-1.5">
+                <span>{locale === "ar" ? "اعثر على الوظيفة بضغطة واحدة 🎯" : "Find Your Job in 1 Click 🎯"}</span>
+              </span>
+              <svg className="h-5 w-10 text-white/80" viewBox="0 0 40 20" fill="none">
+                <path d="M35 18C35 18 25 3 8 3M8 3L14 0.5M8 3L14 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+
+            <p className="mt-2 text-xs leading-relaxed text-neutral-300">
+              {locale === "ar"
+                ? "ابدأ البحث في السوق المناسب لتخصصك؛ يوجهك مستكشف الوظائف مباشرة إلى صفحات البحث المفلترة بمجالك في أشهر المنصات العالمية والمحلية."
+                : "Explore top job markets tailored to your specialization. Job Explorer links you directly to pre-filtered job search feeds on leading global and regional platforms."}
+            </p>
+
+            <div className="mt-4 flex items-center gap-2 pt-3 border-t border-neutral-800">
+              <button
+                type="button"
+                onClick={() => dismissSpotlight(true)}
+                className="button-primary flex-1 py-2 text-xs font-semibold shadow-xs"
+              >
+                {locale === "ar" ? "ابدأ البحث الآن" : "Start Searching Now"}
+              </button>
+              <button
+                type="button"
+                onClick={() => dismissSpotlight(false)}
+                className="rounded-xl border border-neutral-700 bg-neutral-800 px-3 py-2 text-xs font-semibold text-neutral-300 hover:bg-neutral-700 transition-colors"
+              >
+                {locale === "ar" ? "حسناً، فهمت" : "Got it"}
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

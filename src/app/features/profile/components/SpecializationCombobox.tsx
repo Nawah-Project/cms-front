@@ -158,7 +158,7 @@ export function SpecializationCombobox({
           className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200 animate-in fade-in duration-150"
         >
           <p className="font-medium">
-            💡 يرجى كتابة المسمى الوظيفي باللغة الإنجليزية (مثال: UI/UX Designer أو Frontend Developer)؛ وذلك لأن بوصلة سوق العمل تستخدم هذا المسمى للبحث التلقائي المباشر داخل محركات التوظيف العالمية.
+            💡 يرجى كتابة المسمى الوظيفي باللغة الإنجليزية (مثال: UI/UX Designer أو Frontend Developer)؛ وذلك لأن مستكشف الوظائف يستخدم هذا المسمى للبحث التلقائي المباشر داخل محركات التوظيف العالمية.
           </p>
         </div>
       )}

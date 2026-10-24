@@ -330,122 +330,6 @@ function ActiveNodeSideTaskForms({
   );
 }
 
-function CloudFogLayer() {
-  return (
-    <div
-      className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl"
-      aria-hidden="true"
-    >
-      {/* Patchy Ambient Shadow Vignette: Asymmetric density leaving open clearings */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_15%_25%,_rgba(115,115,115,0.3)_0%,_transparent_70%),radial-gradient(ellipse_55%_45%_at_85%_75%,_rgba(82,82,82,0.35)_0%,_transparent_65%)]" />
-
-      {/* Localized Patchy Backdrop Blur: Concentrated around the center lock, leaving perimeter clearings crisp */}
-      <div
-        className="absolute inset-0 backdrop-blur-[1.5px] pointer-events-none"
-        style={{
-          maskImage: "radial-gradient(ellipse 65% 55% at 50% 48%, black 25%, transparent 75%)",
-          WebkitMaskImage: "radial-gradient(ellipse 65% 55% at 50% 48%, black 25%, transparent 75%)",
-        }}
-      />
-
-      {/* Cloud Bank 1 - Heavy Deep Dark-Silver Mass (High density / darker contrast) */}
-      <motion.div
-        className="absolute -top-12 -right-10 h-40 w-64 rounded-[65%_35%_60%_40%/50%_60%_40%_50%] filter blur-2xl bg-gradient-to-br from-neutral-700/75 via-neutral-600/60 to-transparent dark:from-neutral-700/70 dark:via-neutral-800/50 dark:to-transparent"
-        animate={{
-          x: [0, -55, 20, 0],
-          y: [0, 20, -12, 0],
-          scale: [1, 1.22, 0.94, 1],
-          opacity: [0.7, 0.88, 0.6, 0.7],
-        }}
-        transition={{
-          duration: 14,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-
-      {/* Cloud Bank 2 - Medium Volumetric Silver Mass (Mid-tone density) */}
-      <motion.div
-        className="absolute -bottom-12 -left-8 h-44 w-68 rounded-[40%_60%_35%_65%/60%_40%_60%_40%] filter blur-2xl bg-gradient-to-tl from-neutral-600/60 via-neutral-500/45 to-transparent dark:from-neutral-700/65 dark:via-neutral-800/45 dark:to-transparent"
-        animate={{
-          x: [0, 60, -15, 0],
-          y: [0, -22, 10, 0],
-          scale: [1.08, 0.9, 1.2, 1.08],
-          opacity: [0.55, 0.75, 0.5, 0.55],
-        }}
-        transition={{
-          duration: 17,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-
-      {/* Cloud Bank 3 - Dense Core Billowing Around Lock */}
-      <motion.div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-30 w-48 rounded-[50%_50%_50%_50%/50%_50%_50%_50%] filter blur-xl bg-gradient-to-r from-neutral-500/65 via-neutral-400/75 to-neutral-500/65 dark:from-neutral-800/60 dark:via-neutral-700/70 dark:to-neutral-800/60"
-        animate={{
-          x: ["-50%", "-35%", "-65%", "-50%"],
-          y: ["-50%", "-60%", "-38%", "-50%"],
-          scale: [0.95, 1.22, 0.88, 0.95],
-          opacity: [0.5, 0.78, 0.45, 0.5],
-        }}
-        transition={{
-          duration: 12,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-
-      {/* Cloud Bank 4 - Floating Light Silver Wisp (Creates clearings where details peek through) */}
-      <motion.div
-        className="absolute -top-6 left-10 h-28 w-44 rounded-[55%_45%_50%_50%/40%_60%_40%_60%] filter blur-lg bg-gradient-to-bl from-neutral-400/40 via-neutral-300/20 to-transparent dark:from-neutral-700/40 dark:via-neutral-800/20 dark:to-transparent"
-        animate={{
-          x: [0, 35, -25, 0],
-          y: [0, 15, -10, 0],
-          scale: [0.92, 1.15, 0.96, 0.92],
-          opacity: [0.35, 0.55, 0.3, 0.35],
-        }}
-        transition={{
-          duration: 15,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 1.5,
-        }}
-      />
-
-      {/* Cloud Bank 5 - Trailing Lower-Right Wisp */}
-      <motion.div
-        className="absolute -bottom-6 right-12 h-30 w-48 rounded-[50%_50%_45%_55%/55%_45%_55%_45%] filter blur-xl bg-gradient-to-tr from-neutral-500/45 via-neutral-400/25 to-transparent dark:from-neutral-700/40 dark:via-neutral-800/20 dark:to-transparent"
-        animate={{
-          x: [0, -40, 18, 0],
-          y: [0, -14, 8, 0],
-          scale: [1.12, 0.93, 1.18, 1.12],
-          opacity: [0.4, 0.6, 0.35, 0.4],
-        }}
-        transition={{
-          duration: 16,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 2.2,
-        }}
-      />
-
-      {/* Atmospheric Sweeping Mist Drift */}
-      <motion.div
-        className="absolute inset-y-0 -left-1/3 w-1/2 filter blur-3xl bg-gradient-to-r from-transparent via-neutral-400/20 to-transparent dark:via-neutral-600/15 pointer-events-none"
-        animate={{
-          x: ["0%", "300%", "0%"],
-        }}
-        transition={{
-          duration: 22,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-    </div>
-  );
-}
-
 function LockedFogZone({
   lockedMessage,
   children,
@@ -471,7 +355,12 @@ function LockedFogZone({
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setShowHint(false);
-    }, 3000);
+    }, 1800);
+  };
+
+  const handleMouseLeave = () => {
+    setShowHint(false);
+    if (timerRef.current) clearTimeout(timerRef.current);
   };
 
   useEffect(() => {
@@ -483,6 +372,7 @@ function LockedFogZone({
   return (
     <div
       onClick={handleClick}
+      onMouseLeave={handleMouseLeave}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -494,31 +384,33 @@ function LockedFogZone({
       aria-label={cleanMessage}
       className={`relative rounded-xl border border-neutral-300/80 bg-neutral-100/50 shadow-inner dark:border-neutral-700/80 dark:bg-neutral-900/50 cursor-pointer select-none transition-colors hover:border-neutral-400 dark:hover:border-neutral-600 ${className}`}
     >
-      {/* Inner bounded container with rounded corners and overflow-hidden for the blurred content and cloud layer */}
+      {/* Inner bounded container with calm static frosted glass */}
       <div className="relative overflow-hidden rounded-xl">
-        {/* Partially obscured details subtly showing through underneath the mist */}
         <div
-          className="filter blur-[0.8px] opacity-75 select-none pointer-events-none p-5"
+          className="filter blur-[5px] opacity-30 select-none pointer-events-none p-5"
           aria-hidden="true"
         >
           {children}
         </div>
 
-        {/* Dynamic Multi-layered Clouds & Mist Animation */}
-        <CloudFogLayer />
+        {/* Calm Static Frosted Glass Layer */}
+        <div
+          className="absolute inset-0 backdrop-blur-md bg-white/65 dark:bg-neutral-900/65 border border-neutral-200/80 dark:border-neutral-800 rounded-xl pointer-events-none"
+          aria-hidden="true"
+        />
       </div>
 
-      {/* Lock & Tooltip container with overflow-visible so the notification bubble is NEVER clipped */}
+      {/* Lock & Tooltip container */}
       <div className="absolute inset-0 flex items-center justify-center p-4 pointer-events-none z-20 overflow-visible">
         <div className="relative pointer-events-auto">
-          {/* Floating requirement tooltip bubble - unclipped outside the frame */}
+          {/* Floating requirement tooltip bubble */}
           <AnimatePresence>
             {showHint && (
               <motion.div
                 initial={{ opacity: 0, y: 8, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 4, scale: 0.95 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
                 role="status"
                 className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 z-30 whitespace-nowrap rounded-xl bg-neutral-900/95 px-4 py-2 text-center text-xs font-medium text-white shadow-2xl backdrop-blur-md dark:bg-white/95 dark:text-neutral-900 after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-[5px] after:border-transparent after:border-t-neutral-900/95 dark:after:border-t-white/95"
               >
@@ -527,7 +419,7 @@ function LockedFogZone({
             )}
           </AnimatePresence>
 
-          {/* Elevated High-Contrast Lock Icon (pops against dark silver/gray fog) */}
+          {/* Elevated High-Contrast Lock Icon */}
           <motion.div
             animate={isShaking ? { rotate: [0, -14, 14, -8, 8, 0] } : {}}
             transition={{ duration: 0.38, ease: "easeInOut" }}
@@ -819,6 +711,17 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
 
   const currentWeek = journeyData?.state.currentWeek ?? 0;
   const [selectedWeek, setSelectedWeek] = useState<number>(currentWeek);
+  const [lockedPopoverWeek, setLockedPopoverWeek] = useState<number | null>(null);
+  const [wigglingWeek, setWigglingWeek] = useState<number | null>(null);
+  const popoverTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (popoverTimerRef.current) {
+        window.clearTimeout(popoverTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (journeyData?.state.currentWeek !== undefined) {
@@ -883,6 +786,60 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
     setSelectedWeek(weekNum);
   };
 
+  const handleLockedWeekClick = (weekNum: number) => {
+    setWigglingWeek(weekNum);
+    setTimeout(() => setWigglingWeek(null), 600);
+
+    if (popoverTimerRef.current) {
+      window.clearTimeout(popoverTimerRef.current);
+    }
+    setLockedPopoverWeek(weekNum);
+    popoverTimerRef.current = window.setTimeout(() => {
+      setLockedPopoverWeek(null);
+    }, 1800);
+  };
+
+  const handleDismissLockedPopover = () => {
+    if (popoverTimerRef.current) {
+      window.clearTimeout(popoverTimerRef.current);
+    }
+    setLockedPopoverWeek(null);
+  };
+
+  const getLockedWeekPopoverText = (weekNum: number) => {
+    const week1Started = journeyData?.state.week1StartedAt
+      ? new Date(journeyData.state.week1StartedAt)
+      : null;
+
+    if (currentWeek === 0 || !week1Started) {
+      if (weekNum === 1) {
+        return locale === "ar"
+          ? "يفتح بعد إتمامك للمهمة 0 (التهيئة وإعداد السيرة الذاتية)"
+          : "Unlocks after completing Task 0 (Setup & CV Preparation)";
+      }
+      return locale === "ar"
+        ? "يبدأ جدول أسابيع التقديم بعد إتمامك للمهمة 0 (التهيئة)"
+        : "The application weeks schedule begins after completing Task 0 (Setup)";
+    }
+
+    const daysUntilAvailable = (weekNum - 1) * 7;
+    const availableAt = new Date(
+      week1Started.getTime() + daysUntilAvailable * 86_400_000,
+    );
+    const availableDate = new Intl.DateTimeFormat(
+      locale === "ar" ? "ar-EG" : "en-US",
+      {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      },
+    ).format(availableAt);
+
+    return locale === "ar"
+      ? `يفتح في ${availableDate} (بعد إتمام مهام الأسبوع السابق)`
+      : `Unlocks on ${availableDate} (after completing previous week quests)`;
+  };
+
   const getFutureWeekMessage = (weekNum: number) => {
     if (weekNum <= currentWeek) return null;
     if (currentWeek === 0) {
@@ -942,26 +899,67 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
           {[0, 1, 2, 3, 4].map((weekNum) => {
             const isSelected = selectedWeek === weekNum;
             const isFutureWeek = weekNum > journeyData.state.currentWeek;
+            const isLockedPopoverOpen = lockedPopoverWeek === weekNum;
+            const isWiggling = wigglingWeek === weekNum;
+
             return (
-              <button
+              <div
                 key={weekNum}
-                type="button"
-                onClick={() => selectWeek(weekNum)}
-                className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
-                  isSelected
-                    ? "bg-neutral-900 text-white shadow-2xs dark:bg-white dark:text-neutral-900"
-                    : "text-neutral-600 hover:bg-white dark:text-neutral-300 dark:hover:bg-neutral-800"
-                }`}
+                className="relative"
+                onMouseLeave={handleDismissLockedPopover}
               >
-                <span>
-                  {weekNum === 0
-                    ? t("journey.weekZeroTab")
-                    : t("journey.weekNumberTab", { week: weekNum })}
-                </span>
-                {isFutureWeek && (
-                  <Lock className="h-3 w-3 opacity-70" aria-hidden="true" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isFutureWeek) {
+                      handleLockedWeekClick(weekNum);
+                    } else {
+                      selectWeek(weekNum);
+                    }
+                  }}
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                    isSelected
+                      ? "bg-neutral-900 text-white shadow-2xs dark:bg-white dark:text-neutral-900"
+                      : isFutureWeek
+                        ? "text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300 opacity-80"
+                        : "text-neutral-600 hover:bg-white dark:text-neutral-300 dark:hover:bg-neutral-800"
+                  } ${isWiggling ? "animate-lock-wiggle" : ""}`}
+                >
+                  <span>
+                    {weekNum === 0
+                      ? t("journey.weekZeroTab")
+                      : t("journey.weekNumberTab", { week: weekNum })}
+                  </span>
+                  {isFutureWeek && (
+                    <Lock
+                      className={`h-3 w-3 ${isWiggling ? "text-amber-500" : "opacity-70"}`}
+                      aria-hidden="true"
+                    />
+                  )}
+                </button>
+
+                {isLockedPopoverOpen && (
+                  <div
+                    role="tooltip"
+                    className="absolute top-full mt-2 z-50 w-64 rounded-xl border border-neutral-200 bg-white p-3 shadow-xl text-start animate-in fade-in slide-in-from-top-1 duration-150 dark:border-neutral-700 dark:bg-neutral-900"
+                    style={{
+                      [locale === "ar" ? "right" : "left"]: 0,
+                    }}
+                  >
+                    <div className="flex items-center gap-1.5 font-bold text-xs text-neutral-900 dark:text-white border-b border-neutral-100 dark:border-neutral-800 pb-1.5 mb-1.5">
+                      <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                      <span>
+                        {locale === "ar"
+                          ? `الأسبوع ${weekNum} غير متاح حالياً 🔒`
+                          : `Week ${weekNum} is currently locked 🔒`}
+                      </span>
+                    </div>
+                    <p className="text-[11px] leading-relaxed text-neutral-600 dark:text-neutral-300">
+                      {getLockedWeekPopoverText(weekNum)}
+                    </p>
+                  </div>
                 )}
-              </button>
+              </div>
             );
           })}
         </div>

@@ -7,8 +7,10 @@ import {
 } from "../../../types";
 import { getTodayDateString } from "../../../utils/date";
 import { SparklesIcon, SpinnerIcon } from "../../../components/Icons";
+import { Compass } from "lucide-react";
 import { useI18n } from "../../../i18n";
 import { Modal } from "../../../components/ui/Modal";
+import { JobMarketCompass } from "./JobMarketCompass";
 import { useJourneyState } from "../../journey/api/journeyApi";
 import { canAddTailoredApplication } from "../../journey/lib/journey-policies";
 import { useAuth } from "../../auth/store/authStore";
@@ -26,7 +28,7 @@ export function AddApplicationModal({
   onSubmit,
   initialValues,
 }: AddApplicationModalProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { user } = useAuth();
   const { data: journeyData } = useJourneyState({ enabled: Boolean(user) });
   const showTailoredOption = canAddTailoredApplication(journeyData, user);
@@ -47,6 +49,25 @@ export function AddApplicationModal({
     submit?: string;
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showExplorerModal, setShowExplorerModal] = useState(false);
+  const [showHint, setShowHint] = useState(() => {
+    try {
+      return (
+        localStorage.getItem("nawah_add_modal_explorer_hint_seen") !== "true"
+      );
+    } catch {
+      return false;
+    }
+  });
+
+  const dismissHint = () => {
+    try {
+      localStorage.setItem("nawah_add_modal_explorer_hint_seen", "true");
+    } catch {
+      // ignore
+    }
+    setShowHint(false);
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -140,7 +161,8 @@ export function AddApplicationModal({
   };
 
   return (
-    <Modal
+    <>
+      <Modal
       isOpen={isOpen}
       onClose={handleClose}
       title={t("applications.addTitle")}
@@ -169,6 +191,38 @@ export function AddApplicationModal({
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Job Explorer Shortcut in Form Header */}
+        <div className="flex items-center justify-between pb-3 border-b border-border/80">
+          <span className="text-xs text-neutral-500 font-medium">
+            {locale === "ar" ? "لم تجد وظيفة للتقديم بعد؟" : "Looking for a job to apply to?"}
+          </span>
+          <div className="relative" onMouseLeave={dismissHint}>
+            <button
+              type="button"
+              onClick={() => {
+                dismissHint();
+                setShowExplorerModal(true);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-300 bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800 px-3 py-1.5 text-xs font-bold text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors shadow-2xs"
+            >
+              <Compass className="h-3.5 w-3.5 text-neutral-600 dark:text-neutral-300" />
+              <span>{locale === "ar" ? "🧭 مستكشف الوظائف" : "🧭 Job Explorer"}</span>
+            </button>
+
+            {/* Welcoming Floating Hint on First Visit */}
+            {showHint && (
+              <div
+                onClick={dismissHint}
+                className="absolute -top-10 end-0 z-30 whitespace-nowrap rounded-lg bg-neutral-900 text-white px-2.5 py-1 text-[11px] font-semibold shadow-lg animate-in fade-in zoom-in-95 duration-200 after:content-[''] after:absolute after:top-full after:end-4 after:border-[4px] after:border-transparent after:border-t-neutral-900 cursor-pointer"
+              >
+                💡 {locale === "ar"
+                  ? "ابحث عن وظيفة في السوق المناسب بضغطة واحدة من هنا"
+                  : "Find jobs in your target market in 1 click here"}
+              </div>
+            )}
+          </div>
+        </div>
+
         {errors.submit && (
           <div className="rounded-xl border border-danger-border bg-danger-soft/40 p-3 text-xs text-danger-strong">
             {errors.submit}
@@ -327,6 +381,30 @@ export function AddApplicationModal({
         </div>
       </form>
     </Modal>
+
+    {showExplorerModal && (
+      <Modal
+        isOpen={true}
+        onClose={() => setShowExplorerModal(false)}
+        title={locale === "ar" ? "مستكشف الوظائف" : "Job Explorer"}
+        size="2xl"
+      >
+        <div className="max-h-[75vh] overflow-y-auto -m-4 p-4 sm:-m-6 sm:p-6">
+          <JobMarketCompass
+            collapsible={false}
+            onLaunchDraft={(draft) => {
+              setShowExplorerModal(false);
+              if (draft.companyName) setCompanyName(draft.companyName);
+              if (draft.applicationMethod) setApplicationMethod(draft.applicationMethod);
+              if (draft.location) setLocation(draft.location);
+              if (draft.jobTitle) setJobTitle(draft.jobTitle);
+              setJobUrl("");
+            }}
+          />
+        </div>
+      </Modal>
+    )}
+  </>
   );
 }
 

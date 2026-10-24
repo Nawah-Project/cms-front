@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Compass, ChevronDown, ChevronUp, ExternalLink, Globe, Sparkles, AlertCircle } from "lucide-react";
+import { Compass, ChevronDown, ChevronUp, ExternalLink, Globe, AlertCircle } from "lucide-react";
 import { useI18n } from "../../../i18n";
 import { useAuth } from "../../auth/store/authStore";
 import { useToast } from "../../../components/ui/ToastProvider";
@@ -99,12 +99,14 @@ const MACRO_MARKETS: MacroMarket[] = [
 ];
 
 // ============================================================================
-// 18+ Job Platforms Definitions
+// Job Platforms Definitions with Strict Regional Market Mapping
 // ============================================================================
 interface PlatformConfig {
   id: string;
   name: string;
+  domain: string;
   category: "GLOBAL" | "REGIONAL";
+  markets?: string[];
   supportsLocationParam: boolean;
   method: ApplicationMethod;
   descriptionAr: string;
@@ -113,83 +115,413 @@ interface PlatformConfig {
 }
 
 const PLATFORMS: PlatformConfig[] = [
-  // --- Global Platforms ---
+  // --- 1. Global Platforms ---
   {
     id: "linkedin",
     name: "LinkedIn Jobs",
+    domain: "linkedin.com",
     category: "GLOBAL",
     supportsLocationParam: true,
     method: "LINKEDIN",
-    descriptionAr: "البحث المباشر عن الوظائف ومسؤولي التوظيف على شبكة LinkedIn",
-    descriptionEn: "Direct search for jobs and hiring managers on LinkedIn",
+    descriptionAr: "البحث المباشر عن الوظائف ومسؤولي التوظيف على شبكة LinkedIn العالمية المفلترة بتخصصك ودولتك.",
+    descriptionEn: "Direct search for jobs and hiring managers on LinkedIn filtered by your specialization and location.",
     buildUrl: (title, location, isRemote) =>
       `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(title)}&location=${encodeURIComponent(location)}${isRemote ? "&f_WT=2" : ""}`,
   },
   {
     id: "indeed",
     name: "Indeed",
+    domain: "indeed.com",
     category: "GLOBAL",
     supportsLocationParam: true,
     method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "محرك البحث الأكبر للوظائف في مختلف الشركات العالمية",
-    descriptionEn: "Largest job aggregator across global companies",
+    descriptionAr: "أكبر محرك بحث وتجميع للوظائف في مختلف الشركات والمؤسسات حول العالم مع فلترة الموقع الجغرافي.",
+    descriptionEn: "Largest job search aggregator across companies worldwide with precise geographic filtering.",
     buildUrl: (title, location) =>
       `https://www.indeed.com/jobs?q=${encodeURIComponent(title)}&l=${encodeURIComponent(location)}`,
   },
   {
     id: "glassdoor",
     name: "Glassdoor",
+    domain: "glassdoor.com",
     category: "GLOBAL",
     supportsLocationParam: true,
     method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "وظائف مع تقييمات بيئة العمل ومستويات الرواتب الحقيقية",
-    descriptionEn: "Jobs with verified company ratings and salary insights",
+    descriptionAr: "وظائف مع تقييمات بيئة العمل الحقيقية ومستويات الرواتب المعتمدة وتجارب المقابلات الشخصية.",
+    descriptionEn: "Jobs with verified employee reviews, certified salary ranges, and authentic interview experiences.",
     buildUrl: (title, location) =>
       `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${encodeURIComponent(title)}&locKeyword=${encodeURIComponent(location)}`,
   },
   {
     id: "wellfound",
     name: "Wellfound (AngelList)",
+    domain: "wellfound.com",
     category: "GLOBAL",
     supportsLocationParam: true,
     method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "وظائف الشركات الناشئة والتقنية العالمية في مراحل النمو",
-    descriptionEn: "Top startup and tech opportunities worldwide",
+    descriptionAr: "المنصة الأولى عالمياً لفرص العمل في الشركات الناشئة والتقنية المبتكرة في مراحل النمو السريع.",
+    descriptionEn: "Top global platform for career opportunities in high-growth startups and tech innovators.",
     buildUrl: (title, location) => {
       const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
       return `https://wellfound.com/jobs?role=${slug}&location=${encodeURIComponent(location)}`;
     },
   },
+
+  // --- 2. Egypt Regional Platforms ---
   {
-    id: "otta",
-    name: "Otta (Welcome to the Jungle)",
-    category: "GLOBAL",
+    id: "wuzzuf",
+    name: "Wuzzuf",
+    domain: "wuzzuf.net",
+    category: "REGIONAL",
+    markets: ["Egypt"],
     supportsLocationParam: true,
     method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "منصة ذكية لاكتشاف الشركات التقنية الأسرع نمواً",
-    descriptionEn: "Curated tech job platform for fast-growing companies",
-    buildUrl: (title) =>
-      `https://app.otta.com/jobs?search=${encodeURIComponent(title)}`,
+    descriptionAr: "المنصة الأكثر انتشاراً للوظائف التقنية والمحترفين في السوق المصري مع ربط مباشر بمسؤولي الشركات.",
+    descriptionEn: "Egypt's premier professional and tech career hub with direct connections to corporate recruiters.",
+    buildUrl: (title, location) =>
+      `https://wuzzuf.net/search/jobs/?q=${encodeURIComponent(title)}&filters%5Bcountry%5D%5B0%5D=${encodeURIComponent(location)}`,
   },
+  {
+    id: "forasna",
+    name: "Forasna (فرصنا)",
+    domain: "forasna.com",
+    category: "REGIONAL",
+    markets: ["Egypt"],
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "وظائف السوق المصري لجميع التخصصات والكوادر المهنية والتقنية بمختلف المحافظات والقطاعات.",
+    descriptionEn: "Comprehensive Egyptian employment portal across all technical specializations and provinces.",
+    buildUrl: (title) =>
+      `https://forasna.com/job/search?q=${encodeURIComponent(title)}`,
+  },
+  {
+    id: "bayt",
+    name: "Bayt.com",
+    domain: "bayt.com",
+    category: "REGIONAL",
+    markets: ["Egypt", "GCC"],
+    supportsLocationParam: true,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "بوابة التوظيف الأولى في مصر والخليج والشرق الأوسط، تضم آلاف الوظائف في كبرى الشركات.",
+    descriptionEn: "Leading employment portal across Egypt, GCC, and MENA with thousands of corporate listings.",
+    buildUrl: (title, location) =>
+      `https://www.bayt.com/en/international/jobs/?q=${encodeURIComponent(title)}&filters%5Bcountry%5D%5B%5D=${encodeURIComponent(location)}`,
+  },
+  {
+    id: "tanqeeb",
+    name: "Tanqeeb (تنقيب)",
+    domain: "tanqeeb.com",
+    category: "REGIONAL",
+    markets: ["Egypt", "GCC"],
+    supportsLocationParam: true,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "محرك بحث يجمع الوظائف من مئات المواقع العربية والمصرية في مكان واحد لتغطية شاملة للفرص.",
+    descriptionEn: "Job search engine aggregating all listings across Egypt and GCC into a single searchable index.",
+    buildUrl: (title, location) =>
+      `https://www.tanqeeb.com/jobs/search?keywords=${encodeURIComponent(title)}&country=${encodeURIComponent(location)}`,
+  },
+
+  // --- 3. GCC Regional Platforms ---
+  {
+    id: "gulftalent",
+    name: "GulfTalent",
+    domain: "gulftalent.com",
+    category: "REGIONAL",
+    markets: ["GCC"],
+    supportsLocationParam: true,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "وظائف الكفاءات والشركات متعددة الجنسيات في السعودية والإمارات والكويت وعُمان وقطر والبحرين.",
+    descriptionEn: "Top professional and multinational careers across Saudi Arabia, UAE, Kuwait, and the Gulf.",
+    buildUrl: (title, location) =>
+      `https://www.gulftalent.com/jobs/search?keyword=${encodeURIComponent(title)}&country=${encodeURIComponent(location)}`,
+  },
+  {
+    id: "naukrigulf",
+    name: "Naukrigulf",
+    domain: "naukrigulf.com",
+    category: "REGIONAL",
+    markets: ["GCC"],
+    supportsLocationParam: true,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "بوابة الوظائف الكبرى في السعودية والإمارات ودول الخليج، تركز على الوظائف التقنية والهندسية.",
+    descriptionEn: "Major Gulf job board in Saudi Arabia and UAE specializing in tech, engineering, and digital roles.",
+    buildUrl: (title, location) => {
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      return `https://www.naukrigulf.com/${slug}-jobs?location=${encodeURIComponent(location)}`;
+    },
+  },
+
+  // --- 4. Europe Regional Platforms ---
+  {
+    id: "stepstone",
+    name: "StepStone",
+    domain: "stepstone.de",
+    category: "REGIONAL",
+    markets: ["Europe"],
+    supportsLocationParam: true,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "المنصة الرائدة للتوظيف المهني والتقني في ألمانيا وبريطانيا وكافة دول الاتحاد الأوروبي.",
+    descriptionEn: "Leading professional and tech career portal in Germany, UK, and European Union member states.",
+    buildUrl: (title, location) =>
+      `https://www.stepstone.de/work/${encodeURIComponent(title)}?where=${encodeURIComponent(location)}`,
+  },
+  {
+    id: "honeypot",
+    name: "Honeypot.io",
+    domain: "honeypot.io",
+    category: "REGIONAL",
+    markets: ["Europe"],
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "المنصة العكسية للمطورين والمهندسين في أوروبا حيث تتنافس الشركات التقنية لتقديم عروضها لك.",
+    descriptionEn: "Developer-focused reverse hiring platform where European tech companies apply directly to you.",
+    buildUrl: () => `https://app.honeypot.io/`,
+  },
+  {
+    id: "relocateme",
+    name: "Relocate.me",
+    domain: "relocate.me",
+    category: "REGIONAL",
+    markets: ["Europe"],
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "وظائف تقنية أوروبية تقدم دعماً كاملاً لنقل الإقامة ورعاية تأشيرات العمل وتكاليف الانتقال.",
+    descriptionEn: "European tech jobs offering verified relocation assistance and work visa sponsorship packages.",
+    buildUrl: (title) =>
+      `https://relocate.me/search?query=${encodeURIComponent(title)}`,
+  },
+  {
+    id: "landingjobs",
+    name: "Landing.jobs",
+    domain: "landing.jobs",
+    category: "REGIONAL",
+    markets: ["Europe"],
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "مجتمع التوظيف التقني الأول في البرتغال وإسبانيا وجنوب وغرب أوروبا للعمل المحلي وعن بُعد.",
+    descriptionEn: "Leading tech recruitment community in Portugal, Spain, and Western Europe for local and remote work.",
+    buildUrl: (title) =>
+      `https://landing.jobs/jobs?q=${encodeURIComponent(title)}`,
+  },
+  {
+    id: "iamexpat",
+    name: "IamExpat Jobs",
+    domain: "iamexpat.de",
+    category: "REGIONAL",
+    markets: ["Europe"],
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "بوابة الوظائف الناطقة بالإنجليزية للمغتربين والمقيمين الدوليين في ألمانيا وهولندا وسويسرا.",
+    descriptionEn: "English-speaking job board tailored for international talent and expatriates in Germany and Netherlands.",
+    buildUrl: (title) =>
+      `https://jobs.iamexpat.de/career-search?keywords=${encodeURIComponent(title)}`,
+  },
+  {
+    id: "welcometothejungle",
+    name: "Welcome to the Jungle",
+    domain: "welcometothejungle.com",
+    category: "REGIONAL",
+    markets: ["Europe"],
+    supportsLocationParam: true,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "استكشف ثقافة الشركات والفرص التقنية المميزة في فرنسا وبريطانيا ومختلف العواصم الأوروبية.",
+    descriptionEn: "Discover company culture and innovative tech opportunities across France, the UK, and Europe.",
+    buildUrl: (title) =>
+      `https://www.welcometothejungle.com/en/jobs?query=${encodeURIComponent(title)}`,
+  },
+
+  // --- 5. North America Regional Platforms ---
+  {
+    id: "builtin",
+    name: "BuiltIn",
+    domain: "builtin.com",
+    category: "REGIONAL",
+    markets: ["North America"],
+    supportsLocationParam: true,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "ملتقى الشركات التقنية والناشئة في كبرى المراكز التقنية الأمريكية (Silicon Valley, New York, Austin).",
+    descriptionEn: "The hub for tech companies and startups across major US tech centers and remote roles.",
+    buildUrl: (title) =>
+      `https://builtin.com/jobs?search=${encodeURIComponent(title)}`,
+  },
+  {
+    id: "dice",
+    name: "Dice",
+    domain: "dice.com",
+    category: "REGIONAL",
+    markets: ["North America"],
+    supportsLocationParam: true,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "المنصة التخصصية الأبرز لوظائف البرمجيات وتكنولوجيا المعلومات في أمريكا وكندا للتعاقد والدوام الكامل.",
+    descriptionEn: "Leading career marketplace for software engineers and IT specialists in the US and Canada.",
+    buildUrl: (title, location) =>
+      `https://www.dice.com/jobs?q=${encodeURIComponent(title)}&location=${encodeURIComponent(location)}`,
+  },
+  {
+    id: "ziprecruiter",
+    name: "ZipRecruiter",
+    domain: "ziprecruiter.com",
+    category: "REGIONAL",
+    markets: ["North America"],
+    supportsLocationParam: true,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "شبكة التوظيف الذكية الأسرع انتشاراً وتطابقاً مع الوظائف في كبرى المؤسسات الأمريكية والكندية.",
+    descriptionEn: "Fast-growing intelligent employment network matching professionals across the US and Canada.",
+    buildUrl: (title, location) =>
+      `https://www.ziprecruiter.com/candidate/search?search=${encodeURIComponent(title)}&location=${encodeURIComponent(location)}`,
+  },
+  {
+    id: "monster",
+    name: "Monster",
+    domain: "monster.com",
+    category: "REGIONAL",
+    markets: ["North America"],
+    supportsLocationParam: true,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "بوابة التوظيف العريقة لمختلف الشركات والمؤسسات الأمريكية الكبرى في كافة التخصصات والولايات.",
+    descriptionEn: "Longstanding career portal connecting candidates with leading US employers nationwide.",
+    buildUrl: (title, location) =>
+      `https://www.monster.com/jobs/search?q=${encodeURIComponent(title)}&where=${encodeURIComponent(location)}`,
+  },
+
+  // --- 6. APAC Regional Platforms ---
+  {
+    id: "techinasia",
+    name: "TechInAsia Jobs",
+    domain: "techinasia.com",
+    category: "REGIONAL",
+    markets: ["APAC"],
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "المنصة التقنية الكبرى لشركات التكنولوجيا والشركات الناشئة في سنغافورة وإندونيسيا وآسيا.",
+    descriptionEn: "The premier platform for tech startups and emerging tech ventures across Southeast Asia.",
+    buildUrl: (title) =>
+      `https://www.techinasia.com/jobs/search?query=${encodeURIComponent(title)}`,
+  },
+  {
+    id: "nodeflair",
+    name: "NodeFlair",
+    domain: "nodeflair.com",
+    category: "REGIONAL",
+    markets: ["APAC"],
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "وظائف التقنية في سنغافورة وتايوان وجنوب شرق آسيا مع شفافية كاملة في بيانات الرواتب.",
+    descriptionEn: "Tech careers in Singapore, Taiwan, and Southeast Asia with verified salary transparency.",
+    buildUrl: (title) =>
+      `https://nodeflair.com/jobs?query=${encodeURIComponent(title)}`,
+  },
+  {
+    id: "glints",
+    name: "Glints",
+    domain: "glints.com",
+    category: "REGIONAL",
+    markets: ["APAC"],
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "منصة المواهب والتوظيف الرائدة في إندونيسيا وسنغافورة وماليزيا وفيتنام للكفاءات التقنية.",
+    descriptionEn: "Leading talent discovery and career ecosystem in Indonesia, Singapore, and Malaysia.",
+    buildUrl: (title) =>
+      `https://glints.com/opportunities/jobs/explore?keyword=${encodeURIComponent(title)}`,
+  },
+  {
+    id: "seek",
+    name: "Seek",
+    domain: "seek.com.au",
+    category: "REGIONAL",
+    markets: ["APAC"],
+    supportsLocationParam: true,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "بوابة التوظيف الأولى والأكبر بلا منازع في أستراليا ونيوزيلندا لكافة التخصصات المهنية والتقنية.",
+    descriptionEn: "Australia and New Zealand's undisputed number one employment and recruitment marketplace.",
+    buildUrl: (title) =>
+      `https://www.seek.com.au/jobs?keywords=${encodeURIComponent(title)}`,
+  },
+  {
+    id: "wantedly",
+    name: "Wantedly",
+    domain: "wantedly.com",
+    category: "REGIONAL",
+    markets: ["APAC"],
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "شبكة التوظيف الاجتماعي القائمة على التوافق الثقافي ورؤية الشركة في اليابان وسنغافورة وآسيا.",
+    descriptionEn: "Social recruiting platform matching professionals based on mission and culture in Japan and Asia.",
+    buildUrl: (title) =>
+      `https://www.wantedly.com/projects?q=${encodeURIComponent(title)}`,
+  },
+
+  // --- 7. LATAM Regional Platforms ---
+  {
+    id: "getonbrd",
+    name: "GetOnBoard",
+    domain: "getonbrd.com",
+    category: "REGIONAL",
+    markets: ["LATAM"],
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "المنصة المتخصصة الأولى في وظائف التكنولوجيا والشركات الرقمية الناشئة في أمريكا اللاتينية.",
+    descriptionEn: "The leading specialized digital and tech talent marketplace across all of Latin America.",
+    buildUrl: (title) => {
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      return `https://www.getonbrd.com/jobs-${slug}`;
+    },
+  },
+  {
+    id: "computrabajo",
+    name: "Computrabajo",
+    domain: "computrabajo.com",
+    category: "REGIONAL",
+    markets: ["LATAM"],
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "بوابة التوظيف الأكثر زيارة وانتشاراً في المكسيك وكولومبيا والأرجنتين وتشيلي وبيرو.",
+    descriptionEn: "Most visited employment website in Mexico, Colombia, Argentina, and across South America.",
+    buildUrl: (title) => {
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      return `https://www.computrabajo.com/trabajo-de-${slug}`;
+    },
+  },
+  {
+    id: "bumeran",
+    name: "Bumeran",
+    domain: "bumeran.com",
+    category: "REGIONAL",
+    markets: ["LATAM"],
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "بوابة التوظيف الرائدة في الأرجنتين وفنزويلا والإكوادور وبيرو لمختلف القطاعات والشركات.",
+    descriptionEn: "Leading employment and careers board in Argentina, Venezuela, Peru, and Latin America.",
+    buildUrl: (title) => {
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      return `https://www.bumeran.com.ar/empleos-busqueda-${slug}.html`;
+    },
+  },
+
+  // --- 8. Remote Specialized Platforms ---
   {
     id: "weworkremotely",
     name: "We Work Remotely",
-    category: "GLOBAL",
+    domain: "weworkremotely.com",
+    category: "REGIONAL",
+    markets: ["Remote"],
     supportsLocationParam: false,
     method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "المجتمع الأكبر عالمياً لوظائف العمل عن بُعد 100%",
-    descriptionEn: "The largest remote work community in the world",
+    descriptionAr: "المجتمع الأكبر عالمياً لوظائف العمل عن بُعد 100% في مجالات البرمجة والتصميم والتسويق الرقمي.",
+    descriptionEn: "The largest remote work community in the world for software, design, and product roles.",
     buildUrl: (title) =>
       `https://weworkremotely.com/remote-jobs/search?term=${encodeURIComponent(title)}`,
   },
   {
     id: "remoteok",
     name: "RemoteOK",
-    category: "GLOBAL",
+    domain: "remoteok.com",
+    category: "REGIONAL",
+    markets: ["Remote"],
     supportsLocationParam: false,
     method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "وظائف العمل الحر وعن بُعد في الشركات التقنية حول العالم",
-    descriptionEn: "Remote jobs for digital nomads and tech specialists",
+    descriptionAr: "منصة عالمية متخصصة في وظائف العمل عن بُعد لخبراء التكنولوجيا والرحالة الرقميين حول العالم.",
+    descriptionEn: "Worldwide remote job platform for digital nomads, software engineers, and tech specialists.",
     buildUrl: (title) => {
       const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
       return `https://remoteok.com/remote-${slug}-jobs`;
@@ -198,126 +530,54 @@ const PLATFORMS: PlatformConfig[] = [
   {
     id: "flexjobs",
     name: "FlexJobs",
-    category: "GLOBAL",
+    domain: "flexjobs.com",
+    category: "REGIONAL",
+    markets: ["Remote"],
     supportsLocationParam: true,
     method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "وظائف موثوقة ومفحوصة بالكامل للعمل المرن وعن بُعد",
-    descriptionEn: "Hand-screened flexible and remote job listings",
+    descriptionAr: "وظائف موثوقة ومفحوصة بالكامل للعمل المرن وعن بُعد بدون أي إعلانات مضللة أو فرص احتيالية.",
+    descriptionEn: "Hand-screened, verified flexible and remote job listings with zero scams or low-quality ads.",
     buildUrl: (title, location) =>
       `https://www.flexjobs.com/search?search=${encodeURIComponent(title)}&location=${encodeURIComponent(location)}`,
   },
   {
     id: "jobspresso",
     name: "Jobspresso",
-    category: "GLOBAL",
+    domain: "jobspresso.co",
+    category: "REGIONAL",
+    markets: ["Remote"],
     supportsLocationParam: false,
     method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "وظائف تقنية مختارة بعناية للعمل عن بُعد",
-    descriptionEn: "Expertly curated remote tech jobs",
+    descriptionAr: "وظائف تقنية وهندسية وتسويقية مختارة بعناية للعمل عن بُعد في أفضل الشركات الناشئة.",
+    descriptionEn: "Expertly curated remote tech, engineering, and marketing opportunities at top companies.",
     buildUrl: (title) =>
       `https://jobspresso.co/browsejobs/?search_keywords=${encodeURIComponent(title)}`,
   },
   {
-    id: "hired",
-    name: "Hired",
-    category: "GLOBAL",
-    supportsLocationParam: true,
-    method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "سوق العمل العكسي حيث تتنافس الشركات لتقديم عروض لك",
-    descriptionEn: "Reverse marketplace where top employers pitch you",
-    buildUrl: () => `https://hired.com/`,
-  },
-  {
-    id: "ycjobs",
-    name: "Y Combinator Jobs",
-    category: "GLOBAL",
-    supportsLocationParam: false,
-    method: "COMPANY_WEBSITE",
-    descriptionAr: "التقديم المباشر لشركات مسرعة Y Combinator الرائدة",
-    descriptionEn: "Work directly at top Y Combinator-backed startups",
-    buildUrl: (title) =>
-      `https://www.ycombinator.com/jobs?query=${encodeURIComponent(title)}`,
-  },
-  {
-    id: "dice",
-    name: "Dice",
-    category: "GLOBAL",
-    supportsLocationParam: true,
-    method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "المنصة التخصصية لوظائف تكنولوجيا المعلومات والبرمجيات",
-    descriptionEn: "Specialized tech career marketplace",
-    buildUrl: (title, location) =>
-      `https://www.dice.com/jobs?q=${encodeURIComponent(title)}&location=${encodeURIComponent(location)}`,
-  },
-
-  // --- Regional Platforms (MENA & GCC) ---
-  {
-    id: "bayt",
-    name: "Bayt.com",
+    id: "himalayas",
+    name: "Himalayas",
+    domain: "himalayas.app",
     category: "REGIONAL",
-    supportsLocationParam: true,
-    method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "بوابة التوظيف الأولى في الخليج والشرق الأوسط وشمال أفريقيا",
-    descriptionEn: "Leading employment portal across GCC and MENA",
-    buildUrl: (title, location) =>
-      `https://www.bayt.com/en/international/jobs/?q=${encodeURIComponent(title)}&filters%5Bcountry%5D%5B%5D=${encodeURIComponent(location)}`,
-  },
-  {
-    id: "wuzzuf",
-    name: "Wuzzuf",
-    category: "REGIONAL",
-    supportsLocationParam: true,
-    method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "المنصة الأكثر انتشاراً للوظائف التقنية والمحترفين في مصر",
-    descriptionEn: "Egypt's premier professional and tech career hub",
-    buildUrl: (title, location) =>
-      `https://wuzzuf.net/search/jobs/?q=${encodeURIComponent(title)}&filters%5Bcountry%5D%5B0%5D=${encodeURIComponent(location)}`,
-  },
-  {
-    id: "forasna",
-    name: "Forasna (فرصنا)",
-    category: "REGIONAL",
+    markets: ["Remote"],
     supportsLocationParam: false,
     method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "وظائف السوق المصري لجميع التخصصات المهنية والتقنية",
-    descriptionEn: "Comprehensive Egyptian employment portal",
+    descriptionAr: "منصة عمل عن بُعد حديثة تتميز ببيانات رواتب موثوقة وشفافية المزايا وتفاصيل ثقافة العمل.",
+    descriptionEn: "Modern remote job platform featuring transparent compensation data, perks, and company culture.",
     buildUrl: (title) =>
-      `https://forasna.com/job/search?q=${encodeURIComponent(title)}`,
+      `https://himalayas.app/jobs?q=${encodeURIComponent(title)}`,
   },
   {
-    id: "naukrigulf",
-    name: "Naukrigulf",
+    id: "arcdev",
+    name: "Arc.dev",
+    domain: "arc.dev",
     category: "REGIONAL",
-    supportsLocationParam: true,
+    markets: ["Remote"],
+    supportsLocationParam: false,
     method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "بوابة الوظائف الكبرى في السعودية والإمارات ودول الخليج",
-    descriptionEn: "Major job board for Saudi Arabia, UAE, and GCC",
-    buildUrl: (title, location) => {
-      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      return `https://www.naukrigulf.com/${slug}-jobs?location=${encodeURIComponent(location)}`;
-    },
-  },
-  {
-    id: "tanqeeb",
-    name: "Tanqeeb (تنقيب)",
-    category: "REGIONAL",
-    supportsLocationParam: true,
-    method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "محرك بحث يجمع الوظائف من مئات المواقع العربية في مكان واحد",
-    descriptionEn: "Comprehensive MENA job search engine aggregating all listings",
-    buildUrl: (title, location) =>
-      `https://www.tanqeeb.com/jobs/search?keywords=${encodeURIComponent(title)}&country=${encodeURIComponent(location)}`,
-  },
-  {
-    id: "gulftalent",
-    name: "GulfTalent",
-    category: "REGIONAL",
-    supportsLocationParam: true,
-    method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "وظائف الكفاءات والشركات متعددة الجنسيات في دول الخليج",
-    descriptionEn: "Top professional and multinational careers in the Gulf",
-    buildUrl: (title, location) =>
-      `https://www.gulftalent.com/jobs/search?keyword=${encodeURIComponent(title)}&country=${encodeURIComponent(location)}`,
+    descriptionAr: "بوابة متخصصة لتوظيف أفضل المطورين والمهندسين عن بُعد في الشركات والفرق العالمية.",
+    descriptionEn: "Leading platform connecting top remote developers and software engineers with global teams.",
+    buildUrl: (title) =>
+      `https://arc.dev/remote-jobs?search=${encodeURIComponent(title)}`,
   },
 ];
 
@@ -350,6 +610,23 @@ export function JobMarketCompass({
 
   // Determine effective location string
   const effectiveLocation = useMemo(() => {
+    if (selectedMarketId === "Remote") return isRtl ? "عن بُعد" : "Remote";
+    if (selectedMarketId === "Egypt") return isRtl ? "مصر" : "Egypt";
+    if (selectedSubCountryKey) {
+      if (activeMarket.subCountries) {
+        const sub = activeMarket.subCountries.find((c) => c.key === selectedSubCountryKey);
+        if (sub) return isRtl ? sub.labelAr : sub.labelEn;
+      }
+      return selectedSubCountryKey;
+    }
+    if (activeMarket.subCountries && activeMarket.subCountries.length > 0) {
+      const sub = activeMarket.subCountries[0];
+      return isRtl ? sub.labelAr : sub.labelEn;
+    }
+    return isRtl ? activeMarket.labelAr : activeMarket.labelEn;
+  }, [selectedMarketId, selectedSubCountryKey, activeMarket, isRtl]);
+
+  const effectiveLocationQuery = useMemo(() => {
     if (selectedMarketId === "Remote") return "Remote";
     if (selectedMarketId === "Egypt") return "Egypt";
     if (selectedSubCountryKey) return selectedSubCountryKey;
@@ -372,13 +649,13 @@ export function JobMarketCompass({
   };
 
   const handlePlatformClick = (platform: PlatformConfig) => {
-    const finalUrl = platform.buildUrl(targetJobTitle, effectiveLocation, isRemote);
+    const finalUrl = platform.buildUrl(targetJobTitle, effectiveLocationQuery, isRemote);
     window.open(finalUrl, "_blank", "noopener,noreferrer");
 
     if (!platform.supportsLocationParam && !isRemote) {
       toast.info(
         isRtl
-          ? "💡 هذه المنصة تفرز الوظائف عالمياً تلقائياً، يمكنك كتابة الدولة في شريط البحث الداخلي للمنصة عند فتحها."
+          ? "💡 هذه المنصة تفرز الوظائف عالمياً؛ يمكنك كتابة الدولة في شريط البحث الداخلي للمنصة عند فتحها."
           : "💡 This platform searches globally; you can refine by country in the platform's search bar.",
       );
     }
@@ -392,10 +669,30 @@ export function JobMarketCompass({
     });
   };
 
-  const filteredPlatforms = useMemo(() => {
-    if (activeCategoryFilter === "ALL") return PLATFORMS;
-    return PLATFORMS.filter((p) => p.category === activeCategoryFilter);
-  }, [activeCategoryFilter]);
+  // Strict market-linked platforms filtering
+  const globalPlatforms = useMemo(() => {
+    return PLATFORMS.filter((p) => p.category === "GLOBAL");
+  }, []);
+
+  const regionalPlatformsForMarket = useMemo(() => {
+    return PLATFORMS.filter(
+      (p) => p.category === "REGIONAL" && p.markets?.includes(selectedMarketId),
+    );
+  }, [selectedMarketId]);
+
+  const allPlatformsForMarket = useMemo(() => {
+    return [...globalPlatforms, ...regionalPlatformsForMarket];
+  }, [globalPlatforms, regionalPlatformsForMarket]);
+
+  const displayedPlatforms = useMemo(() => {
+    if (activeCategoryFilter === "GLOBAL") return globalPlatforms;
+    if (activeCategoryFilter === "REGIONAL") return regionalPlatformsForMarket;
+    return allPlatformsForMarket;
+  }, [activeCategoryFilter, globalPlatforms, regionalPlatformsForMarket, allPlatformsForMarket]);
+
+  const globalCount = globalPlatforms.length;
+  const regionalCount = regionalPlatformsForMarket.length;
+  const allCount = allPlatformsForMarket.length;
 
   return (
     <section
@@ -411,7 +708,7 @@ export function JobMarketCompass({
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100">
-                {isRtl ? "بوصلة سوق العمل الذكية" : "Smart Job Market Compass"}
+                {isRtl ? "مستكشف الوظائف" : "Job Explorer"}
               </h2>
               <span
                 dir="ltr"
@@ -438,7 +735,7 @@ export function JobMarketCompass({
             <span>
               {expanded
                 ? (isRtl ? "إخفاء الفلاتر" : "Collapse")
-                : (isRtl ? "عرض البوصلة" : "Expand")}
+                : (isRtl ? "عرض المستكشف" : "Expand")}
             </span>
             {expanded ? (
               <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
@@ -457,7 +754,7 @@ export function JobMarketCompass({
               <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
                 {isRtl ? "1. اختر السوق الإقليمي المستهدف:" : "1. Select Macro Market:"}
               </span>
-              <span className="text-[11px] text-neutral-400">
+              <span className="text-[11px] text-neutral-500 font-medium">
                 {effectiveLocation}
               </span>
             </div>
@@ -512,13 +809,24 @@ export function JobMarketCompass({
             </div>
           )}
 
-          {/* Category Tabs: All vs Global vs Regional */}
+          {/* Category Tabs with Dynamic Market Counts */}
           <div className="flex items-center justify-between pt-1 border-t border-border/70">
             <div className="flex items-center gap-1.5">
               {[
-                { id: "ALL" as const, label: isRtl ? "كل المنصات (18+)" : "All Platforms (18+)" },
-                { id: "GLOBAL" as const, label: isRtl ? "منصات عالمية (12)" : "Global (12)" },
-                { id: "REGIONAL" as const, label: isRtl ? "منصات إقليمية ومحلية (6)" : "Regional (6)" },
+                {
+                  id: "ALL" as const,
+                  label: isRtl ? `كل المنصات (${allCount})` : `All Platforms (${allCount})`,
+                },
+                {
+                  id: "GLOBAL" as const,
+                  label: isRtl ? `منصات عالمية (${globalCount})` : `Global (${globalCount})`,
+                },
+                {
+                  id: "REGIONAL" as const,
+                  label: isRtl
+                    ? `منصات إقليمية ومحلية (${regionalCount})`
+                    : `Regional (${regionalCount})`,
+                },
               ].map((cat) => {
                 const active = activeCategoryFilter === cat.id;
                 return (
@@ -528,7 +836,7 @@ export function JobMarketCompass({
                     onClick={() => setActiveCategoryFilter(cat.id)}
                     className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
                       active
-                        ? "bg-neutral-200 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                        ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
                         : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 dark:hover:text-neutral-200 dark:hover:bg-neutral-800/50"
                     }`}
                   >
@@ -540,56 +848,65 @@ export function JobMarketCompass({
 
             <span className="text-[11px] text-neutral-400 hidden sm:inline-block">
               {isRtl
-                ? "الضغط يفتح نتائج البحث ويجهز مسودة طلب فارغة لتسجيله"
-                : "Click launches live search & prepares clean draft"}
+                ? "الضغط يفتح نتائج البحث ويجهز مسودة طلب فارغة"
+                : "Click launches live search & prepares draft"}
             </span>
           </div>
 
-          {/* Platforms Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pt-1">
-            {filteredPlatforms.map((platform) => {
+          {/* Horizontal Rectangular Cards Grid (2 Columns, Official Logos, Full Descriptions) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
+            {displayedPlatforms.map((platform) => {
               return (
                 <button
                   key={platform.id}
                   type="button"
                   onClick={() => handlePlatformClick(platform)}
-                  className="group relative flex flex-col justify-between rounded-2xl border border-border bg-surface p-3.5 text-start transition-all hover:border-neutral-400 hover:shadow-xs dark:hover:border-neutral-600"
+                  className="group flex items-start gap-3.5 rounded-2xl border border-border bg-surface p-4 text-start transition-all hover:border-neutral-400 hover:shadow-sm dark:hover:border-neutral-600 w-full"
                 >
-                  <div className="space-y-1.5 w-full">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 group-hover:text-info-strong transition-colors truncate">
-                        {platform.name}
-                      </span>
-                      <ExternalLink className="h-3.5 w-3.5 shrink-0 text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-neutral-100 transition-colors" />
-                    </div>
-                    <p className="line-clamp-2 text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400">
-                      {isRtl ? platform.descriptionAr : platform.descriptionEn}
-                    </p>
+                  {/* Platform Logo Box */}
+                  <div className="h-11 w-11 shrink-0 rounded-xl border border-border/80 bg-white dark:bg-neutral-900 flex items-center justify-center p-2 shadow-2xs">
+                    <img
+                      src={`https://www.google.com/s2/favicons?domain=${platform.domain}&sz=64`}
+                      alt={platform.name}
+                      className="h-6 w-6 object-contain"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.classList.remove("hidden");
+                      }}
+                    />
+                    <Globe className="h-5 w-5 text-neutral-500 hidden" />
                   </div>
 
-                  <div className="mt-3 pt-2 border-t border-neutral-100 dark:border-neutral-800/80 flex items-center justify-between text-[10px]">
-                    <span
-                      className={`px-1.5 py-0.5 rounded font-medium ${
-                        platform.category === "GLOBAL"
-                          ? "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
-                          : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                      }`}
-                    >
-                      {platform.category === "GLOBAL"
-                        ? (isRtl ? "عالمي" : "Global")
-                        : (isRtl ? "إقليمي" : "Regional")}
-                    </span>
+                  {/* Content (Complete description, no line clamping) */}
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-sm font-bold text-neutral-950 dark:text-neutral-100 group-hover:text-info-strong transition-colors">
+                          {platform.name}
+                        </span>
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                            platform.category === "GLOBAL"
+                              ? "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800"
+                              : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                          }`}
+                        >
+                          {platform.category === "GLOBAL"
+                            ? (isRtl ? "عالمي" : "Global")
+                            : (isRtl ? "إقليمي" : "Regional")}
+                        </span>
+                        <span className="text-[10px] text-neutral-400 font-mono bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded">
+                          {effectiveLocation}
+                        </span>
+                      </div>
+                      <ExternalLink className="h-3.5 w-3.5 shrink-0 text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-neutral-100 transition-colors" />
+                    </div>
 
-                    {!platform.supportsLocationParam && !isRemote ? (
-                      <span className="text-amber-600 dark:text-amber-400 flex items-center gap-0.5" title={isRtl ? "تتطلب فلتر داخلي" : "Manual in-site filter"}>
-                        <AlertCircle className="h-3 w-3" />
-                        <span>{isRtl ? "بحث عام" : "Global only"}</span>
-                      </span>
-                    ) : (
-                      <span className="text-neutral-400 font-mono">
-                        {effectiveLocation}
-                      </span>
-                    )}
+                    <p className="text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
+                      {isRtl ? platform.descriptionAr : platform.descriptionEn}
+                    </p>
                   </div>
                 </button>
               );

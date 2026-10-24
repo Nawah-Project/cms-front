@@ -55,6 +55,7 @@ export interface UserJourneyState {
   currentNodeCode: string;
   currentNodeStartedAt: string;
   weekStartedAt: string;
+  week1StartedAt?: string | null;
   isGroupUnlocked: boolean;
   canUseTableView?: boolean;
   hasUnlockedAdvPrep?: boolean;

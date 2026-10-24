@@ -108,7 +108,7 @@ export default function ReportsPage() {
     setLockedPopoverWeek(weekNum);
     popoverTimerRef.current = window.setTimeout(() => {
       setLockedPopoverWeek(null);
-    }, 4000);
+    }, 1800);
   };
 
   useEffect(() => {
@@ -769,6 +769,30 @@ export default function ReportsPage() {
     );
   }
 
+  const getReportLockedPopoverText = (weekId: number) => {
+    const week1Started = journeyState?.week1StartedAt
+      ? new Date(journeyState.week1StartedAt)
+      : null;
+
+    if (currentWeek === 0 || !week1Started) {
+      return isRtl
+        ? "غير متاح حالياً 🔒 — يبدأ حساب جدول إتاحة هذا الأسبوع فور إتمامك للمهمة صفر وانطلاقك في الأسبوع الأول."
+        : "Currently locked 🔒 — The schedule for this report begins once you finish Task 0 and launch Week 1.";
+    }
+
+    const daysToAdd = (weekId - 1) * 7 + 6;
+    const expectedDate = new Date(week1Started.getTime() + daysToAdd * 86_400_000);
+    const dateFormatted = new Intl.DateTimeFormat(isRtl ? "ar-EG" : "en-US", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(expectedDate);
+
+    return isRtl
+      ? `تقرير الأسبوع ${weekId} غير متاح حالياً 🔒 — الموعد المتوقع لإتاحته: ${dateFormatted} (نهاية الأسبوع ${weekId}).`
+      : `Week ${weekId} Report is locked 🔒 — Expected availability: ${dateFormatted} (end of Week ${weekId}).`;
+  };
+
   return (
     <div className="space-y-8 pb-12 font-sans" dir={isRtl ? "rtl" : "ltr"}>
       {/* 1. Header & Strict Week Filter (Requirement 1) */}
@@ -810,7 +834,17 @@ export default function ReportsPage() {
               const isLocked = tab.isLocked;
 
               return (
-                <div key={String(tab.id)} className="relative" data-week-tab-container>
+                <div
+                  key={String(tab.id)}
+                  className="relative"
+                  data-week-tab-container
+                  onMouseLeave={() => {
+                    if (lockedPopoverWeek === tab.id) {
+                      setLockedPopoverWeek(null);
+                      if (popoverTimerRef.current) window.clearTimeout(popoverTimerRef.current);
+                    }
+                  }}
+                >
                   <button
                     type="button"
                     aria-disabled={isLocked}
@@ -839,7 +873,7 @@ export default function ReportsPage() {
                     <span>{isRtl ? tab.labelAr : tab.labelEn}</span>
                   </button>
 
-                  {/* Anchored Popover (Auto-Dismisses after 4s) */}
+                  {/* Anchored Popover (Auto-Dismisses after 1800ms or onMouseLeave) */}
                   {isLocked && lockedPopoverWeek === tab.id && (
                     <div
                       role="tooltip"
@@ -857,9 +891,7 @@ export default function ReportsPage() {
                         </span>
                       </div>
                       <p className="text-[11px] leading-relaxed text-neutral-600 dark:text-neutral-300">
-                        {isRtl
-                          ? `يُفتح هذا التقرير تلقائياً فور وصولك إلى عقدة "محطة التقييم والتعديل" الخاصة بالأسبوع ${tab.id} في اليوم السابع من رحلتك. ركّز الآن على إنجاز مهام أسبوعك الحالي!`
-                          : `Unlocks automatically upon reaching the Day 7 Strategic Review Station for Week ${tab.id}. Focus on your current week quests!`}
+                        {getReportLockedPopoverText(tab.id as number)}
                       </p>
                     </div>
                   )}

@@ -10,6 +10,15 @@ export type CvMetadata = {
   uploadedAt: string;
 };
 
+export type CvHistoryItem = {
+  id: string;
+  versionNumber: number;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  uploadedAt: string;
+};
+
 export type ProfessionalProfile = {
   id: string;
   name: string;
@@ -18,6 +27,7 @@ export type ProfessionalProfile = {
   cv: CvMetadata | null;
   hasCv: boolean;
   cvVersionNumber?: number;
+  cvHistory?: CvHistoryItem[];
   profileComplete: boolean;
 };
 
@@ -57,6 +67,14 @@ export const profileApi = {
   getCv: async (userId: string): Promise<Blob> => {
     const response = await fetch(
       `${AUTH_API_BASE_URL}/users/${encodeURIComponent(userId)}/cv`,
+      { credentials: "include", headers: { Accept: "application/pdf" } },
+    );
+    if (!response.ok) return readError(response);
+    return response.blob();
+  },
+  getCvHistoryFile: async (historyId: string): Promise<Blob> => {
+    const response = await fetch(
+      `${AUTH_API_BASE_URL}/profile/cv/history/${encodeURIComponent(historyId)}`,
       { credentials: "include", headers: { Accept: "application/pdf" } },
     );
     if (!response.ok) return readError(response);
