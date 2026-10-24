@@ -12,7 +12,7 @@ import { StatusBadge } from "../../../components/StatusBadge";
 import { useI18n } from "../../../i18n";
 import { formatDisplayDate } from "../../../utils/date";
 
-const STAGES: ProgressStage[] = ["applied", "interview", "decision", "closed"];
+const STAGES: ProgressStage[] = ["applied", "assignment", "interview", "decision", "closed"];
 
 function MemberIdentity({
   member,
@@ -288,7 +288,7 @@ export function MemberProgressRow(props: MemberRowState) {
         >
           <td
             id={`member-details-${member.memberId}-desktop`}
-            colSpan={6}
+            colSpan={7}
             className="px-6 pb-5"
           >
             <div
@@ -331,7 +331,7 @@ export function MemberProgressRow(props: MemberRowState) {
         />
         <LastUpdated value={member.lastUpdatedAt} />
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-2">
+      <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
         {STAGES.map((stage) => (
           <div key={stage} className="min-w-0">
             <p className="mb-1 inline-flex items-center gap-1.5 text-[11px] font-medium text-neutral-500">

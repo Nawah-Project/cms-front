@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useOutletContext, useSearchParams } from "react-router";
-import { Lock } from "lucide-react";
+import { Lock, Compass } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { Modal } from "../components/ui/Modal";
 import { EmptyState } from "../components/EmptyState";
 import {
   KanbanIcon,
@@ -142,6 +143,24 @@ export default function ApplicationsPage() {
   };
 
   const updateAppMutation = useUpdateApplication();
+
+  const isGroupUnlocked = Boolean(journeyData?.state.isGroupUnlocked) || totalCount >= 5;
+  const [isCompassModalOpen, setIsCompassModalOpen] = useState(false);
+
+  // One-time milestone celebration toast when compass is relocated to top header
+  useEffect(() => {
+    if (isGroupUnlocked) {
+      const alerted = localStorage.getItem("nawah_compass_relocated_toast");
+      if (!alerted) {
+        toast.info(
+          locale === "ar"
+            ? "🎉 رائع! لقد أتممت 5 طلبات تقديم وتم فتح التفاعل مع المجموعة. تم نقل بوصلة سوق العمل إلى الزر العلوي لتوفير مساحة لمهامك!"
+            : "🎉 Awesome! You completed 5 applications. Job Market Compass has moved to the top header to maximize workspace space!",
+        );
+        localStorage.setItem("nawah_compass_relocated_toast", "true");
+      }
+    }
+  }, [isGroupUnlocked, locale, toast]);
   const [optimisticOverrides, setOptimisticOverrides] = useState<
     Record<string, { stage: Stage; outcome: Outcome }>
   >({});
@@ -295,7 +314,22 @@ export default function ApplicationsPage() {
           </p>
         </div>
 
-        <div>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {isGroupUnlocked && (
+            <button
+              type="button"
+              onClick={() => setIsCompassModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 bg-white px-3.5 py-2 text-xs font-bold text-neutral-800 shadow-2xs hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 transition-colors"
+            >
+              <Compass className="h-4 w-4 text-neutral-600 dark:text-neutral-300" />
+              <span>
+                {locale === "ar"
+                  ? "🧭 بوصلة سوق العمل الذكية"
+                  : "🧭 Job Market Compass"}
+              </span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => openAddModal()}
@@ -307,8 +341,10 @@ export default function ApplicationsPage() {
         </div>
       </div>
 
-      {/* Job Market Compass (V2 Smart Launcher) */}
-      <JobMarketCompass onLaunchDraft={(draft) => openAddModal(draft)} />
+      {/* Job Market Compass (Inline only before 5 applications / when group is locked) */}
+      {!isGroupUnlocked && (
+        <JobMarketCompass onLaunchDraft={(draft) => openAddModal(draft)} />
+      )}
 
       {/* Filter and Search Bar */}
       <div className="space-y-3">
@@ -529,6 +565,26 @@ export default function ApplicationsPage() {
             />
           )}
         </div>
+      )}
+
+      {/* Compass Modal (When opened after reaching 5 applications) */}
+      {isCompassModalOpen && (
+        <Modal
+          isOpen={true}
+          onClose={() => setIsCompassModalOpen(false)}
+          title={locale === "ar" ? "بوصلة سوق العمل الذكية" : "Job Market Compass"}
+          size="xl"
+        >
+          <div className="max-h-[80vh] overflow-y-auto -m-4 p-4 sm:-m-6 sm:p-6">
+            <JobMarketCompass
+              collapsible={false}
+              onLaunchDraft={(draft) => {
+                setIsCompassModalOpen(false);
+                openAddModal(draft);
+              }}
+            />
+          </div>
+        </Modal>
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type DragEvent } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { Navigate, useNavigate, useSearchParams } from "react-router";
 import { PageHeading } from "../../../components/ui/PageHeading";
 import { useI18n } from "../../../i18n";
 import { api } from "../../../services/api";
@@ -38,6 +38,10 @@ export default function TasksPage() {
     enabled: Boolean(user),
   });
   const isUnlocked = canAccessProfessionalDevelopment(journeyData, user);
+
+  if (user?.role !== "ADMIN" && !journeyLoading && (journeyData?.state.currentWeek ?? 0) < 3) {
+    return <Navigate to="/professional-development" replace />;
+  }
 
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedTaskId = searchParams.get("task");

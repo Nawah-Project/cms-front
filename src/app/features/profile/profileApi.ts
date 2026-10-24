@@ -17,6 +17,7 @@ export type ProfessionalProfile = {
   targetJobTitle?: string | null;
   cv: CvMetadata | null;
   hasCv: boolean;
+  cvVersionNumber?: number;
   profileComplete: boolean;
 };
 

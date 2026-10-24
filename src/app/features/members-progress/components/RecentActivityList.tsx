@@ -9,10 +9,56 @@ import { useI18n } from "../../../i18n";
 import { EmptyState } from "../../../components/EmptyState";
 import { useAppModal } from "../../../routes/layout";
 
+function parseSideTaskSummary(
+  sideTask: RecentMemberProgress["sideTask"],
+  fallbackTitle?: string,
+): { title: string; category?: string } {
+  if (!sideTask) return { title: fallbackTitle || "" };
+  const raw = sideTask.reviewSummary || sideTask.postTopic || fallbackTitle || "";
+  if (typeof raw === "string" && raw.trim().startsWith("{")) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed.category === "CV_UPDATE") {
+        return {
+          title: `قام بتحديث السيرة الذاتية (CV v${parsed.version || 1})`,
+          category: "CV_UPDATE",
+        };
+      }
+      if (parsed.category === "PORTFOLIO_UPDATE") {
+        return {
+          title: `قام بتحديث معرض أعماله${parsed.summary ? `: ${parsed.summary}` : ""}`,
+          category: "PORTFOLIO_UPDATE",
+        };
+      }
+      if (parsed.summary) {
+        return { title: parsed.summary, category: parsed.category };
+      }
+    } catch {
+      // not JSON
+    }
+  }
+  return { title: raw };
+}
+
 function ActivityDescription({ event }: { event: RecentMemberProgress }) {
   const { t, locale } = useI18n();
 
   if (event.activityType === "SIDE_TASK" && event.sideTask) {
+    const parsed = parseSideTaskSummary(event.sideTask, event.application.jobTitle);
+
+    if (parsed.category === "CV_UPDATE" || parsed.category === "PORTFOLIO_UPDATE") {
+      return (
+        <span className="inline-flex flex-wrap items-center gap-1.5">
+          <span className="font-medium text-neutral-700 dark:text-neutral-300">
+            {locale === "ar" ? "قام بتحديث بياناته المهنية" : "Updated professional profile"}
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2 py-0.5 text-[11px] font-semibold text-purple-700 dark:bg-purple-950/60 dark:text-purple-300">
+            <span>{parsed.category === "CV_UPDATE" ? (locale === "ar" ? "سيرة ذاتية" : "CV") : (locale === "ar" ? "معرض أعمال" : "Portfolio")}</span>
+          </span>
+        </span>
+      );
+    }
+
     if (event.sideTask.type === "LINKEDIN_POST") {
       return (
         <span className="inline-flex flex-wrap items-center gap-1.5">
@@ -133,9 +179,7 @@ function ActivityItem({
         {/* Subtitle / Details */}
         {event.activityType === "SIDE_TASK" && event.sideTask ? (
           <span className="mt-1 block text-xs text-neutral-600 dark:text-neutral-400">
-            {event.sideTask.postTopic ||
-              event.sideTask.reviewSummary ||
-              event.application.jobTitle}
+            {parseSideTaskSummary(event.sideTask, event.application.jobTitle).title}
           </span>
         ) : (
           <span className="mt-1 block truncate text-sm text-neutral-600 dark:text-neutral-400">

@@ -1542,7 +1542,7 @@ export default function ReportsPage() {
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-sky-400" />
                 <span className="text-neutral-700 dark:text-neutral-300">
-                  {isRtl ? "تم التقديم (قيد الانتظار)" : "Applied (Pending)"}
+                  {isRtl ? "تم التقديم" : "Applied"}
                 </span>
               </div>
               <span className="font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
@@ -1554,7 +1554,7 @@ export default function ReportsPage() {
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-purple-500" />
                 <span className="text-neutral-700 dark:text-neutral-300">
-                  {isRtl ? "اختبار فني / أسيمنت" : "Technical Assignment"}
+                  {isRtl ? "اختبار (أسيمنت)" : "Assignment"}
                 </span>
               </div>
               <span className="font-bold tabular-nums text-purple-600 dark:text-purple-400">
@@ -1566,7 +1566,7 @@ export default function ReportsPage() {
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />
                 <span className="text-neutral-700 dark:text-neutral-300">
-                  {isRtl ? "مقابلة (Interview)" : "Interview Scheduled"}
+                  {isRtl ? "مقابلة" : "Interview"}
                 </span>
               </div>
               <span className="font-bold tabular-nums text-blue-600 dark:text-blue-400">
@@ -1578,7 +1578,7 @@ export default function ReportsPage() {
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-600" />
                 <span className="text-neutral-700 dark:text-neutral-300">
-                  {isRtl ? "عروض وقرارات" : "Decision / Offer"}
+                  {isRtl ? "بانتظار القرار" : "Decision"}
                 </span>
               </div>
               <span className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
@@ -1590,7 +1590,7 @@ export default function ReportsPage() {
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
                 <span className="text-neutral-700 dark:text-neutral-300">
-                  {isRtl ? "مغلق (مرفوض / عدم رد)" : "Closed (Rejected / No Response)"}
+                  {isRtl ? "مغلق" : "Closed"}
                 </span>
               </div>
               <div className="text-end">
@@ -1614,7 +1614,9 @@ export default function ReportsPage() {
               {t("dashboard.eraComparisonTitle")}
             </h2>
             <p className="mt-0.5 text-xs text-neutral-500">
-              {t("dashboard.eraComparisonSubtitle")}
+              {isRtl
+                ? "يقارن معدل استجابة الشركات لكل 10 طلبات بين أحدث نسختين من السيرة الذاتية"
+                : "Compares response rate per 10 applications between your latest two resume versions"}
             </p>
           </div>
 
@@ -1678,259 +1680,27 @@ export default function ReportsPage() {
             )}
           </div>
 
-          <div className="border-t border-border/70 pt-3 text-[11px] text-neutral-500 flex items-center justify-between">
+          <div className="border-t border-border/70 pt-3 text-[11px] text-neutral-500 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <span>
               {isRtl
-                ? "يقارن هذا الرسم كفاءة كل تجهيز أحدثته في استقطاب المقابلات"
-                : "Compares market conversion traction across your iterative setups"}
+                ? "💡 يُحسب معدل الاستجابة بقسمة عدد الردود الإيجابية (المقابلات والاختبارات) على إجمالي الطلبات لكل نسخة، لمساعدتك في قياس مدى فاعلية التعديلات."
+                : "💡 Response rate is calculated by dividing positive responses (interviews & assignments) by total applications per version to measure iteration impact."}
             </span>
-            <button
-              type="button"
-              onClick={() => setIsChangeModalOpen(true)}
-              className="text-xs font-bold text-info-strong hover:underline"
-            >
-              {isRtl ? "+ تسجيل تحديث" : "+ Log Iteration"}
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. Change Impact Tracker & Experiment Log (Requirement 4) */}
-      <section
-        aria-label={t("dashboard.changeTrackerTitle")}
-        className="rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-xs space-y-6"
-      >
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-b border-border/80 pb-4">
-          <div>
-            <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-              {t("dashboard.changeTrackerTitle")}
-            </h2>
-            <p className="mt-0.5 text-xs text-neutral-500">
-              {t("dashboard.changeTrackerSubtitle")}
-            </p>
-          </div>
-
-          {currentWeek >= 3 ? (
-            <button
-              type="button"
-              onClick={() => setIsChangeModalOpen(true)}
-              className="button-primary inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold shadow-xs"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>{t("dashboard.recordNewChange")}</span>
-            </button>
-          ) : (
-            <div className="rounded-xl border border-neutral-200/80 bg-neutral-50 px-3 py-2 text-[11px] leading-relaxed text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-400 max-w-md">
-              <span>
-                {isRtl
-                  ? "يتم تسجيل تحديثات السيرة الذاتية (CV v1, v2) تلقائياً عند رفع ملف جديد في صفحة الملف الشخصي. فتح إمكانية تسجيل التغييرات اليدوية الإضافية (لينكدإن، البورتفوليو، المراسلات) سيبدأ تلقائياً مع الأسبوع 3."
-                  : "CV updates (CV v1, v2) are automatically logged when uploading a new file in your Profile. Manual changes (LinkedIn, Portfolio, Outreach) unlock in Week 3."}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Cards Grid: Baseline + Registered Changes + Single Next Locked Card */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* 1. Baseline Card */}
-          <div className="rounded-xl border border-border bg-neutral-50/60 dark:bg-neutral-900/40 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="rounded-full bg-neutral-200/80 dark:bg-neutral-800 px-2 py-0.5 text-[10px] font-bold text-neutral-800 dark:text-neutral-200">
-                {isRtl ? "النسخة 1 (خط الأساس)" : "Version 1 (Baseline)"}
-              </span>
-              <span className="text-[10px] text-neutral-400">
-                {new Date(baselineChange.createdAt).toLocaleDateString(
-                  isRtl ? "ar-EG" : "en-US",
-                  { month: "short", day: "numeric" },
-                )}
-              </span>
-            </div>
-
-            <div>
-              <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                {baselineChange.title}
-              </h3>
-              <p className="mt-1 text-[11px] leading-relaxed text-neutral-600 dark:text-neutral-400">
-                {baselineChange.note}
-              </p>
-            </div>
-
-            <div className="rounded-lg border border-border/70 bg-surface p-2.5 text-xs space-y-1">
-              <div className="flex items-center justify-between text-neutral-600 dark:text-neutral-400">
-                <span>{isRtl ? "الطلبات بهذه النسخة:" : "Apps Sent:"}</span>
-                <span className="font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
-                  {number(eras[0]?.appsCount ?? 0)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-neutral-600 dark:text-neutral-400">
-                <span>{isRtl ? "الردود المحققة:" : "Responses:"}</span>
-                <span className="font-bold tabular-nums text-info-strong">
-                  {number(eras[0]?.responsesCount ?? 0)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-semibold">
-                <span>{isRtl ? "معدل الاستجابة:" : "Traction Rate:"}</span>
-                <span className="tabular-nums">{eras[0]?.rate ?? 0}%</span>
-              </div>
-            </div>
-          </div>
-
-          {/* 2. Registered Changes Cards */}
-          {eras.slice(1).map((era, i) => (
-            <div
-              key={era.id}
-              className="rounded-xl border border-border bg-surface p-4 space-y-3 shadow-2xs"
-            >
-              <div className="flex items-center justify-between">
-                <span className="rounded-full bg-info-soft px-2 py-0.5 text-[10px] font-bold text-info-strong">
-                  {isRtl ? `تحديث #${i + 1}` : `Iteration #${i + 1}`}
-                </span>
-                <span className="text-[10px] text-neutral-400">
-                  {new Date(era.startDate).toLocaleDateString(
-                    isRtl ? "ar-EG" : "en-US",
-                    { month: "short", day: "numeric" },
-                  )}
-                </span>
-              </div>
-
-              <div>
-                <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                  {era.title}
-                </h3>
-                <p className="mt-1 text-[11px] leading-relaxed text-neutral-600 dark:text-neutral-400 line-clamp-2">
-                  {allChanges[i + 1]?.note || ""}
-                </p>
-              </div>
-
-              {/* Performance During Era */}
-              <div className="rounded-lg border border-border/70 bg-neutral-50/50 dark:bg-neutral-900/40 p-2.5 text-xs space-y-1">
-                <div className="flex items-center justify-between text-neutral-600 dark:text-neutral-400">
-                  <span>{isRtl ? "الطلبات المرسلة:" : "Apps Sent:"}</span>
-                  <span className="font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
-                    {number(era.appsCount)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-neutral-600 dark:text-neutral-400">
-                  <span>{isRtl ? "الردود:" : "Responses:"}</span>
-                  <span className="font-bold tabular-nums text-info-strong">
-                    {number(era.responsesCount)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-semibold">
-                  <span>{isRtl ? "معدل التحول:" : "Traction Rate:"}</span>
-                  <span className="tabular-nums">{era.rate}%</span>
-                </div>
-              </div>
-
-              {/* Impact Verdict Box */}
-              {era.verdict && (
-                <div
-                  className={`rounded-lg border p-2.5 text-xs ${
-                    era.verdict.status === "IMPROVED"
-                      ? "border-emerald-300 bg-emerald-50/70 dark:border-emerald-900/60 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300"
-                      : era.verdict.status === "TESTING"
-                        ? "border-amber-300 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300"
-                        : "border-border bg-neutral-100/70 dark:bg-neutral-900/40 text-neutral-700 dark:text-neutral-300"
-                  }`}
-                >
-                  {era.verdict.status === "IMPROVED" ? (
-                    <div>
-                      <span className="font-bold block">
-                        {isRtl
-                          ? `أثر إيجابي: ارتفع معدل الاستجابة بـ +${era.verdict.deltaPercent}% ↗`
-                          : `Positive Lift: Response rate rose by +${era.verdict.deltaPercent}% ↗`}
-                      </span>
-                      <p className="mt-0.5 text-[10px] opacity-90">
-                        {isRtl
-                          ? "التعديل حقق نتيجة ملموسة مقارنة بالتجهيز السابق."
-                          : "This tooling adjustment drove measurable improvement."}
-                      </p>
-                    </div>
-                  ) : era.verdict.status === "TESTING" ? (
-                    <div>
-                      <span className="font-bold block">
-                        {isRtl
-                          ? `قيد الاختبار — أرسل ${era.verdict.remainingNeeded} طلبات إضافية`
-                          : `Testing — Send ${era.verdict.remainingNeeded} more apps`}
-                      </span>
-                      <p className="mt-0.5 text-[10px] opacity-90">
-                        {isRtl
-                          ? "العينة الحالية قيد الجمع للحكم على أثر التعديل."
-                          : "Building sample to compute statistically valid delta."}
-                      </p>
-                    </div>
-                  ) : (
-                    <div>
-                      <span className="font-bold block">
-                        {isRtl
-                          ? "لم يظهر تحسن بعد — راجع الملاحظات 💡"
-                          : "No lift yet — Review guidance 💡"}
-                      </span>
-                      <p className="mt-0.5 text-[10px] opacity-90">
-                        {isRtl
-                          ? "استعن بنموذج التقييم في محطة المراجعة القادمة."
-                          : "Refine targeting keywords at your next review checkpoint."}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-
-          {/* 3. Next Expected Station Card (Single Locked Card - Zero Spoilers) */}
-          <div className="rounded-xl border-2 border-dashed border-border/80 bg-neutral-50/40 dark:bg-neutral-900/30 p-5 flex flex-col justify-between space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="rounded-full bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300 inline-flex items-center gap-1">
-                <Lock className="h-2.5 w-2.5" />
-                <span>
-                  {currentWeek === 0
-                    ? isRtl
-                      ? "محطة التعديل الأولى"
-                      : "First Iteration Station"
-                    : isRtl
-                      ? `محطة مراجعة الأسبوع ${currentWeek}`
-                      : `Week ${currentWeek} Review Station`}
-                </span>
-              </span>
-            </div>
-
-            <div>
-              <h3 className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
-                {currentWeek === 0
-                  ? isRtl
-                    ? "التطوير التأسيسي بعد المهمة صفر"
-                    : "Foundational Pivot after Task 0"
-                  : isRtl
-                    ? "محطة التقييم والتعديل (اليوم السابع)"
-                    : "Day 7 Strategic Review Station"}
-              </h3>
-              <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
-                {currentWeek === 0
-                  ? isRtl
-                    ? "أكمل المهمة صفر (أول 5 طلبات) لفتح إرشادات التعديل الأول للسيرة الذاتية وقياس الفارق في النتائج."
-                    : "Complete Task 0 (first 5 applications) to unlock initial resume upgrade guidance."
-                  : isRtl
-                    ? "تُفتح محطة التقييم في اليوم السابع لمراجعة نتائج هذا الأسبوع وتعديل أدواتك."
-                    : "Unlocks on Day 7 to review weekly results and calibrate your tooling."}
-              </p>
-            </div>
-
-            <div className="pt-2 border-t border-border/60 flex items-center justify-between text-[11px]">
-              <span className="text-neutral-400">
-                {currentWeek === 0 ? "5 / 5" : isRtl ? "اليوم السابع" : "Day 7"}
-              </span>
+            {currentWeek >= 3 && (
               <button
                 type="button"
-                onClick={openJourneyTasksPanel}
-                className="font-bold text-info-strong hover:underline"
+                disabled={submitSideTaskMutation.isPending}
+                onClick={() => setIsChangeModalOpen(true)}
+                className="text-xs font-bold text-info-strong hover:underline shrink-0 disabled:opacity-50"
               >
-                {isRtl ? "متابعة المهام الحالية" : "View Active Tasks"}
+                {isRtl ? "+ تسجيل تحديث" : "+ Log Iteration"}
               </button>
-            </div>
+            )}
           </div>
         </div>
       </section>
+
+
 
       {/* 7. Modal: Log New Tooling Change (Requirement 4.B) */}
       {isChangeModalOpen && (

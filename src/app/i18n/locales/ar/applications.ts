@@ -38,7 +38,7 @@ export default {
   summaryClosed: "الطلبات المغلقة",
   noApplicationsYet: "لا توجد طلبات تقديم بعد.",
   submitted: "تم التقديم",
-  assignment: "أسيمنت تقني",
+  assignment: "اختبار (أسيمنت)",
   interview: "مقابلة",
   decision: "بانتظار القرار",
   closed: "مغلق",

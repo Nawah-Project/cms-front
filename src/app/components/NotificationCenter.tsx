@@ -5,10 +5,12 @@ import { BellIcon, CheckIcon, ClockIcon, SparklesIcon } from "./Icons";
 import { api } from "../services/api";
 import type { DashboardStats } from "../types";
 import {
+  useJourneyState,
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
   useNotifications,
 } from "../features/journey/api/journeyApi";
+import { useAuth } from "../features/auth/store/authStore";
 import type { AppNotification } from "../features/journey/types";
 import { openJourneyTasksPanel } from "./journeyTasksPanelEvents";
 
@@ -74,6 +76,10 @@ export function NotificationCenter({
     localStorage.setItem("nawah_email_reminders", next ? "true" : "false");
   };
 
+  const { user } = useAuth();
+  const { data: journeyData } = useJourneyState({ enabled: Boolean(user) });
+  const currentWeek = journeyData?.state.currentWeek ?? 0;
+
   const persistentItems = notificationsData?.items ?? [];
   const persistentUnreadCount = notificationsData?.unreadCount ?? 0;
 
@@ -81,7 +87,7 @@ export function NotificationCenter({
   const recentNoResponse = stats?.recentNoResponseCount ?? 0;
   const staleApplicationsCount = stats?.closed?.noResponse ?? 0;
   const companionAlertsCount =
-    (unreadFeedback > 0 ? 1 : 0) +
+    (unreadFeedback > 0 && currentWeek >= 3 ? 1 : 0) +
     (expiringSoon > 0 ? 1 : 0) +
     (recentNoResponse > 0 ? 1 : 0) +
     (staleApplicationsCount > 0 && recentNoResponse === 0 && expiringSoon === 0
@@ -239,7 +245,7 @@ export function NotificationCenter({
             })}
 
             {/* Companion Alerts */}
-            {unreadFeedback > 0 && (
+            {unreadFeedback > 0 && currentWeek >= 3 && (
               <Link
                 to="/professional-development/feedback"
                 onClick={() => setOpen(false)}
@@ -255,7 +261,7 @@ export function NotificationCenter({
                     })}
                   </p>
                   <p className="mt-0.5 text-[11px] text-text-secondary">
-                    {t("professionalDevelopment.feedbackInsights")}
+                    {locale === "ar" ? "الملاحظات" : "Feedback"}
                   </p>
                 </div>
               </Link>

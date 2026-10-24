@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { Navigate, useNavigate, useSearchParams } from "react-router";
 import { useAuth } from "../../auth/store/authStore";
 import { PageHeading } from "../../../components/ui/PageHeading";
 import { JourneyTieredInsights } from "../../journey/components/JourneyTieredInsights";
@@ -621,6 +621,11 @@ export default function FeedbackInsightsPage() {
         <SpinnerIcon className="h-6 w-6 animate-spin text-neutral-400" />
       </div>
     );
+  }
+
+  const currentWeek = journeyData?.state.currentWeek ?? 0;
+  if (currentWeek < 3) {
+    return <Navigate to="/professional-development" replace />;
   }
 
   if (!isUnlocked) {

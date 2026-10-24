@@ -1,10 +1,11 @@
 import type { MemberProgressCounts } from "../types/membersProgress.types";
 import { useI18n } from "../../../i18n";
 
-export type ProgressStage = "applied" | "interview" | "decision" | "closed";
+export type ProgressStage = "applied" | "assignment" | "interview" | "decision" | "closed";
 
 const STAGE_STYLES: Record<ProgressStage, string> = {
   applied: "border-border bg-neutral-soft text-neutral-strong",
+  assignment: "border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-300",
   interview: "border-info-border bg-info-soft text-info-strong",
   decision: "border-warning-border bg-warning-soft text-warning-strong",
   closed: "border-border-strong bg-neutral-100 text-neutral-800",
@@ -27,6 +28,16 @@ export function ProgressStageIcon({ stage }: { stage: ProgressStage }) {
       <svg {...common}>
         <path d="M7 3.5h7l4 4v13H7a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2Z" />
         <path d="M14 3.5v4h4M8.5 13h7M8.5 16.5h7" />
+      </svg>
+    );
+  }
+
+  if (stage === "assignment") {
+    return (
+      <svg {...common}>
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+        <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+        <path d="m9 14 2 2 4-4" />
       </svg>
     );
   }

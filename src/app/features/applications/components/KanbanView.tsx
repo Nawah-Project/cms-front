@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router";
-import type { Application, Outcome, Stage } from "../../../types";
+import { ChevronDown, ExternalLink, Pencil } from "lucide-react";
+import type { Application, Outcome, Stage, UpdateApplicationInput } from "../../../types";
 import { formatApplicationMethod } from "../../../types";
 import { formatShortDate } from "../../../utils/date";
 import {
@@ -11,6 +12,8 @@ import {
 import { StatusBadge } from "./StatusBadge";
 import { useI18n } from "../../../i18n";
 import { Modal } from "../../../components/ui/Modal";
+import { EditApplicationModal } from "./EditApplicationModal";
+import { useUpdateApplication } from "../api/applicationsApi";
 
 interface KanbanViewProps {
   applications: Application[];
@@ -98,7 +101,15 @@ function getColumnDotColor(stage: Stage) {
 
 export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
   const { t, locale } = useI18n();
+  const isRtl = locale === "ar";
   const navigate = useNavigate();
+  const updateMutation = useUpdateApplication();
+
+  // Accordion expanded cards state
+  const [expandedCardIds, setExpandedCardIds] = useState<Set<string>>(new Set());
+
+  // Edit modal state
+  const [editingApp, setEditingApp] = useState<Application | null>(null);
 
   // Drag and drop state
   const [draggedAppId, setDraggedAppId] = useState<string | null>(null);
@@ -106,15 +117,32 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
   const [isDraggingNow, setIsDraggingNow] = useState(false);
 
   // Outcome selection modal when dropping into CLOSED stage
-  const [pendingClosedApp, setPendingClosedApp] = useState<Application | null>(
-    null,
-  );
-  const [selectedClosedOutcome, setSelectedClosedOutcome] =
-    useState<Outcome>("ACCEPTED");
+  const [pendingClosedApp, setPendingClosedApp] = useState<Application | null>(null);
+  const [selectedClosedOutcome, setSelectedClosedOutcome] = useState<Outcome>("ACCEPTED");
 
   const draggedApp = draggedAppId
     ? applications.find((a) => a.id === draggedAppId) || null
     : null;
+
+  const toggleCardExpanded = (appId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setExpandedCardIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(appId)) next.delete(appId);
+      else next.add(appId);
+      return next;
+    });
+  };
+
+  const handleOpenEdit = (app: Application, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingApp(app);
+  };
+
+  const handleSaveEdit = async (id: string, updates: UpdateApplicationInput) => {
+    await updateMutation.mutateAsync({ id, updates });
+    setEditingApp(null);
+  };
 
   const handleDragStart = (e: React.DragEvent, app: Application) => {
     setDraggedAppId(app.id);
@@ -189,6 +217,19 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
     await onStageChange(app.id, "CLOSED", selectedClosedOutcome);
   };
 
+  const handleQuickStageChange = async (app: Application, newStage: Stage, e: React.ChangeEvent<HTMLSelectElement>) => {
+    e.stopPropagation();
+    if (newStage === app.stage) return;
+    if (newStage === "CLOSED") {
+      setPendingClosedApp(app);
+      setSelectedClosedOutcome(app.outcome !== "NONE" ? app.outcome : "ACCEPTED");
+      return;
+    }
+    if (onStageChange) {
+      await onStageChange(app.id, newStage, "NONE");
+    }
+  };
+
   return (
     <div className="w-full select-none">
       <div className="overflow-x-auto pb-4">
@@ -236,7 +277,7 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                 </div>
 
                 {/* Cards Container & Drop Zone */}
-                <div className="space-y-2.5 flex-1 flex flex-col overflow-y-auto">
+                <div className="space-y-2 flex-1 flex flex-col overflow-y-auto">
                   {colApps.length === 0 ? (
                     <div
                       className={`flex-1 flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl text-center transition-all ${
@@ -259,6 +300,7 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                   ) : (
                     <>
                       {colApps.map((app) => {
+                        const isExpanded = expandedCardIds.has(app.id);
                         return (
                           <div
                             key={app.id}
@@ -267,80 +309,145 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                             onDragEnd={handleDragEnd}
                             onClick={() => {
                               if (!isDraggingNow) {
-                                navigate(`/applications/${app.id}`);
+                                toggleCardExpanded(app.id);
                               }
                             }}
-                            className={`p-3.5 rounded-xl border shadow-xs transition-all duration-150 group cursor-grab active:cursor-grabbing hover:shadow-sm ${getApplicationCardColor(app)}`}
+                            className={`p-2.5 rounded-xl border shadow-xs transition-all duration-150 group cursor-grab active:cursor-grabbing hover:shadow-sm ${getApplicationCardColor(app)}`}
                           >
-                            {/* Card Top: Grip handle & Company */}
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex items-center gap-1.5 min-w-0">
+                            {/* Line 1: Grip + Company Name + Edit Pencil + Chevron */}
+                            <div className="flex items-center justify-between gap-1.5">
+                              <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                 <GripVerticalIcon className="w-3.5 h-3.5 text-neutral-300 dark:text-neutral-600 group-hover:text-neutral-500 dark:group-hover:text-neutral-400 transition-colors shrink-0" />
-                                <span className="font-semibold text-xs text-neutral-900 dark:text-neutral-100 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors truncate">
+                                <span className="font-bold text-xs text-neutral-900 dark:text-neutral-100 truncate">
                                   {app.companyName}
                                 </span>
                               </div>
-                              <div className="flex items-center gap-1 shrink-0">
-                                {app.isTailored && (
-                                  <span
-                                    title={t("applications.tailoredBadge")}
-                                    className="inline-flex items-center gap-0.5 rounded-full border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold text-amber-800 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-200"
-                                  >
-                                    <SparklesIcon className="h-2.5 w-2.5" />
-                                    <span>{t("applications.tailoredShort")}</span>
-                                  </span>
-                                )}
-                                {app.jobUrl && (
-                                  <a
-                                    href={app.jobUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-0.5 rounded-sm shrink-0"
-                                    title={t("applications.openJob", {
-                                      company: app.companyName,
-                                    })}
-                                  >
-                                    <ExternalLinkIcon className="w-3 h-3" />
-                                  </a>
-                                )}
+
+                              <div className="flex items-center gap-0.5 shrink-0">
+                                {/* Quick Edit Pencil */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleOpenEdit(app, e)}
+                                  title={t("common.edit")}
+                                  className="p-1 rounded-md text-neutral-400 hover:text-neutral-800 hover:bg-neutral-100 dark:hover:text-neutral-200 dark:hover:bg-neutral-800 transition-colors"
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </button>
+
+                                {/* Chevron Toggle */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => toggleCardExpanded(app.id, e)}
+                                  aria-expanded={isExpanded}
+                                  className="p-1 rounded-md text-neutral-400 hover:text-neutral-800 hover:bg-neutral-100 dark:hover:text-neutral-200 dark:hover:bg-neutral-800 transition-colors"
+                                >
+                                  <ChevronDown
+                                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                                      isExpanded ? "rotate-180" : ""
+                                    }`}
+                                  />
+                                </button>
                               </div>
                             </div>
 
-                            {/* Job Title */}
-                            <div className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mt-1.5 ps-5 truncate">
-                              {app.jobTitle}
-                            </div>
-
-                            {/* Location & Date */}
-                            <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400 mt-2.5 pt-2 border-t border-neutral-100 dark:border-neutral-800/80">
-                              <span>
+                            {/* Line 2: Job Title & Short Date */}
+                            <div className="flex items-center justify-between text-[11px] text-neutral-600 dark:text-neutral-400 ps-5 mt-1">
+                              <span className="truncate font-medium max-w-[130px]">
+                                {app.jobTitle}
+                              </span>
+                              <span className="shrink-0 text-neutral-400 ms-1 text-[10px]">
                                 {formatShortDate(app.applicationDate, locale)}
                               </span>
-                              <span className="truncate max-w-[110px] text-end">
-                                {app.location || t("common.remote")}
-                              </span>
                             </div>
 
-                            {/* Footer: Application Method and Outcome Badge */}
-                            <div className="flex items-center justify-between gap-2 mt-2 pt-1 text-[11px]">
-                              <span className="text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded text-[10px] font-medium truncate max-w-[130px]">
-                                {formatApplicationMethod(
-                                  app.applicationMethod,
-                                  t,
-                                )}
-                              </span>
+                            {/* Accordion Drawer on Click */}
+                            {isExpanded && (
+                              <div
+                                onClick={(e) => e.stopPropagation()}
+                                className="member-detail-enter mt-2.5 pt-2.5 border-t border-neutral-200/80 dark:border-neutral-800 space-y-2.5 text-xs"
+                              >
+                                {/* Location & Method & Job Link */}
+                                <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400">
+                                  <span className="truncate max-w-[110px]">
+                                    {app.location || t("common.remote")}
+                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded text-[10px]">
+                                      {formatApplicationMethod(app.applicationMethod, t)}
+                                    </span>
+                                    {app.jobUrl && (
+                                      <a
+                                        href={app.jobUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-info-strong hover:text-info-strong/80 p-0.5 rounded"
+                                        title={t("applications.openJob", {
+                                          company: app.companyName,
+                                        })}
+                                      >
+                                        <ExternalLink className="h-3 w-3" />
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
 
-                              {col.stage === "CLOSED" &&
-                                (app.outcome === "NONE" ? (
-                                  <StatusBadge kind="stage" value="CLOSED" />
-                                ) : (
-                                  <StatusBadge
-                                    kind="outcome"
-                                    value={app.outcome}
-                                  />
-                                ))}
-                            </div>
+                                {/* Badges */}
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  {app.isTailored && (
+                                    <span
+                                      title={t("applications.tailoredBadge")}
+                                      className="inline-flex items-center gap-0.5 rounded-full border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold text-amber-800 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-200"
+                                    >
+                                      <SparklesIcon className="h-2.5 w-2.5" />
+                                      <span>{t("applications.tailoredShort")}</span>
+                                    </span>
+                                  )}
+                                  {app.sharedWithGroup && (
+                                    <span className="inline-flex items-center gap-0.5 rounded-full border border-emerald-300 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
+                                      <SparklesIcon className="h-2.5 w-2.5" />
+                                      <span>{t("members.sharedOpportunityBadge")}</span>
+                                    </span>
+                                  )}
+                                  {col.stage === "CLOSED" && app.outcome !== "NONE" && (
+                                    <StatusBadge kind="outcome" value={app.outcome} />
+                                  )}
+                                </div>
+
+                                {/* Stage Selector & Prep Workspace CTA */}
+                                <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-100 dark:border-neutral-800/80">
+                                  <select
+                                    value={app.stage}
+                                    onChange={(e) => handleQuickStageChange(app, e.target.value as Stage, e)}
+                                    className="text-[11px] font-medium rounded-lg border border-neutral-300 bg-white dark:border-neutral-700 dark:bg-neutral-800 px-2 py-1 text-neutral-800 dark:text-neutral-200 focus:outline-none"
+                                  >
+                                    {COLUMNS.map((c) => (
+                                      <option key={c.stage} value={c.stage}>
+                                        {t(`applications.${c.label}`)}
+                                      </option>
+                                    ))}
+                                  </select>
+
+                                  {(app.stage === "INTERVIEW" || app.stage === "ASSIGNMENT") ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => navigate(`/applications/${app.id}`)}
+                                      className="text-[11px] font-bold text-info-strong hover:underline inline-flex items-center gap-1"
+                                    >
+                                      <span>{t("applications.openPrepWorkspace")}</span>
+                                      <ExternalLink className="h-2.5 w-2.5" />
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => navigate(`/applications/${app.id}`)}
+                                      className="text-[11px] text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 hover:underline"
+                                    >
+                                      {t("common.details")}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -358,6 +465,16 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
           })}
         </div>
       </div>
+
+      {/* Edit Application Modal */}
+      {editingApp && (
+        <EditApplicationModal
+          isOpen={true}
+          application={editingApp}
+          onClose={() => setEditingApp(null)}
+          onSave={handleSaveEdit}
+        />
+      )}
 
       {/* Outcome Selection Modal when moved to CLOSED stage */}
       <Modal
@@ -439,4 +556,3 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
     </div>
   );
 }
-

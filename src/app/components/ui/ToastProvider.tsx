@@ -7,9 +7,9 @@ import React, {
   useState,
   type ReactNode,
 } from "react";
-import { AlertCircleIcon, CheckIcon, CloseIcon } from "../Icons";
+import { AlertCircle, Check, Info, AlertTriangle, X } from "lucide-react";
 
-export type ToastVariant = "success" | "error" | "info";
+export type ToastVariant = "success" | "error" | "info" | "warning";
 
 export interface ToastOptions {
   message: string;
@@ -27,12 +27,13 @@ export interface ToastContextValue {
   success: (message: string) => void;
   error: (message: string) => void;
   info: (message: string) => void;
+  warning: (message: string) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 const DEFAULT_TOAST_DURATION = 4000;
-const MAX_CONCURRENT_TOASTS = 2;
+const MAX_CONCURRENT_TOASTS = 3;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -71,6 +72,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           next[existingIndex] = {
             ...existing,
             count: existing.count + 1,
+            duration,
           };
           return next;
         }
@@ -83,11 +85,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         timersRef.current.set(id, newTimer);
 
         // Limit concurrent toasts
-        const trimmed = prev.length >= MAX_CONCURRENT_TOASTS
-          ? prev.slice(prev.length - MAX_CONCURRENT_TOASTS + 1)
-          : prev;
+        const trimmed =
+          prev.length >= MAX_CONCURRENT_TOASTS
+            ? prev.slice(prev.length - MAX_CONCURRENT_TOASTS + 1)
+            : prev;
 
-        return [...trimmed, { id, message, variant, count: 1 }];
+        return [...trimmed, { id, message, variant, duration, count: 1 }];
       });
     },
     [removeToast],
@@ -108,42 +111,74 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     [showToast],
   );
 
+  const warning = useCallback(
+    (message: string) => showToast({ message, variant: "warning" }),
+    [showToast],
+  );
+
   const value = useMemo(
-    () => ({ showToast, success, error, info }),
-    [showToast, success, error, info],
+    () => ({ showToast, success, error, info, warning }),
+    [showToast, success, error, info, warning],
   );
 
   return (
     <ToastContext.Provider value={value}>
       {children}
+      <style>{`
+        @keyframes toastProgressAnim {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+      `}</style>
       <div
         aria-live="polite"
         aria-atomic="true"
-        className="fixed top-5 end-5 z-[120] flex max-w-sm w-full flex-col gap-2.5 pointer-events-none px-4 sm:px-0"
+        className="fixed bottom-8 start-5 lg:start-[17.5rem] z-[120] flex max-w-sm w-full flex-col gap-2.5 pointer-events-none px-4 sm:px-0"
       >
         {toasts.map((toast) => {
-          let borderClass = "border-s-info-strong";
-          let icon = <AlertCircleIcon className="h-5 w-5 text-info-strong shrink-0" />;
+          let iconContainer = (
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-50 text-sky-600 dark:bg-sky-950/60 dark:text-sky-300">
+              <Info className="h-4 w-4" />
+            </div>
+          );
+          let progressBarClass = "bg-sky-500";
 
           if (toast.variant === "success") {
-            borderClass = "border-s-success-strong";
-            icon = <CheckIcon className="h-5 w-5 text-success-strong shrink-0" />;
+            iconContainer = (
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-300">
+                <Check className="h-4 w-4" />
+              </div>
+            );
+            progressBarClass = "bg-emerald-500";
           } else if (toast.variant === "error") {
-            borderClass = "border-s-danger-strong";
-            icon = <AlertCircleIcon className="h-5 w-5 text-danger-strong shrink-0" />;
+            iconContainer = (
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-300">
+                <AlertCircle className="h-4 w-4" />
+              </div>
+            );
+            progressBarClass = "bg-rose-500";
+          } else if (toast.variant === "warning") {
+            iconContainer = (
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-300">
+                <AlertTriangle className="h-4 w-4" />
+              </div>
+            );
+            progressBarClass = "bg-amber-500";
           }
+
+          const durationMs = toast.duration || DEFAULT_TOAST_DURATION;
 
           return (
             <div
               key={toast.id}
               role="status"
-              className={`pointer-events-auto flex items-start gap-3 rounded-xl border border-border border-s-4 ${borderClass} bg-surface p-3.5 shadow-lg transition-all duration-200 animate-in fade-in slide-in-from-top-2`}
+              className="pointer-events-auto relative overflow-hidden flex items-start gap-3 rounded-2xl border border-border backdrop-blur-md bg-white/95 dark:bg-neutral-900/95 p-4 shadow-xl transition-all duration-200 animate-in fade-in slide-in-from-bottom-2"
             >
-              {icon}
-              <div className="flex-1 text-sm font-medium text-text-primary leading-snug pt-0.5 flex items-center justify-between gap-2">
+              {iconContainer}
+              <div className="flex-1 text-xs font-semibold text-neutral-900 dark:text-neutral-100 leading-relaxed pt-0.5 flex items-center justify-between gap-2">
                 <span>{toast.message}</span>
                 {toast.count > 1 && (
-                  <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-neutral-200/80 px-2 py-0.5 text-xs font-bold text-neutral-800 shadow-xs dark:bg-neutral-800 dark:text-neutral-200">
+                  <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-neutral-200/80 px-2 py-0.5 text-[10px] font-bold text-neutral-800 shadow-xs dark:bg-neutral-800 dark:text-neutral-200">
                     ×{toast.count}
                   </span>
                 )}
@@ -152,10 +187,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 type="button"
                 onClick={() => removeToast(toast.id)}
                 aria-label="Close"
-                className="rounded-lg p-1 text-text-muted hover:bg-neutral-100 hover:text-text-primary shrink-0 transition-colors dark:hover:bg-neutral-800"
+                className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 shrink-0 transition-colors"
               >
-                <CloseIcon className="h-3.5 w-3.5" />
+                <X className="h-3.5 w-3.5" />
               </button>
+
+              {/* Thin auto-dismiss progress bar */}
+              <div className="absolute inset-x-0 bottom-0 h-0.5 bg-neutral-200/50 dark:bg-neutral-800/50 overflow-hidden">
+                <div
+                  className={`h-full opacity-60 ${progressBarClass}`}
+                  style={{
+                    animation: `toastProgressAnim ${durationMs}ms linear forwards`,
+                  }}
+                />
+              </div>
             </div>
           );
         })}

@@ -38,7 +38,7 @@ export default {
   summaryClosed: "Closed applications",
   noApplicationsYet: "No applications yet.",
   submitted: "Applied",
-  assignment: "Technical Assignment",
+  assignment: "Assignment",
   interview: "Interview",
   decision: "Decision",
   closed: "Closed",

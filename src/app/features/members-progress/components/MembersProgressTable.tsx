@@ -22,11 +22,16 @@ export function MembersProgressTable({
   const { t } = useI18n();
   const stageColumns: { stage: ProgressStage; label: string }[] = [
     { stage: "applied", label: t("applications.submitted") },
+    { stage: "assignment", label: t("applications.assignment") },
     { stage: "interview", label: t("applications.interview") },
     { stage: "decision", label: t("applications.decision") },
     { stage: "closed", label: t("applications.closed") },
   ];
-  const columns = [t("members.member"), ...stageColumns.map(({ label }) => label), t("members.lastUpdatedLabel")];
+  const columns = [
+    t("members.member"),
+    ...stageColumns.map(({ label }) => label),
+    t("members.lastUpdatedLabel"),
+  ];
   const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
   const [details, setDetails] = useState<Record<string, MemberDetail>>({});
   const [loadingMemberId, setLoadingMemberId] = useState<string | null>(null);
@@ -61,27 +66,39 @@ export function MembersProgressTable({
 
   return (
     <div className="space-y-3">
-      {profileMember && <MemberProfessionalCard member={profileMember} onClose={() => setProfileMember(null)} />}
-      <div className="hidden overflow-hidden rounded-xl border border-neutral-300 bg-white shadow-sm md:block">
+      {profileMember && (
+        <MemberProfessionalCard
+          member={profileMember}
+          onClose={() => setProfileMember(null)}
+        />
+      )}
+      <div className="hidden overflow-hidden rounded-xl border border-neutral-300 bg-white shadow-sm md:block dark:border-neutral-800 dark:bg-neutral-900">
         <table className="data-table w-full table-fixed">
           <caption className="sr-only">
             {t("members.tableCaption")}
           </caption>
           <colgroup>
-            <col className="w-[24%]" />
+            <col className="w-[22%]" />
+            <col className="w-[12%]" />
             <col className="w-[14%]" />
-            <col className="w-[14%]" />
-            <col className="w-[14%]" />
-            <col className="w-[14%]" />
-            <col className="w-[20%]" />
+            <col className="w-[12%]" />
+            <col className="w-[12%]" />
+            <col className="w-[12%]" />
+            <col className="w-[16%]" />
           </colgroup>
           <thead>
-            <tr className="data-table-head border-b border-neutral-300 bg-neutral-100 text-neutral-700">
+            <tr className="data-table-head border-b border-neutral-300 bg-neutral-100 text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-300">
               {columns.map((column, index) => (
                 <th
                   key={column}
                   scope="col"
-                  className={`data-table-cell text-xs font-semibold uppercase tracking-wide text-neutral-700 ${index === 0 ? "ps-5 text-start sm:ps-6" : index === columns.length - 1 ? "pe-5 text-end" : "text-center"}`}
+                  className={`data-table-cell text-xs font-semibold uppercase tracking-wide text-neutral-700 dark:text-neutral-300 ${
+                    index === 0
+                      ? "ps-5 text-start sm:ps-6"
+                      : index === columns.length - 1
+                        ? "pe-5 text-end"
+                        : "text-center"
+                  }`}
                 >
                   {index > 0 && index < columns.length - 1 ? (
                     <span className="inline-flex items-center justify-center gap-1.5">
@@ -90,7 +107,9 @@ export function MembersProgressTable({
                       />
                       <span>{column}</span>
                     </span>
-                  ) : column}
+                  ) : (
+                    column
+                  )}
                 </th>
               ))}
             </tr>
