@@ -45,7 +45,7 @@ export default {
   viewGroupProgress: "View group progress",
 
   // New Performance Analytics & Experimentation Lab keys
-  reportsTitle: "Reports & Performance Analytics",
+  reportsTitle: "Performance Analytics",
   reportsSubtitle:
     "Performance analytics lab, conversion funnel, and weekly pivot impact log integrated with Nawah Journey.",
   scopeAll: "All Journey (Overview)",

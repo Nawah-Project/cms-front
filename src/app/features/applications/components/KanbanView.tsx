@@ -32,6 +32,11 @@ const COLUMNS: {
     description: "submittedApplications",
   },
   {
+    stage: "ASSIGNMENT",
+    label: "assignment",
+    description: "assignmentProcess",
+  },
+  {
     stage: "INTERVIEW",
     label: "interview",
     description: "interviewProcess",
@@ -65,6 +70,8 @@ function getApplicationCardColor(app: Application) {
   }
 
   switch (app.stage) {
+    case "ASSIGNMENT":
+      return "bg-surface border-border border-s-4 border-s-purple-500 hover:border-border-hover";
     case "INTERVIEW":
       return "bg-surface border-border border-s-4 border-s-info-strong hover:border-border-hover";
     case "DECISION":
@@ -76,6 +83,8 @@ function getApplicationCardColor(app: Application) {
 
 function getColumnDotColor(stage: Stage) {
   switch (stage) {
+    case "ASSIGNMENT":
+      return "bg-purple-500";
     case "INTERVIEW":
       return "bg-info-strong";
     case "DECISION":
@@ -183,7 +192,7 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
   return (
     <div className="w-full select-none">
       <div className="overflow-x-auto pb-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 min-w-[700px] lg:min-w-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3.5 min-w-[900px] xl:min-w-0">
           {COLUMNS.map((col) => {
             const label = t(`applications.${col.label}`);
             const colApps = applications.filter(

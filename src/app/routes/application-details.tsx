@@ -212,7 +212,9 @@ export default function ApplicationDetailsPage() {
   }
 
   const showPrepWorkspace =
-    application.stage === "INTERVIEW" || Boolean(application.hasAssignment);
+    application.stage === "INTERVIEW" ||
+    application.stage === "ASSIGNMENT" ||
+    Boolean(application.hasAssignment);
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-200">
@@ -318,7 +320,7 @@ export default function ApplicationDetailsPage() {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
           {STAGES.map((s) => {
             const isCurrent = application.stage === s.key;
             return (

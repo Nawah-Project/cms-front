@@ -13,9 +13,22 @@ import {
   timeTitle,
 } from "./components/AdminUI";
 import { TaskFormDialog } from "../professional-development/components/TaskFormDialog";
-import type { CreateTaskInput } from "../professional-development/types";
-import { ArrowLeftIcon, PlusIcon } from "../../components/Icons";
+import { FeedbackFormDialog } from "../professional-development/components/FeedbackFormDialog";
+import type { CreateTaskInput, FeedbackPost } from "../professional-development/types";
+import { ArrowLeftIcon, EditIcon, PlusIcon, SparklesIcon, TrashIcon } from "../../components/Icons";
 import { useToast } from "../../components/ui/ToastProvider";
+
+const TRIGGER_LABELS: Record<string, string> = {
+  INSIGHT_TASK_0_CV_BASE: "المهمة 0: صياغة الـ CV",
+  INSIGHT_W1_INTERVIEW_BASIC: "الأسبوع 1: التجهيز للمقابلة والأسيمنت",
+  INSIGHT_W1_TAILORED_CV: "الأسبوع 1: التقديم المخصص",
+  INSIGHT_W2_CUSTOM_PREP: "الأسبوع 2: التجهيز المخصص",
+  INSIGHT_W2_CONTENT_BUILDING: "الأسبوع 2: بناء المحتوى",
+  INSIGHT_W3_TIME_MGMT: "الأسبوع 3: إدارة الوقت",
+  INSIGHT_W3_NETWORKING: "الأسبوع 3: بناء العلاقات",
+  INSIGHT_W4_SELF_CAREER_PLAN: "الأسبوع 4: التخطيط للكارير",
+  INSIGHT_INTERVIEW_ADVANCED: "حدث: أول مقابلة / أسيمنت",
+};
 
 type DevelopmentMember = AdminMember & {
   development: {
@@ -42,6 +55,38 @@ export default function AdminProfessionalDevelopmentPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [assignGroupOpen, setAssignGroupOpen] = useState(false);
   const [notice, setNotice] = useState("");
+
+  const [activeTab, setActiveTab] = useState<"tasks" | "insights">("tasks");
+  const [feedbackPosts, setFeedbackPosts] = useState<FeedbackPost[]>([]);
+  const [feedbackPage, setFeedbackPage] = useState(1);
+  const [feedbackTotalPages, setFeedbackTotalPages] = useState(1);
+  const [feedbackTotalCount, setFeedbackTotalCount] = useState(0);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackError, setFeedbackError] = useState(false);
+  const [editingPost, setEditingPost] = useState<FeedbackPost | null>(null);
+  const [feedbackFormOpen, setFeedbackFormOpen] = useState(false);
+
+  const loadFeedback = useCallback(async (p = 1) => {
+    setFeedbackLoading(true);
+    setFeedbackError(false);
+    try {
+      const res = await adminApi.feedbackPosts(p, 20);
+      setFeedbackPosts(res.items);
+      setFeedbackPage(res.page);
+      setFeedbackTotalPages(res.totalPages);
+      setFeedbackTotalCount(res.total);
+    } catch {
+      setFeedbackError(true);
+    } finally {
+      setFeedbackLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "insights") {
+      void loadFeedback(feedbackPage);
+    }
+  }, [activeTab, feedbackPage, loadFeedback]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -96,20 +141,196 @@ export default function AdminProfessionalDevelopmentPage() {
         <PageHeading
           eyebrow={t("professionalDevelopment.title")}
           title={t("admin.professionalDevelopment")}
-          description={t("professionalDevelopment.adminDevelopmentDescription")}
+          description={
+            activeTab === "tasks"
+              ? t("professionalDevelopment.adminDevelopmentDescription")
+              : "إدارة ملاحظات الحبكة والتوجيهات الاستراتيجية المربوطة بمحطات مسار الرحلة وقواعد البيانات."
+          }
         />
+        {activeTab === "tasks" ? (
+          <button
+            type="button"
+            onClick={() => setAssignGroupOpen(true)}
+            disabled={!groups.some((group) => group.memberCount > 0)}
+            className="button-primary inline-flex items-center gap-1.5 px-4 py-2 text-sm disabled:opacity-50"
+          >
+            <PlusIcon className="h-4 w-4" />
+            {t("professionalDevelopment.assignGroupTask")}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setEditingPost(null);
+              setFeedbackFormOpen(true);
+            }}
+            className="button-primary inline-flex items-center gap-1.5 px-4 py-2 text-sm shadow-xs"
+          >
+            <PlusIcon className="h-4 w-4" />
+            إضافة ملاحظة / رؤية جديدة
+          </button>
+        )}
+      </div>
+
+      {/* Tab Switcher */}
+      <div className="flex border-b border-border">
         <button
           type="button"
-          onClick={() => setAssignGroupOpen(true)}
-          disabled={!groups.some((group) => group.memberCount > 0)}
-          className="button-primary inline-flex items-center gap-1.5 px-4 py-2 text-sm disabled:opacity-50"
+          onClick={() => setActiveTab("tasks")}
+          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors ${
+            activeTab === "tasks"
+              ? "border-neutral-900 text-neutral-900 dark:border-white dark:text-white"
+              : "border-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200"
+          }`}
         >
-          <PlusIcon className="h-4 w-4" />
-          {t("professionalDevelopment.assignGroupTask")}
+          <span>مهام وتطوير الأعضاء</span>
+          <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+            {totalCount || members.length}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("insights")}
+          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors ${
+            activeTab === "insights"
+              ? "border-neutral-900 text-neutral-900 dark:border-white dark:text-white"
+              : "border-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200"
+          }`}
+        >
+          <span>ملاحظات ورؤى الحبكة (Journey Insights)</span>
+          <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700 dark:bg-purple-950/60 dark:text-purple-300">
+            {feedbackTotalCount || feedbackPosts.length}
+          </span>
         </button>
       </div>
-      {notice && <p role="status" className="text-sm text-success-strong">{notice}</p>}
-      <div className="flex flex-wrap items-end justify-between gap-3">
+
+      {activeTab === "insights" ? (
+        <div className="space-y-4">
+          {feedbackLoading ? (
+            <LoadingState label="جاري تحميل ملاحظات ورؤى الرحلة..." />
+          ) : feedbackError ? (
+            <ErrorState onRetry={() => void loadFeedback(feedbackPage)} />
+          ) : !feedbackPosts.length ? (
+            <EmptyState>
+              لا توجد ملاحظات أو رؤى مسجلة حالياً. انقر على الزر أعلاه لإضافة أول رؤية للمسار.
+            </EmptyState>
+          ) : (
+            <div className="grid gap-3">
+              {feedbackPosts.map((post) => {
+                const triggerLabel = post.unlockTriggerCode
+                  ? (TRIGGER_LABELS[post.unlockTriggerCode] || post.unlockTriggerCode)
+                  : "متاحة فوراً (بدون قفل)";
+
+                return (
+                  <div
+                    key={post.id}
+                    className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-surface p-4 transition-all hover:border-neutral-300 dark:hover:border-neutral-700 sm:flex-row sm:items-center shadow-xs"
+                  >
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`rounded-md px-2 py-0.5 text-xs font-semibold ${
+                            post.unlockTriggerCode
+                              ? "bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800"
+                              : "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+                          }`}
+                        >
+                          {triggerLabel}
+                        </span>
+                        <span className="rounded-md border border-border bg-surface px-2 py-0.5 text-[11px] font-medium text-neutral-600 dark:text-neutral-300">
+                          {post.visibility === "ALL"
+                            ? "لجميع الأعضاء"
+                            : post.visibility === "GROUP"
+                              ? "مجموعة"
+                              : "عضو محدد"}
+                        </span>
+                        {post.promptTemplate && (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
+                            <SparklesIcon className="h-3 w-3 text-amber-500" />
+                            برومبت ذكي
+                          </span>
+                        )}
+                        {post.resources && post.resources.length > 0 && (
+                          <span className="rounded-md bg-info-soft px-2 py-0.5 text-[11px] font-medium text-info-strong border border-info-border">
+                            {post.resources.length} مصادر مرفقة
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                        {post.title}
+                      </h3>
+                      <p className="line-clamp-2 text-xs text-neutral-500 leading-relaxed">
+                        {post.content.replace(/<[^>]*>/g, "")}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingPost(post);
+                          setFeedbackFormOpen(true);
+                        }}
+                        className="button-ghost inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-neutral-700 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white"
+                      >
+                        <EditIcon className="h-3.5 w-3.5" />
+                        تعديل
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!window.confirm("هل أنت متأكد من رغبتك في أرشفة هذه الرؤية؟")) return;
+                          try {
+                            await adminApi.archiveFeedback(post.id);
+                            toast.success("تمت أرشفة الرؤية بنجاح");
+                            void loadFeedback(feedbackPage);
+                          } catch {
+                            toast.error("فشل أرشفة الرؤية");
+                          }
+                        }}
+                        className="button-ghost inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                        title="أرشفة"
+                      >
+                        <TrashIcon className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {!feedbackLoading && !feedbackError && feedbackTotalPages > 1 && (
+            <nav
+              aria-label="صفحات الرؤى"
+              className="flex items-center justify-center gap-3 border-t border-border pt-5"
+            >
+              <button
+                type="button"
+                disabled={feedbackPage <= 1}
+                onClick={() => setFeedbackPage((v) => v - 1)}
+                className="button-secondary px-3 py-2 text-xs disabled:opacity-50"
+              >
+                السابق
+              </button>
+              <span className="text-xs text-neutral-500">
+                صفحة {feedbackPage} من {feedbackTotalPages}
+              </span>
+              <button
+                type="button"
+                disabled={feedbackPage >= feedbackTotalPages}
+                onClick={() => setFeedbackPage((v) => v + 1)}
+                className="button-secondary px-3 py-2 text-xs disabled:opacity-50"
+              >
+                التالي
+              </button>
+            </nav>
+          )}
+        </div>
+      ) : (
+        <>
+          {notice && <p role="status" className="text-sm text-success-strong">{notice}</p>}
+          <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-wrap items-end gap-3 flex-1">
           <label className="grid gap-1 text-xs text-neutral-500 min-w-60 flex-1 max-w-xs">
             {t("admin.member")}
@@ -241,6 +462,8 @@ export default function AdminProfessionalDevelopmentPage() {
           </button>
         </nav>
       )}
+        </>
+      )}
       {selected && (
         <AdminMemberDetail
           member={selected}
@@ -266,6 +489,25 @@ export default function AdminProfessionalDevelopmentPage() {
             setNotice(msg);
             toast.success(msg);
             void load();
+          }}
+        />
+      )}
+      {feedbackFormOpen && (
+        <FeedbackFormDialog
+          post={editingPost}
+          onClose={() => {
+            setFeedbackFormOpen(false);
+            setEditingPost(null);
+          }}
+          onSaved={(msg) => {
+            setFeedbackFormOpen(false);
+            setEditingPost(null);
+            toast.success(
+              msg === "feedbackCreated"
+                ? "تم إنشاء ونشر الرؤية بنجاح"
+                : "تم تحديث الرؤية بنجاح",
+            );
+            void loadFeedback(feedbackPage);
           }}
         />
       )}

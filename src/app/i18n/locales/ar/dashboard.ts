@@ -44,7 +44,7 @@ export default {
   viewGroupProgress: "الاطلاع على نشاط المجموعة",
 
   // New Performance Analytics & Experimentation Lab keys
-  reportsTitle: "التقارير وتحليل الأداء",
+  reportsTitle: "تحليل الأداء",
   reportsSubtitle:
     "معمل تحليل الأداء، مسار التحول، وسجل التجارب الأسبوعية المتكامل مع رحلة نواة.",
   scopeAll: "نظرة شاملة (كل الرحلة)",

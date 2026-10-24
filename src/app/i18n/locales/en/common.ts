@@ -5,7 +5,7 @@ export default {
   languageEnglish: "English",
   navDashboard: "Dashboard",
   navApplications: "My Applications",
-  navReports: "Reports & Analytics",
+  navReports: "Performance Analytics",
   navProfessionalDevelopment: "Professional Development",
   navMembers: "Members Progress",
   navAdmin: "Admin",

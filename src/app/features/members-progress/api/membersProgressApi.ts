@@ -9,7 +9,7 @@ import type {
 } from "../types/membersProgress.types";
 import { apiClient } from "../../../lib/api-client";
 
-const STAGES: Stage[] = ["APPLIED", "INTERVIEW", "DECISION", "CLOSED"];
+const STAGES: Stage[] = ["APPLIED", "ASSIGNMENT", "INTERVIEW", "DECISION", "CLOSED"];
 const OUTCOMES: Exclude<Outcome, "NONE">[] = [
   "ACCEPTED",
   "REJECTED",

@@ -686,8 +686,8 @@ export default function AdminNotificationsPage() {
                       }
                       className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
                         isSelected
-                          ? "border-neutral-900 bg-neutral-900 text-white shadow-xs"
-                          : "border-border bg-surface text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
+                          ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900 shadow-xs"
+                          : "border-border bg-surface text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
                       }`}
                     >
                       {item.label}
@@ -854,19 +854,19 @@ export default function AdminNotificationsPage() {
                       onClick={() => setChannel(ch.id as typeof channel)}
                       className={`rounded-xl border p-2.5 text-center text-xs transition-all ${
                         isSelected
-                          ? "border-neutral-900 bg-neutral-900 text-white font-bold shadow-xs"
-                          : "border-border bg-surface text-neutral-600 hover:bg-neutral-50"
+                          ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900 font-bold shadow-xs"
+                          : "border-border bg-surface text-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-900 dark:text-neutral-300"
                       }`}
                     >
-                      <div className={isSelected ? "text-white font-bold" : "text-neutral-800 font-medium"}>
+                      <div className={isSelected ? "text-white dark:text-neutral-900 font-bold" : "text-neutral-800 dark:text-neutral-200 font-medium"}>
                         {ch.label}
                       </div>
                       {ch.badge && (
                         <span
                           className={`mt-1 inline-block text-[10px] ${
                             isSelected
-                              ? "text-emerald-300 font-semibold"
-                              : "text-emerald-600"
+                              ? "text-emerald-300 dark:text-emerald-700 font-semibold"
+                              : "text-emerald-600 dark:text-emerald-400"
                           }`}
                         >
                           {ch.badge}

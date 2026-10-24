@@ -332,15 +332,15 @@ export function EditApplicationModal({
           <label className="field-label mb-2">
             {t("applications.stage")}
           </label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
             {STAGES.map((s) => (
               <button
                 key={s.key}
                 type="button"
                 onClick={() => handleStageChange(s.key)}
-                className={`px-3 py-2 text-xs font-medium rounded-xl border transition-all ${
+                className={`px-2.5 py-2 text-xs font-medium rounded-xl border transition-all ${
                   stage === s.key
-                    ? "bg-neutral-900 text-white border-neutral-900 shadow-xs"
+                    ? "bg-neutral-900 text-white border-neutral-900 shadow-xs dark:bg-white dark:text-neutral-900 dark:border-white"
                     : "bg-surface text-text-secondary border-border hover:bg-surface-hover"
                 }`}
               >

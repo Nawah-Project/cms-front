@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useOutletContext } from "react-router";
 import {
   TrendingUp,
@@ -28,7 +28,7 @@ import { SpinnerIcon } from "../../../components/Icons";
 
 export function meta() {
   return [
-    { title: "التقارير وتحليل الأداء | Nawah Project" },
+    { title: "تحليل الأداء | Nawah Project" },
     {
       name: "description",
       content:
@@ -90,10 +90,40 @@ export default function ReportsPage() {
   const [reviewDraft, setReviewDraft] = useState("");
   const [newCvChecked, setNewCvChecked] = useState(false);
   const [isChangeModalOpen, setIsChangeModalOpen] = useState(false);
-  const [newChangeCategory, setNewChangeCategory] = useState<ChangeCategory>("CV_UPDATE");
+  const [newChangeCategory, setNewChangeCategory] = useState<ChangeCategory>("PORTFOLIO_UPDATE");
   const [newChangeTitle, setNewChangeTitle] = useState("");
   const [newChangeNote, setNewChangeNote] = useState("");
   const [newChangeIsNewCv, setNewChangeIsNewCv] = useState(true);
+
+  // Locked Week Tab Anchored Popover state
+  const [lockedPopoverWeek, setLockedPopoverWeek] = useState<number | null>(null);
+  const [wigglingTab, setWigglingTab] = useState<number | null>(null);
+  const popoverTimerRef = useRef<number | null>(null);
+
+  const handleLockedTabClick = (weekNum: number) => {
+    setWigglingTab(weekNum);
+    window.setTimeout(() => setWigglingTab(null), 400);
+
+    if (popoverTimerRef.current) window.clearTimeout(popoverTimerRef.current);
+    setLockedPopoverWeek(weekNum);
+    popoverTimerRef.current = window.setTimeout(() => {
+      setLockedPopoverWeek(null);
+    }, 4000);
+  };
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-week-tab-container]")) {
+        setLockedPopoverWeek(null);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      if (popoverTimerRef.current) window.clearTimeout(popoverTimerRef.current);
+    };
+  }, []);
 
   // Growth Curve Chart Controls
   const [viewMode, setViewMode] = useState<"cumulative" | "period">("cumulative");
@@ -447,12 +477,18 @@ export default function ReportsPage() {
   const appliedCount = scopedApps.filter(
     (a) => a.stage === "APPLIED" && !a.hasAssignment && a.outcome === "NONE",
   ).length;
-  const donutAssignmentCount = scopedApps.filter((a) => a.hasAssignment).length;
+  const donutAssignmentCount = scopedApps.filter(
+    (a) =>
+      (a.stage === "ASSIGNMENT" || a.hasAssignment) &&
+      a.stage !== "INTERVIEW" &&
+      a.stage !== "DECISION" &&
+      a.stage !== "CLOSED",
+  ).length;
   const donutInterviewCount = scopedApps.filter(
     (a) => a.stage === "INTERVIEW" && a.outcome === "NONE",
   ).length;
   const donutDecisionCount = scopedApps.filter(
-    (a) => a.stage === "DECISION" || a.outcome === "ACCEPTED",
+    (a) => (a.stage === "DECISION" && a.outcome === "NONE") || a.outcome === "ACCEPTED",
   ).length;
   const donutClosedCount = scopedApps.filter(
     (a) =>
@@ -462,7 +498,9 @@ export default function ReportsPage() {
       a.outcome === "WITHDRAWN",
   ).length;
 
+  const acceptedCount = scopedApps.filter((a) => a.outcome === "ACCEPTED").length;
   const rejectedCount = scopedApps.filter((a) => a.outcome === "REJECTED").length;
+  const withdrawnCount = scopedApps.filter((a) => a.outcome === "WITHDRAWN").length;
   const noResponseCount = scopedApps.filter(
     (a) => a.outcome === "NO_RESPONSE",
   ).length;
@@ -750,50 +788,82 @@ export default function ReportsPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setIsChangeModalOpen(true)}
-              className="button-primary inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold shadow-xs"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>{t("dashboard.recordNewChange")}</span>
-            </button>
-          </div>
+          {currentWeek >= 3 && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsChangeModalOpen(true)}
+                className="button-primary inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold shadow-xs"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>{t("dashboard.recordNewChange")}</span>
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* 5 Filter Tabs with Strict Gating */}
+        {/* 5 Filter Tabs with Anchored Popovers on Locked Tabs */}
         <div className="pt-1">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex items-center gap-2 overflow-visible pb-1 scrollbar-none flex-wrap">
             {FILTER_TABS.map((tab) => {
               const isSelected = selectedWeek === tab.id;
               const isLocked = tab.isLocked;
 
               return (
-                <button
-                  key={String(tab.id)}
-                  type="button"
-                  disabled={isLocked}
-                  aria-disabled={isLocked}
-                  title={
-                    isLocked
-                      ? t("dashboard.filterLockedHint")
-                      : undefined
-                  }
-                  onClick={() => {
-                    if (!isLocked) setSelectedWeek(tab.id);
-                  }}
-                  className={`inline-flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-all ${
-                    isLocked
-                      ? "border-border/60 bg-neutral-100/50 text-neutral-400 dark:bg-neutral-900/40 dark:text-neutral-600 disabled:cursor-not-allowed disabled:opacity-50 select-none"
-                      : isSelected
-                        ? "border-neutral-900 bg-neutral-900 text-white shadow-xs font-bold"
-                        : "border-border bg-surface text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
-                  }`}
-                >
-                  {isLocked && <Lock className="h-3 w-3 text-neutral-400 shrink-0" />}
-                  <span>{isRtl ? tab.labelAr : tab.labelEn}</span>
-                </button>
+                <div key={String(tab.id)} className="relative" data-week-tab-container>
+                  <button
+                    type="button"
+                    aria-disabled={isLocked}
+                    onClick={() => {
+                      if (isLocked) {
+                        handleLockedTabClick(tab.id as number);
+                      } else {
+                        setSelectedWeek(tab.id);
+                      }
+                    }}
+                    className={`inline-flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-all ${
+                      isLocked
+                        ? "border-border/70 bg-neutral-100/60 text-neutral-500 opacity-60 cursor-pointer hover:opacity-85 dark:bg-neutral-900/50 dark:text-neutral-400 select-none"
+                        : isSelected
+                          ? "border-neutral-900 bg-neutral-900 text-white shadow-xs font-bold dark:border-white dark:bg-white dark:text-neutral-900"
+                          : "border-border bg-surface text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                    }`}
+                  >
+                    {isLocked && (
+                      <Lock
+                        className={`h-3 w-3 text-neutral-400 shrink-0 ${
+                          wigglingTab === tab.id ? "animate-lock-wiggle" : ""
+                        }`}
+                      />
+                    )}
+                    <span>{isRtl ? tab.labelAr : tab.labelEn}</span>
+                  </button>
+
+                  {/* Anchored Popover (Auto-Dismisses after 4s) */}
+                  {isLocked && lockedPopoverWeek === tab.id && (
+                    <div
+                      role="tooltip"
+                      className="absolute top-full mt-2 z-50 w-72 rounded-xl border border-neutral-200 bg-white p-3.5 shadow-xl text-start animate-in fade-in slide-in-from-top-1 duration-150 dark:border-neutral-700 dark:bg-neutral-900"
+                      style={{
+                        [isRtl ? "right" : "left"]: 0,
+                      }}
+                    >
+                      <div className="flex items-center gap-1.5 font-bold text-xs text-neutral-900 dark:text-white border-b border-neutral-100 dark:border-neutral-800 pb-1.5 mb-1.5">
+                        <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                        <span>
+                          {isRtl
+                            ? `تقرير الأسبوع ${tab.id} غير متاح حالياً 🔒`
+                            : `Week ${tab.id} Report is currently locked 🔒`}
+                        </span>
+                      </div>
+                      <p className="text-[11px] leading-relaxed text-neutral-600 dark:text-neutral-300">
+                        {isRtl
+                          ? `يُفتح هذا التقرير تلقائياً فور وصولك إلى عقدة "محطة التقييم والتعديل" الخاصة بالأسبوع ${tab.id} في اليوم السابع من رحلتك. ركّز الآن على إنجاز مهام أسبوعك الحالي!`
+                          : `Unlocks automatically upon reaching the Day 7 Strategic Review Station for Week ${tab.id}. Focus on your current week quests!`}
+                      </p>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -963,77 +1033,79 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* Embedded 4-Metric Summary Strip */}
-        <div className="rounded-xl border border-border bg-neutral-50/70 dark:bg-neutral-900/50 p-4 grid grid-cols-2 lg:grid-cols-4 gap-4 divide-y lg:divide-y-0 lg:divide-x lg:divide-x-reverse divide-border/60">
-          {/* Metric 1: Scope & Era */}
-          <div className="pt-2 lg:pt-0 lg:px-3">
-            <span className="text-xs font-medium text-neutral-500">
-              {isRtl ? "النطاق والتجهيز المختار" : "Scope & Active Iteration"}
-            </span>
-            <div className="mt-1 font-bold text-neutral-900 dark:text-neutral-100 text-sm">
-              {selectedWeek === "ALL"
-                ? isRtl
-                  ? "الرحلة الشاملة (تراكمي)"
-                  : "All Journey (Cumulative)"
-                : isRtl
-                  ? `تقرير الأسبوع ${selectedWeek}`
-                  : `Week ${selectedWeek} Report`}
+        {/* 12-Column Split Layout (Side-by-Side on Desktop) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          {/* Right Column (in RTL): Vertically Stacked 4 Metric Cards */}
+          <div className="lg:col-span-4 xl:col-span-3 flex flex-col justify-between gap-3">
+            {/* Metric 1: Scope & Era */}
+            <div className="rounded-xl border border-border bg-neutral-50/70 dark:bg-neutral-900/50 p-3.5 space-y-1">
+              <span className="text-[11px] font-medium text-neutral-500">
+                {isRtl ? "النطاق والتجهيز المختار" : "Scope & Active Iteration"}
+              </span>
+              <div className="font-bold text-neutral-900 dark:text-neutral-100 text-sm">
+                {selectedWeek === "ALL"
+                  ? isRtl
+                    ? "الرحلة الشاملة (تراكمي)"
+                    : "All Journey (Cumulative)"
+                  : isRtl
+                    ? `تقرير الأسبوع ${selectedWeek}`
+                    : `Week ${selectedWeek} Report`}
+              </div>
+              <span className="inline-block rounded-md bg-info-soft border border-info-border px-2 py-0.5 text-[10px] text-info-strong font-semibold">
+                {`CV v${cvVersion} — ${cvVersion === 1 ? (isRtl ? "التجهيز الأولي" : "Baseline") : (isRtl ? `تحديث #${cvVersion - 1}` : `Iteration #${cvVersion - 1}`)}`}
+              </span>
             </div>
-            <p className="mt-0.5 text-[11px] text-info-strong font-medium">
-              {`CV v${cvVersion} — ${cvVersion === 1 ? (isRtl ? "التجهيز الأولي" : "Baseline") : (isRtl ? `تحديث #${cvVersion - 1}` : `Iteration #${cvVersion - 1}`)}`}
-            </p>
+
+            {/* Metric 2: Applications Sent */}
+            <div className="rounded-xl border border-border bg-neutral-50/70 dark:bg-neutral-900/50 p-3.5 space-y-1">
+              <span className="text-[11px] font-medium text-neutral-500">
+                {isRtl ? "إجمالي الطلبات المرسلة" : "Applications Sent"}
+              </span>
+              <div className="text-2xl font-bold tabular-nums text-neutral-950 dark:text-neutral-100">
+                {number(totalAppsCount)}
+              </div>
+              <p className="text-[11px] text-neutral-500">
+                {`${number(openAppsCount)} ${isRtl ? "مفتوح" : "open"} · ${number(closedAppsCount)} ${isRtl ? "مغلق" : "closed"}`}
+              </p>
+            </div>
+
+            {/* Metric 3: Responses Achieved */}
+            <div className="rounded-xl border border-border bg-neutral-50/70 dark:bg-neutral-900/50 p-3.5 space-y-1">
+              <span className="text-[11px] font-medium text-neutral-500">
+                {isRtl ? "عدد الردود والمقابلات" : "Responses & Interviews"}
+              </span>
+              <div className="text-2xl font-bold tabular-nums text-info-strong">
+                {number(totalResponsesCount)}
+              </div>
+              <p className="text-[11px] text-neutral-500">
+                {`${number(assignmentsCount)} ${isRtl ? "أسيمنت" : "assgn"} · ${number(interviewsCount)} ${isRtl ? "مقابلة" : "intvw"} · ${number(decisionsCount)} ${isRtl ? "بانتظار القرار" : "decision"}`}
+              </p>
+            </div>
+
+            {/* Metric 4: Golden Ratio Formula */}
+            <div className="rounded-xl border border-border bg-neutral-50/70 dark:bg-neutral-900/50 p-3.5 space-y-1">
+              <span className="text-[11px] font-medium text-neutral-500">
+                {isRtl ? "متوسط الاستجابة الفعلي (المؤشر الذهبي)" : "Response Ratio (Golden Metric)"}
+              </span>
+              <div className="text-lg font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                {overallRatio > 0
+                  ? isRtl
+                    ? `1 رد : كل ${overallRatio} طلب`
+                    : `1 response : ${overallRatio} apps`
+                  : isRtl
+                    ? "0 ردود حتى الآن"
+                    : "0 responses yet"}
+              </div>
+              <p className="text-[11px] text-neutral-500">
+                {`${isRtl ? "معدل التحول:" : "Conversion:"} ${overallConversionRate}%`}
+              </p>
+            </div>
           </div>
 
-          {/* Metric 2: Applications Sent */}
-          <div className="pt-2 lg:pt-0 lg:px-3">
-            <span className="text-xs font-medium text-neutral-500">
-              {isRtl ? "إجمالي الطلبات المرسلة" : "Applications Sent"}
-            </span>
-            <div className="mt-1 text-2xl font-bold tabular-nums text-neutral-950 dark:text-neutral-100">
-              {number(totalAppsCount)}
-            </div>
-            <p className="mt-0.5 text-[11px] text-neutral-500">
-              {tailoredAppsCount > 0 || currentWeek >= 2
-                ? `${number(tailoredAppsCount)} ${isRtl ? "مخصص" : "tailored"} · ${number(generalAppsCount)} ${isRtl ? "عام" : "standard"}`
-                : `${number(openAppsCount)} ${isRtl ? "مفتوح" : "open"} · ${number(closedAppsCount)} ${isRtl ? "مغلق" : "closed"}`}
-            </p>
-          </div>
-
-          {/* Metric 3: Responses Achieved */}
-          <div className="pt-2 lg:pt-0 lg:px-3">
-            <span className="text-xs font-medium text-neutral-500">
-              {isRtl ? "عدد الردود والمقابلات" : "Responses & Interviews"}
-            </span>
-            <div className="mt-1 text-2xl font-bold tabular-nums text-info-strong">
-              {number(totalResponsesCount)}
-            </div>
-            <p className="mt-0.5 text-[11px] text-neutral-500">
-              {`${number(interviewsCount)} ${isRtl ? "مقابلة" : "intvw"} · ${number(assignmentsCount)} ${isRtl ? "أسيمنت" : "assgn"} · ${number(decisionsCount)} ${isRtl ? "عروض/قرار" : "offers"}`}
-            </p>
-          </div>
-
-          {/* Metric 4: Golden Ratio Formula */}
-          <div className="pt-2 lg:pt-0 lg:px-3">
-            <span className="text-xs font-medium text-neutral-500">
-              {isRtl ? "متوسط الاستجابة الفعلي (المؤشر الذهبي)" : "Response Ratio (Golden Metric)"}
-            </span>
-            <div className="mt-1 text-lg font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-              {overallRatio > 0
-                ? isRtl
-                  ? `1 رد : كل ${overallRatio} طلب`
-                  : `1 response : ${overallRatio} apps`
-                : isRtl
-                  ? "0 ردود حتى الآن"
-                  : "0 responses yet"}
-            </div>
-            <p className="mt-0.5 text-[11px] text-neutral-500">
-              {`${isRtl ? "معدل التحول:" : "Conversion:"} ${overallConversionRate}%`}
-            </p>
-          </div>
-        </div>
-
-        {/* Interactive SVG Area Line Chart */}
-        <div className="relative">
+          {/* Left Column (in RTL): Edge-to-Edge SVG Curve + Bottom Legend */}
+          <div className="lg:col-span-8 xl:col-span-9 flex flex-col justify-between rounded-xl border border-border/60 bg-neutral-50/30 dark:bg-neutral-950/30 p-4 min-h-[340px]">
+            {/* Interactive SVG Area Line Chart */}
+            <div className="relative flex-1 flex flex-col justify-center">
           {chartPoints.length === 0 ? (
             <div className="flex h-56 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-neutral-50/50 dark:bg-neutral-900/30 text-center p-6">
               <Activity className="h-8 w-8 text-neutral-400 mb-2" />
@@ -1356,6 +1428,8 @@ export default function ReportsPage() {
               );
             })()
           )}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1524,7 +1598,9 @@ export default function ReportsPage() {
                   {number(donutClosedCount)} ({totalAppsCount > 0 ? Math.round((donutClosedCount / totalAppsCount) * 100) : 0}%)
                 </span>
                 <span className="block text-[10px] text-neutral-400">
-                  {`${number(rejectedCount)} ${isRtl ? "مرفوض" : "rejected"} · ${number(noResponseCount)} ${isRtl ? "عدم رد" : "no resp"}`}
+                  {isRtl
+                    ? `مقبول: ${number(acceptedCount)} · مرفوض: ${number(rejectedCount)} · منسحب: ${number(withdrawnCount)} · لا يوجد رد: ${number(noResponseCount)}`
+                    : `Accepted: ${number(acceptedCount)} · Rejected: ${number(rejectedCount)} · Withdrawn: ${number(withdrawnCount)} · No Response: ${number(noResponseCount)}`}
                 </span>
               </div>
             </div>
@@ -1634,14 +1710,24 @@ export default function ReportsPage() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsChangeModalOpen(true)}
-            className="button-primary inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold shadow-xs"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>{t("dashboard.recordNewChange")}</span>
-          </button>
+          {currentWeek >= 3 ? (
+            <button
+              type="button"
+              onClick={() => setIsChangeModalOpen(true)}
+              className="button-primary inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold shadow-xs"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>{t("dashboard.recordNewChange")}</span>
+            </button>
+          ) : (
+            <div className="rounded-xl border border-neutral-200/80 bg-neutral-50 px-3 py-2 text-[11px] leading-relaxed text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-400 max-w-md">
+              <span>
+                {isRtl
+                  ? "يتم تسجيل تحديثات السيرة الذاتية (CV v1, v2) تلقائياً عند رفع ملف جديد في صفحة الملف الشخصي. فتح إمكانية تسجيل التغييرات اليدوية الإضافية (لينكدإن، البورتفوليو، المراسلات) سيبدأ تلقائياً مع الأسبوع 3."
+                  : "CV updates (CV v1, v2) are automatically logged when uploading a new file in your Profile. Manual changes (LinkedIn, Portfolio, Outreach) unlock in Week 3."}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Cards Grid: Baseline + Registered Changes + Single Next Locked Card */}
@@ -1846,230 +1932,6 @@ export default function ReportsPage() {
         </div>
       </section>
 
-      {/* 6. Context-Aware Station Card (Requirement 5) */}
-      <section
-        aria-label="محطة التقييم والتعديل"
-        className="rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-xs space-y-4"
-      >
-        {currentWeek === 0 ? (
-          /* Case 1: Researcher in TASK_0 */
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-            <div className="space-y-1.5 max-w-2xl">
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200 px-2.5 py-0.5 text-xs font-bold">
-                  {isRtl ? "المهمة صفر النشطة" : "Active Task 0"}
-                </span>
-                <span className="text-xs text-neutral-500">
-                  {isRtl ? "كسر حاجز البداية" : "Overcoming Inertia"}
-                </span>
-              </div>
-              <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-                {isRtl
-                  ? "المحطة القادمة: التعديل التأسيسي الأول بعد المهمة صفر"
-                  : "Next Checkpoint: Foundational Setup Calibration"}
-              </h2>
-              <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                {isRtl
-                  ? `تبقى لك ${Math.max(0, 5 - totalAppsCount)} من أول 5 طلبات لإتمام المهمة صفر وفتح أول تقرير إرشادي وتطوير سيرتك الذاتية (CV v2) قبل بدء الأسبوع الأول.`
-                  : `You have ${Math.max(0, 5 - totalAppsCount)} remaining of your initial 5 applications to complete Task 0 and unlock your initial resume coaching guide.`}
-              </p>
-
-              {/* Progress bar */}
-              <div className="pt-2 max-w-md">
-                <div className="flex items-center justify-between text-[11px] font-bold text-neutral-700 dark:text-neutral-300 mb-1">
-                  <span>{isRtl ? "التقدم في المهمة صفر:" : "Task 0 Progress:"}</span>
-                  <span className="tabular-nums">
-                    {Math.min(5, totalAppsCount)} / 5
-                  </span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
-                  <div
-                    className="h-full bg-neutral-900 dark:bg-white rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(100, (totalAppsCount / 5) * 100)}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-              <button
-                type="button"
-                onClick={openAddModal}
-                className="button-primary inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold shadow-xs"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                <span>{isRtl ? "إضافة طلب تقديم جديد" : "Add Application"}</span>
-              </button>
-              <button
-                type="button"
-                onClick={openJourneyTasksPanel}
-                className="button-secondary inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold"
-              >
-                <Compass className="h-3.5 w-3.5 text-info-strong" />
-                <span>{isRtl ? "فتح درج مهام الرحلة" : "Open Journey Tasks"}</span>
-              </button>
-            </div>
-          </div>
-        ) : isAtReviewStation ? (
-          /* Case 2: Researcher at Review Station */
-          <div className="space-y-4">
-            <div>
-              <span className="rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-200 px-2.5 py-0.5 text-xs font-bold">
-                {isRtl ? "محطة اليوم السابع النشطة" : "Active Day 7 Review Station"}
-              </span>
-              <h2 className="mt-2 text-base font-bold text-neutral-900 dark:text-neutral-100">
-                {isRtl
-                  ? "محطة اليوم السابع: تقييم الأداء وتعديل التجهيز"
-                  : "Day 7 Strategic Review Station: Performance Evaluation & Pivot"}
-              </h2>
-              <p className="mt-1 text-xs text-neutral-500">
-                {isRtl
-                  ? "سجل ملخص التعديلات التي قمت بها في هذا الأسبوع وتأثيرها لنقلك للأسبوع التالي."
-                  : "Record your weekly review summary and tooling adjustments to advance your journey."}
-              </p>
-            </div>
-
-            <form onSubmit={handleDay7ReviewSubmit} className="space-y-4 max-w-3xl">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
-                  {isRtl
-                    ? "ما التعديل الذي قمت به في أدواتك/سيرتك الذاتية بناءً على أرقام هذا الأسبوع؟"
-                    : "What calibration did you make to your tools/CV based on this week's metrics?"}
-                </label>
-                <textarea
-                  rows={3}
-                  value={reviewDraft}
-                  onChange={(e) => setReviewDraft(e.target.value)}
-                  placeholder={
-                    isRtl
-                      ? "مثال: قمت بتعديل ملخص السيرة الذاتية للتركيز على نتائج المشاريع وإعادة صياغة الكلمات المفتاحية..."
-                      : "e.g., Calibrated resume headline to highlight business impact and aligned keywords..."
-                  }
-                  className="w-full rounded-xl border border-border bg-neutral-50/60 dark:bg-neutral-900 p-3 text-xs text-neutral-900 dark:text-white focus:border-neutral-900 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  id="day7-new-cv"
-                  type="checkbox"
-                  checked={newCvChecked}
-                  onChange={(e) => setNewCvChecked(e.target.checked)}
-                  className="h-4 w-4 rounded border-border text-neutral-900 focus:ring-0"
-                />
-                <label
-                  htmlFor="day7-new-cv"
-                  className="text-xs font-medium text-neutral-700 dark:text-neutral-300"
-                >
-                  {isRtl
-                    ? "تم تحديث السيرة الذاتية ورفع النسخة المطورة (v+1)"
-                    : "Updated CV and prepared next iteration (v+1)"}
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                disabled={!reviewDraft.trim() || submitSideTaskMutation.isPending}
-                className="button-primary inline-flex items-center gap-2 py-2 px-4 text-xs font-semibold disabled:opacity-50 shadow-xs"
-              >
-                <Send className="h-3.5 w-3.5" />
-                <span>
-                  {submitSideTaskMutation.isPending
-                    ? isRtl
-                      ? "جارٍ الحفظ والترقية…"
-                      : "Saving…"
-                    : isRtl
-                      ? "حفظ ملخص التعديل وتأكيد المحطة"
-                      : "Submit Review & Advance"}
-                </span>
-              </button>
-            </form>
-          </div>
-        ) : (
-          /* Case 3: Researcher in Sprint (Days 1 to 6) */
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="space-y-2 max-w-2xl">
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-info-soft text-info-strong px-2.5 py-0.5 text-xs font-bold">
-                  {isRtl ? "مرحلة التنفيذ الأسبوعي" : "Active Weekly Sprint"}
-                </span>
-                <span className="text-xs text-neutral-500">
-                  {journeyData?.currentNode?.titleAr || (isRtl ? "المهمة النشطة" : "Active Node")}
-                </span>
-              </div>
-              <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-                {isRtl
-                  ? "التحضير لمحطة اليوم السابع (التقييم والتعديل)"
-                  : "Preparing for Day 7 Strategic Review Station"}
-              </h2>
-              <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                {isRtl
-                  ? "ركز حالياً على إتمام المهام النشطة. في اليوم السابع ستتوقف لتقييم استجابة الشركات وتعديل استراتيجيتك للأسبوع القادم."
-                  : "Focus on your active applications sprint. On Day 7 you will evaluate market traction and pivot your tooling."}
-              </p>
-
-              <div className="pt-2 flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={openJourneyTasksPanel}
-                  className="button-secondary inline-flex items-center gap-2 py-2 px-3 text-xs font-semibold"
-                >
-                  <Compass className="h-4 w-4 text-info-strong" />
-                  <span>{isRtl ? "متابعة مهام الأسبوع في الدرج" : "Open Journey Tasks"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={openAddModal}
-                  className="button-primary inline-flex items-center gap-1.5 py-2 px-3 text-xs font-semibold shadow-xs"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>{isRtl ? "تسجيل طلب تقديم جديد" : "Add Application"}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Quick Metrics Strip */}
-            <div className="rounded-xl border border-border bg-neutral-50/70 dark:bg-neutral-900/60 p-4 min-w-[240px] space-y-2.5">
-              <span className="text-xs font-bold text-neutral-700 dark:text-neutral-300 block">
-                {isRtl ? "مؤشرات الجاهزية للمحطة" : "Station Readiness"}
-              </span>
-
-              <div className="space-y-1.5 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-neutral-500">
-                    {isRtl ? "الطلبات المتبقية بالمهمة:" : "Remaining in task:"}
-                  </span>
-                  <span className="font-bold tabular-nums text-neutral-800 dark:text-neutral-200">
-                    {number(
-                      Math.max(
-                        0,
-                        (journeyData?.currentNode?.requiredAppsCount ?? 0) -
-                          (journeyData?.currentNode?.progress?.apps?.current ?? 0),
-                      ),
-                    )}{" "}
-                    {isRtl ? "طلب" : "apps"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-neutral-500">
-                    {isRtl ? "ملاحظات المقابلات:" : "Logged notes:"}
-                  </span>
-                  <span className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-                    {number(applications.filter((a) => a.interviewNotes).length)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-neutral-500">
-                    {isRtl ? "نسخة الـ CV الحالية:" : "Current CV Version:"}
-                  </span>
-                  <span className="font-bold text-info-strong">v{cvVersion}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </section>
-
       {/* 7. Modal: Log New Tooling Change (Requirement 4.B) */}
       {isChangeModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
@@ -2097,18 +1959,13 @@ export default function ReportsPage() {
             </div>
 
             <form onSubmit={handleSaveNewChange} className="space-y-4">
-              {/* Category Pills */}
+              {/* Category Pills (Without CV Update - CV is automated upon upload) */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-neutral-800 dark:text-neutral-200 block">
                   {t("dashboard.fieldCategory")}
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {[
-                    {
-                      id: "CV_UPDATE" as ChangeCategory,
-                      label: t("dashboard.categoryCv"),
-                      icon: FileText,
-                    },
                     {
                       id: "PORTFOLIO_UPDATE" as ChangeCategory,
                       label: t("dashboard.categoryPortfolio"),
@@ -2131,14 +1988,11 @@ export default function ReportsPage() {
                       <button
                         key={cat.id}
                         type="button"
-                        onClick={() => {
-                          setNewChangeCategory(cat.id);
-                          if (cat.id === "CV_UPDATE") setNewChangeIsNewCv(true);
-                        }}
+                        onClick={() => setNewChangeCategory(cat.id)}
                         className={`p-2.5 rounded-xl border text-start text-xs font-medium transition-all flex items-start gap-2 ${
                           isSelected
-                            ? "border-neutral-900 bg-neutral-900 text-white shadow-xs font-bold"
-                            : "border-border bg-surface text-neutral-700 hover:bg-neutral-50"
+                            ? "border-neutral-900 bg-neutral-900 text-white shadow-xs font-bold dark:border-white dark:bg-white dark:text-neutral-900"
+                            : "border-border bg-surface text-neutral-700 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-800"
                         }`}
                       >
                         <IconComp className="h-3.5 w-3.5 shrink-0 mt-0.5" />
@@ -2161,8 +2015,8 @@ export default function ReportsPage() {
                   onChange={(e) => setNewChangeTitle(e.target.value)}
                   placeholder={
                     isRtl
-                      ? "مثال: تعديل الـ CV للتركيز على قيمة البيزنس وإبراز TypeScript"
-                      : "e.g., Calibrated resume to highlight business value and TypeScript"
+                      ? "مثال: تعديل البورتفوليو وإضافة مشاريع الإنتاج السابقة"
+                      : "e.g., Added production projects to portfolio"
                   }
                   className="w-full rounded-xl border border-border bg-neutral-50/60 dark:bg-neutral-900 px-3.5 py-2 text-xs text-neutral-900 dark:text-white focus:border-neutral-900 focus:outline-none"
                 />
@@ -2184,23 +2038,6 @@ export default function ReportsPage() {
                   }
                   className="w-full rounded-xl border border-border bg-neutral-50/60 dark:bg-neutral-900 p-3 text-xs text-neutral-900 dark:text-white focus:border-neutral-900 focus:outline-none"
                 />
-              </div>
-
-              {/* New CV Version Checkbox */}
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  id="modal-new-cv"
-                  type="checkbox"
-                  checked={newChangeIsNewCv}
-                  onChange={(e) => setNewChangeIsNewCv(e.target.checked)}
-                  className="h-4 w-4 rounded border-border text-neutral-900 focus:ring-0"
-                />
-                <label
-                  htmlFor="modal-new-cv"
-                  className="text-xs font-medium text-neutral-700 dark:text-neutral-300"
-                >
-                  {t("dashboard.fieldNewCv")} (CV v{cvVersion + 1})
-                </label>
               </div>
 
               {/* Modal Buttons */}

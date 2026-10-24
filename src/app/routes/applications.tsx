@@ -319,6 +319,7 @@ export default function ApplicationsPage() {
               { key: "ALL", label: t("applications.filterAll") },
               { key: "ACTIVE", label: t("applications.filterActive") },
               { key: "APPLIED", label: t("applications.submitted") },
+              { key: "ASSIGNMENT", label: t("applications.assignment") },
               { key: "INTERVIEW", label: t("applications.interview") },
               { key: "DECISION", label: t("applications.decision") },
               { key: "CLOSED", label: t("applications.closed") },

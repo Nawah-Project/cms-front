@@ -29,6 +29,13 @@ export function JourneyTieredInsights() {
   );
   const isAdmin = user?.role === "ADMIN";
 
+  const unlockedItems = JOURNEY_INSIGHTS_CATALOG.filter(
+    (item) => isAdmin || unlockedSet.has(item.code),
+  );
+  const firstLockedItem = JOURNEY_INSIGHTS_CATALOG.find(
+    (item) => !isAdmin && !unlockedSet.has(item.code),
+  );
+
   return (
     <section
       aria-labelledby="tiered-insights-heading"
@@ -53,48 +60,22 @@ export function JourneyTieredInsights() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {JOURNEY_INSIGHTS_CATALOG.map((item) => {
-          const isUnlocked = isAdmin || unlockedSet.has(item.code);
+        {unlockedItems.map((item) => {
           const title = locale === "ar" ? item.titleAr : item.titleEn;
           const summary = locale === "ar" ? item.summaryAr : item.summaryEn;
-          const unlockReq =
-            locale === "ar"
-              ? item.unlockRequirementAr
-              : item.unlockRequirementEn;
           const promptTemplate =
             locale === "ar" ? item.promptTemplateAr : item.promptTemplateEn;
 
           return (
             <article
               key={item.code}
-              className={`flex flex-col justify-between rounded-2xl border p-4 transition-all sm:p-5 ${
-                isUnlocked
-                  ? "border-neutral-300 bg-white shadow-2xs dark:border-neutral-700 dark:bg-neutral-900"
-                  : item.isAdvanced
-                    ? "border-amber-300/80 bg-amber-50/40 dark:border-amber-800/60 dark:bg-amber-950/20"
-                    : "border-dashed border-border bg-neutral-50/60 dark:bg-neutral-900/40"
-              }`}
+              className="flex flex-col justify-between rounded-2xl border border-neutral-300 bg-white p-4 shadow-2xs transition-all sm:p-5 dark:border-neutral-700 dark:bg-neutral-900"
             >
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                      isUnlocked
-                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
-                        : "bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200"
-                    }`}
-                  >
-                    {isUnlocked ? (
-                      <>
-                        <Unlock className="h-3 w-3" aria-hidden="true" />
-                        <span>{t("journey.insightUnlockedBadge")}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="h-3 w-3" aria-hidden="true" />
-                        <span>{unlockReq}</span>
-                      </>
-                    )}
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
+                    <Unlock className="h-3 w-3" aria-hidden="true" />
+                    <span>{t("journey.insightUnlockedBadge")}</span>
                   </span>
 
                   <span className="text-[11px] font-medium text-neutral-400">
@@ -114,11 +95,30 @@ export function JourneyTieredInsights() {
 
               <PromptCopyBox
                 promptTemplate={promptTemplate}
-                locked={!isUnlocked}
+                locked={false}
               />
             </article>
           );
         })}
+
+        {/* Single Fog of War Mystery Card (Zero Spoilers) */}
+        {firstLockedItem && (
+          <article className="relative flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/80 p-6 text-center transition-all dark:border-neutral-700 dark:bg-neutral-900/40 min-h-[220px]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-200/80 text-neutral-700 shadow-xs dark:bg-neutral-800 dark:text-neutral-300">
+              <Lock className="h-5 w-5" aria-hidden="true" />
+            </div>
+
+            <h3 className="mt-3 text-sm font-bold text-neutral-900 dark:text-neutral-100">
+              {locale === "ar" ? "رؤية المحطة القادمة 🔒" : "Next Station Insight 🔒"}
+            </h3>
+
+            <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
+              {locale === "ar"
+                ? "تفتح هذه الرؤية والبرومبت الاستراتيجي المرافق لها فور وصولك لمحطتك القادمة في الرحلة. ركّز على إنجاز مهامك الحالية أولاً!"
+                : "This strategic insight and accompanying prompt will unlock upon reaching your next journey station. Stay focused on your current tasks!"}
+            </p>
+          </article>
+        )}
       </div>
     </section>
   );

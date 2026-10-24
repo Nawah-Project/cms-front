@@ -83,6 +83,14 @@ export interface CreateFeedbackInput {
   groupId?: string;
   context?: FeedbackContext;
   tags?: FeedbackTag[];
+  unlockTriggerCode?: string | null;
+  promptTemplate?: string | null;
+  resources?: Array<{
+    title: string;
+    url: string;
+    type?: string;
+    description?: string;
+  }> | null;
   resource?: {
     title: string;
     url: string;

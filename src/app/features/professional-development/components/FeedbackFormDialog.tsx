@@ -34,6 +34,13 @@ const TAGS: FeedbackTag[] = [
   "GENERAL",
 ];
 
+interface FormResourceItem {
+  title: string;
+  url: string;
+  type: string;
+  description: string;
+}
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")
@@ -105,13 +112,27 @@ export function FeedbackFormDialog({
     post?.context ?? "GENERAL",
   );
   const [tags, setTags] = useState<FeedbackTag[]>(post?.tags ?? []);
-  const [resourceTitle, setResourceTitle] = useState(
-    post?.resources[0]?.title ?? "",
+  const [unlockTriggerCode, setUnlockTriggerCode] = useState(
+    post?.unlockTriggerCode ?? "",
   );
-  const [resourceUrl, setResourceUrl] = useState(post?.resources[0]?.url ?? "");
-  const [resourceDescription, setResourceDescription] = useState(
-    post?.resources[0]?.description ?? "",
+  const [promptTemplate, setPromptTemplate] = useState(
+    post?.promptTemplate ?? "",
   );
+  const [resourceList, setResourceList] = useState<FormResourceItem[]>(() => {
+    if (post?.resources && post.resources.length > 0) {
+      return post.resources.map((r) => ({
+        title: r.title,
+        url: r.url,
+        type: r.type || "ARTICLE",
+        description: r.description || "",
+      }));
+    }
+    return [];
+  });
+  const [newResTitle, setNewResTitle] = useState("");
+  const [newResUrl, setNewResUrl] = useState("");
+  const [newResType, setNewResType] = useState("ARTICLE");
+  const [newResDesc, setNewResDesc] = useState("");
   const [members, setMembers] = useState<AdminMember[]>([]);
   const [memberPage, setMemberPage] = useState(1);
   const [memberPages, setMemberPages] = useState(1);
@@ -245,20 +266,42 @@ export function FeedbackFormDialog({
       setError(t("professionalDevelopment.chooseAudience"));
       return;
     }
-    if (resourceUrl.trim()) {
+
+    const pendingResource =
+      newResUrl.trim() && newResTitle.trim()
+        ? [
+            {
+              title: newResTitle.trim(),
+              url: newResUrl.trim(),
+              type: newResType,
+              description: newResDesc.trim(),
+            },
+          ]
+        : [];
+
+    const allResources = [...resourceList, ...pendingResource];
+
+    for (const res of allResources) {
       try {
-        const url = new URL(resourceUrl.trim());
+        const url = new URL(res.url);
         if (url.protocol !== "https:" || url.username || url.password)
           throw new Error("unsafe");
       } catch {
         setError(t("professionalDevelopment.resourceRequiresHttps"));
         return;
       }
-      if (!resourceTitle.trim()) {
+      if (!res.title.trim()) {
         setError(t("professionalDevelopment.formError"));
         return;
       }
     }
+
+    const formattedResources = allResources.map((res) => ({
+      title: res.title.trim(),
+      url: res.url.trim(),
+      type: res.type || "ARTICLE",
+      ...(res.description?.trim() ? { description: res.description.trim() } : {}),
+    }));
 
     const input: CreateFeedbackInput = {
       title: title.trim(),
@@ -266,6 +309,10 @@ export function FeedbackFormDialog({
       visibility,
       context,
       tags,
+      unlockTriggerCode: unlockTriggerCode.trim() || null,
+      promptTemplate: promptTemplate.trim() || null,
+      resources: formattedResources,
+      resource: formattedResources[0] ?? null,
       ...(!post || audienceChanged
         ? visibility === "DIRECT"
           ? { targetUserId }
@@ -273,15 +320,6 @@ export function FeedbackFormDialog({
             ? { groupId }
             : {}
         : {}),
-      resource: resourceUrl.trim()
-        ? {
-            title: resourceTitle.trim(),
-            url: resourceUrl.trim(),
-            ...(resourceDescription.trim()
-              ? { description: resourceDescription.trim() }
-              : {}),
-          }
-        : null,
       sendEmailNotification,
     };
 
@@ -370,6 +408,30 @@ export function FeedbackFormDialog({
                 className="field-control"
               />
             </label>
+
+            <label className="grid gap-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              <span>محطة فتح الرؤية في مسار الرحلة (Journey Station Unlock Trigger)</span>
+              <select
+                value={unlockTriggerCode}
+                onChange={(e) => setUnlockTriggerCode(e.target.value)}
+                className="field-control text-xs"
+              >
+                <option value="">متاحة فوراً لجميع المستهدفين (بدون قفل مرحلي)</option>
+                <option value="INSIGHT_TASK_0_CV_BASE">المهمة 0: إتمام صياغة السيرة الذاتية (INSIGHT_TASK_0_CV_BASE)</option>
+                <option value="INSIGHT_W1_INTERVIEW_BASIC">الأسبوع 1: بعد المهمة 2 - التجهيز للمقابلة والأسيمنت (INSIGHT_W1_INTERVIEW_BASIC)</option>
+                <option value="INSIGHT_W1_TAILORED_CV">الأسبوع 1: محطة اليوم السابع - التقديم المخصص (INSIGHT_W1_TAILORED_CV)</option>
+                <option value="INSIGHT_W2_CUSTOM_PREP">الأسبوع 2: بعد المهمة 2 - التجهيز المخصص (INSIGHT_W2_CUSTOM_PREP)</option>
+                <option value="INSIGHT_W2_CONTENT_BUILDING">الأسبوع 2: محطة اليوم السابع - بناء المحتوى (INSIGHT_W2_CONTENT_BUILDING)</option>
+                <option value="INSIGHT_W3_TIME_MGMT">الأسبوع 3: بعد المهمة 2 - إدارة الوقت (INSIGHT_W3_TIME_MGMT)</option>
+                <option value="INSIGHT_W3_NETWORKING">الأسبوع 3: محطة اليوم السابع - بناء العلاقات (INSIGHT_W3_NETWORKING)</option>
+                <option value="INSIGHT_W4_SELF_CAREER_PLAN">الأسبوع 4: بعد المهمة 2 - التخطيط الاستراتيجي للكارير (INSIGHT_W4_SELF_CAREER_PLAN)</option>
+                <option value="INSIGHT_INTERVIEW_ADVANCED">حدث شرطي: عند تسجيل أول مقابلة أو أسيمنت (INSIGHT_INTERVIEW_ADVANCED)</option>
+              </select>
+              <span className="text-[11px] text-neutral-500">
+                تحدد متى تصبح هذه الرؤية مرئية للطالب في قسم الملاحظات والرؤى ومحرك الرحلة.
+              </span>
+            </label>
+
             <div className="grid gap-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300">
               <span>{t("professionalDevelopment.contentLabel")}</span>
               <div className="overflow-hidden rounded-lg border border-border bg-surface focus-within:border-neutral-500 focus-within:ring-2 focus-within:ring-neutral-900/15 dark:focus-within:ring-white/15">
@@ -424,6 +486,24 @@ export function FeedbackFormDialog({
               </div>
               <span className="text-xs font-normal text-neutral-500">
                 {t("professionalDevelopment.contentHelp")}
+              </span>
+            </div>
+
+            <div className="grid gap-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              <div className="flex items-center justify-between">
+                <span>البرومبت الذكي (اختياري)</span>
+                <span className="text-[11px] text-neutral-400 font-mono">Prompt Template</span>
+              </div>
+              <textarea
+                rows={4}
+                value={promptTemplate}
+                onChange={(event) => setPromptTemplate(event.target.value)}
+                placeholder="اكتب البرومبت الذي سيظهر للطالب داخل مربع داكن قابل للنسخ بنقرة زر واحدة..."
+                className="w-full rounded-xl border border-neutral-800 bg-neutral-950 p-3 font-mono text-xs leading-relaxed text-neutral-100 placeholder:text-neutral-600 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+                dir="auto"
+              />
+              <span className="text-xs font-normal text-neutral-500">
+                سيظهر للطالب أسفل الرؤية في صندوق أنيق مع زر نسخ فوري للمساعدة في التطبيق العملي.
               </span>
             </div>
           </div>
@@ -626,48 +706,157 @@ export function FeedbackFormDialog({
             </fieldset>
           </div>
 
-          <fieldset className="space-y-3 rounded-xl border border-border p-4 sm:p-5">
-            <legend className="px-1 text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-              {t("professionalDevelopment.resourceOptional")}
-            </legend>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
-                {t("professionalDevelopment.resourceTitle")}
-                <input
-                  maxLength={200}
-                  value={resourceTitle}
-                  onChange={(event) => setResourceTitle(event.target.value)}
-                  placeholder={t(
-                    "professionalDevelopment.resourceTitlePlaceholder",
-                  )}
-                  className="field-control"
-                />
-              </label>
-              <label className="grid gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
-                {t("professionalDevelopment.resourceUrl")}
-                <input
-                  type="url"
-                  maxLength={2048}
-                  value={resourceUrl}
-                  onChange={(event) => setResourceUrl(event.target.value)}
-                  placeholder="https://"
-                  className="field-control"
-                />
-              </label>
-              <label className="grid gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300 sm:col-span-2">
-                {t("professionalDevelopment.resourceDescription")}
-                <input
-                  maxLength={1000}
-                  value={resourceDescription}
-                  onChange={(event) =>
-                    setResourceDescription(event.target.value)
-                  }
-                  placeholder={t(
-                    "professionalDevelopment.resourceDescriptionPlaceholder",
-                  )}
-                  className="field-control"
-                />
-              </label>
+          <fieldset className="space-y-4 rounded-xl border border-border p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <legend className="px-1 text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                المصادر والمراجع المرفقة (مقالات، فيديوهات، أدوات)
+              </legend>
+              <span className="text-xs text-neutral-400">
+                {resourceList.length} مصادر مضافة
+              </span>
+            </div>
+
+            {/* Existing Resources List */}
+            {resourceList.length > 0 && (
+              <div className="space-y-2">
+                {resourceList.map((res, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-border bg-neutral-50/70 p-3 dark:bg-neutral-900/50"
+                  >
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="rounded bg-neutral-200 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+                          {res.type === "VIDEO"
+                            ? "فيديو"
+                            : res.type === "TOOL"
+                              ? "أداة"
+                              : res.type === "DOCUMENT"
+                                ? "مستند"
+                                : "مقال"}
+                        </span>
+                        <span className="font-semibold text-xs text-neutral-900 dark:text-neutral-100 truncate">
+                          {res.title}
+                        </span>
+                      </div>
+                      <a
+                        href={res.url}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="block truncate font-mono text-[11px] text-info-strong hover:underline"
+                        dir="ltr"
+                      >
+                        {res.url}
+                      </a>
+                      {res.description && (
+                        <p className="text-[11px] text-neutral-500 truncate">
+                          {res.description}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setResourceList((list) =>
+                          list.filter((_, i) => i !== index),
+                        )
+                      }
+                      className="rounded p-1 text-neutral-400 hover:bg-neutral-200 hover:text-danger-strong dark:hover:bg-neutral-800"
+                      title="حذف المصدر"
+                    >
+                      <CloseIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add Resource Sub-Form */}
+            <div className="rounded-xl border border-dashed border-border p-3.5 bg-surface space-y-3">
+              <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 block">
+                + إضافة مصدر جديد
+              </span>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <label className="grid gap-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 sm:col-span-2">
+                  عنوان المصدر
+                  <input
+                    maxLength={200}
+                    value={newResTitle}
+                    onChange={(e) => setNewResTitle(e.target.value)}
+                    placeholder="مثال: دليل بناء سيرة ذاتية متوافقة مع ATS"
+                    className="field-control"
+                  />
+                </label>
+                <label className="grid gap-1 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+                  نوع المصدر
+                  <select
+                    value={newResType}
+                    onChange={(e) => setNewResType(e.target.value)}
+                    className="field-control"
+                  >
+                    <option value="ARTICLE">مقال أو مرجع</option>
+                    <option value="VIDEO">فيديو أو شرح</option>
+                    <option value="TOOL">أداة أو برمجية</option>
+                    <option value="DOCUMENT">ملف أو نموذج مستند</option>
+                  </select>
+                </label>
+                <label className="grid gap-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 sm:col-span-3">
+                  رابط المصدر (HTTPS حصراً)
+                  <input
+                    type="url"
+                    maxLength={2048}
+                    value={newResUrl}
+                    onChange={(e) => setNewResUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="field-control font-mono text-xs"
+                    dir="ltr"
+                  />
+                </label>
+                <label className="grid gap-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 sm:col-span-3">
+                  وصف مختصر (اختياري)
+                  <input
+                    maxLength={1000}
+                    value={newResDesc}
+                    onChange={(e) => setNewResDesc(e.target.value)}
+                    placeholder="شرح موجز لأهمية المصدر وكيفية الاستفادة منه..."
+                    className="field-control"
+                  />
+                </label>
+              </div>
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  disabled={!newResTitle.trim() || !newResUrl.trim()}
+                  onClick={() => {
+                    try {
+                      const parsed = new URL(newResUrl.trim());
+                      if (parsed.protocol !== "https:") {
+                        setError("يجب أن يبدأ رابط المصدر بـ https:// حصراً");
+                        return;
+                      }
+                    } catch {
+                      setError("صيغة رابط المصدر غير صالحة");
+                      return;
+                    }
+                    setError("");
+                    setResourceList((list) => [
+                      ...list,
+                      {
+                        title: newResTitle.trim(),
+                        url: newResUrl.trim(),
+                        type: newResType,
+                        description: newResDesc.trim(),
+                      },
+                    ]);
+                    setNewResTitle("");
+                    setNewResUrl("");
+                    setNewResDesc("");
+                  }}
+                  className="button-secondary px-3 py-1.5 text-xs disabled:opacity-40"
+                >
+                  + تثبيت المصدر في القائمة
+                </button>
+              </div>
             </div>
           </fieldset>
 

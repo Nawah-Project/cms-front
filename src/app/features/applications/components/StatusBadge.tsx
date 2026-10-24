@@ -7,6 +7,7 @@ type StatusBadgeProps =
 
 const STAGE_STYLE: Record<Stage, string> = {
   APPLIED: "status-neutral",
+  ASSIGNMENT: "border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-300",
   INTERVIEW: "status-info",
   DECISION: "status-warning",
   CLOSED: "status-neutral",
@@ -23,6 +24,7 @@ export function StatusBadge(props: StatusBadgeProps) {
   const { t } = useI18n();
   const stageKeys: Record<Stage, string> = {
     APPLIED: "applications.submitted",
+    ASSIGNMENT: "applications.assignment",
     INTERVIEW: "applications.interview",
     DECISION: "applications.decision",
     CLOSED: "applications.closed",

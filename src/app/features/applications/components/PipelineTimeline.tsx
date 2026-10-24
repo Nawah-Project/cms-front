@@ -9,7 +9,7 @@ interface PipelineTimelineProps {
   onStageSelect?: (stage: Stage) => void;
 }
 
-const ORDERED_STAGES: Stage[] = ["APPLIED", "INTERVIEW", "DECISION", "CLOSED"];
+const ORDERED_STAGES: Stage[] = ["APPLIED", "ASSIGNMENT", "INTERVIEW", "DECISION", "CLOSED"];
 
 export function PipelineTimeline({
   currentStage,
@@ -19,6 +19,7 @@ export function PipelineTimeline({
   const { t } = useI18n();
   const labels: Record<Stage, string> = {
     APPLIED: t("applications.submitted"),
+    ASSIGNMENT: t("applications.assignment"),
     INTERVIEW: t("applications.interview"),
     DECISION: t("applications.decision"),
     CLOSED: t("applications.closed"),

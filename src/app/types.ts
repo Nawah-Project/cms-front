@@ -1,4 +1,4 @@
-export type Stage = "APPLIED" | "INTERVIEW" | "DECISION" | "CLOSED";
+export type Stage = "APPLIED" | "ASSIGNMENT" | "INTERVIEW" | "DECISION" | "CLOSED";
 
 export type Outcome =
   "NONE" | "ACCEPTED" | "REJECTED" | "WITHDRAWN" | "NO_RESPONSE";
@@ -148,6 +148,7 @@ export function formatApplicationMethod(
 
 export const STAGES: { key: Stage; label: string }[] = [
   { key: "APPLIED", label: "Applied" },
+  { key: "ASSIGNMENT", label: "Assignment" },
   { key: "INTERVIEW", label: "Interview" },
   { key: "DECISION", label: "Decision" },
   { key: "CLOSED", label: "Closed" },
