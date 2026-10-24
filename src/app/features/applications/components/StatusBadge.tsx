@@ -7,7 +7,7 @@ type StatusBadgeProps =
 
 const STAGE_STYLE: Record<Stage, string> = {
   APPLIED: "status-neutral",
-  ASSIGNMENT: "border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-300",
+  ASSIGNMENT: "status-assignment",
   INTERVIEW: "status-info",
   DECISION: "status-warning",
   CLOSED: "status-neutral",

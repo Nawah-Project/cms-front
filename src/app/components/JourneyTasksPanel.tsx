@@ -5,6 +5,7 @@ import { useAuth } from "../features/auth/store/authStore";
 import { useJourneyState } from "../features/journey/api/journeyApi";
 import { JourneyQuestsMap } from "../features/journey/components/JourneyQuestsMap";
 import { OPEN_JOURNEY_TASKS_PANEL_EVENT } from "./journeyTasksPanelEvents";
+import { useTour } from "../features/applications/components/FirstApplicationGuidedTour";
 
 export function JourneyTasksPanel() {
   const { t, locale } = useI18n();
@@ -12,6 +13,7 @@ export function JourneyTasksPanel() {
   const { data: journeyData } = useJourneyState();
   const [open, setOpen] = useState(false);
   const [hasUnseenUpdate, setHasUnseenUpdate] = useState(false);
+  const { isTourActive, step, setStep } = useTour();
   const [coachmarkSeen, setCoachmarkSeen] = useState<boolean>(() => {
     try {
       return localStorage.getItem("nawah_journey_coachmark_seen") === "true";
@@ -75,6 +77,15 @@ export function JourneyTasksPanel() {
     }
   }, [open, coachmarkSeen]);
 
+  // Step 2 forcing open & Step >= 3 auto-closing
+  useEffect(() => {
+    if (isTourActive && step === 2) {
+      setOpen(true);
+    } else if (isTourActive && step >= 3 && open) {
+      setOpen(false);
+    }
+  }, [isTourActive, step, open]);
+
   useEffect(() => {
     const openPanel = () => setOpen(true);
     window.addEventListener(OPEN_JOURNEY_TASKS_PANEL_EVENT, openPanel);
@@ -85,11 +96,13 @@ export function JourneyTasksPanel() {
   useEffect(() => {
     if (!open) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") {
+        if (!isTourActive) setOpen(false);
+      }
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [open]);
+  }, [open, isTourActive]);
 
   const isRtl = locale === "ar";
   // In RTL (drawer on left): closed arrow points right (>), open arrow points left (<)
@@ -107,7 +120,9 @@ export function JourneyTasksPanel() {
         <button
           type="button"
           aria-label={t("common.close")}
-          onClick={() => setOpen(false)}
+          onClick={() => {
+            if (!isTourActive) setOpen(false);
+          }}
           className="fixed inset-y-0 end-0 start-0 z-50 cursor-default bg-neutral-950/30 lg:start-64"
         />
       )}
@@ -120,7 +135,9 @@ export function JourneyTasksPanel() {
           height: "min(50rem, calc(100dvh - 2rem))",
           transform: open ? "translateX(0)" : `translateX(${hiddenOffset})`,
         }}
-        className="fixed end-5 top-1/2 z-[60] -translate-y-1/2 transition-transform duration-300 ease-out pointer-events-none"
+        className={`fixed end-5 top-1/2 -translate-y-1/2 transition-transform duration-300 ease-out pointer-events-none ${
+          isTourActive && (step === 1 || step === 2) ? "z-[9995]" : "z-[60]"
+        }`}
       >
         {/* Inner Panel Drawer */}
         <div
@@ -148,7 +165,9 @@ export function JourneyTasksPanel() {
             </div>
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                if (!isTourActive) setOpen(false);
+              }}
               aria-label={t("common.close")}
               aria-controls="journey-tasks-drawer"
               aria-expanded={true}
@@ -166,10 +185,19 @@ export function JourneyTasksPanel() {
         {/* Unified Sliding Handle Button (100% mechanical lockstep with drawer movement) */}
         <button
           type="button"
+          data-tour-step="journey-drawer-handle"
           aria-controls="journey-tasks-drawer"
           aria-expanded={open}
           aria-label={open ? t("journey.closePanel") : t("journey.panelTitle")}
-          onClick={() => setOpen((prev) => !prev)}
+          onClick={() => {
+            setOpen((prev) => {
+              const next = !prev;
+              if (next && isTourActive && step === 1) {
+                setStep(2);
+              }
+              return next;
+            });
+          }}
           style={{
             [isRtl ? "left" : "right"]: "calc(100% - 1px)",
           }}

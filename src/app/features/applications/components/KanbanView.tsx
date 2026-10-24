@@ -75,7 +75,7 @@ function getApplicationCardColor(app: Application) {
 
   switch (app.stage) {
     case "ASSIGNMENT":
-      return "bg-surface border-border border-s-4 border-s-purple-500 hover:border-border-hover";
+      return "bg-surface border-border border-s-4 border-s-[#525b88] hover:border-border-hover";
     case "INTERVIEW":
       return "bg-surface border-border border-s-4 border-s-info-strong hover:border-border-hover";
     case "DECISION":
@@ -87,16 +87,18 @@ function getApplicationCardColor(app: Application) {
 
 function getColumnDotColor(stage: Stage) {
   switch (stage) {
+    case "APPLIED":
+      return "bg-[#64748b]";
     case "ASSIGNMENT":
-      return "bg-purple-500";
+      return "bg-[#525b88]";
     case "INTERVIEW":
-      return "bg-info-strong";
+      return "bg-[#285987]";
     case "DECISION":
-      return "bg-warning-strong";
+      return "bg-[#b47d1c]";
     case "CLOSED":
-      return "bg-neutral-600";
+      return "bg-[#4b5563]";
     default:
-      return "bg-neutral-400";
+      return "bg-[#64748b]";
   }
 }
 

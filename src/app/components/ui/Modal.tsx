@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useI18n } from "../../i18n";
 import { CloseIcon } from "../Icons";
 
@@ -8,6 +9,7 @@ export interface ModalProps {
   title: string;
   subtitle?: string;
   size?: "sm" | "md" | "lg" | "xl" | "2xl";
+  zIndex?: number;
   disableClose?: boolean;
   children: React.ReactNode;
   footer?: React.ReactNode;
@@ -27,104 +29,106 @@ export function Modal({
   title,
   subtitle,
   size = "md",
+  zIndex,
   disableClose = false,
   children,
   footer,
 }: ModalProps) {
   const { t } = useI18n();
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
   const titleId = useId();
   const subtitleId = useId();
 
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
     if (isOpen) {
       previouslyFocusedElement.current = document.activeElement as HTMLElement;
-      if (!dialog.open) {
-        dialog.showModal();
-      }
-    } else {
-      if (dialog.open) {
-        dialog.close();
-      }
-      if (previouslyFocusedElement.current) {
-        previouslyFocusedElement.current.focus();
-      }
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        if (previouslyFocusedElement.current) {
+          previouslyFocusedElement.current.focus();
+        }
+      };
     }
   }, [isOpen]);
 
-  const handleCancel = (e: React.SyntheticEvent<HTMLDialogElement, Event>) => {
-    e.preventDefault();
-    if (!disableClose) {
-      onClose();
-    }
-  };
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !disableClose) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, disableClose, onClose]);
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
-    if (disableClose) return;
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    const rect = dialog.getBoundingClientRect();
-    const isInDialog =
-      rect.top <= e.clientY &&
-      e.clientY <= rect.top + rect.height &&
-      rect.left <= e.clientX &&
-      e.clientX <= rect.left + rect.width;
-    if (!isInDialog) {
-      onClose();
-    }
-  };
-
-  if (!isOpen) {
+  if (!isOpen || typeof document === "undefined") {
     return null;
   }
 
-  return (
-    <dialog
-      ref={dialogRef}
-      onCancel={handleCancel}
-      onClick={handleBackdropClick}
+  const containerZIndex = zIndex ?? 100;
+
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
       aria-labelledby={titleId}
       aria-describedby={subtitle ? subtitleId : undefined}
-      className={`fixed inset-0 z-50 m-auto w-full ${SIZE_CLASSES[size]} rounded-2xl border border-border bg-surface p-0 text-text-primary shadow-xl backdrop:bg-neutral-900/50 backdrop:backdrop-blur-xs animate-in fade-in zoom-in-95 duration-150`}
+      style={{ zIndex: containerZIndex }}
+      className="fixed inset-0 flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
     >
-      <div className="flex max-h-[90vh] flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-start justify-between border-b border-border px-6 py-4">
-          <div className="space-y-0.5 pe-4">
-            <h2 id={titleId} className="text-base font-semibold text-text-primary">
-              {title}
-            </h2>
-            {subtitle && (
-              <p id={subtitleId} className="text-xs text-text-secondary">
-                {subtitle}
-              </p>
-            )}
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-neutral-950/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-150"
+        onClick={() => {
+          if (!disableClose) onClose();
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Modal Dialog Card */}
+      <div
+        className={`relative z-10 w-full ${SIZE_CLASSES[size]} rounded-2xl border border-border bg-surface p-0 text-text-primary shadow-2xl animate-in fade-in zoom-in-95 duration-150 my-auto`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex max-h-[90vh] flex-col overflow-hidden">
+          {/* Header */}
+          <div className="flex items-start justify-between border-b border-border px-6 py-4">
+            <div className="space-y-0.5 pe-4">
+              <h2 id={titleId} className="text-base font-semibold text-text-primary">
+                {title}
+              </h2>
+              {subtitle && (
+                <p id={subtitleId} className="text-xs text-text-secondary">
+                  {subtitle}
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={disableClose}
+              aria-label={t("common.close")}
+              className="rounded-lg p-1 text-text-muted hover:bg-neutral-100 hover:text-text-primary disabled:pointer-events-none disabled:opacity-40"
+            >
+              <CloseIcon className="h-4 w-4" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={disableClose}
-            aria-label={t("common.close")}
-            className="rounded-lg p-1 text-text-muted hover:bg-neutral-100 hover:text-text-primary disabled:pointer-events-none disabled:opacity-40"
-          >
-            <CloseIcon className="h-4 w-4" />
-          </button>
+
+          {/* Scrollable Content */}
+          <div className="overflow-y-auto p-6">{children}</div>
+
+          {/* Footer */}
+          {footer && (
+            <div className="flex items-center justify-end gap-3 border-t border-border bg-neutral-50/60 px-6 py-4">
+              {footer}
+            </div>
+          )}
         </div>
-
-        {/* Scrollable Content */}
-        <div className="overflow-y-auto p-6">{children}</div>
-
-        {/* Footer */}
-        {footer && (
-          <div className="flex items-center justify-end gap-3 border-t border-border bg-neutral-50/60 px-6 py-4">
-            {footer}
-          </div>
-        )}
       </div>
-    </dialog>
+    </div>,
+    document.body,
   );
 }

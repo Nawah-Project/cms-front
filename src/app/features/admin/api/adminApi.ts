@@ -20,6 +20,7 @@ export type UxConfig = {
 };
 export type StageCounts = {
   applied: number;
+  assignment?: number;
   interview: number;
   decision: number;
   closed: number;

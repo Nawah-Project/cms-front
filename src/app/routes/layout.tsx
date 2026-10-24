@@ -21,6 +21,7 @@ import {
   type MilestoneCelebrationData,
 } from "../features/journey/lib/celebrationEvents";
 import { MilestoneCelebrationModal } from "../components/ui/MilestoneCelebrationModal";
+import { FirstApplicationGuidedTourProvider } from "../features/applications/components/FirstApplicationGuidedTour";
 
 export interface AppContextType {
   openAddModal: (initialValues?: Partial<CreateApplicationInput>) => void;
@@ -53,8 +54,16 @@ export default function Layout() {
         setCelebrationData(customEvent.detail);
       }
     };
+    const openAddHandler = (e: Event) => {
+      const customEvent = e as CustomEvent<Partial<CreateApplicationInput>>;
+      openAddModal(customEvent.detail);
+    };
     window.addEventListener(CELEBRATE_MILESTONE_EVENT, handler);
-    return () => window.removeEventListener(CELEBRATE_MILESTONE_EVENT, handler);
+    window.addEventListener("nawah_open_add_modal", openAddHandler);
+    return () => {
+      window.removeEventListener(CELEBRATE_MILESTONE_EVENT, handler);
+      window.removeEventListener("nawah_open_add_modal", openAddHandler);
+    };
   }, []);
 
   const openAddModal = (initialValues?: Partial<CreateApplicationInput>) => {
@@ -83,6 +92,7 @@ export default function Layout() {
       // Ignore if journey state fetch fails
     }
 
+    window.dispatchEvent(new CustomEvent("nawah_app_created"));
     navigate("/applications");
     return created;
   };
@@ -91,46 +101,48 @@ export default function Layout() {
     <ProtectedRoute>
       <EmailVerificationGate>
         <ProfileCompletionGate>
-          <AppContext.Provider value={{ openAddModal }}>
-            <div className="min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200">
-              <AppSidebar />
-              <JourneyTasksPanel />
+          <FirstApplicationGuidedTourProvider>
+            <AppContext.Provider value={{ openAddModal }}>
+              <div className="min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200">
+                <AppSidebar />
+                <JourneyTasksPanel />
 
-              <div className="min-h-screen w-full lg:ps-64">
-                <main className="w-full px-5 py-7 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 lg:py-10">
-                  <Outlet context={{ openAddModal }} />
-                </main>
-              </div>
+                <div className="min-h-screen w-full lg:ps-64">
+                  <main className="w-full px-5 py-7 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 lg:py-10">
+                    <Outlet context={{ openAddModal }} />
+                  </main>
+                </div>
 
-              <AddApplicationModal
-                isOpen={isAddModalOpen}
-                initialValues={draftValues}
-                onClose={() => {
-                  setIsAddModalOpen(false);
-                  setDraftValues(null);
-                }}
-                onSubmit={handleCreateApplication}
-              />
-
-              {celebrationData && (
-                <MilestoneCelebrationModal
-                  isOpen={Boolean(celebrationData)}
-                  onClose={() => setCelebrationData(null)}
-                  title={celebrationData.title}
-                  description={celebrationData.description}
-                  unlockedItems={celebrationData.unlockedItems}
-                  ctaLabel={celebrationData.ctaLabel}
-                  onCtaClick={() => {
-                    const targetRoute = celebrationData.ctaRoute;
-                    setCelebrationData(null);
-                    if (targetRoute) {
-                      navigate(targetRoute);
-                    }
+                <AddApplicationModal
+                  isOpen={isAddModalOpen}
+                  initialValues={draftValues}
+                  onClose={() => {
+                    setIsAddModalOpen(false);
+                    setDraftValues(null);
                   }}
+                  onSubmit={handleCreateApplication}
                 />
-              )}
-            </div>
-          </AppContext.Provider>
+
+                {celebrationData && (
+                  <MilestoneCelebrationModal
+                    isOpen={Boolean(celebrationData)}
+                    onClose={() => setCelebrationData(null)}
+                    title={celebrationData.title}
+                    description={celebrationData.description}
+                    unlockedItems={celebrationData.unlockedItems}
+                    ctaLabel={celebrationData.ctaLabel}
+                    onCtaClick={() => {
+                      const targetRoute = celebrationData.ctaRoute;
+                      setCelebrationData(null);
+                      if (targetRoute) {
+                        navigate(targetRoute);
+                      }
+                    }}
+                  />
+                )}
+              </div>
+            </AppContext.Provider>
+          </FirstApplicationGuidedTourProvider>
         </ProfileCompletionGate>
       </EmailVerificationGate>
     </ProtectedRoute>

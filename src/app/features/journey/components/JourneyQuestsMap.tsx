@@ -33,6 +33,7 @@ import { useToast } from "../../../components/ui/ToastProvider";
 import { useAppModal } from "../../../routes/layout";
 import { profileApi } from "../../profile/profileApi";
 import { useAuth } from "../../auth/store/authStore";
+import { useTour } from "../../applications/components/FirstApplicationGuidedTour";
 
 function getNodeAvailableAt(
   node: EnrichedJourneyNode,
@@ -707,6 +708,7 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
   const { user } = useAuth();
   const { showToast } = useToast();
   const { openAddModal } = useAppModal();
+  const { isTourActive, step, setStep } = useTour();
   const queryClient = useQueryClient();
   const { data: journeyData, isLoading } = useJourneyState();
 
@@ -1111,7 +1113,13 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
                       {isActive && node.requiredAppsCount > 0 && (
                         <button
                           type="button"
-                          onClick={() => openAddModal()}
+                          data-tour-step="journey-add-app-btn"
+                          onClick={() => {
+                            if (isTourActive && step === 2) {
+                              setStep(3);
+                            }
+                            openAddModal();
+                          }}
                           className="button-primary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs"
                         >
                           <Plus className="h-3.5 w-3.5" aria-hidden="true" />

@@ -27,6 +27,7 @@ import {
 import { journeyQueryKeys } from "../features/journey/config/query-keys";
 import { canUseApplicationsTableView } from "../features/journey/lib/journey-policies";
 import { celebrateJourneyUnlocks } from "../features/journey/lib/celebrate-unlocks";
+import { dispatchMilestoneCelebration } from "../features/journey/lib/celebrationEvents";
 import type { JourneyStateResponse } from "../features/journey/types";
 import { useAuth } from "../features/auth/store/authStore";
 import type {
@@ -188,55 +189,6 @@ export default function ApplicationsPage() {
   const updateAppMutation = useUpdateApplication();
 
   const [isCompassModalOpen, setIsCompassModalOpen] = useState(false);
-  const explorerBtnRef = useRef<HTMLButtonElement | null>(null);
-  const [buttonRect, setButtonRect] = useState<DOMRect | null>(null);
-  const spotlightKey = user?.id
-    ? `nawah_explorer_spotlight_v2_${user.id}`
-    : null;
-  const [showSpotlight, setShowSpotlight] = useState(false);
-
-  useEffect(() => {
-    if (!spotlightKey) return;
-    try {
-      const seen = localStorage.getItem(spotlightKey);
-      if (seen !== "true") {
-        setShowSpotlight(true);
-      }
-    } catch {
-      // ignore
-    }
-  }, [spotlightKey]);
-
-  const updateButtonRect = () => {
-    if (explorerBtnRef.current) {
-      setButtonRect(explorerBtnRef.current.getBoundingClientRect());
-    }
-  };
-
-  useEffect(() => {
-    if (!showSpotlight) return;
-    updateButtonRect();
-    window.addEventListener("resize", updateButtonRect);
-    window.addEventListener("scroll", updateButtonRect, true);
-    return () => {
-      window.removeEventListener("resize", updateButtonRect);
-      window.removeEventListener("scroll", updateButtonRect, true);
-    };
-  }, [showSpotlight]);
-
-  const dismissSpotlight = (openExplorer = false) => {
-    if (spotlightKey) {
-      try {
-        localStorage.setItem(spotlightKey, "true");
-      } catch {
-        // ignore
-      }
-    }
-    setShowSpotlight(false);
-    if (openExplorer) {
-      setIsCompassModalOpen(true);
-    }
-  };
 
   const [optimisticOverrides, setOptimisticOverrides] = useState<
     Record<string, { stage: Stage; outcome: Outcome }>
@@ -340,7 +292,42 @@ export default function ApplicationsPage() {
           outcome: nextOutcome,
         },
       });
-      toast.success(t("applications.applicationUpdated"));
+      if (newStage === "INTERVIEW") {
+        toast.success(
+          locale === "ar"
+            ? "🎉 خطوة عظيمة! تم الانتقال لمرحلة المقابلة — مساحة التحضير والملاحظات جاهزة لمساعدتك!"
+            : "🎉 Fantastic milestone! Interview stage confirmed!",
+        );
+      } else if (newStage === "CLOSED" && nextOutcome === "ACCEPTED") {
+        const app = rawApplications.find((a) => a.id === appId);
+        dispatchMilestoneCelebration({
+          title:
+            locale === "ar"
+              ? "🎉 مبارك! ألف مبروك قبولك في الوظيفة!"
+              : "🎉 Congratulations on Your Job Offer!",
+          description:
+            locale === "ar"
+              ? `تهانينا لك على قبولك في شركة ${app?.companyName || "العمل"} بمسمى ${app?.jobTitle || "المهني"}! هذا تتويج رائع لجهدك في رحلة نواة.`
+              : `Congratulations on your offer! A well-deserved milestone in your journey.`,
+          unlockedItems:
+            locale === "ar"
+              ? [
+                  "تسجيل أول قبول وظيفي ناجح (First Job Offer)",
+                  "تحديث بوصلة الإنجاز ومعدلات التحول",
+                ]
+              : [
+                  "First Job Offer Logged",
+                  "Performance Conversion Traction Updated",
+                ],
+          ctaLabel:
+            locale === "ar"
+              ? "استعرض تقرير أدائك"
+              : "View Performance Analytics",
+          ctaRoute: "/reports",
+        });
+      } else {
+        toast.success(t("applications.applicationUpdated"));
+      }
       trackUxEvent("application_stage_updated", { appId, stage: newStage });
 
       try {
@@ -439,12 +426,8 @@ export default function ApplicationsPage() {
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="relative inline-block">
             <button
-              ref={explorerBtnRef}
               type="button"
-              onClick={() => {
-                if (showSpotlight) dismissSpotlight(true);
-                else setIsCompassModalOpen(true);
-              }}
+              onClick={() => setIsCompassModalOpen(true)}
               className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 bg-white px-3.5 py-2 text-xs font-bold text-neutral-800 transition-all shadow-2xs hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
             >
               <Compass className="h-4 w-4 text-primary-strong" />
@@ -500,24 +483,26 @@ export default function ApplicationsPage() {
               </button>
             </div>
 
-            {/* Preparation Period Dropdown */}
-            <div className="flex items-center gap-1.5">
-              <select
-                aria-label={locale === "ar" ? "فترة التجهيز / نسخة السيرة" : "Preparation Period"}
-                value={currentPeriod}
-                onChange={(e) => updatePeriodFilter(e.target.value)}
-                className="field-control text-xs py-1.5 px-2.5 rounded-xl bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 font-medium"
-              >
-                <option value="ALL">
-                  {locale === "ar" ? "كل الفترات (All Periods)" : "All Periods"}
-                </option>
-                {Array.from({ length: Math.max(1, maxCvVersion) }, (_, i) => i + 1).map((v) => (
-                  <option key={v} value={`v${v}`}>
-                    {locale === "ar" ? `نسخة السيرة ${v} (CV v${v})` : `CV v${v}`}
+            {/* Preparation Period Dropdown - Hidden in Week 0 */}
+            {currentWeek >= 1 && (
+              <div className="flex items-center gap-1.5">
+                <select
+                  aria-label={locale === "ar" ? "فترة التجهيز / نسخة السيرة" : "Preparation Period"}
+                  value={currentPeriod}
+                  onChange={(e) => updatePeriodFilter(e.target.value)}
+                  className="field-control text-xs py-1.5 px-2.5 rounded-xl bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 font-medium"
+                >
+                  <option value="ALL">
+                    {locale === "ar" ? "كل الفترات (All Periods)" : "All Periods"}
                   </option>
-                ))}
-              </select>
-            </div>
+                  {Array.from({ length: Math.max(1, maxCvVersion) }, (_, i) => i + 1).map((v) => (
+                    <option key={v} value={`v${v}`}>
+                      {locale === "ar" ? `نسخة السيرة ${v} (CV v${v})` : `CV v${v}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center lg:flex-1 lg:max-w-md lg:justify-end">
@@ -604,11 +589,11 @@ export default function ApplicationsPage() {
           </div>
 
           {[
-            { key: "APPLIED", label: t("applications.submitted"), color: "bg-blue-500", count: stageCounts.APPLIED },
-            { key: "ASSIGNMENT", label: t("applications.assignment"), color: "bg-amber-500", count: stageCounts.ASSIGNMENT },
-            { key: "INTERVIEW", label: t("applications.interview"), color: "bg-purple-500", count: stageCounts.INTERVIEW },
-            { key: "DECISION", label: t("applications.decision"), color: "bg-emerald-500", count: stageCounts.DECISION },
-            { key: "CLOSED", label: t("applications.closed"), color: "bg-neutral-500", count: stageCounts.CLOSED },
+            { key: "APPLIED", label: t("applications.submitted"), color: "bg-[#64748b]", count: stageCounts.APPLIED },
+            { key: "ASSIGNMENT", label: t("applications.assignment"), color: "bg-[#525b88]", count: stageCounts.ASSIGNMENT },
+            { key: "INTERVIEW", label: t("applications.interview"), color: "bg-[#285987]", count: stageCounts.INTERVIEW },
+            { key: "DECISION", label: t("applications.decision"), color: "bg-[#b47d1c]", count: stageCounts.DECISION },
+            { key: "CLOSED", label: t("applications.closed"), color: "bg-[#4b5563]", count: stageCounts.CLOSED },
           ].map((stage) => {
             const isSelected = currentStage === stage.key;
             return (
@@ -769,81 +754,6 @@ export default function ApplicationsPage() {
             />
           </div>
         </Modal>
-      )}
-
-      {/* First-Visit Spotlight Overlay via Portal */}
-      {showSpotlight && buttonRect && createPortal(
-        <div className="fixed inset-0 w-screen h-dvh z-[100] pointer-events-auto overflow-hidden">
-          {/* Edge-to-edge full screen backdrop */}
-          <div
-            onClick={() => dismissSpotlight(false)}
-            className="absolute inset-0 bg-neutral-950/75 backdrop-blur-[2px] transition-opacity duration-300"
-            aria-hidden="true"
-          />
-
-          {/* Glowing highlighted clone at exact buttonRect */}
-          <button
-            type="button"
-            onClick={() => dismissSpotlight(true)}
-            style={{
-              position: "fixed",
-              top: buttonRect.top,
-              left: buttonRect.left,
-              width: buttonRect.width,
-              height: buttonRect.height,
-            }}
-            className="z-[101] inline-flex items-center justify-center gap-2 rounded-xl bg-white text-neutral-950 font-bold px-3.5 py-2 text-xs shadow-2xl ring-4 ring-white/70 animate-pulse border border-white cursor-pointer"
-          >
-            <Compass className="h-4 w-4 text-neutral-950" />
-            <span>{locale === "ar" ? "🧭 مستكشف الوظائف" : "🧭 Job Explorer"}</span>
-          </button>
-
-          {/* Guidance card positioned directly under the button */}
-          <div
-            style={{
-              position: "fixed",
-              top: Math.min(window.innerHeight - 250, buttonRect.bottom + 14),
-              left: isRtl
-                ? Math.max(16, Math.min(window.innerWidth - 384, buttonRect.right - 350))
-                : Math.max(16, Math.min(window.innerWidth - 384, buttonRect.left)),
-            }}
-            className="z-[102] w-[calc(100vw-2rem)] max-w-sm rounded-3xl border border-neutral-700/80 bg-neutral-900/95 p-5 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-200"
-          >
-            {/* Curved SVG pointer pointing to the button */}
-            <div className="flex items-center justify-between pb-1">
-              <span className="text-sm font-bold text-white flex items-center gap-1.5">
-                <span>{locale === "ar" ? "اعثر على الوظيفة بضغطة واحدة 🎯" : "Find Your Job in 1 Click 🎯"}</span>
-              </span>
-              <svg className="h-5 w-10 text-white/80" viewBox="0 0 40 20" fill="none">
-                <path d="M35 18C35 18 25 3 8 3M8 3L14 0.5M8 3L14 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-
-            <p className="mt-2 text-xs leading-relaxed text-neutral-300">
-              {locale === "ar"
-                ? "ابدأ البحث في السوق المناسب لتخصصك؛ يوجهك مستكشف الوظائف مباشرة إلى صفحات البحث المفلترة بمجالك في أشهر المنصات العالمية والمحلية."
-                : "Explore top job markets tailored to your specialization. Job Explorer links you directly to pre-filtered job search feeds on leading global and regional platforms."}
-            </p>
-
-            <div className="mt-4 flex items-center gap-2 pt-3 border-t border-neutral-800">
-              <button
-                type="button"
-                onClick={() => dismissSpotlight(true)}
-                className="button-primary flex-1 py-2 text-xs font-semibold shadow-xs"
-              >
-                {locale === "ar" ? "ابدأ البحث الآن" : "Start Searching Now"}
-              </button>
-              <button
-                type="button"
-                onClick={() => dismissSpotlight(false)}
-                className="rounded-xl border border-neutral-700 bg-neutral-800 px-3 py-2 text-xs font-semibold text-neutral-300 hover:bg-neutral-700 transition-colors"
-              >
-                {locale === "ar" ? "حسناً، فهمت" : "Got it"}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
       )}
     </div>
   );

@@ -923,6 +923,7 @@ export function JobMarketCompass({
                 <button
                   key={platform.id}
                   type="button"
+                  data-tour-step={platform.id === "linkedin" ? "explorer-linkedin-card" : undefined}
                   onClick={() => handlePlatformClick(platform)}
                   className="group flex items-start gap-3.5 rounded-2xl border border-border bg-surface p-4 text-start transition-all hover:border-neutral-400 hover:shadow-sm dark:hover:border-neutral-600 w-full"
                 >

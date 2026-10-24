@@ -78,6 +78,7 @@ export function StageCounts({
 }: {
   counts: {
     applied: number;
+    assignment?: number;
     interview: number;
     decision: number;
     closed: number;
@@ -89,6 +90,7 @@ export function StageCounts({
       {(
         [
           [t("applications.submitted"), counts.applied],
+          [t("applications.assignment"), counts.assignment ?? 0],
           [t("applications.interview"), counts.interview],
           [t("applications.decision"), counts.decision],
           [t("applications.closed"), counts.closed],

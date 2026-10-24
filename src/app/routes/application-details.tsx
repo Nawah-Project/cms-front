@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
 import { EditApplicationModal } from "../features/applications/components/EditApplicationModal";
 import { InterviewPrepWorkspace } from "../features/applications/components/InterviewPrepWorkspace";
@@ -26,9 +26,9 @@ import {
 import { journeyApi } from "../features/journey/api/journeyApi";
 import { journeyQueryKeys } from "../features/journey/config/query-keys";
 import { celebrateJourneyUnlocks } from "../features/journey/lib/celebrate-unlocks";
+import { dispatchMilestoneCelebration } from "../features/journey/lib/celebrationEvents";
 import type { JourneyStateResponse } from "../features/journey/types";
 import {
-  STAGES,
   formatApplicationMethod,
   type Application,
   type Outcome,
@@ -37,9 +37,10 @@ import {
 } from "../types";
 import { formatDisplayDate } from "../utils/date";
 import { useI18n } from "../i18n";
-import { Modal } from "../components/ui/Modal";
 import { useToast } from "../components/ui/ToastProvider";
 import { trackUxEvent } from "../utils/uxAnalytics";
+import { profileApi, type CvHistoryItem } from "../features/profile/profileApi";
+import { useAuth } from "../features/auth/store/authStore";
 
 export function meta({ data }: { data?: { application?: Application } }) {
   if (data?.application) {
@@ -58,6 +59,8 @@ export function meta({ data }: { data?: { application?: Application } }) {
 
 export default function ApplicationDetailsPage() {
   const { t, locale } = useI18n();
+  const isRtl = locale === "ar";
+  const { user } = useAuth();
   const { showToast } = useToast();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -75,11 +78,37 @@ export default function ApplicationDetailsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  // State for closing application outcome selection modal
-  const [isPromptingClosedOutcome, setIsPromptingClosedOutcome] =
-    useState(false);
-  const [selectedOutcomeForClose, setSelectedOutcomeForClose] =
-    useState<Outcome>("ACCEPTED");
+  // Query profile to fetch cvHistory for version tags
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => profileApi.get(),
+    enabled: Boolean(user),
+  });
+
+  const cvVersion = useMemo(() => {
+    if (!application) return 1;
+    const cvHistory = (profile?.cvHistory ?? [])
+      .slice()
+      .sort(
+        (a: CvHistoryItem, b: CvHistoryItem) =>
+          a.versionNumber - b.versionNumber,
+      );
+    if (cvHistory.length <= 1) return 1;
+
+    const appTime = new Date(
+      application.createdAt || application.applicationDate,
+    ).getTime();
+    let assigned = 1;
+    for (let i = cvHistory.length - 1; i >= 0; i--) {
+      const v = cvHistory[i];
+      const vTime = new Date(v.uploadedAt).getTime();
+      if (appTime >= vTime) {
+        assigned = v.versionNumber;
+        break;
+      }
+    }
+    return assigned;
+  }, [application, profile?.cvHistory]);
 
   const runUpdateWithCelebration = async (
     appId: string,
@@ -108,20 +137,61 @@ export default function ApplicationDetailsPage() {
     if (!application) return;
     if (newStage === application.stage) return;
 
-    if (newStage === "CLOSED") {
-      setIsPromptingClosedOutcome(true);
-      return;
-    }
-
     try {
+      const targetOutcome =
+        newStage === "CLOSED"
+          ? application.outcome !== "NONE"
+            ? application.outcome
+            : "ACCEPTED"
+          : "NONE";
+
       await runUpdateWithCelebration(application.id, {
         stage: newStage,
-        outcome: "NONE",
+        outcome: targetOutcome,
       });
-      showToast({
-        message: t("applications.applicationUpdated"),
-        variant: "success",
-      });
+
+      if (newStage === "INTERVIEW") {
+        showToast({
+          message:
+            locale === "ar"
+              ? "🎉 خطوة عظيمة! تم تأكيد مرحلة المقابلة — مساحة التحضير والملاحظات بالأسفل جاهزة لمساعدتك!"
+              : "🎉 Fantastic milestone! Interview stage confirmed — preparation hub is ready below!",
+          variant: "success",
+          duration: 6000,
+        });
+      } else if (newStage === "CLOSED" && targetOutcome === "ACCEPTED") {
+        dispatchMilestoneCelebration({
+          title:
+            locale === "ar"
+              ? "🎉 مبارك! ألف مبروك قبولك في الوظيفة!"
+              : "🎉 Congratulations on Your Job Offer!",
+          description:
+            locale === "ar"
+              ? `تهانينا لك على قبولك في شركة ${application.companyName} بمسمى ${application.jobTitle}! هذا تتويج رائع لجهدك وعملك الدؤوب في رحلة نواة.`
+              : `Congratulations on your offer from ${application.companyName} for ${application.jobTitle}! A well-deserved milestone in your journey.`,
+          unlockedItems:
+            locale === "ar"
+              ? [
+                  "تسجيل أول قبول وظيفي ناجح (First Job Offer)",
+                  "تحديث بوصلة الإنجاز ومعدلات التحول",
+                ]
+              : [
+                  "First Job Offer Logged",
+                  "Performance Conversion Traction Updated",
+                ],
+          ctaLabel:
+            locale === "ar"
+              ? "استعرض تقرير أدائك"
+              : "View Performance Analytics",
+          ctaRoute: "/reports",
+        });
+      } else {
+        showToast({
+          message: t("applications.applicationUpdated"),
+          variant: "success",
+        });
+      }
+
       trackUxEvent("application_stage_updated", {
         appId: application.id,
         stage: newStage,
@@ -134,22 +204,54 @@ export default function ApplicationDetailsPage() {
     }
   };
 
-  const handleConfirmClosedOutcome = async () => {
+  const handleOutcomeSelect = async (newOutcome: Outcome) => {
     if (!application) return;
+    if (application.stage === "CLOSED" && application.outcome === newOutcome)
+      return;
+
     try {
       await runUpdateWithCelebration(application.id, {
         stage: "CLOSED",
-        outcome: selectedOutcomeForClose,
+        outcome: newOutcome,
       });
-      setIsPromptingClosedOutcome(false);
-      showToast({
-        message: t("applications.applicationUpdated"),
-        variant: "success",
-      });
+
+      if (newOutcome === "ACCEPTED") {
+        dispatchMilestoneCelebration({
+          title:
+            locale === "ar"
+              ? "🎉 مبارك! ألف مبروك قبولك في الوظيفة!"
+              : "🎉 Congratulations on Your Job Offer!",
+          description:
+            locale === "ar"
+              ? `تهانينا لك على قبولك في شركة ${application.companyName} بمسمى ${application.jobTitle}! هذا تتويج رائع لجهدك وعملك الدؤوب في رحلة نواة.`
+              : `Congratulations on your offer from ${application.companyName} for ${application.jobTitle}! A well-deserved milestone in your journey.`,
+          unlockedItems:
+            locale === "ar"
+              ? [
+                  "تسجيل أول قبول وظيفي ناجح (First Job Offer)",
+                  "تحديث بوصلة الإنجاز ومعدلات التحول",
+                ]
+              : [
+                  "First Job Offer Logged",
+                  "Performance Conversion Traction Updated",
+                ],
+          ctaLabel:
+            locale === "ar"
+              ? "استعرض تقرير أدائك"
+              : "View Performance Analytics",
+          ctaRoute: "/reports",
+        });
+      } else {
+        showToast({
+          message: t("applications.applicationUpdated"),
+          variant: "success",
+        });
+      }
+
       trackUxEvent("application_stage_updated", {
         appId: application.id,
         stage: "CLOSED",
-        outcome: selectedOutcomeForClose,
+        outcome: newOutcome,
       });
     } catch {
       showToast({
@@ -222,7 +324,7 @@ export default function ApplicationDetailsPage() {
       <div className="flex items-center justify-between">
         <Link
           to="/applications"
-          className="inline-flex items-center gap-2 text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
         >
           <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
           <span>{t("applications.backToApplications")}</span>
@@ -248,11 +350,11 @@ export default function ApplicationDetailsPage() {
         </div>
       </div>
 
-      {/* Main Title Card */}
-      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-xs">
+      {/* Main Job Card with Integrated Metadata Pills and Single Interactive Pipeline Controller */}
+      <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2.5">
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
                 {application.jobTitle}
               </h1>
@@ -263,7 +365,7 @@ export default function ApplicationDetailsPage() {
                 </span>
               )}
             </div>
-            <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mt-1 flex items-center gap-2">
+            <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mt-1.5 flex items-center gap-2">
               <BuildingIcon className="w-4 h-4 text-neutral-400" />
               <span>{application.companyName}</span>
             </p>
@@ -287,7 +389,7 @@ export default function ApplicationDetailsPage() {
                 href={application.jobUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors shrink-0"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors shrink-0"
               >
                 <span>{t("applications.viewPosting")}</span>
                 <ExternalLinkIcon className="w-3.5 h-3.5" />
@@ -296,178 +398,101 @@ export default function ApplicationDetailsPage() {
           </div>
         </div>
 
-        {/* Visual Pipeline Timeline */}
-        <div className="mt-8 pt-6 border-t border-neutral-100 dark:border-neutral-800">
-          <div className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider mb-2">
-            {t("applications.pipelineProgress")}
-          </div>
-          <PipelineTimeline
-            currentStage={application.stage}
-            outcome={application.outcome}
-            onStageSelect={handleStageSelect}
-          />
-        </div>
-      </div>
-
-      {/* Quick Stage Controls */}
-      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 shadow-xs">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-            {t("applications.updateStage")}
-          </span>
-          <span className="text-xs text-neutral-400">
-            {t("applications.stageHelp")}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-          {STAGES.map((s) => {
-            const isCurrent = application.stage === s.key;
-            return (
-              <button
-                key={s.key}
-                type="button"
-                onClick={() => handleStageSelect(s.key)}
-                className={`px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
-                  isCurrent
-                    ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 dark:border-white shadow-xs font-semibold"
-                    : "bg-neutral-50 dark:bg-neutral-800/40 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                }`}
-              >
-                {t(
-                  `applications.${s.key === "APPLIED" ? "submitted" : s.key.toLowerCase()}`,
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Interview & Assignment Preparation Workspace (V2) */}
-      {showPrepWorkspace && (
-        <InterviewPrepWorkspace
-          application={application}
-          onSave={handleSaveEdit}
-        />
-      )}
-
-      {/* Application Metadata Details */}
-      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-xs divide-y divide-neutral-100 dark:divide-neutral-800">
-        <div className="p-4 bg-neutral-50/60 dark:bg-neutral-800/30">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-            {t("applications.details")}
-          </h2>
-        </div>
-
-        {/* Applied Date */}
-        <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-          <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
-            <CalendarIcon className="w-3.5 h-3.5 text-neutral-400" />
-            {t("applications.appliedLabel")}
-          </span>
-          <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-            {formatDisplayDate(application.applicationDate, locale)}
-          </span>
-        </div>
-
-        {/* Location */}
-        <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-          <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
-            <MapPinIcon className="w-3.5 h-3.5 text-neutral-400" />
-            {t("applications.locationLabel")}
-          </span>
-          <span className="text-xs font-medium text-neutral-900 dark:text-neutral-100">
-            {application.location || t("common.notSpecified")}
-          </span>
-        </div>
-
-        {/* Application Method */}
-        <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-          <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
-            <BriefcaseIcon className="w-3.5 h-3.5 text-neutral-400" />
-            {t("applications.method")}
-          </span>
-          <span className="text-xs font-medium text-neutral-900 dark:text-neutral-100">
-            {formatApplicationMethod(application.applicationMethod, t)}
-          </span>
-        </div>
-
-        {/* Status */}
-        <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-          <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-            {t("applications.stage")}
-          </span>
-          <div className="flex items-center gap-2">
+        {/* Integrated Metadata Pills Bar */}
+        <div className="mt-5 flex flex-wrap items-center gap-2.5 pt-4 border-t border-neutral-100 dark:border-neutral-800 text-xs">
+          {/* Stage & Outcome Badges */}
+          <div className="inline-flex items-center gap-1.5">
             <StatusBadge kind="stage" value={application.stage} />
             {application.stage === "CLOSED" &&
               application.outcome !== "NONE" && (
                 <StatusBadge kind="outcome" value={application.outcome} />
               )}
           </div>
-        </div>
 
-        {/* Job URL if present */}
-        {application.jobUrl && (
-          <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-            <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-              {t("applications.jobUrl")}
+          {/* Applied Date Pill */}
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200/90 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/60 px-3 py-1 text-neutral-700 dark:text-neutral-300">
+            <CalendarIcon className="w-3.5 h-3.5 text-neutral-400" />
+            <span className="text-neutral-500 dark:text-neutral-400 font-medium">
+              {t("applications.appliedLabel")}:
             </span>
+            <span className="font-semibold">
+              {formatDisplayDate(application.applicationDate, locale)}
+            </span>
+          </span>
+
+          {/* Location Pill */}
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200/90 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/60 px-3 py-1 text-neutral-700 dark:text-neutral-300">
+            <MapPinIcon className="w-3.5 h-3.5 text-neutral-400" />
+            <span className="text-neutral-500 dark:text-neutral-400 font-medium">
+              {t("applications.locationLabel")}:
+            </span>
+            <span className="font-semibold">
+              {application.location || t("common.notSpecified")}
+            </span>
+          </span>
+
+          {/* Method Pill */}
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200/90 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/60 px-3 py-1 text-neutral-700 dark:text-neutral-300">
+            <BriefcaseIcon className="w-3.5 h-3.5 text-neutral-400" />
+            <span className="text-neutral-500 dark:text-neutral-400 font-medium">
+              {t("applications.method")}:
+            </span>
+            <span className="font-semibold">
+              {formatApplicationMethod(application.applicationMethod, t)}
+            </span>
+          </span>
+
+          {/* CV Version Pill */}
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200/90 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/60 px-3 py-1 text-neutral-700 dark:text-neutral-300">
+            <span className="text-neutral-500 dark:text-neutral-400 font-medium">
+              CV:
+            </span>
+            <span className="font-bold text-neutral-900 dark:text-neutral-100">
+              CV v{cvVersion}
+            </span>
+          </span>
+
+          {/* Job Post URL Pill */}
+          {application.jobUrl && (
             <a
               href={application.jobUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline truncate max-w-sm flex items-center gap-1"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-info-border/70 bg-info-soft/40 px-3 py-1 text-info-strong hover:bg-info-soft transition-colors font-semibold"
             >
-              <span className="truncate">{application.jobUrl}</span>
-              <ExternalLinkIcon className="w-3 h-3 shrink-0" />
+              <span>
+                {isRtl ? "رابط إعلان الوظيفة" : "Job Posting"}
+              </span>
+              <ExternalLinkIcon className="w-3 h-3" />
             </a>
-          </div>
-        )}
+          )}
+
+          {/* Shared with Group Pill */}
+          {application.sharedWithGroup && (
+            <span className="inline-flex items-center gap-1 rounded-lg border border-emerald-200/90 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-emerald-700 dark:text-emerald-300 font-semibold">
+              👥 {isRtl ? "مشارك مع المجموعة" : "Shared with Group"}
+            </span>
+          )}
+        </div>
+
+        {/* Visual Pipeline Timeline (Sole Interactive Controller) */}
+        <div className="mt-8 pt-6 border-t border-neutral-100 dark:border-neutral-800">
+          <PipelineTimeline
+            currentStage={application.stage}
+            outcome={application.outcome}
+            onStageSelect={handleStageSelect}
+            onOutcomeSelect={handleOutcomeSelect}
+          />
+        </div>
       </div>
 
-      {/* Modal Prompt for Outcome when Stage is changed to CLOSED */}
-      <Modal
-        isOpen={isPromptingClosedOutcome}
-        onClose={() => setIsPromptingClosedOutcome(false)}
-        title={t("applications.closeApplication")}
-        subtitle={t("applications.selectOutcome")}
-        size="sm"
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={() => setIsPromptingClosedOutcome(false)}
-              className="button-secondary text-sm"
-            >
-              {t("common.cancel")}
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirmClosedOutcome}
-              className="button-primary text-sm"
-            >
-              {t("applications.confirmClose")}
-            </button>
-          </>
-        }
-      >
-        <div className="grid grid-cols-3 gap-2">
-          {(["ACCEPTED", "REJECTED", "WITHDRAWN"] as Outcome[]).map((opt) => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => setSelectedOutcomeForClose(opt)}
-              className={`px-3 py-2 text-xs font-medium rounded-xl border transition-all ${
-                selectedOutcomeForClose === opt
-                  ? "bg-neutral-900 text-white border-neutral-900 shadow-xs"
-                  : "bg-surface text-text-secondary border-border hover:bg-surface-hover"
-              }`}
-            >
-              {t(`applications.${opt.toLowerCase()}`)}
-            </button>
-          ))}
-        </div>
-      </Modal>
+      {/* Interview & Assignment Preparation Workspace */}
+      {showPrepWorkspace && (
+        <InterviewPrepWorkspace
+          application={application}
+          onSave={handleSaveEdit}
+        />
+      )}
 
       {/* Edit Modal */}
       <EditApplicationModal

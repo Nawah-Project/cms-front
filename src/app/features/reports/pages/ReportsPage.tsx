@@ -1072,60 +1072,68 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          {/* Segmented Controls (Left in RTL) */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* View Mode Toggle */}
-            <div className="inline-flex rounded-lg border border-border bg-neutral-100 p-0.5 dark:bg-neutral-900">
-              <button
-                type="button"
-                onClick={() => setViewMode("cumulative")}
-                className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
-                  viewMode === "cumulative"
-                    ? "bg-surface text-neutral-900 shadow-2xs dark:bg-neutral-800 dark:text-white"
-                    : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400"
-                }`}
-              >
-                {t("dashboard.growthCumulative")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("period")}
-                className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
-                  viewMode === "period"
-                    ? "bg-surface text-neutral-900 shadow-2xs dark:bg-neutral-800 dark:text-white"
-                    : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400"
-                }`}
-              >
-                {t("dashboard.periodPerformance")}
-              </button>
+          {/* Segmented Controls or Initial Calm Badge */}
+          {totalAppsCount < 10 ? (
+            <div className="flex items-center">
+              <span className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-200/90 bg-neutral-100/80 px-3 py-1.5 text-xs font-semibold text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/80 dark:text-neutral-300">
+                📈 {isRtl ? "العرض النشط: النمو التراكمي للطلبات والردود" : "Active View: Cumulative Growth"}
+              </span>
             </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              {/* View Mode Toggle */}
+              <div className="inline-flex rounded-lg border border-border bg-neutral-100 p-0.5 dark:bg-neutral-900">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("cumulative")}
+                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
+                    viewMode === "cumulative"
+                      ? "bg-surface text-neutral-900 shadow-2xs dark:bg-neutral-800 dark:text-white"
+                      : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400"
+                  }`}
+                >
+                  {t("dashboard.growthCumulative")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("period")}
+                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
+                    viewMode === "period"
+                      ? "bg-surface text-neutral-900 shadow-2xs dark:bg-neutral-800 dark:text-white"
+                      : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400"
+                  }`}
+                >
+                  {t("dashboard.periodPerformance")}
+                </button>
+              </div>
 
-            {/* Metric Mode Toggle */}
-            <div className="inline-flex rounded-lg border border-border bg-neutral-100 p-0.5 dark:bg-neutral-900">
-              <button
-                type="button"
-                onClick={() => setMetricMode("volume")}
-                className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
-                  metricMode === "volume"
-                    ? "bg-surface text-neutral-900 shadow-2xs dark:bg-neutral-800 dark:text-white"
-                    : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400"
-                }`}
-              >
-                {t("dashboard.metricVolume")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setMetricMode("rate")}
-                className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
-                  metricMode === "rate"
-                    ? "bg-surface text-neutral-900 shadow-2xs dark:bg-neutral-800 dark:text-white"
-                    : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400"
-                }`}
-              >
-                {t("dashboard.metricRate")}
-              </button>
+              {/* Metric Mode Toggle */}
+              <div className="inline-flex rounded-lg border border-border bg-neutral-100 p-0.5 dark:bg-neutral-900">
+                <button
+                  type="button"
+                  onClick={() => setMetricMode("volume")}
+                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
+                    metricMode === "volume"
+                      ? "bg-surface text-neutral-900 shadow-2xs dark:bg-neutral-800 dark:text-white"
+                      : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400"
+                  }`}
+                >
+                  {t("dashboard.metricVolume")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMetricMode("rate")}
+                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
+                    metricMode === "rate"
+                      ? "bg-surface text-neutral-900 shadow-2xs dark:bg-neutral-800 dark:text-white"
+                      : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400"
+                  }`}
+                >
+                  {t("dashboard.metricRate")}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* 12-Column Split Layout (Side-by-Side on Desktop) */}
@@ -1578,11 +1586,11 @@ export default function ReportsPage() {
                 const r = 75;
                 const circumference = 2 * Math.PI * r;
                 const slices = [
-                  { label: "Applied", count: appliedCount, color: "#38bdf8" }, // Sky
-                  { label: "Assignment", count: donutAssignmentCount, color: "#8b5cf6" }, // Purple
-                  { label: "Interview", count: donutInterviewCount, color: "#2563eb" }, // Blue
-                  { label: "Decision", count: donutDecisionCount, color: "#10b981" }, // Emerald
-                  { label: "Closed", count: donutClosedCount, color: "#f43f5e" }, // Rose
+                  { label: "Applied", count: appliedCount, color: "#64748b" }, // Slate gray
+                  { label: "Assignment", count: donutAssignmentCount, color: "#525b88" }, // Muted Slate-Indigo
+                  { label: "Interview", count: donutInterviewCount, color: "#285987" }, // Nawah Blue
+                  { label: "Decision", count: donutDecisionCount, color: "#b47d1c" }, // Warm Amber
+                  { label: "Closed", count: donutClosedCount, color: "#4b5563" }, // Muted Dark Gray
                 ];
 
                 let accumulatedOffset = 0;
@@ -1635,7 +1643,7 @@ export default function ReportsPage() {
           <div className="space-y-2 border-t border-border/70 pt-4 text-xs">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-sky-400" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#64748b]" />
                 <span className="text-neutral-700 dark:text-neutral-300">
                   {isRtl ? "تم التقديم" : "Applied"}
                 </span>
@@ -1647,43 +1655,43 @@ export default function ReportsPage() {
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-purple-500" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#525b88]" />
                 <span className="text-neutral-700 dark:text-neutral-300">
                   {isRtl ? "اختبار (أسيمنت)" : "Assignment"}
                 </span>
               </div>
-              <span className="font-bold tabular-nums text-purple-600 dark:text-purple-400">
+              <span className="font-bold tabular-nums text-[#525b88] dark:text-[#b8c0e0]">
                 {number(donutAssignmentCount)} ({totalAppsCount > 0 ? Math.round((donutAssignmentCount / totalAppsCount) * 100) : 0}%)
               </span>
             </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#285987]" />
                 <span className="text-neutral-700 dark:text-neutral-300">
                   {isRtl ? "مقابلة" : "Interview"}
                 </span>
               </div>
-              <span className="font-bold tabular-nums text-blue-600 dark:text-blue-400">
+              <span className="font-bold tabular-nums text-[#285987] dark:text-[#aec8e6]">
                 {number(donutInterviewCount)} ({totalAppsCount > 0 ? Math.round((donutInterviewCount / totalAppsCount) * 100) : 0}%)
               </span>
             </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-600" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#b47d1c]" />
                 <span className="text-neutral-700 dark:text-neutral-300">
                   {isRtl ? "بانتظار القرار" : "Decision"}
                 </span>
               </div>
-              <span className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+              <span className="font-bold tabular-nums text-[#b47d1c] dark:text-[#e3c77a]">
                 {number(donutDecisionCount)} ({totalAppsCount > 0 ? Math.round((donutDecisionCount / totalAppsCount) * 100) : 0}%)
               </span>
             </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#4b5563]" />
                 <span className="text-neutral-700 dark:text-neutral-300">
                   {isRtl ? "مغلق" : "Closed"}
                 </span>

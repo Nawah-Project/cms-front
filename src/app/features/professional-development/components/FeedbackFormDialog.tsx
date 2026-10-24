@@ -171,6 +171,7 @@ export function FeedbackFormDialog({
           applicationsCount: 0,
           currentStageCounts: {
             applied: 0,
+            assignment: 0,
             interview: 0,
             decision: 0,
             closed: 0,

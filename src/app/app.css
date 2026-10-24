@@ -181,6 +181,19 @@ html {
     border-color: var(--color-border);
     color: var(--color-neutral-strong);
   }
+  .status-assignment {
+    background: #eef0f7;
+    border-color: #c5cbe3;
+    color: #3b4266;
+  }
+  .status-assignment:hover {
+    background: #e5e8f4;
+  }
+  .dark .status-assignment {
+    background: rgba(82, 91, 136, 0.2);
+    border-color: #47507a;
+    color: #b8c0e0;
+  }
   .status-info {
     background: var(--color-info-soft);
     border-color: var(--color-info-border);

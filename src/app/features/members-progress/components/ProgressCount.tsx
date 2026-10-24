@@ -5,7 +5,7 @@ export type ProgressStage = "applied" | "assignment" | "interview" | "decision" 
 
 const STAGE_STYLES: Record<ProgressStage, string> = {
   applied: "border-border bg-neutral-soft text-neutral-strong",
-  assignment: "border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-300",
+  assignment: "border-[#c5cbe3] bg-[#eef0f7] text-[#3b4266] dark:border-[#47507a] dark:bg-[rgba(82,91,136,0.2)] dark:text-[#b8c0e0]",
   interview: "border-info-border bg-info-soft text-info-strong",
   decision: "border-warning-border bg-warning-soft text-warning-strong",
   closed: "border-border-strong bg-neutral-100 text-neutral-800",

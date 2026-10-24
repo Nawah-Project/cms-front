@@ -14,6 +14,7 @@ import { Modal } from "../../../components/ui/Modal";
 import { useJourneyState } from "../../journey/api/journeyApi";
 import { canAddTailoredApplication } from "../../journey/lib/journey-policies";
 import { useAuth } from "../../auth/store/authStore";
+import { sanitizeJobUrl } from "../../../utils/urlSanitizer";
 
 interface EditApplicationModalProps {
   isOpen: boolean;
@@ -129,7 +130,7 @@ export function EditApplicationModal({
         applicationDate,
         location: location.trim(),
         applicationMethod,
-        jobUrl: jobUrl.trim(),
+        jobUrl: sanitizeJobUrl(jobUrl),
         stage,
         outcome:
           stage !== "CLOSED"
@@ -291,6 +292,7 @@ export function EditApplicationModal({
             type="url"
             required
             value={jobUrl}
+            onBlur={() => setJobUrl((prev) => sanitizeJobUrl(prev))}
             onChange={(e) => {
               setJobUrl(e.target.value);
               if (errors.jobUrl) setErrors((prev) => ({ ...prev, jobUrl: undefined }));

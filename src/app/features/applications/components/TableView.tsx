@@ -42,9 +42,19 @@ export function TableView({ applications, appCvVersionMap }: TableViewProps) {
         id: appId,
         updates: { stage: nextStage },
       });
-      toast.success(
-        locale === "ar" ? "تم تحديث مرحلة الطلب بنجاح" : "Application stage updated successfully",
-      );
+      if (nextStage === "INTERVIEW") {
+        toast.success(
+          locale === "ar"
+            ? "🎉 خطوة عظيمة! تم الانتقال لمرحلة المقابلة — مساحة التحضير والملاحظات بالأسفل جاهزة لمساعدتك!"
+            : "🎉 Fantastic milestone! Interview stage confirmed!",
+        );
+      } else {
+        toast.success(
+          locale === "ar"
+            ? "تم تحديث مرحلة الطلب بنجاح"
+            : "Application stage updated successfully",
+        );
+      }
     } catch {
       toast.error(
         locale === "ar" ? "تعذر تحديث مرحلة الطلب" : "Failed to update application stage",

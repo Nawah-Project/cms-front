@@ -14,6 +14,8 @@ import { JobMarketCompass } from "./JobMarketCompass";
 import { useJourneyState } from "../../journey/api/journeyApi";
 import { canAddTailoredApplication } from "../../journey/lib/journey-policies";
 import { useAuth } from "../../auth/store/authStore";
+import { useTour } from "./FirstApplicationGuidedTour";
+import { sanitizeJobUrl } from "../../../utils/urlSanitizer";
 
 interface AddApplicationModalProps {
   isOpen: boolean;
@@ -30,6 +32,7 @@ export function AddApplicationModal({
 }: AddApplicationModalProps) {
   const { t, locale } = useI18n();
   const { user } = useAuth();
+  const { isTourActive, step, setStep } = useTour();
   const { data: journeyData } = useJourneyState({ enabled: Boolean(user) });
   const showTailoredOption = canAddTailoredApplication(journeyData, user);
 
@@ -156,10 +159,11 @@ export function AddApplicationModal({
         applicationDate,
         location: location.trim(),
         applicationMethod,
-        jobUrl: jobUrl.trim(),
+        jobUrl: sanitizeJobUrl(jobUrl),
         isTailored: showTailoredOption ? isTailored : false,
         sharedWithGroup,
       });
+      window.dispatchEvent(new CustomEvent("nawah_app_created"));
       resetForm();
       onClose();
     } catch {
@@ -178,19 +182,20 @@ export function AddApplicationModal({
       onClose={handleClose}
       title={t("applications.addTitle")}
       size="lg"
-      disableClose={isSubmitting}
+      disableClose={isSubmitting || isTourActive}
       footer={
         <>
           <button
             type="button"
             onClick={handleClose}
-            disabled={isSubmitting}
-            className="button-secondary text-sm"
+            disabled={isSubmitting || isTourActive}
+            className={`button-secondary text-sm ${isTourActive ? "hidden" : ""}`}
           >
             {t("common.cancel")}
           </button>
           <button
             type="button"
+            data-tour-step="add-app-submit"
             onClick={handleSubmit}
             disabled={isSubmitting}
             className="button-primary inline-flex items-center gap-2 text-sm"
@@ -210,8 +215,12 @@ export function AddApplicationModal({
           <div className="relative" onMouseLeave={dismissHint}>
             <button
               type="button"
+              data-tour-step="add-app-explorer-btn"
               onClick={() => {
                 dismissHint();
+                if (isTourActive && step === 3) {
+                  setStep(4);
+                }
                 setShowExplorerModal(true);
               }}
               className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-300 bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800 px-3 py-1.5 text-xs font-bold text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors shadow-2xs"
@@ -221,7 +230,7 @@ export function AddApplicationModal({
             </button>
 
             {/* Welcoming Floating Hint on First Visit */}
-            {showHint && (
+            {showHint && !isTourActive && (
               <div
                 onClick={dismissHint}
                 className="absolute top-full mt-2 end-0 z-[160] whitespace-nowrap rounded-xl bg-neutral-900 text-white px-3 py-2 text-xs font-semibold shadow-2xl ring-1 ring-white/10 animate-in fade-in slide-in-from-top-1 duration-200 after:content-[''] after:absolute after:bottom-full after:end-5 after:border-[6px] after:border-transparent after:border-b-neutral-900 cursor-pointer"
@@ -248,12 +257,24 @@ export function AddApplicationModal({
           <input
             id="companyName"
             type="text"
+            data-tour-step="add-app-company"
             required
             value={companyName}
             onChange={(e) => {
               setCompanyName(e.target.value);
               if (errors.companyName)
                 setErrors((prev) => ({ ...prev, companyName: undefined }));
+            }}
+            onKeyDown={(e) => {
+              if (
+                e.key === "Enter" &&
+                isTourActive &&
+                step === 5 &&
+                companyName.trim().length >= 2
+              ) {
+                e.preventDefault();
+                setStep(6);
+              }
             }}
             placeholder={t("applications.companyPlaceholder")}
             className={`field-control ${errors.companyName ? "field-control-error" : ""}`}
@@ -345,11 +366,25 @@ export function AddApplicationModal({
           <input
             id="jobUrl"
             type="url"
+            data-tour-step="add-app-url"
             required
             value={jobUrl}
+            onBlur={() => setJobUrl((prev) => sanitizeJobUrl(prev))}
             onChange={(e) => {
               setJobUrl(e.target.value);
               if (errors.jobUrl) setErrors((prev) => ({ ...prev, jobUrl: undefined }));
+            }}
+            onKeyDown={(e) => {
+              if (
+                e.key === "Enter" &&
+                isTourActive &&
+                step === 6 &&
+                jobUrl.trim().length >= 8 &&
+                /^https?:\/\//i.test(jobUrl.trim())
+              ) {
+                e.preventDefault();
+                setStep(7);
+              }
             }}
             placeholder="https://..."
             className={`field-control ${errors.jobUrl ? "field-control-error" : ""}`}
@@ -406,7 +441,11 @@ export function AddApplicationModal({
     {showExplorerModal && (
       <Modal
         isOpen={true}
-        onClose={() => setShowExplorerModal(false)}
+        zIndex={110}
+        onClose={() => {
+          if (!isTourActive) setShowExplorerModal(false);
+        }}
+        disableClose={isTourActive}
         title={locale === "ar" ? "مستكشف الوظائف" : "Job Explorer"}
         size="2xl"
       >
@@ -415,6 +454,9 @@ export function AddApplicationModal({
             collapsible={false}
             onLaunchDraft={(draft) => {
               setShowExplorerModal(false);
+              if (isTourActive && step === 4) {
+                setStep(5);
+              }
               if (draft.companyName) setCompanyName(draft.companyName);
               if (draft.applicationMethod) setApplicationMethod(draft.applicationMethod);
               if (draft.location) setLocation(draft.location);
