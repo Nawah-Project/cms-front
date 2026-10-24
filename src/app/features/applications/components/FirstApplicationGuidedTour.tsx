@@ -405,7 +405,7 @@ export function FirstApplicationGuidedTourProvider({
     return () => clearInterval(interval);
   }, [isTourActive, step]);
 
-  // Track inputs for steps 5 & 6
+  // Track inputs for steps 5 & 6 (instant keystroke + interval fallback)
   useEffect(() => {
     if (!isTourActive) return;
 
@@ -414,18 +414,39 @@ export function FirstApplicationGuidedTourProvider({
         const compEl = document.querySelector<HTMLInputElement>(
           '[data-tour-step="add-app-company"]',
         );
-        if (compEl) setCompanyValue(compEl.value);
+        if (compEl && compEl.value !== companyValue) {
+          setCompanyValue(compEl.value);
+        }
       } else if (step === 6) {
         const urlEl = document.querySelector<HTMLInputElement>(
           '[data-tour-step="add-app-url"]',
         );
-        if (urlEl) setUrlValue(urlEl.value);
+        if (urlEl && urlEl.value !== urlValue) {
+          setUrlValue(urlEl.value);
+        }
       }
     };
 
-    const interval = window.setInterval(checkInputs, 80);
-    return () => window.clearInterval(interval);
-  }, [isTourActive, step]);
+    checkInputs();
+
+    const handleInput = (e: Event) => {
+      const target = e.target as HTMLInputElement | null;
+      if (!target) return;
+      if (step === 5 && target.matches?.('[data-tour-step="add-app-company"]')) {
+        setCompanyValue(target.value);
+      } else if (step === 6 && target.matches?.('[data-tour-step="add-app-url"]')) {
+        setUrlValue(target.value);
+      }
+    };
+
+    document.addEventListener("input", handleInput, true);
+    const interval = window.setInterval(checkInputs, 60);
+
+    return () => {
+      document.removeEventListener("input", handleInput, true);
+      window.clearInterval(interval);
+    };
+  }, [isTourActive, step, companyValue, urlValue]);
 
   // Keyboard navigation: Enter in steps 5 & 6 advances
   useEffect(() => {
@@ -658,7 +679,13 @@ export function FirstApplicationGuidedTourProvider({
               {/* Steps 5 & 6 only: Sleek inline Next button */}
               {step === 5 && (
                 <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
-                  <span className="text-[10px] text-neutral-400 truncate">
+                  <span
+                    className={`text-[10px] truncate transition-colors ${
+                      isStep5Valid
+                        ? "text-emerald-400 font-medium"
+                        : "text-neutral-400"
+                    }`}
+                  >
                     {isStep5Valid
                       ? (isRtl ? "✓ جاهز للمتابعة" : "✓ Ready")
                       : (isRtl ? "اكتب اسم الشركة..." : "Type company name...")}
@@ -667,7 +694,11 @@ export function FirstApplicationGuidedTourProvider({
                     type="button"
                     disabled={!isStep5Valid}
                     onClick={nextStep}
-                    className="inline-flex items-center gap-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 disabled:hover:bg-emerald-500 text-neutral-950 font-bold px-2.5 py-1 text-[11px] transition-colors shrink-0 shadow-xs"
+                    className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all duration-150 shrink-0 ${
+                      isStep5Valid
+                        ? "bg-emerald-400 hover:bg-emerald-300 text-neutral-950 shadow-md shadow-emerald-400/25 ring-1 ring-emerald-300/50 cursor-pointer active:scale-95"
+                        : "bg-emerald-500/35 text-neutral-400/90 cursor-not-allowed border border-emerald-500/20"
+                    }`}
                   >
                     <span>{isRtl ? "التالي ←" : "Next →"}</span>
                   </button>
@@ -676,7 +707,13 @@ export function FirstApplicationGuidedTourProvider({
 
               {step === 6 && (
                 <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
-                  <span className="text-[10px] text-neutral-400 truncate">
+                  <span
+                    className={`text-[10px] truncate transition-colors ${
+                      isStep6Valid
+                        ? "text-emerald-400 font-medium"
+                        : "text-neutral-400"
+                    }`}
+                  >
                     {isStep6Valid
                       ? (isRtl ? "✓ رابط صحيح" : "✓ Valid link")
                       : (isRtl ? "الصق الرابط (http://)..." : "Paste job URL...")}
@@ -685,7 +722,11 @@ export function FirstApplicationGuidedTourProvider({
                     type="button"
                     disabled={!isStep6Valid}
                     onClick={nextStep}
-                    className="inline-flex items-center gap-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 disabled:hover:bg-emerald-500 text-neutral-950 font-bold px-2.5 py-1 text-[11px] transition-colors shrink-0 shadow-xs"
+                    className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all duration-150 shrink-0 ${
+                      isStep6Valid
+                        ? "bg-emerald-400 hover:bg-emerald-300 text-neutral-950 shadow-md shadow-emerald-400/25 ring-1 ring-emerald-300/50 cursor-pointer active:scale-95"
+                        : "bg-emerald-500/35 text-neutral-400/90 cursor-not-allowed border border-emerald-500/20"
+                    }`}
                   >
                     <span>{isRtl ? "التالي ←" : "Next →"}</span>
                   </button>
