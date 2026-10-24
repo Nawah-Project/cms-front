@@ -112,12 +112,6 @@ export function FeedbackFormDialog({
     post?.context ?? "GENERAL",
   );
   const [tags, setTags] = useState<FeedbackTag[]>(post?.tags ?? []);
-  const [unlockTriggerCode, setUnlockTriggerCode] = useState(
-    post?.unlockTriggerCode ?? "",
-  );
-  const [promptTemplate, setPromptTemplate] = useState(
-    post?.promptTemplate ?? "",
-  );
   const [resourceList, setResourceList] = useState<FormResourceItem[]>(() => {
     if (post?.resources && post.resources.length > 0) {
       return post.resources.map((r) => ({
@@ -309,8 +303,8 @@ export function FeedbackFormDialog({
       visibility,
       context,
       tags,
-      unlockTriggerCode: unlockTriggerCode.trim() || null,
-      promptTemplate: promptTemplate.trim() || null,
+      unlockTriggerCode: null,
+      promptTemplate: null,
       resources: formattedResources,
       resource: formattedResources[0] ?? null,
       ...(!post || audienceChanged
@@ -409,28 +403,7 @@ export function FeedbackFormDialog({
               />
             </label>
 
-            <label className="grid gap-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              <span>محطة فتح الرؤية في مسار الرحلة (Journey Station Unlock Trigger)</span>
-              <select
-                value={unlockTriggerCode}
-                onChange={(e) => setUnlockTriggerCode(e.target.value)}
-                className="field-control text-xs"
-              >
-                <option value="">متاحة فوراً لجميع المستهدفين (بدون قفل مرحلي)</option>
-                <option value="INSIGHT_TASK_0_CV_BASE">المهمة 0: إتمام صياغة السيرة الذاتية (INSIGHT_TASK_0_CV_BASE)</option>
-                <option value="INSIGHT_W1_INTERVIEW_BASIC">الأسبوع 1: بعد المهمة 2 - التجهيز للمقابلة والأسيمنت (INSIGHT_W1_INTERVIEW_BASIC)</option>
-                <option value="INSIGHT_W1_TAILORED_CV">الأسبوع 1: محطة اليوم السابع - التقديم المخصص (INSIGHT_W1_TAILORED_CV)</option>
-                <option value="INSIGHT_W2_CUSTOM_PREP">الأسبوع 2: بعد المهمة 2 - التجهيز المخصص (INSIGHT_W2_CUSTOM_PREP)</option>
-                <option value="INSIGHT_W2_CONTENT_BUILDING">الأسبوع 2: محطة اليوم السابع - بناء المحتوى (INSIGHT_W2_CONTENT_BUILDING)</option>
-                <option value="INSIGHT_W3_TIME_MGMT">الأسبوع 3: بعد المهمة 2 - إدارة الوقت (INSIGHT_W3_TIME_MGMT)</option>
-                <option value="INSIGHT_W3_NETWORKING">الأسبوع 3: محطة اليوم السابع - بناء العلاقات (INSIGHT_W3_NETWORKING)</option>
-                <option value="INSIGHT_W4_SELF_CAREER_PLAN">الأسبوع 4: بعد المهمة 2 - التخطيط الاستراتيجي للكارير (INSIGHT_W4_SELF_CAREER_PLAN)</option>
-                <option value="INSIGHT_INTERVIEW_ADVANCED">حدث شرطي: عند تسجيل أول مقابلة أو أسيمنت (INSIGHT_INTERVIEW_ADVANCED)</option>
-              </select>
-              <span className="text-[11px] text-neutral-500">
-                تحدد متى تصبح هذه الرؤية مرئية للطالب في قسم الملاحظات والرؤى ومحرك الرحلة.
-              </span>
-            </label>
+
 
             <div className="grid gap-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300">
               <span>{t("professionalDevelopment.contentLabel")}</span>
@@ -489,23 +462,7 @@ export function FeedbackFormDialog({
               </span>
             </div>
 
-            <div className="grid gap-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              <div className="flex items-center justify-between">
-                <span>البرومبت الذكي (اختياري)</span>
-                <span className="text-[11px] text-neutral-400 font-mono">Prompt Template</span>
-              </div>
-              <textarea
-                rows={4}
-                value={promptTemplate}
-                onChange={(event) => setPromptTemplate(event.target.value)}
-                placeholder="اكتب البرومبت الذي سيظهر للطالب داخل مربع داكن قابل للنسخ بنقرة زر واحدة..."
-                className="w-full rounded-xl border border-neutral-800 bg-neutral-950 p-3 font-mono text-xs leading-relaxed text-neutral-100 placeholder:text-neutral-600 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
-                dir="auto"
-              />
-              <span className="text-xs font-normal text-neutral-500">
-                سيظهر للطالب أسفل الرؤية في صندوق أنيق مع زر نسخ فوري للمساعدة في التطبيق العملي.
-              </span>
-            </div>
+
           </div>
 
           <fieldset className="space-y-3 rounded-xl border border-border p-4 sm:p-5">

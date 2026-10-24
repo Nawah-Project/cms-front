@@ -63,7 +63,12 @@ function MemberFeedbackPage() {
       const [results, unread] = await Promise.all([
         Promise.all(
           scopes.map((item) =>
-            api.getFeedback({ scope: item, page: 1, limit: FEEDBACK_LOAD_LIMIT }),
+            api.getFeedback({
+              scope: item,
+              kind: "member",
+              page: 1,
+              limit: FEEDBACK_LOAD_LIMIT,
+            }),
           ),
         ),
         api.getFeedbackUnreadCount(),
@@ -138,16 +143,13 @@ function MemberFeedbackPage() {
   return (
     <div className="space-y-7">
       <PageHeading
-        eyebrow={t("professionalDevelopment.title")}
-        title={t("professionalDevelopment.feedbackTitle")}
-        description={t("professionalDevelopment.feedbackSubtitle")}
+        eyebrow="التطوير المهني"
+        title="الملاحظات"
+        description="الملاحظات والتوجيهات المباشرة من المرشدين الموجهة لك ولمجموعتك المهنية."
       />
       <ProfessionalDevelopmentNav
         unreadCount={unreadCount.forYou + unreadCount.shared}
       />
-
-      {/* V4 Tiered Strategic Insights & Interactive AI Prompt Templates */}
-      <JourneyTieredInsights />
 
       <div className="space-y-4">
         <div className="space-y-3 rounded-xl border border-border bg-surface p-3 sm:p-4">

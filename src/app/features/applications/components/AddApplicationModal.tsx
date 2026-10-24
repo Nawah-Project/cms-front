@@ -49,30 +49,36 @@ export function AddApplicationModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (isOpen && initialValues) {
-      if (initialValues.companyName !== undefined) {
-        setCompanyName(initialValues.companyName);
-      }
-      if (initialValues.jobTitle !== undefined) {
-        setJobTitle(initialValues.jobTitle);
-      }
-      if (initialValues.location !== undefined) {
-        setLocation(initialValues.location);
-      }
-      if (initialValues.applicationMethod !== undefined) {
-        setApplicationMethod(initialValues.applicationMethod);
-      }
-      if (initialValues.jobUrl !== undefined) {
-        setJobUrl(initialValues.jobUrl);
-      }
-      if (initialValues.isTailored !== undefined) {
-        setIsTailored(Boolean(initialValues.isTailored));
-      }
-      if (initialValues.sharedWithGroup !== undefined) {
-        setSharedWithGroup(Boolean(initialValues.sharedWithGroup));
+    if (isOpen) {
+      if (initialValues) {
+        if (initialValues.companyName !== undefined) {
+          setCompanyName(initialValues.companyName);
+        }
+        if (initialValues.jobTitle !== undefined) {
+          setJobTitle(initialValues.jobTitle);
+        } else if (user?.targetJobTitle) {
+          setJobTitle(user.targetJobTitle);
+        }
+        if (initialValues.location !== undefined) {
+          setLocation(initialValues.location);
+        }
+        if (initialValues.applicationMethod !== undefined) {
+          setApplicationMethod(initialValues.applicationMethod);
+        }
+        if (initialValues.jobUrl !== undefined) {
+          setJobUrl(initialValues.jobUrl);
+        }
+        if (initialValues.isTailored !== undefined) {
+          setIsTailored(Boolean(initialValues.isTailored));
+        }
+        if (initialValues.sharedWithGroup !== undefined) {
+          setSharedWithGroup(Boolean(initialValues.sharedWithGroup));
+        }
+      } else if (user?.targetJobTitle) {
+        setJobTitle(user.targetJobTitle);
       }
     }
-  }, [isOpen, initialValues]);
+  }, [isOpen, initialValues, user?.targetJobTitle]);
 
   const validate = () => {
     const errs: { companyName?: string; jobTitle?: string } = {};

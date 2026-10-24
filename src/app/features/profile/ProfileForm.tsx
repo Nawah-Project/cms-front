@@ -1,9 +1,10 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useI18n } from "../../i18n";
-import { DocumentPdfIcon } from "../../components/Icons";
+import { CheckIcon, DocumentPdfIcon, SparklesIcon } from "../../components/Icons";
 import { useToast } from "../../components/ui/ToastProvider";
 import type { ProfessionalProfile } from "./profileApi";
 import { isPdf, MAX_CV_BYTES, MAX_CV_SIZE_MB, profileApi } from "./profileApi";
+import { STANDARDIZED_SPECIALIZATIONS } from "../../constants/specializations";
 
 function formatSize(bytes: number, locale: string) {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(bytes / (1024 * 1024));
@@ -23,9 +24,11 @@ export function ProfileForm({
   const fileInput = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(initial.name);
   const [portfolio, setPortfolio] = useState(initial.portfolioUrl ?? "");
+  const [targetJobTitle, setTargetJobTitle] = useState(initial.targetJobTitle ?? "");
   const [file, setFile] = useState<File | null>(null);
   const [uploadState, setUploadState] = useState<"idle" | "selected" | "uploading" | "uploaded" | "error">("idle");
   const [portfolioError, setPortfolioError] = useState("");
+  const [specializationError, setSpecializationError] = useState("");
   const [nameError, setNameError] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -72,6 +75,13 @@ export function ProfileForm({
       return;
     }
     setNameError("");
+
+    if (!targetJobTitle.trim()) {
+      setSpecializationError("يرجى اختيار تخصصك الوظيفي الأساسي للمتابعة");
+      return;
+    }
+    setSpecializationError("");
+
     if (!validatePortfolio()) return;
     if (!file && !initial.hasCv) {
       setError(t("profile.cvRequired"));
@@ -79,11 +89,22 @@ export function ProfileForm({
     }
     setSaving(true);
     try {
-      let next = await profileApi.update(name.trim(), portfolio.trim());
+      let next = await profileApi.update(
+        name.trim(),
+        portfolio.trim(),
+        targetJobTitle.trim(),
+      );
       if (file) {
         setUploadState("uploading");
         const cv = await profileApi.uploadCv(file);
-        next = { ...next, cv, hasCv: true, profileComplete: Boolean(next.portfolioUrl) };
+        next = {
+          ...next,
+          cv,
+          hasCv: true,
+          profileComplete: Boolean(
+            next.portfolioUrl && next.targetJobTitle,
+          ),
+        };
         setUploadState("uploaded");
       }
       if (!next.profileComplete) throw new Error("Profile is incomplete");
@@ -98,7 +119,68 @@ export function ProfileForm({
   };
 
   return (
-    <form onSubmit={submit} className="space-y-5" noValidate>
+    <form onSubmit={submit} className="space-y-6" noValidate>
+      {/* 1. Specialization Selection */}
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <label className="field-label text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-0">
+            اختر تخصصك الوظيفي الأساسي
+          </label>
+          <span className="text-xs text-neutral-400 font-mono">Specialization</span>
+        </div>
+        <p className="text-xs text-neutral-500 leading-relaxed">
+          سيُستخدم هذا التخصص لتوجيهك تلقائياً إلى الوظائف المطابقة لمجالك في بوصلة سوق العمل الذكية.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+          {STANDARDIZED_SPECIALIZATIONS.map((spec) => {
+            const isSelected = targetJobTitle === spec.value;
+            return (
+              <div
+                key={spec.value}
+                onClick={() => {
+                  setTargetJobTitle(spec.value);
+                  setSpecializationError("");
+                }}
+                className={`relative flex flex-col justify-between cursor-pointer rounded-xl border p-3.5 transition-all text-start select-none ${
+                  isSelected
+                    ? "border-neutral-900 bg-neutral-900/5 ring-2 ring-neutral-900 shadow-xs dark:border-white dark:bg-white/10 dark:ring-white"
+                    : "border-border bg-surface hover:border-neutral-400 hover:bg-neutral-50/70 dark:hover:bg-neutral-900"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                      {spec.titleAr}
+                    </span>
+                    <span
+                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                        isSelected
+                          ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900"
+                          : "border-neutral-300 dark:border-neutral-700"
+                      }`}
+                    >
+                      {isSelected && <CheckIcon className="h-2.5 w-2.5" />}
+                    </span>
+                  </div>
+                  <span className="mt-0.5 block font-mono text-[11px] text-neutral-500 dark:text-neutral-400" dir="ltr">
+                    {spec.titleEn}
+                  </span>
+                </div>
+                <p className="mt-1.5 text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed line-clamp-2">
+                  {spec.descriptionAr}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+        {specializationError && (
+          <p role="alert" className="text-xs text-danger-strong font-medium">
+            {specializationError}
+          </p>
+        )}
+      </div>
+
       <div>
         <label htmlFor="profile-name" className="field-label">{t("profile.name")}</label>
         <input

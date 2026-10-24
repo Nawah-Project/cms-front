@@ -231,6 +231,19 @@ export default function TasksPage() {
 
       <ProfessionalDevelopmentNav />
 
+      {/* Celebratory Unlocked Banner for Time Management */}
+      <div className="rounded-xl border border-emerald-300 bg-emerald-50/80 p-4 dark:border-emerald-800 dark:bg-emerald-950/40 flex items-start gap-3">
+        <span className="text-lg">🎉</span>
+        <div>
+          <p className="text-xs sm:text-sm font-bold text-emerald-900 dark:text-emerald-100">
+            تم تفعيل أداة إدارة المهام الشخصية!
+          </p>
+          <p className="mt-0.5 text-xs text-emerald-800 dark:text-emerald-300 leading-relaxed">
+            يمكنك الآن تطبيق إرشادات إدارة الوقت وتنظيم مهامك اليومية هنا ومتابعة مراحل إنجازها.
+          </p>
+        </div>
+      </div>
+
       <div className="border-t border-border pt-6">
         <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
           {t("journey.personalAndMentorTasksHeading")}

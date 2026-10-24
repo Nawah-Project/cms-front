@@ -276,7 +276,7 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
               onboarding
               onSaved={(saved) => {
                 setProfile(saved);
-                if (user) setUser({ ...user, name: saved.name });
+                if (user) setUser({ ...user, name: saved.name, targetJobTitle: saved.targetJobTitle });
                 trackUxEvent("onboarding_completed");
                 setCompleted(true);
                 navigate("/applications", { replace: true });

@@ -14,6 +14,7 @@ export type ProfessionalProfile = {
   id: string;
   name: string;
   portfolioUrl: string | null;
+  targetJobTitle?: string | null;
   cv: CvMetadata | null;
   hasCv: boolean;
   profileComplete: boolean;
@@ -37,8 +38,16 @@ async function readError(response: Response): Promise<never> {
 
 export const profileApi = {
   get: () => apiClient.get<ProfessionalProfile>("/profile"),
-  update: (name: string, portfolioUrl: string | null) =>
-    apiClient.patch<ProfessionalProfile>("/profile", { name, portfolioUrl }),
+  update: (
+    name: string,
+    portfolioUrl: string | null,
+    targetJobTitle?: string | null,
+  ) =>
+    apiClient.patch<ProfessionalProfile>("/profile", {
+      name,
+      portfolioUrl,
+      targetJobTitle,
+    }),
   uploadCv: async (file: File): Promise<CvMetadata> => {
     const form = new FormData();
     form.append("file", file);

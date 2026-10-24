@@ -46,7 +46,7 @@ export default function ProfilePage() {
             initial={profile}
             onSaved={(saved) => {
               setProfile(saved);
-              if (user) setUser({ ...user, name: saved.name });
+              if (user) setUser({ ...user, name: saved.name, targetJobTitle: saved.targetJobTitle });
             }}
           />
           <div className="flex flex-wrap gap-3">

@@ -41,6 +41,8 @@ export interface FeedbackPost {
   readAt?: string | null;
   unlockTriggerCode?: string | null;
   promptTemplate?: string | null;
+  targetUser?: { id: string; name: string } | null;
+  group?: { id: string; name: string } | null;
 }
 
 export interface FeedbackPage {

@@ -15,6 +15,10 @@ export default [
     route("reports", "features/reports/pages/ReportsPage.tsx"),
     route(
       "professional-development",
+      "features/professional-development/pages/GuidancePage.tsx",
+    ),
+    route(
+      "professional-development/tasks",
       "features/professional-development/pages/TasksPage.tsx",
     ),
     route(

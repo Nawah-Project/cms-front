@@ -4,6 +4,7 @@ export interface User {
   email: string;
   role?: "USER" | "ADMIN";
   emailVerified?: boolean;
+  targetJobTitle?: string | null;
 }
 
 export interface Credentials {

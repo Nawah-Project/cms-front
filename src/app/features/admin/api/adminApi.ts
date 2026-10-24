@@ -310,9 +310,14 @@ export const adminApi = {
     request<TaskNote[]>(`/admin/tasks/${encodeURIComponent(taskId)}/feedback`),
   feedback: (feedbackId: string) =>
     request<FeedbackPost>(`/admin/feedback/${encodeURIComponent(feedbackId)}`),
-  feedbackPosts: (page = 1, limit = 20, archived = false) =>
+  feedbackPosts: (
+    page = 1,
+    limit = 20,
+    archived = false,
+    kind?: "guidance" | "member",
+  ) =>
     request<FeedbackPage>(
-      `/admin/feedback?page=${page}&limit=${limit}&archived=${archived}`,
+      `/admin/feedback?page=${page}&limit=${limit}&archived=${archived}${kind ? `&kind=${kind}` : ""}`,
     ),
   createFeedback: (input: CreateFeedbackInput) =>
     request<FeedbackPost>("/admin/feedback", {

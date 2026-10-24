@@ -450,16 +450,17 @@ export const api = {
     );
   },
 
-  getFeedback(params: {
-    scope: FeedbackScope;
+  getFeedback(params?: {
+    scope?: FeedbackScope;
+    kind?: "guidance" | "member";
     page?: number;
     limit?: number;
   }): Promise<FeedbackPage> {
-    const query = new URLSearchParams({
-      scope: params.scope,
-      page: String(params.page ?? 1),
-      limit: String(params.limit ?? 20),
-    });
+    const query = new URLSearchParams();
+    if (params?.scope) query.set("scope", params.scope);
+    if (params?.kind) query.set("kind", params.kind);
+    query.set("page", String(params?.page ?? 1));
+    query.set("limit", String(params?.limit ?? 20));
     return request<FeedbackPage>(`/feedback?${query}`);
   },
 
