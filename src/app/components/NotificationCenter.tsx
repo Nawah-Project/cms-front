@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useI18n } from "../i18n";
 import { BellIcon, CheckIcon, ClockIcon, SparklesIcon } from "./Icons";
 import { api } from "../services/api";
@@ -10,8 +11,12 @@ import {
   useMarkNotificationRead,
   useNotifications,
 } from "../features/journey/api/journeyApi";
+import { notificationQueryKeys } from "../features/journey/config/query-keys";
 import { useAuth } from "../features/auth/store/authStore";
-import type { AppNotification } from "../features/journey/types";
+import type {
+  AppNotification,
+  NotificationsListResponse,
+} from "../features/journey/types";
 import { openJourneyTasksPanel } from "./journeyTasksPanelEvents";
 
 export interface NotificationCenterProps {
@@ -31,7 +36,11 @@ export function NotificationCenter({
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [unreadFeedback, setUnreadFeedback] = useState<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const pendingReadIds = useRef(new Set<string>());
+  const timerMap = useRef(new Map<string, NodeJS.Timeout>());
 
+  const queryClient = useQueryClient();
   const { data: notificationsData } = useNotifications(30);
   const markReadMutation = useMarkNotificationRead();
   const markAllReadMutation = useMarkAllNotificationsRead();
@@ -83,6 +92,88 @@ export function NotificationCenter({
   const persistentItems = notificationsData?.items ?? [];
   const persistentUnreadCount = notificationsData?.unreadCount ?? 0;
 
+  // Viewport Auto-Read via IntersectionObserver (65% visibility, 350ms dwell)
+  useEffect(() => {
+    if (!open) return;
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const id = (entry.target as HTMLElement).getAttribute(
+            "data-notification-id",
+          );
+          if (!id) return;
+
+          if (entry.isIntersecting) {
+            if (pendingReadIds.current.has(id)) return;
+            if (!timerMap.current.has(id)) {
+              const timer = setTimeout(() => {
+                timerMap.current.delete(id);
+                if (pendingReadIds.current.has(id)) return;
+                pendingReadIds.current.add(id);
+
+                // 1. Optimistic Cache Update
+                queryClient.setQueriesData<NotificationsListResponse>(
+                  { queryKey: notificationQueryKeys.all },
+                  (old) => {
+                    if (!old) return old;
+                    let foundUnread = false;
+                    const updatedItems = old.items.map((item) => {
+                      if (item.id === id && !item.isRead) {
+                        foundUnread = true;
+                        return {
+                          ...item,
+                          isRead: true,
+                          readAt: new Date().toISOString(),
+                        };
+                      }
+                      return item;
+                    });
+                    return {
+                      ...old,
+                      items: updatedItems,
+                      unreadCount: foundUnread
+                        ? Math.max(0, old.unreadCount - 1)
+                        : old.unreadCount,
+                    };
+                  },
+                );
+
+                // 2. Background PATCH request
+                markReadMutation.mutate(id);
+              }, 350);
+              timerMap.current.set(id, timer);
+            }
+          } else {
+            // Scrolled out of view before 350ms dwell
+            const existingTimer = timerMap.current.get(id);
+            if (existingTimer) {
+              clearTimeout(existingTimer);
+              timerMap.current.delete(id);
+            }
+          }
+        });
+      },
+      {
+        root: scrollContainer,
+        threshold: 0.65,
+      },
+    );
+
+    const unreadNodes = scrollContainer.querySelectorAll(
+      '[data-notification-id][data-unread="true"]',
+    );
+    unreadNodes.forEach((node) => observer.observe(node));
+
+    return () => {
+      observer.disconnect();
+      timerMap.current.forEach((t) => clearTimeout(t));
+      timerMap.current.clear();
+    };
+  }, [open, persistentItems, queryClient, markReadMutation]);
+
   const expiringSoon = stats?.expiringSoonCount ?? 0;
   const recentNoResponse = stats?.recentNoResponseCount ?? 0;
   const staleApplicationsCount = stats?.closed?.noResponse ?? 0;
@@ -95,7 +186,8 @@ export function NotificationCenter({
       : 0);
 
   const handleNotificationClick = (item: AppNotification) => {
-    if (!item.isRead) {
+    if (!item.isRead && !pendingReadIds.current.has(item.id)) {
+      pendingReadIds.current.add(item.id);
       markReadMutation.mutate(item.id);
     }
     setOpen(false);
@@ -189,7 +281,10 @@ export function NotificationCenter({
             </div>
           </div>
 
-          <div className="max-h-80 overflow-y-auto py-2 divide-y divide-border/60">
+          <div
+            ref={scrollContainerRef}
+            className="max-h-80 overflow-y-auto py-2 divide-y divide-border/60"
+          >
             {/* Persistent V2 Journey & System Notifications */}
             {persistentItems.map((item) => {
               const title = locale === "ar" ? item.titleAr : item.titleEn;
@@ -198,6 +293,8 @@ export function NotificationCenter({
                 <button
                   key={item.id}
                   type="button"
+                  data-notification-id={item.id}
+                  data-unread={!item.isRead ? "true" : "false"}
                   onClick={() => handleNotificationClick(item)}
                   className={`flex w-full items-start gap-3 p-2.5 rounded-xl text-start transition hover:bg-neutral-50 dark:hover:bg-neutral-800/60 ${
                     !item.isRead

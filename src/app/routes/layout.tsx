@@ -20,6 +20,7 @@ import {
   CELEBRATE_MILESTONE_EVENT,
   type MilestoneCelebrationData,
 } from "../features/journey/lib/celebrationEvents";
+import { closeJourneyTasksPanel } from "../components/journeyTasksPanelEvents";
 import { MilestoneCelebrationModal } from "../components/ui/MilestoneCelebrationModal";
 import { FirstApplicationGuidedTourProvider } from "../features/applications/components/FirstApplicationGuidedTour";
 
@@ -51,6 +52,7 @@ export default function Layout() {
     const handler = (event: Event) => {
       const customEvent = event as CustomEvent<MilestoneCelebrationData>;
       if (customEvent.detail) {
+        closeJourneyTasksPanel();
         setCelebrationData(customEvent.detail);
       }
     };
@@ -67,6 +69,7 @@ export default function Layout() {
   }, []);
 
   const openAddModal = (initialValues?: Partial<CreateApplicationInput>) => {
+    closeJourneyTasksPanel();
     setDraftValues(initialValues ?? null);
     setIsAddModalOpen(true);
   };

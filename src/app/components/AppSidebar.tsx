@@ -33,18 +33,30 @@ const NAV_ITEMS: NavItem[] = [
     icon: "applications",
   },
   {
+    labelKey: "common.navProfessionalDevelopment",
+    to: "/professional-development",
+    icon: "development",
+  },
+  {
+    labelKey: "common.navMembers",
+    to: "/members-progress",
+    icon: "members",
+  },
+  {
     labelKey: "common.navReports",
     to: "/reports",
     icon: "reports",
   },
   {
-    labelKey: "common.navProfessionalDevelopment",
-    to: "/professional-development",
-    icon: "development",
+    labelKey: "common.navProfile",
+    to: "/profile",
+    icon: "profile",
   },
-  { labelKey: "common.navMembers", to: "/members-progress", icon: "members" },
-  { labelKey: "common.navAdmin", to: "/admin", icon: "admin" },
-  { labelKey: "common.navProfile", to: "/profile", icon: "profile" },
+  {
+    labelKey: "common.navAdmin",
+    to: "/admin",
+    icon: "admin",
+  },
 ];
 
 function NavIcon({ name }: { name: NavItem["icon"] }) {

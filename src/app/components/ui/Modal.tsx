@@ -2,6 +2,7 @@ import React, { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useI18n } from "../../i18n";
 import { CloseIcon } from "../Icons";
+import { closeJourneyTasksPanel } from "../journeyTasksPanelEvents";
 
 export interface ModalProps {
   isOpen: boolean;
@@ -41,6 +42,7 @@ export function Modal({
 
   useEffect(() => {
     if (isOpen) {
+      closeJourneyTasksPanel();
       previouslyFocusedElement.current = document.activeElement as HTMLElement;
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";

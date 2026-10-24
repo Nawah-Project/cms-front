@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router";
 import { ChevronLeft, ChevronRight, ListChecks, X } from "lucide-react";
 import { useI18n } from "../i18n";
 import { useAuth } from "../features/auth/store/authStore";
 import { useJourneyState } from "../features/journey/api/journeyApi";
 import { JourneyQuestsMap } from "../features/journey/components/JourneyQuestsMap";
-import { OPEN_JOURNEY_TASKS_PANEL_EVENT } from "./journeyTasksPanelEvents";
+import {
+  OPEN_JOURNEY_TASKS_PANEL_EVENT,
+  CLOSE_JOURNEY_TASKS_PANEL_EVENT,
+} from "./journeyTasksPanelEvents";
+import { CELEBRATE_MILESTONE_EVENT } from "../features/journey/lib/celebrationEvents";
 import { useTour } from "../features/applications/components/FirstApplicationGuidedTour";
 
 export function JourneyTasksPanel() {
   const { t, locale } = useI18n();
+  const location = useLocation();
   const { user } = useAuth();
   const { data: journeyData } = useJourneyState();
   const [open, setOpen] = useState(false);
@@ -86,6 +92,50 @@ export function JourneyTasksPanel() {
     }
   }, [isTourActive, step, open]);
 
+  // Route change auto-close (unless locked in tour step 2)
+  useEffect(() => {
+    if (open && (!isTourActive || step !== 2)) {
+      setOpen(false);
+    }
+  }, [location.pathname, location.search]);
+
+  // Close drawer on external events (celebrations, modals, explicit close events)
+  useEffect(() => {
+    const handleClose = () => {
+      if (!isTourActive || step !== 2) {
+        setOpen(false);
+      }
+    };
+    window.addEventListener(CLOSE_JOURNEY_TASKS_PANEL_EVENT, handleClose);
+    window.addEventListener(CELEBRATE_MILESTONE_EVENT, handleClose);
+    window.addEventListener("nawah_open_add_modal", handleClose);
+    return () => {
+      window.removeEventListener(CLOSE_JOURNEY_TASKS_PANEL_EVENT, handleClose);
+      window.removeEventListener(CELEBRATE_MILESTONE_EVENT, handleClose);
+      window.removeEventListener("nawah_open_add_modal", handleClose);
+    };
+  }, [isTourActive, step]);
+
+  // Click-outside drawer auto-close (unless locked in tour step 2)
+  useEffect(() => {
+    if (!open) return;
+    const handleOutsideClick = (event: MouseEvent | TouchEvent) => {
+      if (isTourActive && step === 2) return;
+      const target = event.target as Node | null;
+      if (!target) return;
+      const panel = document.getElementById("journey-tasks-panel");
+      if (panel && !panel.contains(target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+    };
+  }, [open, isTourActive, step]);
+
   useEffect(() => {
     const openPanel = () => setOpen(true);
     window.addEventListener(OPEN_JOURNEY_TASKS_PANEL_EVENT, openPanel);
@@ -97,12 +147,12 @@ export function JourneyTasksPanel() {
     if (!open) return;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        if (!isTourActive) setOpen(false);
+        if (!isTourActive || step !== 2) setOpen(false);
       }
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [open, isTourActive]);
+  }, [open, isTourActive, step]);
 
   const isRtl = locale === "ar";
   // In RTL (drawer on left): closed arrow points right (>), open arrow points left (<)
@@ -121,9 +171,9 @@ export function JourneyTasksPanel() {
           type="button"
           aria-label={t("common.close")}
           onClick={() => {
-            if (!isTourActive) setOpen(false);
+            if (!isTourActive || step !== 2) setOpen(false);
           }}
-          className="fixed inset-y-0 end-0 start-0 z-50 cursor-default bg-neutral-950/30 lg:start-64"
+          className="fixed inset-0 z-50 cursor-default bg-neutral-950/30"
         />
       )}
 

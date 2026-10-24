@@ -281,6 +281,7 @@ export function FirstApplicationGuidedTourProvider({
   const [isTourActive, setIsTourActive] = useState(false);
   const [step, setStep] = useState<TourStep>(1);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+  const [targetBorderRadius, setTargetBorderRadius] = useState<string>("12px");
 
   // Form field live values for Step 5 & 6 validation
   const [companyValue, setCompanyValue] = useState("");
@@ -358,6 +359,14 @@ export function FirstApplicationGuidedTourProvider({
 
         const rect = el.getBoundingClientRect();
         if (rect.width > 0 && rect.height > 0) {
+          const computed = window.getComputedStyle(el);
+          const radius = computed.borderRadius;
+          if (radius && radius !== "0px") {
+            setTargetBorderRadius(radius);
+          } else {
+            setTargetBorderRadius("12px");
+          }
+
           setTargetRect((prev) => {
             if (
               !prev ||
@@ -484,7 +493,7 @@ export function FirstApplicationGuidedTourProvider({
         arrowOffset: 40,
       };
 
-  const pad = step === 5 || step === 6 ? 4 : 6;
+  const pad = 2;
 
   return (
     <TourContext.Provider
@@ -502,7 +511,7 @@ export function FirstApplicationGuidedTourProvider({
         typeof document !== "undefined" &&
         createPortal(
           <div className="fixed inset-0 w-screen h-dvh z-[9990] pointer-events-none select-none overflow-hidden">
-            {/* 4 Physical Backdrop Divs: Shading EVERYTHING across the screen EXCEPT activeRect (z-[9990]) */}
+            {/* 4 Physical Backdrop Divs: Invisible hitboxes blocking clicks EXCEPT inside activeRect (z-[9990]) */}
             {activeRect ? (
               <>
                 {/* Top Backdrop */}
@@ -515,7 +524,7 @@ export function FirstApplicationGuidedTourProvider({
                     height: Math.max(0, activeRect.top - pad),
                     zIndex: 9990,
                   }}
-                  className="bg-neutral-950/80 backdrop-blur-[2px] pointer-events-auto"
+                  className="bg-transparent pointer-events-auto"
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -531,7 +540,7 @@ export function FirstApplicationGuidedTourProvider({
                     bottom: 0,
                     zIndex: 9990,
                   }}
-                  className="bg-neutral-950/80 backdrop-blur-[2px] pointer-events-auto"
+                  className="bg-transparent pointer-events-auto"
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -547,7 +556,7 @@ export function FirstApplicationGuidedTourProvider({
                     height: activeRect.height + pad * 2,
                     zIndex: 9990,
                   }}
-                  className="bg-neutral-950/80 backdrop-blur-[2px] pointer-events-auto"
+                  className="bg-transparent pointer-events-auto"
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -563,7 +572,7 @@ export function FirstApplicationGuidedTourProvider({
                     height: activeRect.height + pad * 2,
                     zIndex: 9990,
                   }}
-                  className="bg-neutral-950/80 backdrop-blur-[2px] pointer-events-auto"
+                  className="bg-transparent pointer-events-auto"
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -572,7 +581,7 @@ export function FirstApplicationGuidedTourProvider({
               </>
             ) : (
               <div
-                className="fixed inset-0 bg-neutral-950/80 backdrop-blur-[2px] z-[9990] pointer-events-auto"
+                className="fixed inset-0 bg-neutral-950/72 backdrop-blur-[2px] z-[9990] pointer-events-auto"
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
@@ -580,7 +589,7 @@ export function FirstApplicationGuidedTourProvider({
               />
             )}
 
-            {/* Glowing Cutout Border around Target (z-[9991]) */}
+            {/* Glowing Cutout Border around Target (z-[9991]) casting seamless dark backdrop via box-shadow */}
             {activeRect && (
               <div
                 style={{
@@ -589,9 +598,15 @@ export function FirstApplicationGuidedTourProvider({
                   left: activeRect.left - pad,
                   width: activeRect.width + pad * 2,
                   height: activeRect.height + pad * 2,
+                  borderRadius: targetBorderRadius
+                    ? `calc(${targetBorderRadius} + ${pad}px)`
+                    : "14px",
+                  border: "1.5px solid rgba(255, 255, 255, 0.85)",
+                  boxShadow:
+                    "0 0 0 9999px rgba(9, 9, 11, 0.72), 0 0 12px rgba(16, 185, 129, 0.18)",
                   zIndex: 9991,
                 }}
-                className="rounded-2xl ring-4 ring-emerald-400/90 animate-pulse pointer-events-none shadow-[0_0_35px_rgba(52,211,153,0.6)]"
+                className="ring-2 ring-emerald-400/35 pointer-events-none transition-all duration-150"
               />
             )}
 
