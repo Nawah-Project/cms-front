@@ -22,6 +22,8 @@ export default {
   cancel: "Cancel",
   confirm: "Confirm",
   dismiss: "Dismiss",
+  expand: "Expand details",
+  collapse: "Collapse details",
   save: "Save",
   saving: "Saving…",
   edit: "Edit",

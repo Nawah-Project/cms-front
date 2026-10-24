@@ -25,12 +25,6 @@ interface MacroMarket {
 
 const MACRO_MARKETS: MacroMarket[] = [
   {
-    id: "Remote",
-    labelAr: "عن بُعد (عالمي)",
-    labelEn: "Remote / Global",
-    flag: "🌐",
-  },
-  {
     id: "Egypt",
     labelAr: "مصر",
     labelEn: "Egypt",
@@ -107,15 +101,16 @@ interface PlatformConfig {
   domain: string;
   category: "GLOBAL" | "REGIONAL";
   markets?: string[];
+  isRemoteOnly?: boolean;
   supportsLocationParam: boolean;
   method: ApplicationMethod;
   descriptionAr: string;
   descriptionEn: string;
-  buildUrl: (title: string, location: string, isRemote: boolean) => string;
+  buildUrl: (title: string, location: string, workMode: "ALL" | "REMOTE" | "ON_SITE") => string;
 }
 
 const PLATFORMS: PlatformConfig[] = [
-  // --- 1. Global Platforms ---
+  // --- 1. Global Major Platforms ---
   {
     id: "linkedin",
     name: "LinkedIn Jobs",
@@ -123,10 +118,14 @@ const PLATFORMS: PlatformConfig[] = [
     category: "GLOBAL",
     supportsLocationParam: true,
     method: "LINKEDIN",
-    descriptionAr: "البحث المباشر عن الوظائف ومسؤولي التوظيف على شبكة LinkedIn العالمية المفلترة بتخصصك ودولتك.",
-    descriptionEn: "Direct search for jobs and hiring managers on LinkedIn filtered by your specialization and location.",
-    buildUrl: (title, location, isRemote) =>
-      `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(title)}&location=${encodeURIComponent(location)}${isRemote ? "&f_WT=2" : ""}`,
+    descriptionAr: "البحث المباشر عن الوظائف ومسؤولي التوظيف على شبكة LinkedIn العالمية المفلترة بتخصصك ودولتك ونمط عملك.",
+    descriptionEn: "Direct search for jobs and hiring managers on LinkedIn filtered by your specialization, location, and work mode.",
+    buildUrl: (title, location, workMode) => {
+      let wtParam = "";
+      if (workMode === "REMOTE") wtParam = "&f_WT=2";
+      else if (workMode === "ON_SITE") wtParam = "&f_WT=1%2C3";
+      return `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(title)}&location=${encodeURIComponent(location)}${wtParam}`;
+    },
   },
   {
     id: "indeed",
@@ -135,10 +134,12 @@ const PLATFORMS: PlatformConfig[] = [
     category: "GLOBAL",
     supportsLocationParam: true,
     method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "أكبر محرك بحث وتجميع للوظائف في مختلف الشركات والمؤسسات حول العالم مع فلترة الموقع الجغرافي.",
-    descriptionEn: "Largest job search aggregator across companies worldwide with precise geographic filtering.",
-    buildUrl: (title, location) =>
-      `https://www.indeed.com/jobs?q=${encodeURIComponent(title)}&l=${encodeURIComponent(location)}`,
+    descriptionAr: "أكبر محرك بحث وتجميع للوظائف في مختلف الشركات والمؤسسات حول العالم مع فلترة الموقع الجغرافي ونمط العمل.",
+    descriptionEn: "Largest job search aggregator across companies worldwide with precise geographic and work mode filtering.",
+    buildUrl: (title, location, workMode) => {
+      const remoteParam = workMode === "REMOTE" ? "&sc=0kf%3Aattr%28DSQF7%29%3B" : "";
+      return `https://www.indeed.com/jobs?q=${encodeURIComponent(title)}&l=${encodeURIComponent(location)}${remoteParam}`;
+    },
   },
   {
     id: "glassdoor",
@@ -165,6 +166,98 @@ const PLATFORMS: PlatformConfig[] = [
       const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
       return `https://wellfound.com/jobs?role=${slug}&location=${encodeURIComponent(location)}`;
     },
+  },
+  {
+    id: "remotive",
+    name: "Remotive",
+    domain: "remotive.com",
+    category: "GLOBAL",
+    isRemoteOnly: true,
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "مجتمع عالمي رائد لوظائف التكنولوجيا والعمل عن بُعد، مفحوصة ومحدثة يومياً للمطورين والمصممين.",
+    descriptionEn: "Top global remote tech job board curated and updated daily for developers, designers, and digital experts.",
+    buildUrl: (title) =>
+      `https://remotive.com/remote-jobs/search?query=${encodeURIComponent(title)}`,
+  },
+  {
+    id: "himalayas",
+    name: "Himalayas",
+    domain: "himalayas.app",
+    category: "GLOBAL",
+    isRemoteOnly: true,
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "منصة عمل عن بُعد حديثة تتميز ببيانات رواتب موثوقة وشفافية المزايا وتفاصيل ثقافة العمل.",
+    descriptionEn: "Modern remote job platform featuring transparent compensation data, perks, and company culture.",
+    buildUrl: (title) =>
+      `https://himalayas.app/jobs?q=${encodeURIComponent(title)}`,
+  },
+  {
+    id: "arcdev",
+    name: "Arc.dev",
+    domain: "arc.dev",
+    category: "GLOBAL",
+    isRemoteOnly: true,
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "بوابة متخصصة لتوظيف أفضل المطورين والمهندسين والمصممين عن بُعد في الشركات والفرق العالمية.",
+    descriptionEn: "Leading platform connecting top remote developers and designers with global tech companies.",
+    buildUrl: (title) =>
+      `https://arc.dev/remote-jobs?search=${encodeURIComponent(title)}`,
+  },
+  {
+    id: "weworkremotely",
+    name: "We Work Remotely",
+    domain: "weworkremotely.com",
+    category: "GLOBAL",
+    isRemoteOnly: true,
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "المجتمع الأكبر عالمياً لوظائف العمل عن بُعد 100% في مجالات البرمجة والتصميم والتسويق الرقمي.",
+    descriptionEn: "The largest remote work community in the world for software, design, and product roles.",
+    buildUrl: (title) =>
+      `https://weworkremotely.com/remote-jobs/search?term=${encodeURIComponent(title)}`,
+  },
+  {
+    id: "remoteok",
+    name: "RemoteOK",
+    domain: "remoteok.com",
+    category: "GLOBAL",
+    isRemoteOnly: true,
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "منصة عالمية متخصصة في وظائف العمل عن بُعد لخبراء التكنولوجيا والرحالة الرقميين حول العالم.",
+    descriptionEn: "Worldwide remote job platform for digital nomads, software engineers, and tech specialists.",
+    buildUrl: (title) => {
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      return `https://remoteok.com/remote-${slug}-jobs`;
+    },
+  },
+  {
+    id: "flexjobs",
+    name: "FlexJobs",
+    domain: "flexjobs.com",
+    category: "GLOBAL",
+    supportsLocationParam: true,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "وظائف موثوقة ومفحوصة بالكامل للعمل المرن وعن بُعد بدون أي إعلانات مضللة أو فرص احتيالية.",
+    descriptionEn: "Hand-screened, verified flexible and remote job listings with zero scams or low-quality ads.",
+    buildUrl: (title, location) =>
+      `https://www.flexjobs.com/search?search=${encodeURIComponent(title)}&location=${encodeURIComponent(location)}`,
+  },
+  {
+    id: "jobspresso",
+    name: "Jobspresso",
+    domain: "jobspresso.co",
+    category: "GLOBAL",
+    isRemoteOnly: true,
+    supportsLocationParam: false,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "وظائف تقنية وهندسية وتسويقية مختارة بعناية للعمل عن بُعد في أفضل الشركات الناشئة.",
+    descriptionEn: "Expertly curated remote tech, engineering, and marketing opportunities at top companies.",
+    buildUrl: (title) =>
+      `https://jobspresso.co/browsejobs/?search_keywords=${encodeURIComponent(title)}`,
   },
 
   // --- 2. Egypt Regional Platforms ---
@@ -219,6 +312,19 @@ const PLATFORMS: PlatformConfig[] = [
     descriptionEn: "Job search engine aggregating all listings across Egypt and GCC into a single searchable index.",
     buildUrl: (title, location) =>
       `https://www.tanqeeb.com/jobs/search?keywords=${encodeURIComponent(title)}&country=${encodeURIComponent(location)}`,
+  },
+  {
+    id: "laimoon",
+    name: "Laimoon Jobs",
+    domain: "laimoon.com",
+    category: "REGIONAL",
+    markets: ["Egypt", "GCC"],
+    supportsLocationParam: true,
+    method: "RECRUITMENT_PLATFORM",
+    descriptionAr: "بوابة الوظائف والتطوير المهني في الإمارات والسعودية والخليج ومصر مع استكشاف الرواتب والشركات.",
+    descriptionEn: "Career and recruitment portal across UAE, Saudi Arabia, GCC, and Egypt with salary insights.",
+    buildUrl: (title, location) =>
+      `https://jobs.laimoon.com/search?keyword=${encodeURIComponent(title)}&country=${encodeURIComponent(location)}`,
   },
 
   // --- 3. GCC Regional Platforms ---
@@ -497,94 +603,14 @@ const PLATFORMS: PlatformConfig[] = [
       return `https://www.bumeran.com.ar/empleos-busqueda-${slug}.html`;
     },
   },
-
-  // --- 8. Remote Specialized Platforms ---
-  {
-    id: "weworkremotely",
-    name: "We Work Remotely",
-    domain: "weworkremotely.com",
-    category: "REGIONAL",
-    markets: ["Remote"],
-    supportsLocationParam: false,
-    method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "المجتمع الأكبر عالمياً لوظائف العمل عن بُعد 100% في مجالات البرمجة والتصميم والتسويق الرقمي.",
-    descriptionEn: "The largest remote work community in the world for software, design, and product roles.",
-    buildUrl: (title) =>
-      `https://weworkremotely.com/remote-jobs/search?term=${encodeURIComponent(title)}`,
-  },
-  {
-    id: "remoteok",
-    name: "RemoteOK",
-    domain: "remoteok.com",
-    category: "REGIONAL",
-    markets: ["Remote"],
-    supportsLocationParam: false,
-    method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "منصة عالمية متخصصة في وظائف العمل عن بُعد لخبراء التكنولوجيا والرحالة الرقميين حول العالم.",
-    descriptionEn: "Worldwide remote job platform for digital nomads, software engineers, and tech specialists.",
-    buildUrl: (title) => {
-      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      return `https://remoteok.com/remote-${slug}-jobs`;
-    },
-  },
-  {
-    id: "flexjobs",
-    name: "FlexJobs",
-    domain: "flexjobs.com",
-    category: "REGIONAL",
-    markets: ["Remote"],
-    supportsLocationParam: true,
-    method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "وظائف موثوقة ومفحوصة بالكامل للعمل المرن وعن بُعد بدون أي إعلانات مضللة أو فرص احتيالية.",
-    descriptionEn: "Hand-screened, verified flexible and remote job listings with zero scams or low-quality ads.",
-    buildUrl: (title, location) =>
-      `https://www.flexjobs.com/search?search=${encodeURIComponent(title)}&location=${encodeURIComponent(location)}`,
-  },
-  {
-    id: "jobspresso",
-    name: "Jobspresso",
-    domain: "jobspresso.co",
-    category: "REGIONAL",
-    markets: ["Remote"],
-    supportsLocationParam: false,
-    method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "وظائف تقنية وهندسية وتسويقية مختارة بعناية للعمل عن بُعد في أفضل الشركات الناشئة.",
-    descriptionEn: "Expertly curated remote tech, engineering, and marketing opportunities at top companies.",
-    buildUrl: (title) =>
-      `https://jobspresso.co/browsejobs/?search_keywords=${encodeURIComponent(title)}`,
-  },
-  {
-    id: "himalayas",
-    name: "Himalayas",
-    domain: "himalayas.app",
-    category: "REGIONAL",
-    markets: ["Remote"],
-    supportsLocationParam: false,
-    method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "منصة عمل عن بُعد حديثة تتميز ببيانات رواتب موثوقة وشفافية المزايا وتفاصيل ثقافة العمل.",
-    descriptionEn: "Modern remote job platform featuring transparent compensation data, perks, and company culture.",
-    buildUrl: (title) =>
-      `https://himalayas.app/jobs?q=${encodeURIComponent(title)}`,
-  },
-  {
-    id: "arcdev",
-    name: "Arc.dev",
-    domain: "arc.dev",
-    category: "REGIONAL",
-    markets: ["Remote"],
-    supportsLocationParam: false,
-    method: "RECRUITMENT_PLATFORM",
-    descriptionAr: "بوابة متخصصة لتوظيف أفضل المطورين والمهندسين عن بُعد في الشركات والفرق العالمية.",
-    descriptionEn: "Leading platform connecting top remote developers and software engineers with global teams.",
-    buildUrl: (title) =>
-      `https://arc.dev/remote-jobs?search=${encodeURIComponent(title)}`,
-  },
 ];
 
 interface JobMarketCompassProps {
   onLaunchDraft: (draft: Partial<CreateApplicationInput>) => void;
   collapsible?: boolean;
 }
+
+export type WorkMode = "ALL" | "REMOTE" | "ON_SITE";
 
 export function JobMarketCompass({
   onLaunchDraft,
@@ -596,8 +622,9 @@ export function JobMarketCompass({
   const toast = useToast();
 
   const [expanded, setExpanded] = useState(true);
-  const [selectedMarketId, setSelectedMarketId] = useState<string>("Remote");
+  const [selectedMarketId, setSelectedMarketId] = useState<string>("Egypt");
   const [selectedSubCountryKey, setSelectedSubCountryKey] = useState<string | null>(null);
+  const [workMode, setWorkMode] = useState<WorkMode>("ALL");
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<"ALL" | "GLOBAL" | "REGIONAL">("ALL");
 
   const targetJobTitle = user?.targetJobTitle || "Software Engineer";
@@ -610,33 +637,33 @@ export function JobMarketCompass({
 
   // Determine effective location string
   const effectiveLocation = useMemo(() => {
-    if (selectedMarketId === "Remote") return isRtl ? "عن بُعد" : "Remote";
-    if (selectedMarketId === "Egypt") return isRtl ? "مصر" : "Egypt";
-    if (selectedSubCountryKey) {
-      if (activeMarket.subCountries) {
-        const sub = activeMarket.subCountries.find((c) => c.key === selectedSubCountryKey);
-        if (sub) return isRtl ? sub.labelAr : sub.labelEn;
-      }
-      return selectedSubCountryKey;
-    }
-    if (activeMarket.subCountries && activeMarket.subCountries.length > 0) {
+    let base = "";
+    if (selectedSubCountryKey && activeMarket.subCountries) {
+      const sub = activeMarket.subCountries.find((c) => c.key === selectedSubCountryKey);
+      base = isRtl ? (sub?.labelAr || selectedSubCountryKey) : (sub?.labelEn || selectedSubCountryKey);
+    } else if (selectedMarketId === "Egypt") {
+      base = isRtl ? "مصر" : "Egypt";
+    } else if (activeMarket.subCountries && activeMarket.subCountries.length > 0) {
       const sub = activeMarket.subCountries[0];
-      return isRtl ? sub.labelAr : sub.labelEn;
+      base = isRtl ? sub.labelAr : sub.labelEn;
+    } else {
+      base = isRtl ? activeMarket.labelAr : activeMarket.labelEn;
     }
-    return isRtl ? activeMarket.labelAr : activeMarket.labelEn;
-  }, [selectedMarketId, selectedSubCountryKey, activeMarket, isRtl]);
+
+    if (workMode === "REMOTE") {
+      return isRtl ? `${base} - عن بُعد` : `${base} - Remote`;
+    }
+    return base;
+  }, [selectedMarketId, selectedSubCountryKey, activeMarket, workMode, isRtl]);
 
   const effectiveLocationQuery = useMemo(() => {
-    if (selectedMarketId === "Remote") return "Remote";
-    if (selectedMarketId === "Egypt") return "Egypt";
     if (selectedSubCountryKey) return selectedSubCountryKey;
+    if (selectedMarketId === "Egypt") return "Egypt";
     if (activeMarket.subCountries && activeMarket.subCountries.length > 0) {
       return activeMarket.subCountries[0].key;
     }
     return activeMarket.labelEn;
   }, [selectedMarketId, selectedSubCountryKey, activeMarket]);
-
-  const isRemote = selectedMarketId === "Remote";
 
   const handleMarketChange = (marketId: string) => {
     setSelectedMarketId(marketId);
@@ -649,10 +676,10 @@ export function JobMarketCompass({
   };
 
   const handlePlatformClick = (platform: PlatformConfig) => {
-    const finalUrl = platform.buildUrl(targetJobTitle, effectiveLocationQuery, isRemote);
+    const finalUrl = platform.buildUrl(targetJobTitle, effectiveLocationQuery, workMode);
     window.open(finalUrl, "_blank", "noopener,noreferrer");
 
-    if (!platform.supportsLocationParam && !isRemote) {
+    if (!platform.supportsLocationParam && workMode !== "REMOTE") {
       toast.info(
         isRtl
           ? "💡 هذه المنصة تفرز الوظائف عالمياً؛ يمكنك كتابة الدولة في شريط البحث الداخلي للمنصة عند فتحها."
@@ -660,19 +687,25 @@ export function JobMarketCompass({
       );
     }
 
-    // Launch draft with empty jobUrl as strictly required!
+    // Launch draft with smart auto-filled location and applicationMethod
+    const appMethod: ApplicationMethod = platform.id === "linkedin" ? "LINKEDIN" : "RECRUITMENT_PLATFORM";
+
     onLaunchDraft({
       jobTitle: targetJobTitle,
       location: effectiveLocation,
-      applicationMethod: platform.method,
+      applicationMethod: appMethod,
       jobUrl: "", // STRICTLY EMPTY: NEVER PREFILL SEARCH URL!
     });
   };
 
   // Strict market-linked platforms filtering
   const globalPlatforms = useMemo(() => {
-    return PLATFORMS.filter((p) => p.category === "GLOBAL");
-  }, []);
+    return PLATFORMS.filter((p) => {
+      if (p.category !== "GLOBAL") return false;
+      if (workMode === "ON_SITE" && p.isRemoteOnly) return false;
+      return true;
+    });
+  }, [workMode]);
 
   const regionalPlatformsForMarket = useMemo(() => {
     return PLATFORMS.filter(
@@ -719,31 +752,61 @@ export function JobMarketCompass({
             </div>
             <p className="mt-0.5 text-xs text-neutral-500">
               {isRtl
-                ? "محركات بحث مباشرة لـ 18+ منصة عالمية وإقليمية مطابقة لتخصصك ودولتك المستهدفة"
-                : "Live automated search engines across 18+ global & regional job platforms"}
+                ? "محركات بحث مباشرة لأكثر من 20 منصة عالمية وإقليمية مطابقة لتخصصك ودولتك المستهدفة"
+                : "Direct search engines across 20+ global and regional platforms tailored to your specialization and target country"}
             </p>
           </div>
         </div>
 
-        {collapsible && (
-          <button
-            type="button"
-            onClick={() => setExpanded((prev) => !prev)}
-            aria-expanded={expanded}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"
-          >
-            <span>
-              {expanded
-                ? (isRtl ? "إخفاء الفلاتر" : "Collapse")
-                : (isRtl ? "عرض المستكشف" : "Expand")}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Work Mode Switcher Segmented Control */}
+          <div className="flex items-center gap-1 rounded-xl border border-border bg-neutral-100/80 dark:bg-neutral-900/80 p-1">
+            <span className="text-[11px] font-bold text-neutral-500 px-1.5 select-none">
+              {isRtl ? "نمط العمل:" : "Work Mode:"}
             </span>
-            {expanded ? (
-              <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
-            ) : (
-              <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
-            )}
-          </button>
-        )}
+            {[
+              { id: "ALL" as WorkMode, labelAr: "الكل", labelEn: "All" },
+              { id: "REMOTE" as WorkMode, labelAr: "🏠 عن بُعد", labelEn: "🏠 Remote" },
+              { id: "ON_SITE" as WorkMode, labelAr: "🏢 مقر الشركة / هجين", labelEn: "🏢 On-site" },
+            ].map((mode) => {
+              const isSelected = workMode === mode.id;
+              return (
+                <button
+                  key={mode.id}
+                  type="button"
+                  onClick={() => setWorkMode(mode.id)}
+                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                    isSelected
+                      ? "bg-white text-neutral-950 shadow-xs dark:bg-neutral-800 dark:text-white"
+                      : "text-neutral-600 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-white"
+                  }`}
+                >
+                  {isRtl ? mode.labelAr : mode.labelEn}
+                </button>
+              );
+            })}
+          </div>
+
+          {collapsible && (
+            <button
+              type="button"
+              onClick={() => setExpanded((prev) => !prev)}
+              aria-expanded={expanded}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"
+            >
+              <span>
+                {expanded
+                  ? (isRtl ? "إخفاء الفلاتر" : "Collapse")
+                  : (isRtl ? "عرض المستكشف" : "Expand")}
+              </span>
+              {expanded ? (
+                <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
       {expanded && (

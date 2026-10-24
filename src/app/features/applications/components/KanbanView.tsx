@@ -17,6 +17,7 @@ import { useUpdateApplication } from "../api/applicationsApi";
 
 interface KanbanViewProps {
   applications: Application[];
+  appCvVersionMap?: Record<string, number>;
   onStageChange?: (
     appId: string,
     newStage: Stage,
@@ -99,7 +100,11 @@ function getColumnDotColor(stage: Stage) {
   }
 }
 
-export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
+export function KanbanView({
+  applications,
+  appCvVersionMap,
+  onStageChange,
+}: KanbanViewProps) {
   const { t, locale } = useI18n();
   const isRtl = locale === "ar";
   const navigate = useNavigate();
@@ -233,7 +238,7 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
   return (
     <div className="w-full select-none">
       <div className="overflow-x-auto pb-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3.5 min-w-[900px] xl:min-w-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3.5 min-w-[900px] xl:min-w-0 items-start">
           {COLUMNS.map((col) => {
             const label = t(`applications.${col.label}`);
             const colApps = applications.filter(
@@ -248,14 +253,14 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                 onDragOver={(e) => handleDragOver(e, col.stage)}
                 onDragLeave={(e) => handleDragLeave(e, col.stage)}
                 onDrop={(e) => handleDrop(e, col.stage)}
-                className={`rounded-2xl p-3 flex flex-col min-h-[460px] transition-all duration-200 border ${
+                className={`h-fit max-h-[calc(100dvh-13rem)] flex flex-col rounded-2xl border border-neutral-200/90 bg-neutral-100/80 dark:border-neutral-800 dark:bg-neutral-900/80 p-2.5 shadow-2xs transition-all duration-200 ${
                   isColumnTarget
-                    ? "bg-neutral-100 dark:bg-neutral-800/60 border-neutral-500 dark:border-neutral-500 ring-2 ring-neutral-300/70 shadow-sm"
-                    : "bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 shadow-sm"
+                    ? "ring-2 ring-neutral-400 dark:ring-neutral-500 shadow-sm"
+                    : ""
                 }`}
               >
                 {/* Column Header */}
-                <div className="flex items-center justify-between px-2 py-2 mb-2.5 border-b border-neutral-300 dark:border-neutral-700">
+                <div className="flex items-center justify-between px-2 py-2 mb-2 border-b border-neutral-300 dark:border-neutral-700">
                   <div className="flex items-center gap-2">
                     <span
                       className={`w-2.5 h-2.5 rounded-full ${getColumnDotColor(col.stage)}`}
@@ -277,24 +282,19 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                 </div>
 
                 {/* Cards Container & Drop Zone */}
-                <div className="space-y-2 flex-1 flex flex-col overflow-y-auto">
+                <div className="space-y-2 flex flex-col overflow-y-auto">
                   {colApps.length === 0 ? (
                     <div
-                      className={`flex-1 flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl text-center transition-all ${
+                      className={`py-5 px-3 rounded-xl border border-dashed text-center transition-all ${
                         isColumnTarget
                           ? "border-neutral-500 bg-neutral-100 text-neutral-700 dark:border-neutral-500 dark:bg-neutral-800 dark:text-neutral-200"
-                          : "border-neutral-300 bg-neutral-50/70 text-neutral-500 dark:border-neutral-700 dark:bg-neutral-950/50 dark:text-neutral-400"
+                          : "border-neutral-300/80 bg-neutral-50/60 text-neutral-400 dark:border-neutral-700/80 dark:bg-neutral-950/40"
                       }`}
                     >
-                      <p className="text-xs font-medium">
+                      <p className="text-[11px] font-medium">
                         {isColumnTarget
                           ? t("applications.dropToMove")
                           : t("applications.noApplications")}
-                      </p>
-                      <p className="text-[11px] mt-0.5 opacity-70">
-                        {isColumnTarget
-                          ? t("applications.moveToStage", { stage: label })
-                          : t("applications.dragToMove")}
                       </p>
                     </div>
                   ) : (
@@ -314,13 +314,18 @@ export function KanbanView({ applications, onStageChange }: KanbanViewProps) {
                             }}
                             className={`p-2.5 rounded-xl border shadow-xs transition-all duration-150 group cursor-grab active:cursor-grabbing hover:shadow-sm ${getApplicationCardColor(app)}`}
                           >
-                            {/* Line 1: Grip + Company Name + Edit Pencil + Chevron */}
+                            {/* Line 1: Grip + Company Name + CV Version + Edit Pencil + Chevron */}
                             <div className="flex items-center justify-between gap-1.5">
                               <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                 <GripVerticalIcon className="w-3.5 h-3.5 text-neutral-300 dark:text-neutral-600 group-hover:text-neutral-500 dark:group-hover:text-neutral-400 transition-colors shrink-0" />
                                 <span className="font-bold text-xs text-neutral-900 dark:text-neutral-100 truncate">
                                   {app.companyName}
                                 </span>
+                                {appCvVersionMap && (
+                                  <span className="rounded px-1.5 py-0.2 text-[9px] font-semibold bg-neutral-200/70 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 shrink-0">
+                                    CV v{appCvVersionMap[app.id] || 1}
+                                  </span>
+                                )}
                               </div>
 
                               <div className="flex items-center gap-0.5 shrink-0">

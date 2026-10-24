@@ -122,6 +122,7 @@ export default {
   locationSaudi: "السعودية",
   locationUAE: "الإمارات",
   locationRemote: "عن بُعد (Remote)",
+  openPrepWorkspace: "فتح غرفة التحضير والملاحظات",
   enableAssignmentPrep: "الشركة طلبت تاسك عملي / تفعيل مساحة التحضير",
   prepWorkspaceBadge: "مساحة التحضير للمقابلة والتاسك العملي",
   prepWorkspaceTitle: "غرفة التحضير والملاحظات (Interview & Assignment Prep)",

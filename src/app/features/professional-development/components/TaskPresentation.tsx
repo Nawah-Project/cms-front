@@ -185,24 +185,28 @@ export function TaskSection({
   const { number } = useI18n();
   return (
     <section
-      className={`min-w-0 space-y-3 rounded-xl border p-3 shadow-xs transition-colors ${isDragTarget ? "border-info-strong bg-info-soft/50 ring-2 ring-info-border" : "border-border bg-surface"}`}
+      className={`min-w-0 h-fit max-h-[calc(100dvh-13rem)] flex flex-col rounded-2xl border p-2.5 shadow-2xs transition-colors ${
+        isDragTarget
+          ? "border-info-strong bg-info-soft/50 ring-2 ring-info-border"
+          : "border-neutral-200/90 bg-neutral-100/80 dark:border-neutral-800 dark:bg-neutral-900/80"
+      }`}
       aria-label={title}
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
-      <header className="flex items-center justify-between gap-2 border-b border-border pb-3">
-        <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+      <header className="flex items-center justify-between gap-2 border-b border-neutral-200/80 pb-2.5 mb-2.5 dark:border-neutral-800">
+        <h2 className="flex min-w-0 items-center gap-2 text-xs font-semibold text-neutral-900 dark:text-neutral-100">
           <span
             aria-hidden="true"
             className={`h-2.5 w-2.5 shrink-0 rounded-full ${STATUS_DOT_STYLES[status]}`}
           />
           <span className="truncate">{title}</span>
         </h2>
-        <span className="inline-flex min-w-7 items-center justify-center rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold tabular-nums text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+        <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-neutral-200/80 px-2 py-0.5 text-xs font-semibold tabular-nums text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
           {number(count)}
         </span>
       </header>
-      <div className="min-h-72 space-y-3 rounded-lg p-1">{children}</div>
+      <div className="space-y-2.5 rounded-lg overflow-y-auto p-0.5">{children}</div>
     </section>
   );
 }

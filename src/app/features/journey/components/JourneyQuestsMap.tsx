@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -712,6 +713,7 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
   const currentWeek = journeyData?.state.currentWeek ?? 0;
   const [selectedWeek, setSelectedWeek] = useState<number>(currentWeek);
   const [lockedPopoverWeek, setLockedPopoverWeek] = useState<number | null>(null);
+  const [lockedBtnRect, setLockedBtnRect] = useState<DOMRect | null>(null);
   const [wigglingWeek, setWigglingWeek] = useState<number | null>(null);
   const popoverTimerRef = useRef<number | null>(null);
 
@@ -786,17 +788,26 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
     setSelectedWeek(weekNum);
   };
 
-  const handleLockedWeekClick = (weekNum: number) => {
-    setWigglingWeek(weekNum);
-    setTimeout(() => setWigglingWeek(null), 600);
-
+  const showLockedPopover = (
+    weekNum: number,
+    targetEl?: HTMLElement | null,
+    wiggle = false,
+  ) => {
+    if (wiggle) {
+      setWigglingWeek(weekNum);
+      setTimeout(() => setWigglingWeek(null), 600);
+    }
+    if (targetEl) {
+      setLockedBtnRect(targetEl.getBoundingClientRect());
+    }
     if (popoverTimerRef.current) {
       window.clearTimeout(popoverTimerRef.current);
     }
     setLockedPopoverWeek(weekNum);
     popoverTimerRef.current = window.setTimeout(() => {
       setLockedPopoverWeek(null);
-    }, 1800);
+      setLockedBtnRect(null);
+    }, 2200);
   };
 
   const handleDismissLockedPopover = () => {
@@ -804,6 +815,7 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
       window.clearTimeout(popoverTimerRef.current);
     }
     setLockedPopoverWeek(null);
+    setLockedBtnRect(null);
   };
 
   const getLockedWeekPopoverText = (weekNum: number) => {
@@ -906,14 +918,20 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
               <div
                 key={weekNum}
                 className="relative"
-                onMouseLeave={handleDismissLockedPopover}
               >
                 <button
                   type="button"
-                  onClick={() => {
+                  onMouseEnter={(e) => {
                     if (isFutureWeek) {
-                      handleLockedWeekClick(weekNum);
+                      showLockedPopover(weekNum, e.currentTarget, false);
+                    }
+                  }}
+                  onMouseLeave={handleDismissLockedPopover}
+                  onClick={(e) => {
+                    if (isFutureWeek) {
+                      showLockedPopover(weekNum, e.currentTarget, true);
                     } else {
+                      handleDismissLockedPopover();
                       selectWeek(weekNum);
                     }
                   }}
@@ -938,12 +956,19 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
                   )}
                 </button>
 
-                {isLockedPopoverOpen && (
+                {isLockedPopoverOpen && lockedBtnRect && createPortal(
                   <div
                     role="tooltip"
-                    className="absolute top-full mt-2 z-50 w-64 rounded-xl border border-neutral-200 bg-white p-3 shadow-xl text-start animate-in fade-in slide-in-from-top-1 duration-150 dark:border-neutral-700 dark:bg-neutral-900"
+                    onMouseEnter={() => {
+                      if (popoverTimerRef.current) window.clearTimeout(popoverTimerRef.current);
+                    }}
+                    onMouseLeave={handleDismissLockedPopover}
+                    className="fixed z-[200] w-64 rounded-xl border border-neutral-200 bg-white p-3 shadow-2xl text-start animate-in fade-in zoom-in-95 duration-150 dark:border-neutral-700 dark:bg-neutral-900 pointer-events-auto"
                     style={{
-                      [locale === "ar" ? "right" : "left"]: 0,
+                      top: Math.min(window.innerHeight - 150, lockedBtnRect.bottom + 8),
+                      left: locale === "ar"
+                        ? Math.max(16, Math.min(window.innerWidth - 270, lockedBtnRect.right - 256))
+                        : Math.max(16, Math.min(window.innerWidth - 270, lockedBtnRect.left)),
                     }}
                   >
                     <div className="flex items-center gap-1.5 font-bold text-xs text-neutral-900 dark:text-white border-b border-neutral-100 dark:border-neutral-800 pb-1.5 mb-1.5">
@@ -957,7 +982,8 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
                     <p className="text-[11px] leading-relaxed text-neutral-600 dark:text-neutral-300">
                       {getLockedWeekPopoverText(weekNum)}
                     </p>
-                  </div>
+                  </div>,
+                  document.body
                 )}
               </div>
             );

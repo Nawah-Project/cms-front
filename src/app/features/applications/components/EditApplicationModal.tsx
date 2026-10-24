@@ -31,7 +31,7 @@ export function EditApplicationModal({
   onClose,
   onSave,
 }: EditApplicationModalProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { user } = useAuth();
   const { data: journeyData } = useJourneyState({ enabled: Boolean(user) });
   const showTailoredOption =
@@ -53,6 +53,7 @@ export function EditApplicationModal({
   const [errors, setErrors] = useState<{
     companyName?: string;
     jobTitle?: string;
+    jobUrl?: string;
     submit?: string;
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -88,12 +89,22 @@ export function EditApplicationModal({
   };
 
   const validate = () => {
-    const errs: { companyName?: string; jobTitle?: string } = {};
+    const errs: { companyName?: string; jobTitle?: string; jobUrl?: string } = {};
     if (!companyName.trim()) {
       errs.companyName = t("applications.validationCompany");
     }
     if (!jobTitle.trim()) {
       errs.jobTitle = t("applications.validationJobTitle");
+    }
+    const trimmedUrl = jobUrl.trim();
+    if (!trimmedUrl) {
+      errs.jobUrl = locale === "ar"
+        ? "🔗 رابط إعلان الوظيفة مطلوب — حفظ الرابط يسهّل عليك الرجوع لتفاصيل الوظيفة ومتابعتها في أي وقت، كما ستحتاجه في (تقييم اليوم السابع والتقرير الأسبوعي) لمراجعة طبيعة الوظائف التي قدمت عليها وتحليل أسباب استجابة الشركات."
+        : "🔗 Job post URL is required — Saving the link allows you to review job details at any time and analyze company responses during weekly reviews.";
+    } else if (!/^https?:\/\//i.test(trimmedUrl)) {
+      errs.jobUrl = locale === "ar"
+        ? "🔗 يرجى إدخال رابط صحيح يبدأ بـ http:// أو https://"
+        : "🔗 Please enter a valid URL starting with http:// or https://";
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -272,16 +283,26 @@ export function EditApplicationModal({
 
         <div>
           <label htmlFor="editJobUrl" className="field-label">
-            {t("applications.jobUrl")}
+            {t("applications.jobUrl")}{" "}
+            <span className="text-danger-strong">*</span>
           </label>
           <input
             id="editJobUrl"
             type="url"
+            required
             value={jobUrl}
-            onChange={(e) => setJobUrl(e.target.value)}
+            onChange={(e) => {
+              setJobUrl(e.target.value);
+              if (errors.jobUrl) setErrors((prev) => ({ ...prev, jobUrl: undefined }));
+            }}
             placeholder="https://..."
-            className="field-control"
+            className={`field-control ${errors.jobUrl ? "field-control-error" : ""}`}
           />
+          {errors.jobUrl && (
+            <p className="mt-1.5 rounded-lg border border-danger-border bg-danger-soft/40 p-2.5 text-xs leading-relaxed text-danger-strong">
+              {errors.jobUrl}
+            </p>
+          )}
         </div>
 
         {/* V2 Strategic Options */}

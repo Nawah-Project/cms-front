@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from "react";
-import { Link, useOutletContext } from "react-router";
+import { Link, useNavigate, useOutletContext } from "react-router";
 import {
   TrendingUp,
   Activity,
@@ -15,6 +15,7 @@ import {
   ArrowRight,
   ArrowLeft,
 } from "lucide-react";
+import { Modal } from "../../../components/ui/Modal";
 import { useI18n } from "../../../i18n";
 import { api } from "../../../services/api";
 import type { Application, DashboardStats } from "../../../types";
@@ -77,6 +78,7 @@ interface EquipmentEra {
 export default function ReportsPage() {
   const { t, number, locale } = useI18n();
   const isRtl = locale === "ar";
+  const navigate = useNavigate();
   const { openAddModal } = useOutletContext<{ openAddModal: () => void }>();
 
   // Scope: exactly 5 tabs ("ALL", 1, 2, 3, 4)
@@ -85,6 +87,9 @@ export default function ReportsPage() {
   const [, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Selected Era for Modal details
+  const [selectedEraForModal, setSelectedEraForModal] = useState<EquipmentEra | null>(null);
 
   // Review & Change Log Modal States
   const [reviewDraft, setReviewDraft] = useState("");
@@ -259,11 +264,22 @@ export default function ReportsPage() {
 
   // Sourced Changes (from SideTask submissions + localStorage cache)
   const userChanges = useMemo<UserChangeLog[]>(() => {
+    const isCorrupt = (text?: string | null) => {
+      if (!text) return false;
+      const lower = text.toLowerCase();
+      return (
+        lower.includes("غلط") ||
+        lower.includes("اسبام") ||
+        lower.includes("spam")
+      );
+    };
+
     const fromApi: UserChangeLog[] = sideTasksData
-      .filter((st) => st.type === "WEEKLY_REVIEW" && st.reviewSummary)
+      .filter((st) => st.type === "WEEKLY_REVIEW" && st.reviewSummary && !isCorrupt(st.reviewSummary))
       .map((st) => {
         try {
           const parsed = JSON.parse(st.reviewSummary!);
+          if (isCorrupt(parsed.title) || isCorrupt(parsed.note)) return null;
           return {
             id: st.id,
             category: (parsed.category as ChangeCategory) || "CV_UPDATE",
@@ -274,9 +290,10 @@ export default function ReportsPage() {
             cvVersion: parsed.cvVersion ?? st.journeyWeek + 1,
           };
         } catch {
+          if (isCorrupt(st.reviewSummary)) return null;
           return {
             id: st.id,
-            category: "CV_UPDATE",
+            category: "CV_UPDATE" as ChangeCategory,
             title: isRtl
               ? `مراجعة الأسبوع ${st.journeyWeek || 1}`
               : `Week ${st.journeyWeek || 1} Review`,
@@ -286,7 +303,8 @@ export default function ReportsPage() {
             cvVersion: st.journeyWeek ? st.journeyWeek + 1 : 2,
           };
         }
-      });
+      })
+      .filter(Boolean) as UserChangeLog[];
 
     // Merge with local storage if available
     let fromLocal: UserChangeLog[] = [];
@@ -294,7 +312,17 @@ export default function ReportsPage() {
       try {
         const key = `nawah_user_change_logs_${journeyState?.userId || "default"}`;
         const raw = localStorage.getItem(key);
-        if (raw) fromLocal = JSON.parse(raw);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            fromLocal = parsed.filter(
+              (c) => !isCorrupt(c.title) && !isCorrupt(c.note),
+            );
+            if (fromLocal.length !== parsed.length) {
+              localStorage.setItem(key, JSON.stringify(fromLocal));
+            }
+          }
+        }
       } catch {
         fromLocal = [];
       }
@@ -437,6 +465,23 @@ export default function ReportsPage() {
       };
     });
   }, [allChanges, sortedApps]);
+
+  const selectedEraApps = useMemo(() => {
+    if (!selectedEraForModal) return [];
+    return sortedApps.filter((app) => {
+      const appTime = new Date(app.createdAt || app.applicationDate).getTime();
+      const startTime = new Date(selectedEraForModal.startDate).getTime();
+      if (selectedEraForModal.isBaseline && allChanges.length > 1) {
+        const nextTime = new Date(allChanges[1].createdAt).getTime();
+        return appTime < nextTime;
+      }
+      if (selectedEraForModal.endDate) {
+        const nextTime = new Date(selectedEraForModal.endDate).getTime();
+        return appTime >= startTime && appTime < nextTime;
+      }
+      return appTime >= startTime;
+    });
+  }, [selectedEraForModal, sortedApps, allChanges]);
 
   // Overall Performance Calculations for Scoped Apps
   const totalAppsCount = scopedApps.length;
@@ -618,7 +663,7 @@ export default function ReportsPage() {
     let cumulativeApps = 0;
     let cumulativeResponses = 0;
 
-    return sortedDates.map((dateStr, idx) => {
+    const points = sortedDates.map((dateStr, idx) => {
       const entry = grouped.get(dateStr)!;
       cumulativeApps += entry.apps.length;
       cumulativeResponses += entry.responses.length;
@@ -662,6 +707,24 @@ export default function ReportsPage() {
         eraTitle: activeEra?.title || `CV v${cvVersion}`,
       };
     });
+
+    if (points.length === 1) {
+      const baselinePoint = {
+        dateStr: "baseline-start",
+        label: isRtl ? "نقطة الانطلاق" : "Starting Baseline",
+        dayApps: 0,
+        cumApps: 0,
+        dayResponses: 0,
+        cumResponses: 0,
+        rate: 0,
+        isPin: false,
+        pinTitle: undefined,
+        eraTitle: points[0].eraTitle,
+      };
+      return [baselinePoint, points[0]];
+    }
+
+    return points;
   }, [scopedApps, allChanges, eras, cvVersion, isRtl]);
 
   // Handle Save New Tooling Change (Requirement 4.B)
@@ -1135,7 +1198,7 @@ export default function ReportsPage() {
           </div>
 
           {/* Left Column (in RTL): Edge-to-Edge SVG Curve + Bottom Legend */}
-          <div className="lg:col-span-8 xl:col-span-9 flex flex-col justify-between rounded-xl border border-border/60 bg-neutral-50/30 dark:bg-neutral-950/30 p-4 min-h-[340px]">
+          <div className="lg:col-span-8 xl:col-span-9 flex flex-col justify-between rounded-2xl border border-neutral-200/90 bg-neutral-100/80 dark:border-neutral-800 dark:bg-neutral-900/80 p-5 shadow-inner min-h-[340px]">
             {/* Interactive SVG Area Line Chart */}
             <div className="relative flex-1 flex flex-col justify-center">
           {chartPoints.length === 0 ? (
@@ -1659,16 +1722,21 @@ export default function ReportsPage() {
               const heightPct = Math.max(15, Math.round((era.appsCount / maxEraApps) * 100));
 
               return (
-                <div key={era.id} className="flex flex-col items-center gap-2">
+                <div
+                  key={era.id}
+                  onClick={() => setSelectedEraForModal(era)}
+                  title={isRtl ? "اضغط لعرض الطلبات المرتبطة" : "Click to view linked applications"}
+                  className="group flex flex-col items-center gap-2 cursor-pointer rounded-2xl p-2 transition-all hover:bg-neutral-100/80 dark:hover:bg-neutral-800/80 hover:ring-2 hover:ring-info-strong/50"
+                >
                   {/* Top Conversion Pill */}
                   <span className="rounded-full bg-emerald-100 dark:bg-emerald-950 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 dark:text-emerald-300 tabular-nums">
                     {era.rate}% {isRtl ? "استجابة" : "traction"}
                   </span>
 
                   {/* Vertical Column Bar */}
-                  <div className="h-40 w-full rounded-xl bg-neutral-100 dark:bg-neutral-800 relative flex items-end p-2 overflow-hidden border border-border/60">
+                  <div className="h-40 w-full rounded-xl bg-neutral-100 dark:bg-neutral-800 relative flex items-end p-2 overflow-hidden border border-border/60 group-hover:border-info-strong/60 transition-colors">
                     <div
-                      className="w-full rounded-lg bg-emerald-500 dark:bg-emerald-600 transition-all duration-500 flex flex-col items-center justify-center text-white"
+                      className="w-full rounded-lg bg-emerald-500 dark:bg-emerald-600 transition-all duration-500 flex flex-col items-center justify-center text-white shadow-xs"
                       style={{ height: `${heightPct}%` }}
                     >
                       <span className="text-[11px] font-bold tabular-nums">
@@ -1679,7 +1747,7 @@ export default function ReportsPage() {
 
                   {/* Bottom Label & Ratio */}
                   <div className="text-center space-y-0.5">
-                    <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 block truncate max-w-[120px]">
+                    <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 block truncate max-w-[120px] group-hover:text-info-strong transition-colors">
                       {era.isBaseline ? t("dashboard.baselineEraTitle") : era.title}
                     </span>
                     <span className="text-[10px] text-neutral-500 block tabular-nums">
@@ -1688,6 +1756,9 @@ export default function ReportsPage() {
                         : isRtl
                           ? "0 ردود"
                           : "0 resp"}
+                    </span>
+                    <span className="block text-[9px] text-info-strong opacity-0 group-hover:opacity-100 transition-opacity">
+                      {isRtl ? "عرض الطلبات ↗" : "View apps ↗"}
                     </span>
                   </div>
                 </div>
@@ -1862,6 +1933,74 @@ export default function ReportsPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* 8. Modal: View Applications for Selected Era */}
+      {selectedEraForModal && (
+        <Modal
+          isOpen={true}
+          onClose={() => setSelectedEraForModal(null)}
+          title={
+            selectedEraForModal.isBaseline
+              ? t("dashboard.baselineEraTitle")
+              : selectedEraForModal.title
+          }
+          size="lg"
+        >
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-200 dark:border-neutral-800">
+              <div>
+                <p className="text-xs text-neutral-500">
+                  {isRtl
+                    ? `إجمالي الطلبات المسجلة خلال هذه الفترة: ${selectedEraApps.length} طلب (معدل استجابة ${selectedEraForModal.rate}%)`
+                    : `Applications logged during this period: ${selectedEraApps.length} (Response rate ${selectedEraForModal.rate}%)`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const targetVersion = selectedEraForModal.cvVersion || 1;
+                  setSelectedEraForModal(null);
+                  navigate(`/applications?period=v${targetVersion}`);
+                }}
+                className="button-primary text-xs py-1.5 px-3 flex items-center gap-1.5 self-start sm:self-auto"
+              >
+                <span>{isRtl ? "عرض في صفحة التقديمات" : "View in Applications"}</span>
+                {isRtl ? <ArrowLeft className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+
+            {selectedEraApps.length === 0 ? (
+              <div className="py-10 text-center text-xs text-neutral-400">
+                {isRtl ? "لا توجد طلبات مسجلة في هذا التجهيز بعد" : "No applications recorded in this period yet"}
+              </div>
+            ) : (
+              <div className="max-h-96 overflow-y-auto space-y-2 pe-1">
+                {selectedEraApps.map((app) => (
+                  <div
+                    key={app.id}
+                    className="flex items-center justify-between p-3 rounded-xl border border-neutral-200/80 bg-neutral-50/50 dark:border-neutral-800 dark:bg-neutral-900/50 text-xs"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                        {app.companyName}
+                      </h4>
+                      <p className="text-neutral-500 truncate">{app.jobTitle}</p>
+                    </div>
+                    <div className="flex items-center gap-3 ms-4 shrink-0">
+                      <span className="text-[11px] text-neutral-400 tabular-nums">
+                        {app.applicationDate || (app.createdAt ? app.createdAt.slice(0, 10) : "")}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-neutral-200/70 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 font-medium text-[10px]">
+                        {app.stage}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </Modal>
       )}
     </div>
   );

@@ -22,6 +22,8 @@ export default {
   cancel: "إلغاء",
   confirm: "تأكيد",
   dismiss: "إغلاق",
+  expand: "توسيع التفاصيل",
+  collapse: "طي التفاصيل",
   save: "حفظ",
   saving: "جارٍ الحفظ…",
   edit: "تعديل",

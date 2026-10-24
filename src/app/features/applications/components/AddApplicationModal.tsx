@@ -46,6 +46,7 @@ export function AddApplicationModal({
   const [errors, setErrors] = useState<{
     companyName?: string;
     jobTitle?: string;
+    jobUrl?: string;
     submit?: string;
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -102,12 +103,22 @@ export function AddApplicationModal({
   }, [isOpen, initialValues, user?.targetJobTitle]);
 
   const validate = () => {
-    const errs: { companyName?: string; jobTitle?: string } = {};
+    const errs: { companyName?: string; jobTitle?: string; jobUrl?: string } = {};
     if (!companyName.trim()) {
       errs.companyName = t("applications.validationCompany");
     }
     if (!jobTitle.trim()) {
       errs.jobTitle = t("applications.validationJobTitle");
+    }
+    const trimmedUrl = jobUrl.trim();
+    if (!trimmedUrl) {
+      errs.jobUrl = locale === "ar"
+        ? "🔗 رابط إعلان الوظيفة مطلوب — حفظ الرابط يسهّل عليك الرجوع لتفاصيل الوظيفة ومتابعتها في أي وقت، كما ستحتاجه في (تقييم اليوم السابع والتقرير الأسبوعي) لمراجعة طبيعة الوظائف التي قدمت عليها وتحليل أسباب استجابة الشركات."
+        : "🔗 Job post URL is required — Saving the link allows you to review job details at any time and analyze company responses during weekly reviews.";
+    } else if (!/^https?:\/\//i.test(trimmedUrl)) {
+      errs.jobUrl = locale === "ar"
+        ? "🔗 يرجى إدخال رابط صحيح يبدأ بـ http:// أو https://"
+        : "🔗 Please enter a valid URL starting with http:// or https://";
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -192,7 +203,7 @@ export function AddApplicationModal({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Job Explorer Shortcut in Form Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-border/80">
+        <div className="flex items-center justify-between pb-3 border-b border-border/80 overflow-visible relative z-20">
           <span className="text-xs text-neutral-500 font-medium">
             {locale === "ar" ? "لم تجد وظيفة للتقديم بعد؟" : "Looking for a job to apply to?"}
           </span>
@@ -213,7 +224,7 @@ export function AddApplicationModal({
             {showHint && (
               <div
                 onClick={dismissHint}
-                className="absolute -top-10 end-0 z-30 whitespace-nowrap rounded-lg bg-neutral-900 text-white px-2.5 py-1 text-[11px] font-semibold shadow-lg animate-in fade-in zoom-in-95 duration-200 after:content-[''] after:absolute after:top-full after:end-4 after:border-[4px] after:border-transparent after:border-t-neutral-900 cursor-pointer"
+                className="absolute top-full mt-2 end-0 z-[160] whitespace-nowrap rounded-xl bg-neutral-900 text-white px-3 py-2 text-xs font-semibold shadow-2xl ring-1 ring-white/10 animate-in fade-in slide-in-from-top-1 duration-200 after:content-[''] after:absolute after:bottom-full after:end-5 after:border-[6px] after:border-transparent after:border-b-neutral-900 cursor-pointer"
               >
                 💡 {locale === "ar"
                   ? "ابحث عن وظيفة في السوق المناسب بضغطة واحدة من هنا"
@@ -328,16 +339,26 @@ export function AddApplicationModal({
 
         <div>
           <label htmlFor="jobUrl" className="field-label">
-            {t("applications.jobUrl")}
+            {t("applications.jobUrl")}{" "}
+            <span className="text-danger-strong">*</span>
           </label>
           <input
             id="jobUrl"
             type="url"
+            required
             value={jobUrl}
-            onChange={(e) => setJobUrl(e.target.value)}
+            onChange={(e) => {
+              setJobUrl(e.target.value);
+              if (errors.jobUrl) setErrors((prev) => ({ ...prev, jobUrl: undefined }));
+            }}
             placeholder="https://..."
-            className="field-control"
+            className={`field-control ${errors.jobUrl ? "field-control-error" : ""}`}
           />
+          {errors.jobUrl && (
+            <p className="mt-1.5 rounded-lg border border-danger-border bg-danger-soft/40 p-2.5 text-xs leading-relaxed text-danger-strong">
+              {errors.jobUrl}
+            </p>
+          )}
         </div>
 
         {/* V2 Strategic Options: Tailored Application & Group Sharing */}

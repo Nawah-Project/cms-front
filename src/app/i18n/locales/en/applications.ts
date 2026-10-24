@@ -122,6 +122,7 @@ export default {
   locationSaudi: "Saudi Arabia",
   locationUAE: "UAE",
   locationRemote: "Remote",
+  openPrepWorkspace: "Open Prep Workspace",
   enableAssignmentPrep: "Company requested an assignment / Open Prep Workspace",
   prepWorkspaceBadge: "Interview & Assignment Prep Workspace",
   prepWorkspaceTitle: "Interview & Technical Assignment Preparation",

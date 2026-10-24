@@ -1,7 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useOutletContext, useSearchParams } from "react-router";
-import { Lock, Compass } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { Lock, Compass, Filter } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { profileApi, type CvHistoryItem } from "../features/profile/profileApi";
 import { Modal } from "../components/ui/Modal";
 import { EmptyState } from "../components/EmptyState";
 import {
@@ -59,6 +61,7 @@ export default function ApplicationsPage() {
   // Read filters from search params
   const currentStage = searchParams.get("stage") || "ALL";
   const currentOutcome = searchParams.get("outcome") || "ALL";
+  const currentPeriod = searchParams.get("period") || "ALL";
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("search") || "",
   );
@@ -93,6 +96,7 @@ export default function ApplicationsPage() {
     applicationsData?.unfilteredTotal ?? applicationsData?.total ?? 0;
 
   const { data: journeyData } = useJourneyState({ enabled: Boolean(user) });
+  const currentWeek = journeyData?.state.currentWeek ?? 0;
   const canUseTableView = canUseApplicationsTableView(
     journeyData,
     user,
@@ -103,6 +107,45 @@ export default function ApplicationsPage() {
     remaining: remainingForTableView,
     current: totalCount,
   });
+
+  // Query profile to fetch cvHistory for periods & version tags
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => profileApi.get(),
+    enabled: Boolean(user),
+  });
+
+  const cvHistory = useMemo(() => {
+    return (profile?.cvHistory ?? [])
+      .slice()
+      .sort((a: CvHistoryItem, b: CvHistoryItem) => a.versionNumber - b.versionNumber);
+  }, [profile?.cvHistory]);
+
+  const maxCvVersion =
+    cvHistory.length > 0 ? cvHistory[cvHistory.length - 1].versionNumber : 1;
+
+  // Compute map of appId -> cvVersion
+  const appCvVersionMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    if (cvHistory.length <= 1) {
+      for (const app of rawApplications) map[app.id] = 1;
+      return map;
+    }
+    for (const app of rawApplications) {
+      const appTime = new Date(app.createdAt || app.applicationDate).getTime();
+      let assignedVersion = 1;
+      for (let i = cvHistory.length - 1; i >= 0; i--) {
+        const v = cvHistory[i];
+        const vTime = new Date(v.uploadedAt).getTime();
+        if (appTime >= vTime) {
+          assignedVersion = v.versionNumber;
+          break;
+        }
+      }
+      map[app.id] = assignedVersion;
+    }
+    return map;
+  }, [cvHistory, rawApplications]);
 
   // Default view mode is 'kanban' in V2; 'table' is unlocked after reaching 10 total applications or W1_M1
   const [viewMode, setViewMode] = useState<"table" | "kanban">("kanban");
@@ -145,21 +188,49 @@ export default function ApplicationsPage() {
   const updateAppMutation = useUpdateApplication();
 
   const [isCompassModalOpen, setIsCompassModalOpen] = useState(false);
-  const [showSpotlight, setShowSpotlight] = useState(() => {
-    try {
-      return (
-        localStorage.getItem("nawah_job_explorer_spotlight_seen") !== "true"
-      );
-    } catch {
-      return false;
-    }
-  });
+  const explorerBtnRef = useRef<HTMLButtonElement | null>(null);
+  const [buttonRect, setButtonRect] = useState<DOMRect | null>(null);
+  const spotlightKey = user?.id
+    ? `nawah_explorer_spotlight_v2_${user.id}`
+    : null;
+  const [showSpotlight, setShowSpotlight] = useState(false);
 
-  const dismissSpotlight = (openExplorer = false) => {
+  useEffect(() => {
+    if (!spotlightKey) return;
     try {
-      localStorage.setItem("nawah_job_explorer_spotlight_seen", "true");
+      const seen = localStorage.getItem(spotlightKey);
+      if (seen !== "true") {
+        setShowSpotlight(true);
+      }
     } catch {
       // ignore
+    }
+  }, [spotlightKey]);
+
+  const updateButtonRect = () => {
+    if (explorerBtnRef.current) {
+      setButtonRect(explorerBtnRef.current.getBoundingClientRect());
+    }
+  };
+
+  useEffect(() => {
+    if (!showSpotlight) return;
+    updateButtonRect();
+    window.addEventListener("resize", updateButtonRect);
+    window.addEventListener("scroll", updateButtonRect, true);
+    return () => {
+      window.removeEventListener("resize", updateButtonRect);
+      window.removeEventListener("scroll", updateButtonRect, true);
+    };
+  }, [showSpotlight]);
+
+  const dismissSpotlight = (openExplorer = false) => {
+    if (spotlightKey) {
+      try {
+        localStorage.setItem(spotlightKey, "true");
+      } catch {
+        // ignore
+      }
     }
     setShowSpotlight(false);
     if (openExplorer) {
@@ -182,7 +253,52 @@ export default function ApplicationsPage() {
     const matchesOutcome =
       currentOutcome === "ALL" ||
       (app.stage === "CLOSED" && app.outcome === currentOutcome);
-    return matchesStage && matchesOutcome;
+    const assignedV = appCvVersionMap[app.id] || 1;
+    const matchesPeriod =
+      currentPeriod === "ALL" ||
+      (currentPeriod === "v1" && assignedV === 1) ||
+      (currentPeriod === "v2" && assignedV === 2) ||
+      currentPeriod === `v${assignedV}`;
+    return matchesStage && matchesOutcome && matchesPeriod;
+  };
+
+  const updatePeriodFilter = (periodKey: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (periodKey === "ALL") {
+      next.delete("period");
+    } else {
+      next.set("period", periodKey);
+    }
+    setSearchParams(next);
+  };
+
+  const isRtl = locale === "ar";
+
+  const stageCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      all: rawApplications.length,
+      active: 0,
+      APPLIED: 0,
+      ASSIGNMENT: 0,
+      INTERVIEW: 0,
+      DECISION: 0,
+      CLOSED: 0,
+    };
+    for (const app of rawApplications) {
+      if (app.stage !== "CLOSED") counts.active++;
+      if (counts[app.stage] !== undefined) {
+        counts[app.stage]++;
+      }
+    }
+    return counts;
+  }, [rawApplications]);
+
+  const toggleStageCapsule = (stageKey: Stage) => {
+    if (currentStage === stageKey) {
+      updateStageFilter("ALL");
+    } else {
+      updateStageFilter(stageKey);
+    }
   };
 
   const applications = rawApplications
@@ -323,18 +439,15 @@ export default function ApplicationsPage() {
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="relative inline-block">
             <button
+              ref={explorerBtnRef}
               type="button"
               onClick={() => {
                 if (showSpotlight) dismissSpotlight(true);
                 else setIsCompassModalOpen(true);
               }}
-              className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all shadow-2xs ${
-                showSpotlight
-                  ? "relative z-[95] ring-4 ring-white/50 shadow-2xl bg-white text-neutral-950 border-white font-extrabold animate-pulse"
-                  : "border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-              }`}
+              className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 bg-white px-3.5 py-2 text-xs font-bold text-neutral-800 transition-all shadow-2xs hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
             >
-              <Compass className={`h-4 w-4 ${showSpotlight ? "text-neutral-950" : "text-neutral-600 dark:text-neutral-300"}`} />
+              <Compass className="h-4 w-4 text-primary-strong" />
               <span>
                 {locale === "ar"
                   ? "🧭 مستكشف الوظائف"
@@ -354,39 +467,61 @@ export default function ApplicationsPage() {
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="space-y-3">
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
-          {/* Stage Filter Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto border-b border-stone-200 pb-0.5 sm:pb-0 scrollbar-none dark:border-neutral-800">
-            {[
-              { key: "ALL", label: t("applications.filterAll") },
-              { key: "ACTIVE", label: t("applications.filterActive") },
-              { key: "APPLIED", label: t("applications.submitted") },
-              { key: "ASSIGNMENT", label: t("applications.assignment") },
-              { key: "INTERVIEW", label: t("applications.interview") },
-              { key: "DECISION", label: t("applications.decision") },
-              { key: "CLOSED", label: t("applications.closed") },
-            ].map((tab) => {
-              const isSelected = currentStage === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => updateStageFilter(tab.key)}
-                  className={`whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
-                    isSelected
-                      ? "border-neutral-800 text-neutral-950 dark:border-neutral-200 dark:text-white"
-                      : "border-transparent text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
+      {/* Two-Tier Filter and Search Bar */}
+      <div className="space-y-3.5 rounded-2xl border border-neutral-200/90 bg-white/70 p-3.5 shadow-2xs backdrop-blur-xs dark:border-neutral-800 dark:bg-neutral-900/70">
+        {/* Tier 1: Scope Switcher + Search + Preparation Period + View Mode */}
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Scope Switcher: All vs Active */}
+            <div className="inline-flex rounded-xl bg-neutral-100 p-1 border border-neutral-200/80 dark:bg-neutral-800/80 dark:border-neutral-700/80">
+              <button
+                type="button"
+                onClick={() => updateStageFilter("ALL")}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                  currentStage === "ALL" || (currentStage !== "ACTIVE" && !["APPLIED", "ASSIGNMENT", "INTERVIEW", "DECISION", "CLOSED"].includes(currentStage))
+                    ? "bg-white text-neutral-950 shadow-xs dark:bg-neutral-900 dark:text-white"
+                    : "text-neutral-600 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-white"
+                }`}
+              >
+                {locale === "ar" ? "كل الطلبات" : "All Applications"}
+                <span className="ms-1.5 text-[11px] font-normal opacity-70">({stageCounts.all})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => updateStageFilter("ACTIVE")}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                  currentStage === "ACTIVE"
+                    ? "bg-white text-neutral-950 shadow-xs dark:bg-neutral-900 dark:text-white"
+                    : "text-neutral-600 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-white"
+                }`}
+              >
+                {locale === "ar" ? "الطلبات المفتوحة" : "Active Applications"}
+                <span className="ms-1.5 text-[11px] font-normal opacity-70">({stageCounts.active})</span>
+              </button>
+            </div>
+
+            {/* Preparation Period Dropdown */}
+            <div className="flex items-center gap-1.5">
+              <select
+                aria-label={locale === "ar" ? "فترة التجهيز / نسخة السيرة" : "Preparation Period"}
+                value={currentPeriod}
+                onChange={(e) => updatePeriodFilter(e.target.value)}
+                className="field-control text-xs py-1.5 px-2.5 rounded-xl bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 font-medium"
+              >
+                <option value="ALL">
+                  {locale === "ar" ? "كل الفترات (All Periods)" : "All Periods"}
+                </option>
+                {Array.from({ length: Math.max(1, maxCvVersion) }, (_, i) => i + 1).map((v) => (
+                  <option key={v} value={`v${v}`}>
+                    {locale === "ar" ? `نسخة السيرة ${v} (CV v${v})` : `CV v${v}`}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:flex-1">
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center lg:flex-1 lg:max-w-md lg:justify-end">
+            {/* Search Input */}
             <form
               onSubmit={handleSearchSubmit}
               className="relative min-w-0 w-full sm:flex-1"
@@ -397,25 +532,26 @@ export default function ApplicationsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("applications.search")}
-                className="field-control ps-9 py-2"
+                className="field-control ps-9 py-1.5 text-xs rounded-xl"
               />
               <SearchIcon className="w-4 h-4 text-text-muted absolute start-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </form>
 
-            <div className="inline-flex w-fit shrink-0 items-center gap-1 rounded-lg border border-neutral-300 bg-white p-1 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+            {/* View Switcher */}
+            <div className="inline-flex w-fit shrink-0 items-center gap-1 rounded-xl border border-neutral-300 bg-white p-1 shadow-2xs dark:border-neutral-700 dark:bg-neutral-900">
               <button
                 type="button"
                 onClick={() => handleViewModeChange("kanban")}
                 title={t("applications.viewBoard")}
                 aria-label={t("applications.viewBoard")}
                 aria-pressed={viewMode === "kanban"}
-                className={`inline-flex min-h-10 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${
+                className={`inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors ${
                   viewMode === "kanban"
-                    ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+                    ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-2xs"
                     : "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"
                 }`}
               >
-                <KanbanIcon className="h-4 w-4" />
+                <KanbanIcon className="h-3.5 w-3.5" />
                 <span>{t("applications.board")}</span>
               </button>
 
@@ -432,18 +568,18 @@ export default function ApplicationsPage() {
                   aria-pressed={viewMode === "table"}
                   aria-disabled={!canUseTableView}
                   aria-expanded={tableLockBubbleOpen}
-                  className={`inline-flex min-h-10 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${
+                  className={`inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors ${
                     !canUseTableView
                       ? "cursor-pointer opacity-75 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
                       : viewMode === "table"
-                        ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+                        ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-2xs"
                         : "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"
                   }`}
                 >
-                  <TableIcon className="h-4 w-4" />
+                  <TableIcon className="h-3.5 w-3.5" />
                   <span>{t("applications.table")}</span>
                   {!canUseTableView && (
-                    <Lock className="h-3.5 w-3.5 text-amber-600" aria-hidden="true" />
+                    <Lock className="h-3 w-3 text-amber-600" aria-hidden="true" />
                   )}
                 </button>
                 <ContextualLockBubble
@@ -460,10 +596,46 @@ export default function ApplicationsPage() {
           </div>
         </div>
 
+        {/* Tier 2: Dedicated Stage Filter Bar */}
+        <div className="flex flex-wrap items-center gap-2 pt-2.5 border-t border-neutral-200/70 dark:border-neutral-800/70">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 dark:text-neutral-400 me-1">
+            <Filter className="w-3.5 h-3.5 text-neutral-400" />
+            <span>{locale === "ar" ? "المرحلة:" : "Stage:"}</span>
+          </div>
+
+          {[
+            { key: "APPLIED", label: t("applications.submitted"), color: "bg-blue-500", count: stageCounts.APPLIED },
+            { key: "ASSIGNMENT", label: t("applications.assignment"), color: "bg-amber-500", count: stageCounts.ASSIGNMENT },
+            { key: "INTERVIEW", label: t("applications.interview"), color: "bg-purple-500", count: stageCounts.INTERVIEW },
+            { key: "DECISION", label: t("applications.decision"), color: "bg-emerald-500", count: stageCounts.DECISION },
+            { key: "CLOSED", label: t("applications.closed"), color: "bg-neutral-500", count: stageCounts.CLOSED },
+          ].map((stage) => {
+            const isSelected = currentStage === stage.key;
+            return (
+              <button
+                key={stage.key}
+                type="button"
+                onClick={() => toggleStageCapsule(stage.key as Stage)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all border ${
+                  isSelected
+                    ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900 shadow-2xs"
+                    : "border-neutral-200/90 bg-white text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${stage.color} shrink-0`} />
+                <span>{stage.label}</span>
+                <span className={`text-[11px] rounded-full px-1.5 py-0.2 ${isSelected ? "bg-white/20 dark:bg-neutral-900/20 font-bold" : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"}`}>
+                  {stage.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* Secondary Outcome Filter when Closed is selected */}
         {currentStage === "CLOSED" && (
-          <div className="flex flex-wrap items-center gap-2 border-t border-stone-200 pt-3 text-sm animate-in fade-in duration-150 dark:border-neutral-800">
-            <span className="me-1 text-xs text-neutral-500 dark:text-neutral-400">
+          <div className="flex flex-wrap items-center gap-2 border-t border-dashed border-stone-200/90 pt-2.5 text-xs animate-in fade-in duration-150 dark:border-neutral-800">
+            <span className="me-1 font-medium text-neutral-500 dark:text-neutral-400">
               {t("applications.outcome")}:
             </span>
             {[
@@ -479,9 +651,9 @@ export default function ApplicationsPage() {
                   key={sub.key}
                   type="button"
                   onClick={() => updateOutcomeFilter(sub.key)}
-                  className={`rounded-sm px-2 py-1 text-xs transition-colors ${
+                  className={`rounded-lg px-2.5 py-1 text-xs transition-colors ${
                     isSelected
-                      ? "font-medium text-neutral-950 underline decoration-stone-400 underline-offset-4 dark:text-white dark:decoration-neutral-500"
+                      ? "font-semibold bg-neutral-200/80 text-neutral-950 dark:bg-neutral-800 dark:text-white"
                       : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
                   }`}
                 >
@@ -565,11 +737,15 @@ export default function ApplicationsPage() {
           </div>
 
           {viewMode === "table" && canUseTableView ? (
-            <TableView applications={applications} />
+            <TableView
+              applications={applications}
+              appCvVersionMap={appCvVersionMap}
+            />
           ) : (
             <KanbanView
               applications={applications}
               onStageChange={handleKanbanStageChange}
+              appCvVersionMap={appCvVersionMap}
             />
           )}
         </div>
@@ -595,16 +771,44 @@ export default function ApplicationsPage() {
         </Modal>
       )}
 
-      {/* First-Visit Spotlight Overlay */}
-      {showSpotlight && (
-        <>
+      {/* First-Visit Spotlight Overlay via Portal */}
+      {showSpotlight && buttonRect && createPortal(
+        <div className="fixed inset-0 w-screen h-dvh z-[100] pointer-events-auto overflow-hidden">
+          {/* Edge-to-edge full screen backdrop */}
           <div
             onClick={() => dismissSpotlight(false)}
-            className="fixed inset-0 z-[90] bg-neutral-950/75 backdrop-blur-[2px] transition-opacity duration-300"
+            className="absolute inset-0 bg-neutral-950/75 backdrop-blur-[2px] transition-opacity duration-300"
             aria-hidden="true"
           />
 
-          <div className="fixed top-28 end-4 sm:end-16 z-[95] max-w-sm rounded-3xl border border-neutral-700/80 bg-neutral-900/95 p-5 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-200">
+          {/* Glowing highlighted clone at exact buttonRect */}
+          <button
+            type="button"
+            onClick={() => dismissSpotlight(true)}
+            style={{
+              position: "fixed",
+              top: buttonRect.top,
+              left: buttonRect.left,
+              width: buttonRect.width,
+              height: buttonRect.height,
+            }}
+            className="z-[101] inline-flex items-center justify-center gap-2 rounded-xl bg-white text-neutral-950 font-bold px-3.5 py-2 text-xs shadow-2xl ring-4 ring-white/70 animate-pulse border border-white cursor-pointer"
+          >
+            <Compass className="h-4 w-4 text-neutral-950" />
+            <span>{locale === "ar" ? "🧭 مستكشف الوظائف" : "🧭 Job Explorer"}</span>
+          </button>
+
+          {/* Guidance card positioned directly under the button */}
+          <div
+            style={{
+              position: "fixed",
+              top: Math.min(window.innerHeight - 250, buttonRect.bottom + 14),
+              left: isRtl
+                ? Math.max(16, Math.min(window.innerWidth - 384, buttonRect.right - 350))
+                : Math.max(16, Math.min(window.innerWidth - 384, buttonRect.left)),
+            }}
+            className="z-[102] w-[calc(100vw-2rem)] max-w-sm rounded-3xl border border-neutral-700/80 bg-neutral-900/95 p-5 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-200"
+          >
             {/* Curved SVG pointer pointing to the button */}
             <div className="flex items-center justify-between pb-1">
               <span className="text-sm font-bold text-white flex items-center gap-1.5">
@@ -638,7 +842,8 @@ export default function ApplicationsPage() {
               </button>
             </div>
           </div>
-        </>
+        </div>,
+        document.body
       )}
     </div>
   );

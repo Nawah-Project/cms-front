@@ -13,9 +13,10 @@ import { useToast } from "../../../components/ui/ToastProvider";
 
 interface TableViewProps {
   applications: Application[];
+  appCvVersionMap?: Record<string, number>;
 }
 
-export function TableView({ applications }: TableViewProps) {
+export function TableView({ applications, appCvVersionMap }: TableViewProps) {
   const { t, locale } = useI18n();
   const navigate = useNavigate();
   const toast = useToast();
@@ -137,6 +138,11 @@ export function TableView({ applications }: TableViewProps) {
                         <span className="font-semibold text-neutral-900 dark:text-neutral-100">
                           {app.jobTitle}
                         </span>
+                        {appCvVersionMap && (
+                          <span className="rounded px-1.5 py-0.2 text-[10px] font-semibold bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                            CV v{appCvVersionMap[app.id] || 1}
+                          </span>
+                        )}
                         {app.isTailored && (
                           <span
                             title={t("applications.tailoredBadge")}

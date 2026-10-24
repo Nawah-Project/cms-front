@@ -337,7 +337,7 @@ export default function TasksPage() {
       ) : (
         <>
           <div className="overflow-x-auto pb-3">
-            <div className="grid min-w-[68rem] grid-cols-4 gap-5">
+            <div className="grid min-w-[68rem] grid-cols-4 gap-5 items-start">
               {COLUMNS.map(({ status, key }) => (
                 <TaskSection
                   key={status}
@@ -373,7 +373,7 @@ export default function TasksPage() {
                       />
                     ))
                   ) : (
-                    <p className="flex min-h-36 items-center justify-center rounded-lg border border-dashed border-border bg-neutral-50/70 px-3 py-6 text-center text-xs leading-5 text-neutral-500 dark:bg-neutral-900/60">
+                    <p className="flex py-5 px-3 items-center justify-center rounded-xl border border-dashed border-neutral-300/80 bg-neutral-50/70 text-center text-[11px] text-neutral-400 dark:border-neutral-700/80 dark:bg-neutral-900/60">
                       {t("professionalDevelopment.noTasksInColumn")}
                     </p>
                   )}
