@@ -353,9 +353,6 @@ export function FirstApplicationGuidedTourProvider({
         if (step === 2) {
           el.scrollIntoView({ block: "nearest", inline: "nearest" });
         }
-        if ((step === 5 || step === 6) && document.activeElement !== el) {
-          el.focus();
-        }
 
         const rect = el.getBoundingClientRect();
         if (rect.width > 0 && rect.height > 0) {
@@ -405,48 +402,52 @@ export function FirstApplicationGuidedTourProvider({
     return () => clearInterval(interval);
   }, [isTourActive, step]);
 
-  // Track inputs for steps 5 & 6 (instant keystroke + interval fallback)
+  // One-time focus on entering steps 5 or 6
   useEffect(() => {
     if (!isTourActive) return;
+    if (step === 5 || step === 6) {
+      const timer = setTimeout(() => {
+        const selector = STEP_SELECTORS[step];
+        const el = selector
+          ? (document.querySelector(selector) as HTMLElement | null)
+          : null;
+        if (el && document.activeElement !== el) {
+          el.focus();
+        }
+      }, 60);
+      return () => clearTimeout(timer);
+    }
+  }, [isTourActive, step]);
+
+  // Track inputs for steps 5 & 6 (smooth non-interfering sync)
+  useEffect(() => {
+    if (!isTourActive) return;
+    if (step !== 5 && step !== 6) return;
 
     const checkInputs = () => {
       if (step === 5) {
         const compEl = document.querySelector<HTMLInputElement>(
           '[data-tour-step="add-app-company"]',
         );
-        if (compEl && compEl.value !== companyValue) {
-          setCompanyValue(compEl.value);
+        if (compEl) {
+          const val = compEl.value || "";
+          setCompanyValue((prev) => (prev !== val ? val : prev));
         }
       } else if (step === 6) {
         const urlEl = document.querySelector<HTMLInputElement>(
           '[data-tour-step="add-app-url"]',
         );
-        if (urlEl && urlEl.value !== urlValue) {
-          setUrlValue(urlEl.value);
+        if (urlEl) {
+          const val = urlEl.value || "";
+          setUrlValue((prev) => (prev !== val ? val : prev));
         }
       }
     };
 
     checkInputs();
-
-    const handleInput = (e: Event) => {
-      const target = e.target as HTMLInputElement | null;
-      if (!target) return;
-      if (step === 5 && target.matches?.('[data-tour-step="add-app-company"]')) {
-        setCompanyValue(target.value);
-      } else if (step === 6 && target.matches?.('[data-tour-step="add-app-url"]')) {
-        setUrlValue(target.value);
-      }
-    };
-
-    document.addEventListener("input", handleInput, true);
-    const interval = window.setInterval(checkInputs, 60);
-
-    return () => {
-      document.removeEventListener("input", handleInput, true);
-      window.clearInterval(interval);
-    };
-  }, [isTourActive, step, companyValue, urlValue]);
+    const interval = window.setInterval(checkInputs, 50);
+    return () => window.clearInterval(interval);
+  }, [isTourActive, step]);
 
   // Keyboard navigation: Enter in steps 5 & 6 advances
   useEffect(() => {
