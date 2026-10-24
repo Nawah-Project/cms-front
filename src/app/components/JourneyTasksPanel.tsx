@@ -135,9 +135,7 @@ export function JourneyTasksPanel() {
           height: "min(50rem, calc(100dvh - 2rem))",
           transform: open ? "translateX(0)" : `translateX(${hiddenOffset})`,
         }}
-        className={`fixed end-5 top-1/2 -translate-y-1/2 transition-transform duration-300 ease-out pointer-events-none ${
-          isTourActive && (step === 1 || step === 2) ? "z-[9995]" : "z-[60]"
-        }`}
+        className="fixed end-5 top-1/2 -translate-y-1/2 transition-transform duration-300 ease-out pointer-events-none z-[60]"
       >
         {/* Inner Panel Drawer */}
         <div

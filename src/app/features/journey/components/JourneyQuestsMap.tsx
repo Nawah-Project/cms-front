@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
   Compass,
@@ -406,30 +405,23 @@ function LockedFogZone({
       <div className="absolute inset-0 flex items-center justify-center p-4 pointer-events-none z-20 overflow-visible">
         <div className="relative pointer-events-auto">
           {/* Floating requirement tooltip bubble */}
-          <AnimatePresence>
-            {showHint && (
-              <motion.div
-                initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 4, scale: 0.95 }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
-                role="status"
-                className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 z-30 whitespace-nowrap rounded-xl bg-neutral-900/95 px-4 py-2 text-center text-xs font-medium text-white shadow-2xl backdrop-blur-md dark:bg-white/95 dark:text-neutral-900 after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-[5px] after:border-transparent after:border-t-neutral-900/95 dark:after:border-t-white/95"
-              >
-                {cleanMessage}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {showHint && (
+            <div
+              role="status"
+              className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 z-30 whitespace-nowrap rounded-xl bg-neutral-900/95 px-4 py-2 text-center text-xs font-medium text-white shadow-2xl backdrop-blur-md dark:bg-white/95 dark:text-neutral-900 animate-in fade-in zoom-in-95 duration-150 after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-[5px] after:border-transparent after:border-t-neutral-900/95 dark:after:border-t-white/95"
+            >
+              {cleanMessage}
+            </div>
+          )}
 
           {/* Elevated High-Contrast Lock Icon */}
-          <motion.div
-            animate={isShaking ? { rotate: [0, -14, 14, -8, 8, 0] } : {}}
-            transition={{ duration: 0.38, ease: "easeInOut" }}
-            whileHover={{ scale: 1.06 }}
-            className="flex w-11 h-11 shrink-0 aspect-square items-center justify-center rounded-full bg-white text-neutral-800 shadow-xl border border-white/80 ring-4 ring-neutral-400/25 backdrop-blur-sm dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600 dark:ring-neutral-900/40"
+          <div
+            className={`flex w-11 h-11 shrink-0 aspect-square items-center justify-center rounded-full bg-white text-neutral-800 shadow-xl border border-white/80 ring-4 ring-neutral-400/25 backdrop-blur-sm dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600 dark:ring-neutral-900/40 transition-transform hover:scale-105 ${
+              isShaking ? "animate-lock-wiggle" : ""
+            }`}
           >
             <Lock className="h-5 w-5 shrink-0" aria-hidden="true" />
-          </motion.div>
+          </div>
         </div>
       </div>
     </div>
@@ -778,6 +770,12 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
   const weekNodes = journeyData.nodes.filter(
     (node) => node.weekNumber === selectedWeek,
   );
+  const hasActiveTask = weekNodes.some(
+    (n) =>
+      n.status === "ACTIVE" &&
+      n.nodeType !== "REVIEW_STATION" &&
+      n.nodeType !== "FINAL_REPORT",
+  );
   const completedInWeek = weekNodes.filter(
     (n) => n.status === "COMPLETED",
   ).length;
@@ -1110,7 +1108,7 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
 
                   {!isLocked && (
                     <div className="flex flex-wrap items-center gap-2">
-                      {isActive && node.requiredAppsCount > 0 && (
+                      {isActive && (
                         <button
                           type="button"
                           data-tour-step="journey-add-app-btn"
@@ -1120,7 +1118,7 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
                             }
                             openAddModal();
                           }}
-                          className="button-primary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs"
+                          className="button-primary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold"
                         >
                           <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                           <span>{t("common.addApplication")}</span>
@@ -1240,6 +1238,31 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
             </article>
           );
         })}
+
+        {/* Fallback Add Application Button when all quests in week are completed or in review station */}
+        {!hasActiveTask && (
+          <div className="rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-700 p-4 text-center bg-neutral-50/60 dark:bg-neutral-900/40">
+            <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-2 font-medium">
+              {locale === "ar"
+                ? "جميع مهام الأسبوع مكتملة أو في مرحلة التقييم — هل ترغب في تسجيل طلب تقديم إضافي؟"
+                : "All week tasks are completed or in review — Log an additional application?"}
+            </p>
+            <button
+              type="button"
+              data-tour-step="journey-add-app-btn"
+              onClick={() => {
+                if (isTourActive && step === 2) {
+                  setStep(3);
+                }
+                openAddModal();
+              }}
+              className="button-primary inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold shadow-xs"
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>{t("common.addApplication")}</span>
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

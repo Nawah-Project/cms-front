@@ -208,6 +208,8 @@ export default function ApplicationsPage() {
     const assignedV = appCvVersionMap[app.id] || 1;
     const matchesPeriod =
       currentPeriod === "ALL" ||
+      currentWeek === 0 ||
+      maxCvVersion <= 1 ||
       (currentPeriod === "v1" && assignedV === 1) ||
       (currentPeriod === "v2" && assignedV === 2) ||
       currentPeriod === `v${assignedV}`;
@@ -483,8 +485,8 @@ export default function ApplicationsPage() {
               </button>
             </div>
 
-            {/* Preparation Period Dropdown - Hidden in Week 0 */}
-            {currentWeek >= 1 && (
+            {/* Preparation Period Dropdown - Hidden in Week 0 or when only 1 CV version exists */}
+            {currentWeek >= 1 && maxCvVersion > 1 && (
               <div className="flex items-center gap-1.5">
                 <select
                   aria-label={locale === "ar" ? "فترة التجهيز / نسخة السيرة" : "Preparation Period"}

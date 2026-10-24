@@ -54,6 +54,7 @@ export function AddApplicationModal({
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showExplorerModal, setShowExplorerModal] = useState(false);
+  const [companyPasteHint, setCompanyPasteHint] = useState(false);
   const [showHint, setShowHint] = useState(() => {
     try {
       return (
@@ -105,10 +106,38 @@ export function AddApplicationModal({
     }
   }, [isOpen, initialValues, user?.targetJobTitle]);
 
+  const handleCompanyInputOrPaste = (value: string) => {
+    const trimmed = value.trim();
+    if (/^(https?:\/\/|www\.)/i.test(trimmed)) {
+      const formattedUrl = /^www\./i.test(trimmed) ? `https://${trimmed}` : trimmed;
+      if (!jobUrl.trim()) {
+        setJobUrl(formattedUrl);
+        if (errors.jobUrl) {
+          setErrors((prev) => ({ ...prev, jobUrl: undefined }));
+        }
+      }
+      setCompanyName("");
+      setCompanyPasteHint(true);
+      if (errors.companyName) {
+        setErrors((prev) => ({ ...prev, companyName: undefined }));
+      }
+      return;
+    }
+    setCompanyPasteHint(false);
+    setCompanyName(value);
+    if (errors.companyName) {
+      setErrors((prev) => ({ ...prev, companyName: undefined }));
+    }
+  };
+
   const validate = () => {
     const errs: { companyName?: string; jobTitle?: string; jobUrl?: string } = {};
     if (!companyName.trim()) {
       errs.companyName = t("applications.validationCompany");
+    } else if (/https?:\/\/|www\./i.test(companyName.trim())) {
+      errs.companyName = locale === "ar"
+        ? "يرجى كتابة اسم الشركة فقط وليس رابط الموقع"
+        : "Please enter the company name only, not a URL";
     }
     if (!jobTitle.trim()) {
       errs.jobTitle = t("applications.validationJobTitle");
@@ -136,6 +165,7 @@ export function AddApplicationModal({
     setJobUrl("");
     setIsTailored(false);
     setSharedWithGroup(false);
+    setCompanyPasteHint(false);
     setErrors({});
   };
 
@@ -260,11 +290,14 @@ export function AddApplicationModal({
             data-tour-step="add-app-company"
             required
             value={companyName}
-            onChange={(e) => {
-              setCompanyName(e.target.value);
-              if (errors.companyName)
-                setErrors((prev) => ({ ...prev, companyName: undefined }));
+            onPaste={(e) => {
+              const pasted = e.clipboardData.getData("text").trim();
+              if (/^(https?:\/\/|www\.)/i.test(pasted)) {
+                e.preventDefault();
+                handleCompanyInputOrPaste(pasted);
+              }
             }}
+            onChange={(e) => handleCompanyInputOrPaste(e.target.value)}
             onKeyDown={(e) => {
               if (
                 e.key === "Enter" &&
@@ -279,6 +312,13 @@ export function AddApplicationModal({
             placeholder={t("applications.companyPlaceholder")}
             className={`field-control ${errors.companyName ? "field-control-error" : ""}`}
           />
+          {companyPasteHint && (
+            <p className="mt-1.5 rounded-xl border border-amber-300/80 bg-amber-50/80 p-2.5 text-xs text-amber-900 dark:border-amber-800/80 dark:bg-amber-950/40 dark:text-amber-200 animate-in fade-in duration-150">
+              {locale === "ar"
+                ? "✨ لاحظنا أنك لصقت رابط الوظيفة هنا، فقمنا بنقله تلقائياً إلى خانة (رابط الوظيفة) بالأسفل! يرجى كتابة اسم الشركة فقط في هذه الخانة."
+                : "✨ We noticed you pasted the job link here, so we moved it automatically to the Job URL field below! Please enter only the company name here."}
+            </p>
+          )}
           {errors.companyName && (
             <p className="mt-1 text-xs text-danger-strong">
               {errors.companyName}

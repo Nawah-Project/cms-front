@@ -69,6 +69,7 @@ export function Modal({
   }
 
   const containerZIndex = zIndex ?? 100;
+  const zClass = containerZIndex === 110 ? "z-[110]" : "z-[100]";
 
   return createPortal(
     <div
@@ -77,7 +78,7 @@ export function Modal({
       aria-labelledby={titleId}
       aria-describedby={subtitle ? subtitleId : undefined}
       style={{ zIndex: containerZIndex }}
-      className="fixed inset-0 flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
+      className={`fixed inset-0 ${zClass} flex items-center justify-center p-4 overflow-y-auto`}
     >
       {/* Backdrop */}
       <div

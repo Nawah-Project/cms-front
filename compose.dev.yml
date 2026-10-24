@@ -11,6 +11,7 @@ services:
     environment:
       OBSERVABILITY_ENV: development
       NODE_OPTIONS: --import=./monitoring/instrumentation.mjs
+      METRICS_TOKEN: ${DEV_METRICS_TOKEN:-dev-metrics-token-12345}
       VITE_API_URL: ${DEV_VITE_API_URL:?Set DEV_VITE_API_URL in development .env}
       VITE_CV_MAX_FILE_SIZE_BYTES: ${DEV_VITE_CV_MAX_FILE_SIZE_BYTES:-5242880}
     env_file:

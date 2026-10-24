@@ -6,20 +6,11 @@ import React, {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../../features/auth/store/authStore";
 import { useI18n } from "../../../i18n";
 import { useToast } from "../../../components/ui/ToastProvider";
-import { useApplications } from "../api/applicationsApi";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Compass,
-  FileText,
-  Globe,
-  ListChecks,
-  Plus,
-  Send,
-} from "lucide-react";
+import { profileApi } from "../../../features/profile/profileApi";
 
 export type TourStep = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
@@ -58,7 +49,6 @@ interface StepContent {
   titleEn: string;
   bodyAr: string;
   bodyEn: string;
-  icon: typeof Compass;
 }
 
 const STEP_CONTENTS: Record<TourStep, StepContent> = {
@@ -67,21 +57,18 @@ const STEP_CONTENTS: Record<TourStep, StepContent> = {
     titleEn: "Step 1 of 7: Open your Quest Map 🎯",
     bodyAr: "اضغط على زر المهام الجانبي لترى المهمة التمهيدية المطلوبة منك الآن.",
     bodyEn: "Click the side quest handle to view your active onboarding mission.",
-    icon: ListChecks,
   },
   2: {
     titleAr: "الخطوة 2 من 7: ابدأ أول طلب تقديم 🚀",
     titleEn: "Step 2 of 7: Start Your First Application 🚀",
-    bodyAr: "اضغط على زر (إضافة طلب تقديم) داخل بطاقة المهمة لتجهيز أول طلب وظيفة.",
+    bodyAr: "اضغط على زر (+ إضافة طلب تقديم) داخل بطاقة المهمة لتجهيز أول طلب وظيفة.",
     bodyEn: "Click (+ Add Application) in the mission card to set up your first application.",
-    icon: Plus,
   },
   3: {
     titleAr: "الخطوة 3 من 7: افتح مستكشف الوظائف 🧭",
     titleEn: "Step 3 of 7: Open Job Explorer 🧭",
     bodyAr: "اضغط هنا للوصول السريع إلى الوظائف المفتوحة والمفلترة بتخصصك.",
     bodyEn: "Click here to discover open jobs pre-filtered by your specialization.",
-    icon: Compass,
   },
   4: {
     titleAr: "الخطوة 4 من 7: ابحث في LinkedIn Jobs 💼",
@@ -90,14 +77,12 @@ const STEP_CONTENTS: Record<TourStep, StepContent> = {
       "اضغط على بطاقة LinkedIn لفتح الوظائف المناسبة لتخصصك في تبويب جديد؛ اختر وظيفة وانسخ رابطها واسم الشركة ثم عد إلى هذه النافذة.",
     bodyEn:
       "Click LinkedIn card to browse matching jobs in a new tab; pick a job, copy its URL and company name, then return to this form.",
-    icon: Globe,
   },
   5: {
     titleAr: "الخطوة 5 من 7: سجل اسم الشركة 🏢",
     titleEn: "Step 5 of 7: Record Company Name 🏢",
     bodyAr: "اكتب اسم الشركة التي وجدت الفرصة لديها (واضغط التالي للمتابعة).",
     bodyEn: "Enter the company name where you found the job (click Next to continue).",
-    icon: FileText,
   },
   6: {
     titleAr: "الخطوة 6 من 7: الصق رابط الوظيفة 🔗",
@@ -106,14 +91,12 @@ const STEP_CONTENTS: Record<TourStep, StepContent> = {
       "ضع رابط إعلان الوظيفة هنا؛ يسهّل عليك الرجوع إليها لاحقاً وستحتاجه في تقييم اليوم السابع.",
     bodyEn:
       "Paste the job post URL here; it enables quick review and is vital for your Day 7 evaluation.",
-    icon: Globe,
   },
   7: {
     titleAr: "الخطوة 7 من 7: احفظ طلبك الأول! 🎉",
     titleEn: "Step 7 of 7: Save Your First Application! 🎉",
-    bodyAr: "اضغط على (إضافة الطلب) لتسجيل أول إنجاز لك في المهمة صفر.",
-    bodyEn: "Click (Add Application) to log your first milestone in Mission Zero.",
-    icon: Send,
+    bodyAr: "اضغط على (إضافة الطلب) لتسجيل أول إنجاز لك في المهمة بنجاح.",
+    bodyEn: "Click (Add Application) to log your first milestone successfully.",
   },
 };
 
@@ -131,92 +114,72 @@ function getTourCardPlacement(
   isRtl: boolean,
   step: TourStep,
 ): SmartPlacement {
-  const cardWidth = 360;
-  const cardHeight = step === 5 || step === 6 ? 250 : 190;
+  const cardWidth = 280;
+  const cardHeight = step === 5 || step === 6 ? 165 : 125;
   const screenW = typeof window !== "undefined" ? window.innerWidth : 1200;
   const screenH = typeof window !== "undefined" ? window.innerHeight : 800;
 
+  const targetCenterX = targetRect.left + targetRect.width / 2;
+  const targetCenterY = targetRect.top + targetRect.height / 2;
+
   // STEP 1: Target is handle button on the edge
   if (step === 1) {
-    const isDockedLeft = targetRect.left < 160;
-    if (isDockedLeft) {
+    // In RTL, drawer is docked on the left (targetRect.left < 200)
+    // Card placed directly to the right of handle, arrow points left
+    if (targetRect.left < screenW / 2) {
       const top = Math.max(
         16,
-        Math.min(screenH - cardHeight - 16, targetRect.top - 20),
+        Math.min(screenH - cardHeight - 16, targetCenterY - cardHeight / 2),
       );
-      const left = targetRect.right + 18;
+      const left = Math.min(screenW - cardWidth - 16, targetRect.right + 14);
       const arrowOffset = Math.max(
         18,
-        Math.min(cardHeight - 28, targetRect.top + targetRect.height / 2 - top - 9),
+        Math.min(cardHeight - 18, targetCenterY - top),
       );
       return { top, left, arrowDir: "left", arrowOffset };
     } else {
+      // In LTR, drawer is docked on the right
       const top = Math.max(
         16,
-        Math.min(screenH - cardHeight - 16, targetRect.top - 20),
+        Math.min(screenH - cardHeight - 16, targetCenterY - cardHeight / 2),
       );
-      const left = Math.max(16, targetRect.left - cardWidth - 18);
+      const left = Math.max(16, targetRect.left - cardWidth - 14);
       const arrowOffset = Math.max(
         18,
-        Math.min(cardHeight - 28, targetRect.top + targetRect.height / 2 - top - 9),
+        Math.min(cardHeight - 18, targetCenterY - top),
       );
       return { top, left, arrowDir: "right", arrowOffset };
     }
   }
 
-  // STEP 2: Button inside sliding drawer
-  if (step === 2) {
-    if (screenW >= 840) {
-      // Place cleanly to the right of drawer in RTL, or left of drawer in LTR
-      const top = Math.max(
-        16,
-        Math.min(screenH - cardHeight - 16, targetRect.top - 20),
-      );
-      const left = isRtl
-        ? Math.min(screenW - cardWidth - 16, Math.max(510, targetRect.right + 24))
-        : Math.max(16, targetRect.left - cardWidth - 24);
-      const arrowDir: ArrowDir = isRtl ? "left" : "right";
-      const arrowOffset = Math.max(
-        18,
-        Math.min(cardHeight - 28, targetRect.top + targetRect.height / 2 - top - 9),
-      );
-      return { top, left, arrowDir, arrowOffset };
-    }
-  }
-
   // STEP 7: Submit button at bottom of modal - Card placed ABOVE submit button
   if (step === 7) {
-    const top = Math.max(16, targetRect.top - cardHeight - 16);
-    let left = isRtl
-      ? targetRect.right - cardWidth
-      : targetRect.left;
+    const top = Math.max(16, targetRect.top - cardHeight - 14);
+    let left = targetCenterX - cardWidth / 2;
     left = Math.max(16, Math.min(screenW - cardWidth - 16, left));
-    const targetCenterX = targetRect.left + targetRect.width / 2;
     const arrowOffset = Math.max(
-      24,
-      Math.min(cardWidth - 32, targetCenterX - left - 9),
+      20,
+      Math.min(cardWidth - 20, targetCenterX - left),
     );
     return { top, left, arrowDir: "down", arrowOffset };
   }
 
-  // STEPS 2, 3, 4, 5, 6: Prefer below, fallback to above if overflowing bottom
-  let top = targetRect.bottom + 16;
+  // STEPS 2, 3, 4, 5, 6: Prefer BELOW target, arrow points UP
+  let top = targetRect.bottom + 14;
   let arrowDir: ArrowDir = "up";
 
   if (top + cardHeight > screenH - 16) {
-    top = Math.max(16, targetRect.top - cardHeight - 16);
+    // If not enough space below, place ABOVE target, arrow points DOWN
+    top = Math.max(16, targetRect.top - cardHeight - 14);
     arrowDir = "down";
   }
 
-  let left = isRtl
-    ? targetRect.right - cardWidth
-    : targetRect.left;
+  let left = targetCenterX - cardWidth / 2;
   left = Math.max(16, Math.min(screenW - cardWidth - 16, left));
 
-  const targetCenterX = targetRect.left + targetRect.width / 2;
   const arrowOffset = Math.max(
-    24,
-    Math.min(cardWidth - 32, targetCenterX - left - 9),
+    20,
+    Math.min(cardWidth - 20, targetCenterX - left),
   );
 
   return { top, left, arrowDir, arrowOffset };
@@ -226,15 +189,15 @@ function TourArrow({ dir, offset }: { dir: ArrowDir; offset: number }) {
   if (dir === "left") {
     return (
       <div
-        className="absolute -left-3 pointer-events-none drop-shadow-[0_0_6px_rgba(56,189,248,0.5)]"
-        style={{ top: offset }}
+        className="absolute -left-[9px] pointer-events-none drop-shadow-[-2px_0_4px_rgba(0,0,0,0.6)]"
+        style={{ top: offset - 8 }}
       >
-        <svg width="12" height="18" viewBox="0 0 12 18" fill="none">
+        <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
           <path
-            d="M12 0L0 9L12 18V0Z"
+            d="M0 8L10 0V16L0 8Z"
             fill="#171717"
-            stroke="#38bdf8"
-            strokeWidth="1.5"
+            stroke="rgba(255,255,255,0.2)"
+            strokeWidth="1"
           />
         </svg>
       </div>
@@ -244,15 +207,15 @@ function TourArrow({ dir, offset }: { dir: ArrowDir; offset: number }) {
   if (dir === "right") {
     return (
       <div
-        className="absolute -right-3 pointer-events-none drop-shadow-[0_0_6px_rgba(56,189,248,0.5)]"
-        style={{ top: offset }}
+        className="absolute -right-[9px] pointer-events-none drop-shadow-[2px_0_4px_rgba(0,0,0,0.6)]"
+        style={{ top: offset - 8 }}
       >
-        <svg width="12" height="18" viewBox="0 0 12 18" fill="none">
+        <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
           <path
-            d="M0 0L12 9L0 18V0Z"
+            d="M10 8L0 16V0L10 8Z"
             fill="#171717"
-            stroke="#38bdf8"
-            strokeWidth="1.5"
+            stroke="rgba(255,255,255,0.2)"
+            strokeWidth="1"
           />
         </svg>
       </div>
@@ -262,15 +225,15 @@ function TourArrow({ dir, offset }: { dir: ArrowDir; offset: number }) {
   if (dir === "up") {
     return (
       <div
-        className="absolute -top-3 pointer-events-none drop-shadow-[0_0_6px_rgba(56,189,248,0.5)]"
-        style={{ left: offset }}
+        className="absolute -top-[9px] pointer-events-none drop-shadow-[0_-2px_4px_rgba(0,0,0,0.6)]"
+        style={{ left: offset - 8 }}
       >
-        <svg width="18" height="12" viewBox="0 0 18 12" fill="none">
+        <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
           <path
-            d="M0 12L9 0L18 12H0Z"
+            d="M8 0L16 10H0L8 0Z"
             fill="#171717"
-            stroke="#38bdf8"
-            strokeWidth="1.5"
+            stroke="rgba(255,255,255,0.2)"
+            strokeWidth="1"
           />
         </svg>
       </div>
@@ -280,15 +243,15 @@ function TourArrow({ dir, offset }: { dir: ArrowDir; offset: number }) {
   // Down
   return (
     <div
-      className="absolute -bottom-3 pointer-events-none drop-shadow-[0_0_6px_rgba(56,189,248,0.5)]"
-      style={{ left: offset }}
+      className="absolute -bottom-[9px] pointer-events-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+      style={{ left: offset - 8 }}
     >
-      <svg width="18" height="12" viewBox="0 0 18 12" fill="none">
+      <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
         <path
-          d="M0 0L9 12L18 0H0Z"
+          d="M8 10L0 0H16L8 10Z"
           fill="#171717"
-          stroke="#38bdf8"
-          strokeWidth="1.5"
+          stroke="rgba(255,255,255,0.2)"
+          strokeWidth="1"
         />
       </svg>
     </div>
@@ -304,12 +267,15 @@ export function FirstApplicationGuidedTourProvider({
   const { locale } = useI18n();
   const isRtl = locale === "ar";
   const { showToast } = useToast();
-  const { data: appsData } = useApplications();
-  const totalApplications =
-    appsData?.unfilteredTotal ?? appsData?.total ?? 0;
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => profileApi.get(),
+    enabled: Boolean(user),
+  });
 
   const storageKey = user?.id
-    ? `nawah_first_app_tour_completed_${user.id}`
+    ? `nawah_v2_guided_tour_done_${user.id}`
     : null;
 
   const [isTourActive, setIsTourActive] = useState(false);
@@ -320,12 +286,18 @@ export function FirstApplicationGuidedTourProvider({
   const [companyValue, setCompanyValue] = useState("");
   const [urlValue, setUrlValue] = useState("");
 
-  // Determine if tour should start
+  // Determine if tour should start:
+  // ONLY conditions: user logged in, profileComplete === true, and !localStorage.getItem(storageKey)
+  // NEVER depend on applications.length or totalApplications!
   useEffect(() => {
     if (!user || !storageKey) return;
+    if (profile && !profile.profileComplete) {
+      setIsTourActive(false);
+      return;
+    }
     try {
-      const completed = localStorage.getItem(storageKey);
-      if (completed !== "true" && totalApplications === 0) {
+      const tourDone = localStorage.getItem(storageKey);
+      if (tourDone !== "true") {
         setIsTourActive(true);
         setStep(1);
       } else {
@@ -334,7 +306,7 @@ export function FirstApplicationGuidedTourProvider({
     } catch {
       setIsTourActive(false);
     }
-  }, [user, storageKey, totalApplications]);
+  }, [user?.id, storageKey, profile?.profileComplete]);
 
   const completeTour = () => {
     if (storageKey) {
@@ -369,7 +341,6 @@ export function FirstApplicationGuidedTourProvider({
     }
 
     let animationFrameId: number;
-    let lastRect: { top: number; left: number; width: number; height: number } | null = null;
 
     const track = () => {
       const selector = STEP_SELECTORS[step];
@@ -387,21 +358,18 @@ export function FirstApplicationGuidedTourProvider({
 
         const rect = el.getBoundingClientRect();
         if (rect.width > 0 && rect.height > 0) {
-          if (
-            !lastRect ||
-            Math.abs(rect.top - lastRect.top) > 0.5 ||
-            Math.abs(rect.left - lastRect.left) > 0.5 ||
-            Math.abs(rect.width - lastRect.width) > 0.5 ||
-            Math.abs(rect.height - lastRect.height) > 0.5
-          ) {
-            lastRect = {
-              top: rect.top,
-              left: rect.left,
-              width: rect.width,
-              height: rect.height,
-            };
-            setTargetRect(rect);
-          }
+          setTargetRect((prev) => {
+            if (
+              !prev ||
+              Math.abs(rect.top - prev.top) > 0.5 ||
+              Math.abs(rect.left - prev.left) > 0.5 ||
+              Math.abs(rect.width - prev.width) > 0.5 ||
+              Math.abs(rect.height - prev.height) > 0.5
+            ) {
+              return rect;
+            }
+            return prev;
+          });
         }
       }
 
@@ -474,7 +442,7 @@ export function FirstApplicationGuidedTourProvider({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isTourActive, step, companyValue, urlValue]);
 
-  // Complete tour when application created
+  // Complete tour only when application created successfully
   useEffect(() => {
     const handleAppCreated = () => {
       if (isTourActive) {
@@ -491,7 +459,6 @@ export function FirstApplicationGuidedTourProvider({
     urlValue.trim().length >= 8 && /^https?:\/\//i.test(urlValue.trim());
 
   const currentContent = STEP_CONTENTS[step];
-  const IconComponent = currentContent?.icon || Compass;
 
   let activeRect = targetRect;
   if (!activeRect && typeof window !== "undefined") {
@@ -511,7 +478,7 @@ export function FirstApplicationGuidedTourProvider({
         top: 120,
         left: Math.max(
           16,
-          typeof window !== "undefined" ? (window.innerWidth - 360) / 2 : 16,
+          typeof window !== "undefined" ? (window.innerWidth - 280) / 2 : 16,
         ),
         arrowDir: "up" as ArrowDir,
         arrowOffset: 40,
@@ -535,10 +502,10 @@ export function FirstApplicationGuidedTourProvider({
         typeof document !== "undefined" &&
         createPortal(
           <div className="fixed inset-0 w-screen h-dvh z-[9990] pointer-events-none select-none overflow-hidden">
-            {/* 4 Physical Backdrop Divs: Shading EVERYTHING across the screen EXCEPT activeRect */}
+            {/* 4 Physical Backdrop Divs: Shading EVERYTHING across the screen EXCEPT activeRect (z-[9990]) */}
             {activeRect ? (
               <>
-                {/* Top Backdrop (covers top of screen down to target top) */}
+                {/* Top Backdrop */}
                 <div
                   style={{
                     position: "fixed",
@@ -554,7 +521,7 @@ export function FirstApplicationGuidedTourProvider({
                     e.preventDefault();
                   }}
                 />
-                {/* Bottom Backdrop (covers target bottom down to screen bottom) */}
+                {/* Bottom Backdrop */}
                 <div
                   style={{
                     position: "fixed",
@@ -570,7 +537,7 @@ export function FirstApplicationGuidedTourProvider({
                     e.preventDefault();
                   }}
                 />
-                {/* Left Backdrop (covers left edge to target left) */}
+                {/* Left Backdrop */}
                 <div
                   style={{
                     position: "fixed",
@@ -586,7 +553,7 @@ export function FirstApplicationGuidedTourProvider({
                     e.preventDefault();
                   }}
                 />
-                {/* Right Backdrop (covers target right to right edge) */}
+                {/* Right Backdrop */}
                 <div
                   style={{
                     position: "fixed",
@@ -624,11 +591,11 @@ export function FirstApplicationGuidedTourProvider({
                   height: activeRect.height + pad * 2,
                   zIndex: 9991,
                 }}
-                className="rounded-2xl ring-4 ring-primary-strong/90 animate-pulse pointer-events-none shadow-[0_0_45px_rgba(40,89,135,0.7)]"
+                className="rounded-2xl ring-4 ring-emerald-400/90 animate-pulse pointer-events-none shadow-[0_0_35px_rgba(52,211,153,0.6)]"
               />
             )}
 
-            {/* Interactive Guidance Card (z-[9999]) with Directional SVG Arrow */}
+            {/* Interactive Guidance Card (z-[9999]) - Pure Pointer Coachmark */}
             <div
               style={{
                 position: "fixed",
@@ -636,21 +603,16 @@ export function FirstApplicationGuidedTourProvider({
                 left: placement.left,
                 zIndex: 9999,
               }}
-              className="relative w-[calc(100vw-2rem)] max-w-sm rounded-3xl border border-neutral-700/80 bg-neutral-900/95 p-5 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-200 pointer-events-auto"
+              className="relative w-[280px] max-w-[280px] rounded-2xl border border-white/15 bg-neutral-900/95 px-4 py-3.5 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-200 pointer-events-auto"
             >
-              {/* Directional SVG Arrow pointing directly at target */}
+              {/* Attached Pointer Arrow */}
               <TourArrow dir={placement.arrowDir} offset={placement.arrowOffset} />
 
-              {/* Header & Step Dots */}
-              <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-primary-strong/20 text-primary-strong border border-primary-strong/40">
-                    <IconComponent className="h-4 w-4" />
-                  </span>
-                  <span className="text-xs font-bold text-neutral-300">
-                    {isRtl ? `الخطوة ${step} من 7` : `Step ${step} of 7`}
-                  </span>
-                </div>
+              {/* Mini Top Bar (No divider line) */}
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-emerald-400">
+                  {isRtl ? `الخطوة ${step} من 7` : `Step ${step} of 7`}
+                </span>
 
                 <div className="flex items-center gap-1">
                   {[1, 2, 3, 4, 5, 6, 7].map((s) => (
@@ -658,9 +620,9 @@ export function FirstApplicationGuidedTourProvider({
                       key={s}
                       className={`h-1.5 rounded-full transition-all ${
                         s === step
-                          ? "w-4 bg-primary-strong"
+                          ? "w-3.5 bg-emerald-400"
                           : s < step
-                            ? "w-1.5 bg-emerald-500"
+                            ? "w-1.5 bg-emerald-600"
                             : "w-1.5 bg-neutral-700"
                       }`}
                     />
@@ -669,117 +631,48 @@ export function FirstApplicationGuidedTourProvider({
               </div>
 
               {/* Title */}
-              <h3 className="mt-3 text-sm font-bold text-white flex items-center gap-1.5">
+              <h3 className="mt-1.5 text-xs sm:text-[13px] font-bold text-white leading-snug">
                 {isRtl ? currentContent.titleAr : currentContent.titleEn}
               </h3>
 
               {/* Description */}
-              <p className="mt-1.5 text-xs leading-relaxed text-neutral-300">
+              <p className="mt-1 text-[11px] leading-relaxed text-neutral-300">
                 {isRtl ? currentContent.bodyAr : currentContent.bodyEn}
               </p>
 
-              {/* Step 1: Open Drawer Action Button */}
-              {step === 1 && (
-                <div className="mt-4 pt-3 border-t border-neutral-800 flex items-center justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStep(2);
-                    }}
-                    className="button-primary py-1.5 px-3.5 text-xs inline-flex items-center gap-1.5 font-semibold shadow-xs"
-                  >
-                    <span>{isRtl ? "افتح خريطة مهامك" : "Open Journey Tasks"}</span>
-                    {isRtl ? (
-                      <ArrowLeft className="w-3.5 h-3.5" />
-                    ) : (
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                </div>
-              )}
-
-              {/* Step 2: Open Add Application Modal Action Button */}
-              {step === 2 && (
-                <div className="mt-4 pt-3 border-t border-neutral-800 flex items-center justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStep(3);
-                      const addBtn = document.querySelector(
-                        '[data-tour-step="journey-add-app-btn"]',
-                      ) as HTMLButtonElement | null;
-                      if (addBtn) {
-                        addBtn.click();
-                      } else {
-                        const directAddBtn = document.querySelector(
-                          '[data-tour-step="add-app-btn-header"]',
-                        ) as HTMLButtonElement | null;
-                        if (directAddBtn) directAddBtn.click();
-                      }
-                    }}
-                    className="button-primary py-1.5 px-3.5 text-xs inline-flex items-center gap-1.5 font-semibold shadow-xs"
-                  >
-                    <span>{isRtl ? "إضافة أول طلب تقديم" : "Add First Application"}</span>
-                    {isRtl ? (
-                      <ArrowLeft className="w-3.5 h-3.5" />
-                    ) : (
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                </div>
-              )}
-
-              {/* Steps 5 & 6: 'Next' Action Button inside card */}
+              {/* Steps 5 & 6 only: Sleek inline Next button */}
               {step === 5 && (
-                <div className="mt-4 pt-3 border-t border-neutral-800 flex items-center justify-between">
-                  <span className="text-[11px] text-neutral-400">
+                <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
+                  <span className="text-[10px] text-neutral-400 truncate">
                     {isStep5Valid
-                      ? isRtl
-                        ? "✓ الاسم جاهز"
-                        : "✓ Valid Name"
-                      : isRtl
-                        ? "اكتب اسم الشركة للمتابعة..."
-                        : "Type company name..."}
+                      ? (isRtl ? "✓ جاهز للمتابعة" : "✓ Ready")
+                      : (isRtl ? "اكتب اسم الشركة..." : "Type company name...")}
                   </span>
                   <button
                     type="button"
                     disabled={!isStep5Valid}
                     onClick={nextStep}
-                    className="button-primary py-1.5 px-3.5 text-xs inline-flex items-center gap-1.5 disabled:opacity-40"
+                    className="inline-flex items-center gap-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 disabled:hover:bg-emerald-500 text-neutral-950 font-bold px-2.5 py-1 text-[11px] transition-colors shrink-0 shadow-xs"
                   >
-                    <span>{isRtl ? "التالي" : "Next"}</span>
-                    {isRtl ? (
-                      <ArrowLeft className="w-3.5 h-3.5" />
-                    ) : (
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    )}
+                    <span>{isRtl ? "التالي ←" : "Next →"}</span>
                   </button>
                 </div>
               )}
 
               {step === 6 && (
-                <div className="mt-4 pt-3 border-t border-neutral-800 flex items-center justify-between">
-                  <span className="text-[11px] text-neutral-400">
+                <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
+                  <span className="text-[10px] text-neutral-400 truncate">
                     {isStep6Valid
-                      ? isRtl
-                        ? "✓ الرابط صحيح"
-                        : "✓ Valid Link"
-                      : isRtl
-                        ? "الصق رابط يبدأ بـ http://..."
-                        : "Paste URL starting with http://..."}
+                      ? (isRtl ? "✓ رابط صحيح" : "✓ Valid link")
+                      : (isRtl ? "الصق الرابط (http://)..." : "Paste job URL...")}
                   </span>
                   <button
                     type="button"
                     disabled={!isStep6Valid}
                     onClick={nextStep}
-                    className="button-primary py-1.5 px-3.5 text-xs inline-flex items-center gap-1.5 disabled:opacity-40"
+                    className="inline-flex items-center gap-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 disabled:hover:bg-emerald-500 text-neutral-950 font-bold px-2.5 py-1 text-[11px] transition-colors shrink-0 shadow-xs"
                   >
-                    <span>{isRtl ? "التالي" : "Next"}</span>
-                    {isRtl ? (
-                      <ArrowLeft className="w-3.5 h-3.5" />
-                    ) : (
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    )}
+                    <span>{isRtl ? "التالي ←" : "Next →"}</span>
                   </button>
                 </div>
               )}
