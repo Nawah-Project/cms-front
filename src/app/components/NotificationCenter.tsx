@@ -104,13 +104,12 @@ export function NotificationCenter({
       return;
     }
 
-    // 2. Career Insights & Advanced Interview Prep -> Navigate to feedback & insights tab
+    // 2. Career Insights & Advanced Interview Prep -> Navigate to guidance tab
     if (
       item.type === "INSIGHT_UNLOCKED" ||
-      item.type === "INTERVIEW_PREP" ||
-      item.actionUrl?.includes("/professional-development/feedback")
+      item.type === "INTERVIEW_PREP"
     ) {
-      navigate("/professional-development/feedback");
+      navigate(item.actionUrl || "/professional-development");
       return;
     }
 

@@ -41,24 +41,16 @@ export function canAccessGroupSection(
 }
 
 /**
- * Professional Development section (`/professional-development`) is unlocked when:
- * - User is an ADMIN, OR
- * - `isGroupUnlocked === true`, OR
- * - `TASK_0` is in `completedNodeCodes`, OR
- * - `currentWeek >= 1`
+ * Professional Development section (`/professional-development`) is accessible to all
+ * authenticated members because Tab 1 ("الإرشادات - Guidance") provides guidance starting from Station 0
+ * (Task 0 ATS CV base). The sub-tabs ("المهام" and "الملاحظات") are progressively gated to Week 3+.
  */
 export function canAccessProfessionalDevelopment(
   journeyState?: JourneyStateLike,
   user?: { role?: string } | null,
 ): boolean {
   if (user?.role === "ADMIN") return true;
-  const state = extractState(journeyState);
-  if (!state) return false;
-  return (
-    state.isGroupUnlocked === true ||
-    (state.completedNodeCodes ?? []).includes("TASK_0") ||
-    state.currentWeek >= 1
-  );
+  return Boolean(extractState(journeyState) || user);
 }
 
 /**

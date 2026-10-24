@@ -63,6 +63,7 @@ function normalizeMember(value: unknown): MemberProgress {
 
   const normalizedCounts: MemberProgressCounts = {
     applied: normalizeCount(counts.applied),
+    assignment: normalizeCount(counts.assignment),
     interview: normalizeCount(counts.interview),
     decision: normalizeCount(counts.decision),
     closed: normalizeCount(counts.closed),

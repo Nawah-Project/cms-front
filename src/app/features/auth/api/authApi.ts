@@ -25,6 +25,7 @@ function normalizeUser(payload: any): User {
     email: user.email,
     role: user.role === "ADMIN" ? "ADMIN" : "USER",
     emailVerified: user.emailVerified !== false,
+    targetJobTitle: user.targetJobTitle ?? null,
   };
 }
 

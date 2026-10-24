@@ -685,7 +685,7 @@ function ReviewStationCard({
 
           {node.unlocksInsightCode && (isCompleted || isActive) && (
             <Link
-              to="/professional-development/feedback"
+              to={`/professional-development?guidance=${node.unlocksInsightCode}`}
               className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 shadow-2xs transition hover:bg-amber-50 dark:border-amber-700 dark:bg-neutral-800 dark:text-amber-200"
             >
               <Sparkles className="h-3.5 w-3.5 text-amber-600" />
@@ -1097,7 +1097,7 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
 
                       {node.unlocksInsightCode && isCompleted && (
                         <Link
-                          to="/professional-development/feedback"
+                          to={`/professional-development?guidance=${node.unlocksInsightCode}`}
                           className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-white px-3 py-1.5 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 dark:bg-neutral-800 dark:text-neutral-200"
                         >
                           <Sparkles className="h-3.5 w-3.5 text-amber-600" />

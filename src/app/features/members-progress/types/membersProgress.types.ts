@@ -2,6 +2,7 @@ import type { Outcome, Stage } from "../../../types";
 
 export interface MemberProgressCounts {
   applied: number;
+  assignment?: number;
   interview: number;
   decision: number;
   closed: number;

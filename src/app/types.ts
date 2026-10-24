@@ -44,6 +44,7 @@ export interface DashboardStats {
   active: {
     total: number;
     applied: number;
+    assignment?: number;
     interview: number;
     decision: number;
   };
@@ -82,6 +83,8 @@ export interface CreateApplicationInput {
   location?: string;
   applicationMethod?: ApplicationMethod | string;
   jobUrl?: string;
+  stage?: Stage;
+  outcome?: Outcome;
   isTailored?: boolean;
   journeyWeek?: number;
   hasAssignment?: boolean;

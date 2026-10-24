@@ -271,7 +271,7 @@ export function MemberProgressRow(props: MemberRowState) {
             >
               <ProgressCount
                 stage={stage}
-                count={member.counts[stage]}
+                count={member.counts[stage] ?? 0}
                 highlightSuccess={member.hasAcceptedApplication}
               />
               <span className="sr-only">{stage}</span>
@@ -340,7 +340,7 @@ export function MemberProgressRow(props: MemberRowState) {
             </p>
             <ProgressCount
               stage={stage}
-              count={member.counts[stage]}
+              count={member.counts[stage] ?? 0}
               highlightSuccess={member.hasAcceptedApplication}
             />
           </div>

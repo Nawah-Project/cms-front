@@ -99,6 +99,7 @@ export interface CreateSideTaskInput {
   type: SideTaskType;
   postUrl?: string;
   postTopic?: string;
+  applicationId?: string;
   contactName?: string;
   contactRole?: string;
   companyName?: string;

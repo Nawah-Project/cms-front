@@ -273,6 +273,7 @@ export const api = {
           active: {
             total: Number(data.active.total) || 0,
             applied: Number(data.active.applied) || 0,
+            assignment: Number(data.active.assignment) || 0,
             interview: Number(data.active.interview) || 0,
             decision: Number(data.active.decision) || 0,
           },
@@ -310,6 +311,7 @@ export const api = {
         active: {
           total: activeTotal,
           applied,
+          assignment: Number(data.assignment) || 0,
           interview,
           decision,
         },
@@ -329,7 +331,13 @@ export const api = {
     }
 
     return {
-      active: { total: 0, applied: 0, interview: 0, decision: 0 },
+      active: {
+        total: 0,
+        applied: 0,
+        assignment: 0,
+        interview: 0,
+        decision: 0,
+      },
       closed: {
         total: 0,
         accepted: 0,

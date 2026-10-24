@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router";
 import { Lock, Sparkles, Unlock } from "lucide-react";
 import { useAuth } from "../../auth/store/authStore";
 import { PageHeading } from "../../../components/ui/PageHeading";
@@ -130,6 +131,19 @@ export default function GuidancePage() {
     if (isAdmin) return null;
     return unifiedItems.find((item) => !unlockedSet.has(item.code)) || null;
   }, [unifiedItems, isAdmin, unlockedSet]);
+
+  const [searchParams] = useSearchParams();
+  const deepLinkCode = searchParams.get("guidance");
+
+  useEffect(() => {
+    if (!deepLinkCode || !unlockedGuidance.length) return;
+    const matched = unlockedGuidance.find(
+      (item) => item.code === deepLinkCode || item.id === deepLinkCode,
+    );
+    if (matched) {
+      setSelectedItem(matched);
+    }
+  }, [deepLinkCode, unlockedGuidance]);
 
   const handleMarkRead = (postId: string) => {
     const item = unifiedItems.find((i) => i.id === postId || i.code === postId);

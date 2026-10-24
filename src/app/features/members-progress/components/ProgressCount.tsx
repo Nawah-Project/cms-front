@@ -1,7 +1,7 @@
 import type { MemberProgressCounts } from "../types/membersProgress.types";
 import { useI18n } from "../../../i18n";
 
-export type ProgressStage = keyof MemberProgressCounts;
+export type ProgressStage = "applied" | "interview" | "decision" | "closed";
 
 const STAGE_STYLES: Record<ProgressStage, string> = {
   applied: "border-border bg-neutral-soft text-neutral-strong",
