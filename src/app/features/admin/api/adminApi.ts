@@ -71,6 +71,7 @@ export type AdminMember = {
     lastTaskAt: string | null;
   };
   journey?: JourneySnapshot | null;
+  uxVariant?: string | null;
 };
 export type AttentionItem = {
   member: AdminMember;
@@ -347,6 +348,16 @@ export const adminApi = {
     ),
   uxAnalytics: () =>
     request<any>("/admin/monitoring/ux-analytics"),
+  uxLabOverview: () =>
+    request<UxLabOverviewResponse>("/admin/ux-lab/overview"),
+  assignUxVariants: (input: AssignUxVariantsInput) =>
+    request<{ success: boolean; updatedGroups: number; updatedUsers: number }>(
+      "/admin/ux-lab/variants/assign",
+      {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      },
+    ),
   updateUxConfig: (input: {
     defaultVariant?: ExperimentVariant;
     groupVariants?: Record<string, ExperimentVariant>;
@@ -722,3 +733,77 @@ export type PlotGuidanceItem = {
   isCustomized: boolean;
   updatedAt: string | null;
 };
+
+export interface VariantScorecardMetrics {
+  usersCount: number;
+  onboardingRate: number;
+  task0CompletionRate: number;
+  avgAppsPerUser: number;
+  guidanceReadRate: number;
+  activeRetentionRate: number;
+}
+
+export interface UxLabOverviewResponse {
+  ribbon: {
+    activationRate: {
+      percent: number;
+      count: number;
+      total: number;
+    };
+    task0Conversion: {
+      percent: number;
+      count: number;
+      total: number;
+    };
+    explorerAdoption: {
+      count: number;
+    };
+    guidancePromptEngagement: {
+      count: number;
+      readsCount: number;
+      promptCopiesCount: number;
+    };
+    primaryFrictionNode: {
+      code: string;
+      titleAr: string;
+      titleEn: string;
+      count: number;
+      percent: number;
+      daysStalledAvg: number;
+    };
+  };
+  variantScorecard: {
+    A: VariantScorecardMetrics;
+    B: VariantScorecardMetrics;
+    C: VariantScorecardMetrics;
+    winnerVariant: "A" | "B" | "C";
+  };
+  overriddenUsers: Array<{
+    id: string;
+    name: string;
+    email: string;
+    avatar: string | null;
+    uxVariant: string;
+    groupName: string | null;
+  }>;
+  groupVariants: Record<string, "A" | "B" | "C">;
+  defaultVariant: "A" | "B" | "C";
+  introVideoUrl: string;
+  automatedInsights: Array<{
+    id: string;
+    type: "BOTTLENECK" | "WINNER_VARIANT" | "EXPLORER";
+    titleAr: string;
+    titleEn: string;
+    descriptionAr: string;
+    descriptionEn: string;
+    metric: string;
+    tone: "warning" | "success" | "info";
+  }>;
+}
+
+export interface AssignUxVariantsInput {
+  variant: "A" | "B" | "C" | "DEFAULT";
+  groupIds?: string[];
+  userIds?: string[];
+}
+
