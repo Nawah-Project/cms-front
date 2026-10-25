@@ -229,7 +229,7 @@ export function JourneyTopologyCanvas({
     // 2. Journey Nodes from DB
     for (const n of nodes) {
       const coord = NODE_COORDINATES[n.code];
-      const isReview = n.code.includes("REVIEW") || n.nodeType === "REVIEW_STATION";
+      const isReview = n.code.includes("REVIEW");
 
       list.push({
         code: n.code,
@@ -1192,7 +1192,11 @@ export function JourneyTopologyCanvas({
                 <div className="mt-2 text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                   {isAr ? "المحطة الحالية: " : "Current Station: "}
                   <span className="font-bold text-brand-primary">
-                    {tracedMember.journey?.nodeTitleAr || tracedMember.journey?.nodeCode || "TASK_0"}
+                    {(isAr
+                      ? tracedMember.journey?.titleAr
+                      : tracedMember.journey?.titleEn) ||
+                      tracedMember.journey?.nodeCode ||
+                      "TASK_0"}
                   </span>
                 </div>
               </div>

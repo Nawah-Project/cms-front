@@ -443,7 +443,7 @@ export default function AdminUxLabPage() {
   );
 
   if (loading && !overviewData && !funnelData) {
-    return <LoadingState message={isAr ? "جاري تحميل مرصد تحليلات السلوك..." : "Loading UX Observatory..."} />;
+    return <LoadingState label={isAr ? "جاري تحميل مرصد تحليلات السلوك..." : "Loading UX Observatory..."} />;
   }
 
   if (error && !overviewData && !funnelData) {
@@ -728,10 +728,10 @@ export default function AdminUxLabPage() {
               {/* Tapered Trapezoid SVG Funnel Viewport with ample margins and guaranteed contrast */}
               <div className="mt-4 flex justify-center overflow-x-auto">
                 <svg
-                  dir="ltr"
                   viewBox="0 0 880 560"
                   className="w-full max-w-[880px] select-none"
                   xmlns="http://www.w3.org/2000/svg"
+                  style={{ direction: "ltr" }}
                 >
                   <defs>
                     <linearGradient id="funnel-grad-normal" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1021,7 +1021,9 @@ export default function AdminUxLabPage() {
                       return (
                         <div key={stuck.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
                           <div className="flex items-center gap-2.5">
-                            <Initials name={stuck.name} className="h-8 w-8 text-xs font-bold" />
+                            <span className="[&>span]:h-8 [&>span]:w-8 [&>span]:text-xs [&>span]:font-bold [&>img]:h-8 [&>img]:w-8">
+                              <Initials name={stuck.name} />
+                            </span>
                             <div>
                               <div className="flex items-center gap-1.5">
                                 <span className="text-xs font-bold text-neutral-950 dark:text-neutral-50">
@@ -1814,23 +1816,21 @@ export default function AdminUxLabPage() {
       {/* Member 360 Inspector Drawer */}
       <MemberInspectorDrawer
         memberId={selectedMemberId}
-        isOpen={Boolean(selectedMemberId)}
         onClose={() => setSelectedMemberId(null)}
-        onActionCompleted={loadData}
+        onMemberUpdated={loadData}
       />
 
       {/* Feedback & Guidance Form Dialog */}
       {feedbackMember && (
         <FeedbackFormDialog
-          recipientId={feedbackMember.id}
-          recipientName={feedbackMember.name}
-          recipientEmail={feedbackMember.email}
-          initialStage="ONBOARDING"
-          isOpen={true}
+          post={null}
+          initialTargetUserId={feedbackMember.id}
+          initialTargetName={feedbackMember.name}
+          initialVisibility="DIRECT"
           onClose={() => setFeedbackMember(null)}
-          onSubmitted={() => {
+          onSaved={(message) => {
             setFeedbackMember(null);
-            toast.success(isAr ? "تم إرسال التوجيه بنجاح" : "Guidance sent successfully");
+            toast.success(t(`professionalDevelopment.${message}`));
             loadData();
           }}
         />
