@@ -106,21 +106,64 @@ export default function AdminUxLabPage() {
       setLoading(true);
       setError(null);
 
-      const [overviewRes, funnelRes, journeyRes, membersRes, groupsRes] = await Promise.all([
+      const [
+        overviewResult,
+        funnelResult,
+        journeyResult,
+        guidanceResult,
+        membersResult,
+        groupsResult,
+      ] = await Promise.allSettled([
         adminApi.uxLabOverview(),
         adminApi.granularFunnel(),
         adminApi.journeyNodes(),
-        adminApi.users({ limit: 500 }),
+        adminApi.plotGuidance(),
+        adminApi.users({ limit: 100 }),
         adminApi.groups(),
       ]);
 
-      setOverviewData(overviewRes);
-      setFunnelData(funnelRes);
-      setJourneyNodes(journeyRes.nodes || []);
-      setPlotGuidances(journeyRes.plotGuidances || []);
-      setMembers(membersRes.members || []);
-      setGroups(groupsRes.groups || []);
-      setIntroVideoUrl(overviewRes.introVideoUrl || "");
+      if (overviewResult.status === "fulfilled") {
+        setOverviewData(overviewResult.value);
+        setIntroVideoUrl(overviewResult.value.introVideoUrl || "");
+      } else {
+        console.error("Failed to load uxLabOverview:", overviewResult.reason);
+      }
+
+      if (funnelResult.status === "fulfilled") {
+        setFunnelData(funnelResult.value);
+      } else {
+        console.error("Failed to load granularFunnel:", funnelResult.reason);
+      }
+
+      if (journeyResult.status === "fulfilled") {
+        setJourneyNodes(Array.isArray(journeyResult.value) ? journeyResult.value : []);
+      } else {
+        console.error("Failed to load journeyNodes:", journeyResult.reason);
+      }
+
+      if (guidanceResult.status === "fulfilled") {
+        setPlotGuidances(Array.isArray(guidanceResult.value) ? guidanceResult.value : []);
+      } else {
+        console.error("Failed to load plotGuidance:", guidanceResult.reason);
+      }
+
+      if (membersResult.status === "fulfilled") {
+        setMembers(membersResult.value?.items || []);
+      } else {
+        console.error("Failed to load members:", membersResult.reason);
+      }
+
+      if (groupsResult.status === "fulfilled") {
+        setGroups(groupsResult.value?.items || []);
+      } else {
+        console.error("Failed to load groups:", groupsResult.reason);
+      }
+
+      // If the primary telemetry endpoint failed, surface the error
+      if (overviewResult.status === "rejected") {
+        const err = overviewResult.reason;
+        throw new Error(err instanceof Error ? err.message : "Failed to load UX Lab telemetry data");
+      }
     } catch (err: unknown) {
       console.error("Failed to load UX Lab data:", err);
       setError(err instanceof Error ? err.message : "Failed to load UX Lab data");
