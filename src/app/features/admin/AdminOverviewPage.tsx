@@ -88,9 +88,9 @@ export default function AdminOverviewPage() {
   if (error || !data)
     return (
       <ErrorState
-        label={t("admin.overviewError")}
+        message={t("admin.overviewError")}
         onRetry={load}
-        retryLabel={t("common.retry")}
+
       />
     );
 

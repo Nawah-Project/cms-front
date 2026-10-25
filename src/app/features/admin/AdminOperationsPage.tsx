@@ -107,7 +107,7 @@ export default function AdminOperationsPage() {
   if (error || !stats)
     return (
       <ErrorState
-        label={isAr ? "تعذر تحميل المؤشرات التشغيلية" : "Failed to load operations"}
+        message={isAr ? "تعذر تحميل المؤشرات التشغيلية" : "Failed to load operations"}
         onRetry={load}
       />
     );

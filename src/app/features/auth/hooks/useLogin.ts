@@ -3,5 +3,7 @@ import { useAuth } from "../store/authStore";
 import type { Credentials } from "../types/user";
 export function useLogin() {
   const { setUser } = useAuth();
-  return async (input: Credentials) => { await authApi.login(input); const user = await authApi.me(); setUser(user); return user; };
+  return async (input: Credentials) => {
+    const user=await authApi.login(input);setUser(user);return user;
+  };
 }

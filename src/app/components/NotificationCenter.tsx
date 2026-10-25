@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router";
-import { useQueryClient } from "@tanstack/react-query";
 import { useI18n } from "../i18n";
 import { BellIcon, CheckIcon, ClockIcon, SparklesIcon } from "./Icons";
 import { api } from "../services/api";
@@ -11,11 +10,9 @@ import {
   useMarkNotificationRead,
   useNotifications,
 } from "../features/journey/api/journeyApi";
-import { notificationQueryKeys } from "../features/journey/config/query-keys";
 import { useAuth } from "../features/auth/store/authStore";
 import type {
   AppNotification,
-  NotificationsListResponse,
 } from "../features/journey/types";
 import { openJourneyTasksPanel } from "./journeyTasksPanelEvents";
 
@@ -29,10 +26,6 @@ export function NotificationCenter({
   const { t, number, locale, date } = useI18n();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [emailReminders, setEmailReminders] = useState(() => {
-    if (typeof window === "undefined") return true;
-    return localStorage.getItem("nawah_email_reminders") !== "false";
-  });
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [unreadFeedback, setUnreadFeedback] = useState<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,8 +33,8 @@ export function NotificationCenter({
   const pendingReadIds = useRef(new Set<string>());
   const timerMap = useRef(new Map<string, NodeJS.Timeout>());
 
-  const queryClient = useQueryClient();
-  const { data: notificationsData } = useNotifications(30);
+  const [readError,setReadError]=useState(false);
+  const { data: notificationsData, isError: notificationsError, isPending: notificationsLoading, refetch: retryNotifications } = useNotifications(30);
   const markReadMutation = useMarkNotificationRead();
   const markAllReadMutation = useMarkAllNotificationsRead();
 
@@ -79,12 +72,6 @@ export function NotificationCenter({
     };
   }, [open]);
 
-  const handleToggleEmail = () => {
-    const next = !emailReminders;
-    setEmailReminders(next);
-    localStorage.setItem("nawah_email_reminders", next ? "true" : "false");
-  };
-
   const { user } = useAuth();
   const { data: journeyData } = useJourneyState({ enabled: Boolean(user) });
   const currentWeek = journeyData?.state.currentWeek ?? 0;
@@ -94,7 +81,7 @@ export function NotificationCenter({
 
   // Viewport Auto-Read via IntersectionObserver (65% visibility, 350ms dwell)
   useEffect(() => {
-    if (!open) return;
+    if (!open || readError) return;
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
@@ -114,35 +101,8 @@ export function NotificationCenter({
                 if (pendingReadIds.current.has(id)) return;
                 pendingReadIds.current.add(id);
 
-                // 1. Optimistic Cache Update
-                queryClient.setQueriesData<NotificationsListResponse>(
-                  { queryKey: notificationQueryKeys.all },
-                  (old) => {
-                    if (!old) return old;
-                    let foundUnread = false;
-                    const updatedItems = old.items.map((item) => {
-                      if (item.id === id && !item.isRead) {
-                        foundUnread = true;
-                        return {
-                          ...item,
-                          isRead: true,
-                          readAt: new Date().toISOString(),
-                        };
-                      }
-                      return item;
-                    });
-                    return {
-                      ...old,
-                      items: updatedItems,
-                      unreadCount: foundUnread
-                        ? Math.max(0, old.unreadCount - 1)
-                        : old.unreadCount,
-                    };
-                  },
-                );
-
-                // 2. Background PATCH request
-                markReadMutation.mutate(id);
+                // Update unread state only after the API confirms persistence.
+                markReadMutation.mutate(id,{onError:()=>{pendingReadIds.current.delete(id);setReadError(true);}});
               }, 350);
               timerMap.current.set(id, timer);
             }
@@ -172,7 +132,7 @@ export function NotificationCenter({
       timerMap.current.forEach((t) => clearTimeout(t));
       timerMap.current.clear();
     };
-  }, [open, persistentItems, queryClient, markReadMutation]);
+  }, [open, persistentItems, markReadMutation, readError]);
 
   const expiringSoon = stats?.expiringSoonCount ?? 0;
   const recentNoResponse = stats?.recentNoResponseCount ?? 0;
@@ -188,7 +148,7 @@ export function NotificationCenter({
   const handleNotificationClick = (item: AppNotification) => {
     if (!item.isRead && !pendingReadIds.current.has(item.id)) {
       pendingReadIds.current.add(item.id);
-      markReadMutation.mutate(item.id);
+      markReadMutation.mutate(item.id,{onError:()=>{pendingReadIds.current.delete(item.id);setReadError(true);}});
     }
     setOpen(false);
 
@@ -233,7 +193,7 @@ export function NotificationCenter({
   };
 
   return (
-    <div className="relative inline-block" ref={containerRef}>
+    <div className="relative inline-block" ref={containerRef} onKeyDown={e=>{if(e.key==='Escape'){setOpen(false);containerRef.current?.querySelector('button')?.focus();}}}>
       <button
         type="button"
         aria-label={t("dashboard.notificationsTitle")}
@@ -266,7 +226,7 @@ export function NotificationCenter({
                 <button
                   type="button"
                   disabled={markAllReadMutation.isPending}
-                  onClick={() => markAllReadMutation.mutate()}
+                  onClick={() => markAllReadMutation.mutate(undefined,{onError:()=>setReadError(true),onSuccess:()=>setReadError(false)})}
                   className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-info-strong transition-colors hover:bg-info-soft"
                 >
                   <CheckIcon className="h-3 w-3" />
@@ -285,6 +245,8 @@ export function NotificationCenter({
             ref={scrollContainerRef}
             className="max-h-80 overflow-y-auto py-2 divide-y divide-border/60"
           >
+            {(readError || notificationsError) && <div role="alert" className="p-3 text-xs"><p>{locale==='ar'?'تعذر تحديث الإشعارات؛ القراءة لسه مش مؤكدة.':'Notifications could not update; reading is not confirmed.'}</p><button className="button-secondary mt-2" onClick={()=>{setReadError(false);void retryNotifications();}}>{t('common.retry')}</button></div>}
+            {notificationsLoading && <p role="status">{t('common.loading')}</p>}
             {/* Persistent V2 Journey & System Notifications */}
             {persistentItems.map((item) => {
               const title = locale === "ar" ? item.titleAr : item.titleEn;
@@ -439,31 +401,7 @@ export function NotificationCenter({
             )}
           </div>
 
-          {/* Email Reminders Toggle */}
-          <div className="mt-2 border-t border-border pt-3">
-            <label className="flex items-center justify-between gap-3 cursor-pointer">
-              <span className="text-xs text-text-secondary leading-snug">
-                {t("dashboard.emailRemindersLabel")}
-              </span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={emailReminders}
-                onClick={handleToggleEmail}
-                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  emailReminders ? "bg-info-strong" : "bg-neutral-300"
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                    emailReminders
-                      ? "ltr:translate-x-4 rtl:-translate-x-4"
-                      : "translate-x-0"
-                  }`}
-                />
-              </button>
-            </label>
-          </div>
+          <p className="mt-2 border-t border-border pt-3 text-xs text-text-muted">{locale === 'ar' ? 'إرسال البريد حسب إعدادات المنصة؛ التحكم الفردي في التذكيرات مش متاح حاليًا.' : 'Email follows platform settings; individual reminder preferences are not available yet.'}</p>
         </div>
       )}
     </div>

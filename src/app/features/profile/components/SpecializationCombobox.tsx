@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useId } from "react";
 import { Check, ChevronDown, Search } from "lucide-react";
 import { STANDARDIZED_SPECIALIZATIONS } from "../../../constants/specializations";
 import { useI18n } from "../../../i18n";
@@ -22,6 +22,8 @@ export function SpecializationCombobox({
   const isRtl = locale === "ar";
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState(value);
+  const listId=useId();
+  const [active,setActive]=useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Sync internal search term when external value changes
@@ -84,20 +86,28 @@ export function SpecializationCombobox({
           value={searchTerm}
           disabled={disabled}
           onFocus={() => setIsOpen(true)}
-          onChange={handleInputChange}
+          onChange={e=>{setActive(0);handleInputChange(e);}}
           placeholder="e.g. UI/UX Designer, Frontend Developer, AI Engineer..."
           className={`field-control font-mono text-sm pe-10 ${
             error || hasArabic
               ? "border-amber-400 focus:border-amber-500 focus:ring-amber-500/20"
               : ""
           }`}
+          aria-label={isRtl?'التخصص المستهدف':'Target specialization'}
+          aria-controls={listId}
+          aria-activedescendant={isOpen&&filteredOptions[active]?`${listId}-${active}`:undefined}
+          onKeyDown={e=>{
+            if(e.key==='Escape'){e.preventDefault();setIsOpen(false);}
+            else if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();setIsOpen(true);setActive(v=>Math.max(0,Math.min(filteredOptions.length-1,v+(e.key==='ArrowDown'?1:-1))));}
+            else if(e.key==='Enter'&&isOpen&&filteredOptions[active]){e.preventDefault();handleSelect(filteredOptions[active].value);}
+          }}
           aria-autocomplete="list"
           aria-expanded={isOpen}
           role="combobox"
         />
         <button
           type="button"
-          tabIndex={-1}
+          aria-label={isRtl?"عرض التخصصات":"Show specializations"}
           disabled={disabled}
           onClick={() => setIsOpen((prev) => !prev)}
           className="absolute inset-y-0 end-0 flex items-center pe-3 text-neutral-400 hover:text-neutral-600 transition-colors"
@@ -109,13 +119,17 @@ export function SpecializationCombobox({
 
         {/* Dropdown Menu */}
         {isOpen && !disabled && (
-          <div className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl dark:border-neutral-800 dark:bg-neutral-900 animate-in fade-in slide-in-from-top-2 duration-150">
+          <div role="listbox" id={listId} className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl dark:border-neutral-800 dark:bg-neutral-900 animate-in fade-in slide-in-from-top-2 duration-150">
             {filteredOptions.length > 0 ? (
-              filteredOptions.map((opt) => {
+              filteredOptions.map((opt, index) => {
                 const isSelected = value.trim().toLowerCase() === opt.value.toLowerCase();
                 return (
                   <button
                     key={opt.value}
+                    role="option"
+                    id={`${listId}-${index}`}
+                    aria-selected={isSelected}
+                    onFocus={()=>setActive(index)}
                     type="button"
                     onClick={() => handleSelect(opt.value)}
                     className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-start text-xs transition-colors ${
@@ -128,7 +142,7 @@ export function SpecializationCombobox({
                       <span className="font-mono text-xs font-semibold text-neutral-900 dark:text-neutral-100" dir="ltr">
                         {opt.titleEn}
                       </span>
-                      <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                      <span hidden={!isRtl} className="text-[11px] text-neutral-500 dark:text-neutral-400">
                         {opt.titleAr}
                       </span>
                     </div>

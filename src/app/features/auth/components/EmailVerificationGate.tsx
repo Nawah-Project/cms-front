@@ -20,7 +20,7 @@ const INITIAL_COOLDOWN_SECONDS = 60;
 
 export function EmailVerificationGate({ children }: { children: ReactNode }) {
   const { authenticated, user, setUser, signOut } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -171,6 +171,7 @@ export function EmailVerificationGate({ children }: { children: ReactNode }) {
         setUser(refreshed);
         return;
       }
+      if(user && res.sent) setUser({...user, verificationDelivery: "SENT"});
       setDigits(Array(OTP_LENGTH).fill(""));
       setCooldown(res.cooldownSeconds || INITIAL_COOLDOWN_SECONDS);
       inputRefs.current[0]?.focus();
@@ -221,6 +222,7 @@ export function EmailVerificationGate({ children }: { children: ReactNode }) {
           <span>{t("auth.verifyEmailBadge")}</span>
         </div>
 
+        {user?.verificationDelivery === "FAILED" && <p role="alert" className="mt-3 text-danger-strong">{locale === "ar" ? "حسابك اتعمل، لكن إرسال الكود فشل. استخدم إعادة الإرسال لما الخدمة ترجع؛ مش محتاج تسجل من جديد." : "Your account was created, but email delivery failed. Retry sending when service is available; you do not need to register again."}</p>}
         <h1
           id="verify-email-title"
           className="mt-3 text-2xl font-bold tracking-tight text-neutral-950"

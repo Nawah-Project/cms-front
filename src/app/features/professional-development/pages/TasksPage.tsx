@@ -34,7 +34,7 @@ export default function TasksPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { data: journeyData, isLoading: journeyLoading } = useJourneyState({
+  const { data: journeyData, isLoading: journeyLoading, isError: journeyError, refetch: retryJourney } = useJourneyState({
     enabled: Boolean(user),
   });
   const isUnlocked = user?.role === "ADMIN" || Boolean(journeyData?.features?.professionalTasks);
@@ -172,6 +172,8 @@ export default function TasksPage() {
     setDragOverStatus(null);
     if (taskId) void moveTask(taskId, status);
   };
+
+  if (journeyError) return <div role="alert" className="rounded-2xl border border-border p-5"><p>{t("common.unexpectedError")}</p><button className="button-primary mt-3" onClick={()=>void retryJourney()}>{t("common.retry")}</button></div>;
 
   if (!journeyLoading && journeyData && !isUnlocked) return <Navigate to="/professional-development" replace />;
 

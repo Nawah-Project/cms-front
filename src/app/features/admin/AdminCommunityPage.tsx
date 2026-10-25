@@ -464,7 +464,7 @@ export default function AdminCommunityPage() {
                       <td className="px-3 py-3.5">
                         <ActivityBadge
                           status={member.activityStatus}
-                          days={member.inactivityDays}
+                          days={member.inactivityDays ?? null}
                         />
                       </td>
 
@@ -645,7 +645,7 @@ export default function AdminCommunityPage() {
                               <div className="flex items-center gap-3">
                                 <ActivityBadge
                                   status={m.activityStatus}
-                                  days={m.inactivityDays}
+                                  days={m.inactivityDays ?? null}
                                 />
                                 <button
                                   type="button"
@@ -750,11 +750,11 @@ export default function AdminCommunityPage() {
             name: removingMember.name,
             group: removingMember.group?.name || "",
           })}
-          description={t("admin.removeDescription")}
+          message={t("admin.removeDescription")}
           confirmLabel={t("admin.removeConfirm")}
           onConfirm={handleRemoveMember}
           onClose={() => setRemovingMember(null)}
-          loading={removeLoading}
+          isConfirming={removeLoading}
         />
       )}
 

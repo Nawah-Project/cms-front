@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef } from "react";
+import { useDialogFocus } from "./useDialogFocus";
 import { createPortal } from "react-dom";
 import { useI18n } from "../../i18n";
 import { CloseIcon } from "../Icons";
@@ -37,6 +38,8 @@ export function Modal({
 }: ModalProps) {
   const { t } = useI18n();
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(dialogRef, isOpen, onClose, disableClose);
   const titleId = useId();
   const subtitleId = useId();
 
@@ -55,17 +58,6 @@ export function Modal({
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !disableClose) {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, disableClose, onClose]);
-
   if (!isOpen || typeof document === "undefined") {
     return null;
   }
@@ -75,6 +67,8 @@ export function Modal({
 
   return createPortal(
     <div
+      ref={dialogRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}

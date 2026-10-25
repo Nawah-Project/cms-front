@@ -24,17 +24,18 @@ function normalizeUser(payload: any): User {
     name: user.name,
     email: user.email,
     role: user.role === "ADMIN" ? "ADMIN" : "USER",
-    emailVerified: user.emailVerified !== false,
+    emailVerified: user.emailVerified === true,
+    verificationDelivery: user.verificationDelivery === "FAILED" ? "FAILED" : user.verificationDelivery === "SENT" ? "SENT" : undefined,
     targetJobTitle: user.targetJobTitle ?? null,
   };
 }
 
 export const authApi = {
-  async login(input: Credentials): Promise<void> {
-    await apiClient.post("/auth/login", input, { skipAuthRefresh: true });
+  async login(input: Credentials): Promise<User> {
+    return normalizeUser(await apiClient.post("/auth/login", input, { skipAuthRefresh: true }));
   },
-  async register(input: RegistrationInput): Promise<void> {
-    await apiClient.post("/auth/register", input, { skipAuthRefresh: true });
+  async register(input: RegistrationInput): Promise<User> {
+    return normalizeUser(await apiClient.post("/auth/register", input, { skipAuthRefresh: true }));
   },
   async verifyEmail(code: string): Promise<User> {
     const response = await apiClient.post("/auth/verify-email", { code });

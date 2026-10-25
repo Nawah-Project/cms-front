@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   CheckIcon,
   CloseIcon,
@@ -7,20 +7,24 @@ import {
   SparklesIcon,
 } from "../../../components/Icons";
 import { useToast } from "../../../components/ui/ToastProvider";
+import { useI18n } from "../../../i18n";
+import { useDialogFocus } from "../../../components/ui/useDialogFocus";
 import { trackUxEvent } from "../../../utils/uxAnalytics";
 import type { FeedbackPost, FeedbackResource } from "../types";
 
 interface GuidanceReadingModalProps {
-  post: FeedbackPost | {
-    id: string;
-    title: string;
-    content: string;
-    unlockTriggerCode?: string | null;
-    promptTemplate?: string | null;
-    resources?: FeedbackResource[];
-    isRead?: boolean;
-    publishedAt?: string;
-  };
+  post:
+    | FeedbackPost
+    | {
+        id: string;
+        title: string;
+        content: string;
+        unlockTriggerCode?: string | null;
+        promptTemplate?: string | null;
+        resources?: FeedbackResource[];
+        isRead?: boolean;
+        publishedAt?: string;
+      };
   onClose: () => void;
   onMarkRead: (postId: string) => Promise<void>;
 }
@@ -48,6 +52,11 @@ export function GuidanceReadingModal({
   onMarkRead,
 }: GuidanceReadingModalProps) {
   const toast = useToast();
+  const { locale } = useI18n();
+  const ar = locale === "ar";
+  const text = (a: string, e: string) => (ar ? a : e);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(dialogRef, true, onClose);
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isRead, setIsRead] = useState(Boolean(post.isRead));
@@ -58,10 +67,17 @@ export function GuidanceReadingModal({
       await navigator.clipboard.writeText(post.promptTemplate);
       trackUxEvent("prompt_copied");
       setCopied(true);
-      toast.success("تم نسخ موجه الذكاء الاصطناعي بنجاح");
+      toast.success(
+        text("تم نسخ موجه الذكاء الاصطناعي بنجاح", "AI prompt copied"),
+      );
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      toast.error("تعذر نسخ النص تلقائياً، يرجى نسخه يدوياً");
+      toast.error(
+        text(
+          "تعذر نسخ النص تلقائياً، يرجى نسخه يدوياً",
+          "Could not copy automatically; select and copy the text",
+        ),
+      );
     }
   };
 
@@ -70,10 +86,21 @@ export function GuidanceReadingModal({
     try {
       await onMarkRead(post.id);
       setIsRead(true);
-      toast.success("تم حفظ قراءة الإرشادات بنجاح / Reading saved");
+      toast.success(
+        text("تم حفظ قراءة الإرشادات بنجاح / Reading saved", "Reading saved"),
+      );
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "تعذر الحفظ — أعد المحاولة / Save failed — retry");
-    } finally { setSaving(false); }
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : text(
+              "تعذر الحفظ — أعد المحاولة / Save failed — retry",
+              "Save failed — retry",
+            ),
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   const videoResources =
@@ -94,6 +121,8 @@ export function GuidanceReadingModal({
 
   return (
     <div
+      ref={dialogRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-labelledby="guidance-modal-title"
@@ -106,17 +135,17 @@ export function GuidanceReadingModal({
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-xs font-semibold text-purple-700 border border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800">
                 <SparklesIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-                <span>إرشادات الحبكة الذكية</span>
+                <span>{text("إرشادات الحبكة الذكية", "Journey guidance")}</span>
               </span>
               {isRead ? (
                 <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
                   <CheckIcon className="h-3 w-3" />
-                  <span>تمت القراءة</span>
+                  <span>{text("تمت القراءة", "Read")}</span>
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
                   <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                  <span>غير مقروء</span>
+                  <span>{text("غير مقروء", "Unread")}</span>
                 </span>
               )}
             </div>
@@ -131,7 +160,7 @@ export function GuidanceReadingModal({
           <button
             type="button"
             onClick={onClose}
-            aria-label="إغلاق"
+            aria-label={text("إغلاق", "Close")}
             className="rounded-lg p-2 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 transition-colors"
           >
             <CloseIcon className="h-5 w-5" />
@@ -153,7 +182,12 @@ export function GuidanceReadingModal({
             <div className="space-y-3 pt-2">
               <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
                 <PlayCircleIcon className="h-4 w-4 text-rose-500" />
-                <span>فيديوهات وشروحات تطبيقية مرفقة</span>
+                <span>
+                  {text(
+                    "فيديوهات وشروحات تطبيقية مرفقة",
+                    "Videos and practical explanations",
+                  )}
+                </span>
               </h3>
               <div className="space-y-4">
                 {videoResources.map((video) => {
@@ -173,7 +207,7 @@ export function GuidanceReadingModal({
                           rel="noreferrer noopener"
                           className="text-[11px] text-info-strong hover:underline inline-flex items-center gap-1"
                         >
-                          فتح في نافذة جديدة
+                          {text("فتح في نافذة جديدة", "Open in a new window")}
                           <ExternalLinkIcon className="h-3 w-3" />
                         </a>
                       </div>
@@ -218,7 +252,7 @@ export function GuidanceReadingModal({
           {otherResources.length > 0 && (
             <div className="space-y-2.5 pt-2">
               <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                المصادر والمراجع المقترحة
+                {text("المصادر والمراجع المقترحة", "Suggested resources")}
               </h3>
               <div className="grid gap-2 sm:grid-cols-2">
                 {otherResources.map((res) => (
@@ -233,10 +267,10 @@ export function GuidanceReadingModal({
                       <div className="flex items-center justify-between gap-2">
                         <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
                           {res.type === "TOOL"
-                            ? "أداة"
+                            ? text("أداة", "Tool")
                             : res.type === "DOCUMENT"
-                              ? "مستند"
-                              : "مقال"}
+                              ? text("مستند", "Document")
+                              : text("مقال", "Article")}
                         </span>
                         <ExternalLinkIcon className="h-3.5 w-3.5 text-neutral-400 group-hover:text-neutral-700 dark:group-hover:text-neutral-200" />
                       </div>
@@ -261,7 +295,12 @@ export function GuidanceReadingModal({
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
                   <SparklesIcon className="h-3.5 w-3.5 text-amber-500" />
-                  <span>موجه الذكاء الاصطناعي (Prompt جاهز للتطبيق)</span>
+                  <span>
+                    {text(
+                      "موجه الذكاء الاصطناعي (Prompt جاهز للتطبيق)",
+                      "AI prompt — ready to use",
+                    )}
+                  </span>
                 </span>
                 <button
                   type="button"
@@ -275,10 +314,12 @@ export function GuidanceReadingModal({
                   {copied ? (
                     <>
                       <CheckIcon className="h-3.5 w-3.5" />
-                      <span>تم النسخ بنجاح ✓</span>
+                      <span>{text("تم النسخ بنجاح ✓", "Copied ✓")}</span>
                     </>
                   ) : (
-                    <span>نسخ الـ Prompt الذكي</span>
+                    <span>
+                      {text("نسخ الـ Prompt الذكي", "Copy AI prompt")}
+                    </span>
                   )}
                 </button>
               </div>
@@ -292,7 +333,10 @@ export function GuidanceReadingModal({
                 </pre>
               </div>
               <p className="text-[11px] text-neutral-400">
-                💡 انسخ البرومبت أعلاه وافتحه في ChatGPT أو Claude وضع بياناتك الشخصية للحصول على نتائج فورية مطابقة لمرحلتك.
+                {text(
+                  "انسخ البرومبت واستخدمه مع بياناتك في أداة AI تختارها، وراجع النتيجة قبل استخدامها.",
+                  "Copy the prompt into your preferred AI tool, add your context, and review the result before using it.",
+                )}
               </p>
             </div>
           )}
@@ -305,7 +349,7 @@ export function GuidanceReadingModal({
             onClick={onClose}
             className="button-ghost px-4 py-2 text-xs text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
           >
-            إغلاق
+            {text("إغلاق", "Close")}
           </button>
 
           <button
@@ -319,7 +363,11 @@ export function GuidanceReadingModal({
             }`}
           >
             <CheckIcon className="h-4 w-4" />
-            <span>{isRead ? "تم تأكيد القراءة ✓" : "أتممت قراءة الإرشادات ✓"}</span>
+            <span>
+              {isRead
+                ? text("تم تأكيد القراءة ✓", "Reading confirmed ✓")
+                : text("أتممت قراءة الإرشادات ✓", "Mark guidance as read ✓")}
+            </span>
           </button>
         </footer>
       </div>

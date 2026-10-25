@@ -702,7 +702,7 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
   const { openAddModal } = useAppModal();
   const { isTourActive, step, setStep } = useTour();
   const queryClient = useQueryClient();
-  const { data: journeyData, isLoading } = useJourneyState();
+  const { data: journeyData, isLoading, isError, refetch } = useJourneyState();
 
   const currentWeek = journeyData?.state.currentWeek ?? 0;
   const [selectedWeek, setSelectedWeek] = useState<number>(currentWeek);
@@ -755,6 +755,7 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
     return () => window.clearTimeout(timer);
   }, [journeyData, queryClient, user?.role]);
 
+  if (isError) return <section role="alert" className="rounded-2xl border border-border bg-surface p-5"><p>{locale === 'ar' ? 'تعذر تحميل الرحلة.' : 'Could not load your journey.'}</p><button className="button-primary mt-3" onClick={() => void refetch()}>{locale === 'ar' ? 'حاول تاني' : 'Retry'}</button></section>;
   if (isLoading || !journeyData) {
     return (
       <section className="space-y-4 rounded-2xl border border-border bg-surface p-5 shadow-xs">

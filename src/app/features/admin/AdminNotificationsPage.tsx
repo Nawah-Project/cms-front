@@ -1266,7 +1266,7 @@ export default function AdminNotificationsPage() {
                         >
                           عرض
                         </button>
-                        {log.status === "FAILED" && (
+                        {log.status === "FAILED" && log.type !== "VERIFICATION_OTP" && (
                           <button
                             type="button"
                             disabled={retryingLogId === log.id}
@@ -1579,7 +1579,7 @@ function NotificationLogDetailModal({
           >
             إغلاق
           </button>
-          {log.status === "FAILED" && (
+          {log.status === "FAILED" && log.type !== "VERIFICATION_OTP" && (
             <button
               type="button"
               disabled={retrying}
