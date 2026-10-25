@@ -1,7 +1,10 @@
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
+  useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -259,6 +262,257 @@ function TourArrow({ dir, offset }: { dir: ArrowDir; offset: number }) {
   );
 }
 
+interface TourCoachmarkCardProps {
+  step: TourStep;
+  activeRect: DOMRect | null;
+  isRtl: boolean;
+  nextStep: () => void;
+}
+
+function TourCoachmarkCard({
+  step,
+  activeRect,
+  isRtl,
+  nextStep,
+}: TourCoachmarkCardProps) {
+  const currentContent = STEP_CONTENTS[step];
+  const placement = activeRect
+    ? getTourCardPlacement(activeRect, isRtl, step)
+    : {
+        top: 120,
+        left: Math.max(
+          16,
+          typeof window !== "undefined" ? (window.innerWidth - 280) / 2 : 16,
+        ),
+        arrowDir: "up" as ArrowDir,
+        arrowOffset: 40,
+      };
+
+  // Local state strictly confined to the coachmark card
+  // This guarantees zero root re-renders when typing!
+  const [companyValue, setCompanyValue] = useState("");
+  const [urlValue, setUrlValue] = useState("");
+
+  // Step 5: Direct, high-performance input binding for company name
+  useEffect(() => {
+    if (step !== 5) return;
+
+    let targetEl: HTMLInputElement | null = null;
+    let focusTimer: number;
+
+    const bindInput = () => {
+      targetEl = document.querySelector<HTMLInputElement>(
+        '[data-tour-step="add-app-company"]',
+      );
+      if (targetEl) {
+        setCompanyValue(targetEl.value || "");
+
+        const handleInput = () => {
+          if (targetEl) {
+            setCompanyValue(targetEl.value || "");
+          }
+        };
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+          if (e.key === "Enter") {
+            const val = (targetEl?.value || "").trim();
+            if (val.length >= 2) {
+              e.preventDefault();
+              nextStep();
+            }
+          }
+        };
+
+        targetEl.addEventListener("input", handleInput);
+        targetEl.addEventListener("change", handleInput);
+        targetEl.addEventListener("keydown", handleKeyDown);
+
+        focusTimer = window.setTimeout(() => {
+          if (targetEl && document.activeElement !== targetEl) {
+            targetEl.focus();
+          }
+        }, 50);
+
+        return () => {
+          targetEl?.removeEventListener("input", handleInput);
+          targetEl?.removeEventListener("change", handleInput);
+          targetEl?.removeEventListener("keydown", handleKeyDown);
+          window.clearTimeout(focusTimer);
+        };
+      }
+    };
+
+    const cleanup = bindInput();
+    return () => {
+      if (cleanup) cleanup();
+    };
+  }, [step, nextStep]);
+
+  // Step 6: Direct, high-performance input binding for job URL
+  useEffect(() => {
+    if (step !== 6) return;
+
+    let targetEl: HTMLInputElement | null = null;
+    let focusTimer: number;
+
+    const bindInput = () => {
+      targetEl = document.querySelector<HTMLInputElement>(
+        '[data-tour-step="add-app-url"]',
+      );
+      if (targetEl) {
+        setUrlValue(targetEl.value || "");
+
+        const handleInput = () => {
+          if (targetEl) {
+            setUrlValue(targetEl.value || "");
+          }
+        };
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+          if (e.key === "Enter") {
+            const val = (targetEl?.value || "").trim();
+            if (val.length >= 8 && /^https?:\/\//i.test(val)) {
+              e.preventDefault();
+              nextStep();
+            }
+          }
+        };
+
+        targetEl.addEventListener("input", handleInput);
+        targetEl.addEventListener("change", handleInput);
+        targetEl.addEventListener("keydown", handleKeyDown);
+
+        focusTimer = window.setTimeout(() => {
+          if (targetEl && document.activeElement !== targetEl) {
+            targetEl.focus();
+          }
+        }, 50);
+
+        return () => {
+          targetEl?.removeEventListener("input", handleInput);
+          targetEl?.removeEventListener("change", handleInput);
+          targetEl?.removeEventListener("keydown", handleKeyDown);
+          window.clearTimeout(focusTimer);
+        };
+      }
+    };
+
+    const cleanup = bindInput();
+    return () => {
+      if (cleanup) cleanup();
+    };
+  }, [step, nextStep]);
+
+  const isStep5Valid = companyValue.trim().length >= 2;
+  const isStep6Valid =
+    urlValue.trim().length >= 8 && /^https?:\/\//i.test(urlValue.trim());
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: placement.top,
+        left: placement.left,
+        zIndex: 9999,
+      }}
+      className="relative w-[280px] max-w-[280px] rounded-2xl border border-white/15 bg-neutral-900/95 px-4 py-3.5 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-200 pointer-events-auto"
+    >
+      {/* Attached Pointer Arrow */}
+      <TourArrow dir={placement.arrowDir} offset={placement.arrowOffset} />
+
+      {/* Mini Top Bar */}
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-semibold text-emerald-400">
+          {isRtl ? `الخطوة ${step} من 7` : `Step ${step} of 7`}
+        </span>
+
+        <div className="flex items-center gap-1">
+          {[1, 2, 3, 4, 5, 6, 7].map((s) => (
+            <span
+              key={s}
+              className={`h-1.5 rounded-full transition-all ${
+                s === step
+                  ? "w-3.5 bg-emerald-400"
+                  : s < step
+                    ? "w-1.5 bg-emerald-600"
+                    : "w-1.5 bg-neutral-700"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Title */}
+      <h3 className="mt-1.5 text-xs sm:text-[13px] font-bold text-white leading-snug">
+        {isRtl ? currentContent.titleAr : currentContent.titleEn}
+      </h3>
+
+      {/* Description */}
+      <p className="mt-1 text-[11px] leading-relaxed text-neutral-300">
+        {isRtl ? currentContent.bodyAr : currentContent.bodyEn}
+      </p>
+
+      {/* Step 5 Action Bar: Next button becomes vibrant rich green IMMEDIATELY when valid */}
+      {step === 5 && (
+        <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
+          <span
+            className={`text-[10px] truncate transition-colors ${
+              isStep5Valid
+                ? "text-[#34d399] font-bold"
+                : "text-neutral-400"
+            }`}
+          >
+            {isStep5Valid
+              ? (isRtl ? "✓ جاهز للمتابعة" : "✓ Ready")
+              : (isRtl ? "اكتب اسم الشركة..." : "Type company name...")}
+          </span>
+          <button
+            type="button"
+            disabled={!isStep5Valid}
+            onClick={nextStep}
+            className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition-all duration-150 shrink-0 ${
+              isStep5Valid
+                ? "bg-[#10b981] hover:bg-[#059669] text-white shadow-lg shadow-emerald-500/40 ring-1 ring-emerald-300/60 cursor-pointer active:scale-95"
+                : "bg-emerald-500/15 text-emerald-300/40 border border-emerald-500/20 cursor-not-allowed"
+            }`}
+          >
+            <span>{isRtl ? "التالي ←" : "Next →"}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Step 6 Action Bar: Next button becomes vibrant rich green IMMEDIATELY when valid */}
+      {step === 6 && (
+        <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
+          <span
+            className={`text-[10px] truncate transition-colors ${
+              isStep6Valid
+                ? "text-[#34d399] font-bold"
+                : "text-neutral-400"
+            }`}
+          >
+            {isStep6Valid
+              ? (isRtl ? "✓ رابط صحيح" : "✓ Valid link")
+              : (isRtl ? "الصق الرابط (http://)..." : "Paste job URL...")}
+          </span>
+          <button
+            type="button"
+            disabled={!isStep6Valid}
+            onClick={nextStep}
+            className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition-all duration-150 shrink-0 ${
+              isStep6Valid
+                ? "bg-[#10b981] hover:bg-[#059669] text-white shadow-lg shadow-emerald-500/40 ring-1 ring-emerald-300/60 cursor-pointer active:scale-95"
+                : "bg-emerald-500/15 text-emerald-300/40 border border-emerald-500/20 cursor-not-allowed"
+            }`}
+          >
+            <span>{isRtl ? "التالي ←" : "Next →"}</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function FirstApplicationGuidedTourProvider({
   children,
 }: {
@@ -283,10 +537,7 @@ export function FirstApplicationGuidedTourProvider({
   const [step, setStep] = useState<TourStep>(1);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [targetBorderRadius, setTargetBorderRadius] = useState<string>("12px");
-
-  // Form field live values for Step 5 & 6 validation
-  const [companyValue, setCompanyValue] = useState("");
-  const [urlValue, setUrlValue] = useState("");
+  const lastTargetElRef = useRef<HTMLElement | null>(null);
 
   // Determine if tour should start:
   // ONLY conditions: user logged in, profileComplete === true, and !localStorage.getItem(storageKey)
@@ -310,7 +561,7 @@ export function FirstApplicationGuidedTourProvider({
     }
   }, [user?.id, storageKey, profile?.profileComplete]);
 
-  const completeTour = () => {
+  const completeTour = useCallback(() => {
     if (storageKey) {
       try {
         localStorage.setItem(storageKey, "true");
@@ -326,17 +577,43 @@ export function FirstApplicationGuidedTourProvider({
         : "🎉 Fantastic! Your first job application has been logged successfully!",
       variant: "success",
     });
-  };
+  }, [storageKey, isRtl, showToast]);
 
-  const nextStep = () => {
-    if (step < 7) {
-      setStep((prev) => (prev + 1) as TourStep);
-    } else {
-      completeTour();
+  const nextStep = useCallback(() => {
+    setStep((prev) => {
+      if (prev < 7) {
+        return (prev + 1) as TourStep;
+      } else {
+        completeTour();
+        return prev;
+      }
+    });
+  }, [completeTour]);
+
+  // Read border-radius once per step change to prevent 60fps getComputedStyle forced reflows!
+  useEffect(() => {
+    if (!isTourActive) return;
+    const selector = STEP_SELECTORS[step];
+    const el = selector
+      ? (document.querySelector(selector) as HTMLElement | null)
+      : null;
+    if (el) {
+      lastTargetElRef.current = el;
+      try {
+        const computed = window.getComputedStyle(el);
+        const radius = computed.borderRadius;
+        if (radius && radius !== "0px") {
+          setTargetBorderRadius(radius);
+        } else {
+          setTargetBorderRadius("12px");
+        }
+      } catch {
+        setTargetBorderRadius("12px");
+      }
     }
-  };
+  }, [isTourActive, step]);
 
-  // Continuous requestAnimationFrame tracking loop
+  // High-performance requestAnimationFrame tracking loop
   useEffect(() => {
     if (!isTourActive) {
       setTargetRect(null);
@@ -358,21 +635,13 @@ export function FirstApplicationGuidedTourProvider({
 
         const rect = el.getBoundingClientRect();
         if (rect.width > 0 && rect.height > 0) {
-          const computed = window.getComputedStyle(el);
-          const radius = computed.borderRadius;
-          if (radius && radius !== "0px") {
-            setTargetBorderRadius((prev) => (prev !== radius ? radius : prev));
-          } else {
-            setTargetBorderRadius((prev) => (prev !== "12px" ? "12px" : prev));
-          }
-
           setTargetRect((prev) => {
             if (
               !prev ||
-              Math.abs(rect.top - prev.top) > 0.5 ||
-              Math.abs(rect.left - prev.left) > 0.5 ||
-              Math.abs(rect.width - prev.width) > 0.5 ||
-              Math.abs(rect.height - prev.height) > 0.5
+              Math.abs(rect.top - prev.top) > 1 ||
+              Math.abs(rect.left - prev.left) > 1 ||
+              Math.abs(rect.width - prev.width) > 1 ||
+              Math.abs(rect.height - prev.height) > 1
             ) {
               return rect;
             }
@@ -404,99 +673,6 @@ export function FirstApplicationGuidedTourProvider({
     return () => clearInterval(interval);
   }, [isTourActive, step]);
 
-  // One-time focus on entering steps 5 or 6
-  useEffect(() => {
-    if (!isTourActive) return;
-    if (step === 5 || step === 6) {
-      const timer = setTimeout(() => {
-        const selector = STEP_SELECTORS[step];
-        const el = selector
-          ? (document.querySelector(selector) as HTMLElement | null)
-          : null;
-        if (el && document.activeElement !== el) {
-          el.focus();
-        }
-      }, 60);
-      return () => clearTimeout(timer);
-    }
-  }, [isTourActive, step]);
-
-  // Track inputs for steps 5 & 6 (instant keystroke + interval fallback)
-  useEffect(() => {
-    if (!isTourActive) return;
-    if (step !== 5 && step !== 6) return;
-
-    const checkInputs = () => {
-      if (step === 5) {
-        const compEl = document.querySelector<HTMLInputElement>(
-          '[data-tour-step="add-app-company"]',
-        );
-        if (compEl) {
-          const val = compEl.value || "";
-          setCompanyValue((prev) => (prev !== val ? val : prev));
-        }
-      } else if (step === 6) {
-        const urlEl = document.querySelector<HTMLInputElement>(
-          '[data-tour-step="add-app-url"]',
-        );
-        if (urlEl) {
-          const val = urlEl.value || "";
-          setUrlValue((prev) => (prev !== val ? val : prev));
-        }
-      }
-    };
-
-    checkInputs();
-
-    const handleInput = (e: Event) => {
-      const target = e.target as HTMLInputElement | null;
-      if (!target) return;
-      if (
-        step === 5 &&
-        target.getAttribute("data-tour-step") === "add-app-company"
-      ) {
-        setCompanyValue(target.value || "");
-      } else if (
-        step === 6 &&
-        target.getAttribute("data-tour-step") === "add-app-url"
-      ) {
-        setUrlValue(target.value || "");
-      }
-    };
-
-    window.addEventListener("input", handleInput, false);
-    const interval = window.setInterval(checkInputs, 40);
-
-    return () => {
-      window.removeEventListener("input", handleInput, false);
-      window.clearInterval(interval);
-    };
-  }, [isTourActive, step]);
-
-  // Keyboard navigation: Enter in steps 5 & 6 advances
-  useEffect(() => {
-    if (!isTourActive) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter") {
-        if (step === 5 && companyValue.trim().length >= 2) {
-          e.preventDefault();
-          nextStep();
-        } else if (
-          step === 6 &&
-          urlValue.trim().length >= 8 &&
-          /^https?:\/\//i.test(urlValue.trim())
-        ) {
-          e.preventDefault();
-          nextStep();
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isTourActive, step, companyValue, urlValue]);
-
   // Complete tour only when application created successfully
   useEffect(() => {
     const handleAppCreated = () => {
@@ -507,13 +683,7 @@ export function FirstApplicationGuidedTourProvider({
     window.addEventListener("nawah_app_created", handleAppCreated);
     return () =>
       window.removeEventListener("nawah_app_created", handleAppCreated);
-  }, [isTourActive, storageKey]);
-
-  const isStep5Valid = companyValue.trim().length >= 2;
-  const isStep6Valid =
-    urlValue.trim().length >= 8 && /^https?:\/\//i.test(urlValue.trim());
-
-  const currentContent = STEP_CONTENTS[step];
+  }, [isTourActive, completeTour]);
 
   let activeRect = targetRect;
   if (!activeRect && typeof window !== "undefined") {
@@ -527,30 +697,24 @@ export function FirstApplicationGuidedTourProvider({
     }
   }
 
-  const placement = activeRect
-    ? getTourCardPlacement(activeRect, isRtl, step)
-    : {
-        top: 120,
-        left: Math.max(
-          16,
-          typeof window !== "undefined" ? (window.innerWidth - 280) / 2 : 16,
-        ),
-        arrowDir: "up" as ArrowDir,
-        arrowOffset: 40,
-      };
+  // Padding around target cutout: 5px for inputs to give generous clearance, 2px for buttons
+  const isInputStep = step === 5 || step === 6;
+  const pad = isInputStep ? 5 : 2;
 
-  const pad = 2;
+  // Memoize TourContextValue so consumers never re-render when RAF tracks coordinates!
+  const tourContextValue = useMemo<TourContextValue>(
+    () => ({
+      isTourActive,
+      step,
+      nextStep,
+      setStep,
+      completeTour,
+    }),
+    [isTourActive, step, nextStep, completeTour],
+  );
 
   return (
-    <TourContext.Provider
-      value={{
-        isTourActive,
-        step,
-        nextStep,
-        setStep,
-        completeTour,
-      }}
-    >
+    <TourContext.Provider value={tourContextValue}>
       {children}
 
       {isTourActive &&
@@ -571,6 +735,10 @@ export function FirstApplicationGuidedTourProvider({
                     zIndex: 9990,
                   }}
                   className="bg-transparent pointer-events-auto"
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -587,6 +755,10 @@ export function FirstApplicationGuidedTourProvider({
                     zIndex: 9990,
                   }}
                   className="bg-transparent pointer-events-auto"
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -603,6 +775,10 @@ export function FirstApplicationGuidedTourProvider({
                     zIndex: 9990,
                   }}
                   className="bg-transparent pointer-events-auto"
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -619,6 +795,10 @@ export function FirstApplicationGuidedTourProvider({
                     zIndex: 9990,
                   }}
                   className="bg-transparent pointer-events-auto"
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -628,6 +808,10 @@ export function FirstApplicationGuidedTourProvider({
             ) : (
               <div
                 className="fixed inset-0 bg-neutral-950/72 backdrop-blur-[2px] z-[9990] pointer-events-auto"
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
@@ -656,108 +840,13 @@ export function FirstApplicationGuidedTourProvider({
               />
             )}
 
-            {/* Interactive Guidance Card (z-[9999]) - Pure Pointer Coachmark */}
-            <div
-              style={{
-                position: "fixed",
-                top: placement.top,
-                left: placement.left,
-                zIndex: 9999,
-              }}
-              className="relative w-[280px] max-w-[280px] rounded-2xl border border-white/15 bg-neutral-900/95 px-4 py-3.5 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-200 pointer-events-auto"
-            >
-              {/* Attached Pointer Arrow */}
-              <TourArrow dir={placement.arrowDir} offset={placement.arrowOffset} />
-
-              {/* Mini Top Bar (No divider line) */}
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-emerald-400">
-                  {isRtl ? `الخطوة ${step} من 7` : `Step ${step} of 7`}
-                </span>
-
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5, 6, 7].map((s) => (
-                    <span
-                      key={s}
-                      className={`h-1.5 rounded-full transition-all ${
-                        s === step
-                          ? "w-3.5 bg-emerald-400"
-                          : s < step
-                            ? "w-1.5 bg-emerald-600"
-                            : "w-1.5 bg-neutral-700"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Title */}
-              <h3 className="mt-1.5 text-xs sm:text-[13px] font-bold text-white leading-snug">
-                {isRtl ? currentContent.titleAr : currentContent.titleEn}
-              </h3>
-
-              {/* Description */}
-              <p className="mt-1 text-[11px] leading-relaxed text-neutral-300">
-                {isRtl ? currentContent.bodyAr : currentContent.bodyEn}
-              </p>
-
-              {/* Steps 5 & 6 only: Sleek inline Next button */}
-              {step === 5 && (
-                <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
-                  <span
-                    className={`text-[10px] truncate transition-colors ${
-                      isStep5Valid
-                        ? "text-[#34d399] font-bold"
-                        : "text-neutral-400"
-                    }`}
-                  >
-                    {isStep5Valid
-                      ? (isRtl ? "✓ جاهز للمتابعة" : "✓ Ready")
-                      : (isRtl ? "اكتب اسم الشركة..." : "Type company name...")}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={!isStep5Valid}
-                    onClick={nextStep}
-                    className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition-all duration-150 shrink-0 ${
-                      isStep5Valid
-                        ? "bg-[#34d399] hover:bg-[#10b981] text-neutral-950 shadow-md shadow-[#34d399]/35 ring-1 ring-[#6ee7b7]/60 cursor-pointer active:scale-95"
-                        : "bg-emerald-500/15 text-emerald-300/40 border border-emerald-500/20 cursor-not-allowed"
-                    }`}
-                  >
-                    <span>{isRtl ? "التالي ←" : "Next →"}</span>
-                  </button>
-                </div>
-              )}
-
-              {step === 6 && (
-                <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
-                  <span
-                    className={`text-[10px] truncate transition-colors ${
-                      isStep6Valid
-                        ? "text-[#34d399] font-bold"
-                        : "text-neutral-400"
-                    }`}
-                  >
-                    {isStep6Valid
-                      ? (isRtl ? "✓ رابط صحيح" : "✓ Valid link")
-                      : (isRtl ? "الصق الرابط (http://)..." : "Paste job URL...")}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={!isStep6Valid}
-                    onClick={nextStep}
-                    className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition-all duration-150 shrink-0 ${
-                      isStep6Valid
-                        ? "bg-[#34d399] hover:bg-[#10b981] text-neutral-950 shadow-md shadow-[#34d399]/35 ring-1 ring-[#6ee7b7]/60 cursor-pointer active:scale-95"
-                        : "bg-emerald-500/15 text-emerald-300/40 border border-emerald-500/20 cursor-not-allowed"
-                    }`}
-                  >
-                    <span>{isRtl ? "التالي ←" : "Next →"}</span>
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* Interactive Guidance Card (z-[9999]) - Isolated self-contained coachmark */}
+            <TourCoachmarkCard
+              step={step}
+              activeRect={activeRect}
+              isRtl={isRtl}
+              nextStep={nextStep}
+            />
           </div>,
           document.body,
         )}

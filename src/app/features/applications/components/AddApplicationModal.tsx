@@ -74,8 +74,14 @@ export function AddApplicationModal({
     setShowHint(false);
   };
 
+  const prevIsOpenRef = React.useRef(false);
+  const prevInitialValuesRef = React.useRef(initialValues);
+
   useEffect(() => {
-    if (isOpen) {
+    const isOpening = isOpen && !prevIsOpenRef.current;
+    const isNewInitialValues = isOpen && initialValues !== prevInitialValuesRef.current;
+
+    if (isOpening || isNewInitialValues) {
       if (initialValues) {
         if (initialValues.companyName !== undefined) {
           setCompanyName(initialValues.companyName);
@@ -104,6 +110,8 @@ export function AddApplicationModal({
         setJobTitle(user.targetJobTitle);
       }
     }
+    prevIsOpenRef.current = isOpen;
+    prevInitialValuesRef.current = initialValues;
   }, [isOpen, initialValues, user?.targetJobTitle]);
 
   const handleCompanyInputOrPaste = (value: string) => {
