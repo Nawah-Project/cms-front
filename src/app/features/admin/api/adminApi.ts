@@ -611,8 +611,65 @@ export type GranularFunnelStage = {
   }>;
 };
 
+export type CumulativeFunnelStage = {
+  code: string;
+  order: number;
+  titleAr: string;
+  titleEn: string;
+  descriptionAr: string;
+  descriptionEn: string;
+  cumulativeCount: number;
+  cumulativePercent: number;
+  stepConversionRate: number;
+  dropoffCount: number;
+  dropoffRate: number;
+  stalledCount: number;
+  stalledUsers: Array<{
+    id: string;
+    name: string;
+    email: string | null;
+    groupName: string | null;
+    daysAtStage: number;
+    applicationsCount: number;
+    status: string;
+  }>;
+  beads: Array<{
+    id: string;
+    name: string;
+    status: "CONVERTED" | "STALLED";
+    daysStalled: number;
+  }>;
+};
+
+export type FunnelInsightsData = {
+  biggestLeak: {
+    fromStageTitleAr: string;
+    fromStageTitleEn: string;
+    toStageTitleAr: string;
+    toStageTitleEn: string;
+    droppedCount: number;
+    droppedPercent: number;
+    descriptionAr: string;
+    descriptionEn: string;
+  };
+  velocityInsight: {
+    stageCode: string;
+    avgDays: number;
+    descriptionAr: string;
+    descriptionEn: string;
+  };
+  actionableCta: {
+    labelAr: string;
+    labelEn: string;
+    targetUserIds: string[];
+    count: number;
+  };
+};
+
 export type GranularFunnelResponse = {
   stages: GranularFunnelStage[];
+  cumulativeStages?: CumulativeFunnelStage[];
+  funnelInsights?: FunnelInsightsData;
   topBottleneck: {
     code: string;
     titleAr: string;
