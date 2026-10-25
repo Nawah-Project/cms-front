@@ -31,10 +31,10 @@ export function canAccessGroupSection(
   user?: { role?: string } | null,
 ): boolean {
   if (user?.role === "ADMIN") return true;
+  if (journeyState && "features" in journeyState) return journeyState.features.groups;
   const state = extractState(journeyState);
   if (!state) return false;
   return (
-    state.isGroupUnlocked === true ||
     (state.completedNodeCodes ?? []).includes("TASK_0") ||
     state.currentWeek >= 1
   );
@@ -63,7 +63,7 @@ export function canUseApplicationsTableView(
   totalAppsCount?: number,
 ): boolean {
   if (user?.role === "ADMIN") return true;
-  if (typeof totalAppsCount === "number" && totalAppsCount >= 10) return true;
+  if (journeyState && "features" in journeyState) return journeyState.features.tableView;
   const state = extractState(journeyState);
   if (!state) return false;
   return (
@@ -71,6 +71,10 @@ export function canUseApplicationsTableView(
     (state.completedNodeCodes ?? []).includes("W1_M1") ||
     state.currentWeek >= 2
   );
+}
+
+export function canUseProfessionalTasks(journey?: JourneyStateResponse | null, user?: { role?: string } | null): boolean {
+  return user?.role === "ADMIN" || Boolean(journey?.features.professionalTasks);
 }
 
 /**

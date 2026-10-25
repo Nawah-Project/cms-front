@@ -63,6 +63,7 @@ function getLockedNodeMessage(
   t: (key: string, values?: Record<string, string | number>) => string,
 ) {
   if (isAdmin) return t("journey.fogOfWarOverlay");
+  if (node.weekNumber > journeyData.state.currentWeek) return t("journey.completePreviousFirst");
 
   const incompletePreviousNode = journeyData.nodes.some(
     (candidate) =>
@@ -489,10 +490,7 @@ function ReviewStationCard({
       await submitMutation.mutateAsync({
         nodeCode: node.code,
         type: "WEEKLY_REVIEW",
-        reviewSummary:
-          notes.trim() ||
-          `Completed Week ${node.weekNumber} Review & Optimization`,
-        newCvUploaded: Boolean(cvUploadedName),
+        reviewSummary: notes.trim(),
       });
       setNotes("");
       showToast({
@@ -651,6 +649,7 @@ function ReviewStationCard({
                     {t("journey.day7ReflectionLabel")}
                   </label>
                   <textarea
+                    required
                     rows={3}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
@@ -671,7 +670,7 @@ function ReviewStationCard({
                     </span>
                     <input
                       type="file"
-                      accept=".pdf,.doc,.docx"
+                      accept="application/pdf,.pdf"
                       onChange={handleCvUpload}
                       className="sr-only"
                     />
@@ -818,61 +817,11 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
     setLockedBtnRect(null);
   };
 
-  const getLockedWeekPopoverText = (weekNum: number) => {
-    const week1Started = journeyData?.state.week1StartedAt
-      ? new Date(journeyData.state.week1StartedAt)
-      : null;
+  const getLockedWeekPopoverText = (weekNum: number) => locale === "ar"
+    ? `يفتح الأسبوع ${weekNum} بعد إتمام أنشطة ومراجعة الأسبوع السابق. توقيت الإتاحة يتبع تقدمك الفعلي.`
+    : `Week ${weekNum} unlocks after completing the preceding week and its review. Availability follows your actual progress.`;
 
-    if (currentWeek === 0 || !week1Started) {
-      if (weekNum === 1) {
-        return locale === "ar"
-          ? "يفتح بعد إتمامك للمهمة 0 (التهيئة وإعداد السيرة الذاتية)"
-          : "Unlocks after completing Task 0 (Setup & CV Preparation)";
-      }
-      return locale === "ar"
-        ? "يبدأ جدول أسابيع التقديم بعد إتمامك للمهمة 0 (التهيئة)"
-        : "The application weeks schedule begins after completing Task 0 (Setup)";
-    }
-
-    const daysUntilAvailable = (weekNum - 1) * 7;
-    const availableAt = new Date(
-      week1Started.getTime() + daysUntilAvailable * 86_400_000,
-    );
-    const availableDate = new Intl.DateTimeFormat(
-      locale === "ar" ? "ar-EG" : "en-US",
-      {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      },
-    ).format(availableAt);
-
-    return locale === "ar"
-      ? `يفتح في ${availableDate} (بعد إتمام مهام الأسبوع السابق)`
-      : `Unlocks on ${availableDate} (after completing previous week quests)`;
-  };
-
-  const getFutureWeekMessage = (weekNum: number) => {
-    if (weekNum <= currentWeek) return null;
-    if (currentWeek === 0) {
-      return t("journey.weekZeroGateNotice");
-    }
-    const daysUntilAvailable = (weekNum - currentWeek) * 7;
-    const availableAt = new Date(
-      new Date(journeyData.state.weekStartedAt).getTime() +
-        daysUntilAvailable * 24 * 60 * 60 * 1000,
-    );
-    const availableDate = new Intl.DateTimeFormat(locale, {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }).format(availableAt);
-
-    return t("journey.weekUnavailable", {
-      week: weekNum,
-      date: availableDate,
-    });
-  };
+  const getFutureWeekMessage = (weekNum: number) => weekNum > currentWeek ? getLockedWeekPopoverText(weekNum) : null;
 
   const handleSideTaskSubmitted = (nextState: JourneyStateResponse) => {
     celebrateJourneyUnlocks(journeyData, nextState, t, locale, showToast);

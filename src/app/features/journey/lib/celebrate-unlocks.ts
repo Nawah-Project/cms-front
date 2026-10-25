@@ -26,19 +26,19 @@ export function celebrateJourneyUnlocks(
           : "🎉 Milestone Unlocked: Group & Professional Development Available!",
       description:
         locale === "ar"
-          ? "أتممت بنجاح المهمة صفر (تسجيل أول 5 طلبات تقديم). تم فك قفل لوحة مهامك الخاصة، ومشاركة رحلتك مع زملائك في المجموعة، والاطلاع على الرؤى الاستراتيجية!"
-          : "You have completed Milestone 0 (5 applications). You can now manage your personal tasks board, collaborate with your group, and access foundational insights!",
+          ? "أتممت بنجاح المهمة صفر (تسجيل أول 5 طلبات تقديم). تم فك قفل دليل السيرة الذاتية، ومشاركة رحلتك مع زملائك في المجموعة، والاطلاع على الرؤى الاستراتيجية!"
+          : "You have completed Milestone 0 (5 applications). You can now read your CV guidance, collaborate with your group, and access foundational insights!",
       unlockedItems:
         locale === "ar"
           ? [
               "قسم متابعة تقدم المجموعة (Group Progress)",
-              "لوحة التطوير المهني والمهام (Personal Tasks Board)",
+              "المهام المهنية تفتح بعد قراءة دليل إدارة الوقت في الأسبوع الثالث",
               "ملاحظة تأسيس السيرة الذاتية (CV Baseline Insight)",
               "فتح مسار الأسبوع الأول (Week 1 Quests)",
             ]
           : [
               "Group Progress Section",
-              "Professional Development & Tasks Board",
+              "Professional tasks open after reading the Week 3 time-management guide",
               "CV Baseline Strategy Insight",
               "Week 1 Quests Unlocked",
             ],

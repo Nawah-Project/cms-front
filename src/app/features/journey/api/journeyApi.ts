@@ -12,6 +12,9 @@ import type {
 } from "../types";
 
 export const journeyApi = {
+  markInsightRead(code: string): Promise<UserJourneyState> {
+    return apiClient.post(`/journey/insights/${encodeURIComponent(code)}/read`);
+  },
   getJourneyState(): Promise<JourneyStateResponse> {
     return apiClient.get<JourneyStateResponse>("/journey/state");
   },

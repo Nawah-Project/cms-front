@@ -37,11 +37,8 @@ export default function TasksPage() {
   const { data: journeyData, isLoading: journeyLoading } = useJourneyState({
     enabled: Boolean(user),
   });
-  const isUnlocked = canAccessProfessionalDevelopment(journeyData, user);
+  const isUnlocked = user?.role === "ADMIN" || Boolean(journeyData?.features?.professionalTasks);
 
-  if (user?.role !== "ADMIN" && !journeyLoading && (journeyData?.state.currentWeek ?? 0) < 3) {
-    return <Navigate to="/professional-development" replace />;
-  }
 
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedTaskId = searchParams.get("task");
@@ -175,6 +172,8 @@ export default function TasksPage() {
     setDragOverStatus(null);
     if (taskId) void moveTask(taskId, status);
   };
+
+  if (!journeyLoading && journeyData && !isUnlocked) return <Navigate to="/professional-development" replace />;
 
   if (journeyLoading) {
     return (

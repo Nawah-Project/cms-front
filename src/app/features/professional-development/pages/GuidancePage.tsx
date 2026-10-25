@@ -5,7 +5,9 @@ import { useAuth } from "../../auth/store/authStore";
 import { PageHeading } from "../../../components/ui/PageHeading";
 import { ProfessionalDevelopmentNav } from "../components/ProfessionalDevelopmentNav";
 import { GuidanceReadingModal } from "../components/GuidanceReadingModal";
-import { useJourneyState } from "../../journey/api/journeyApi";
+import { journeyApi, useJourneyState } from "../../journey/api/journeyApi";
+import { useQueryClient } from "@tanstack/react-query";
+import { journeyQueryKeys } from "../../journey/config/query-keys";
 import { JOURNEY_INSIGHTS_CATALOG } from "../../journey/lib/journey-insights-catalog";
 import { api } from "../../../services/api";
 import { useI18n } from "../../../i18n";
@@ -29,6 +31,7 @@ interface UnifiedGuidanceItem {
 export default function GuidancePage() {
   const { t, locale } = useI18n();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { data: journeyData, isLoading: journeyLoading } = useJourneyState({
     enabled: Boolean(user),
   });
@@ -36,18 +39,6 @@ export default function GuidancePage() {
   const [dbPosts, setDbPosts] = useState<FeedbackPost[]>([]);
   const [dbLoading, setDbLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<UnifiedGuidanceItem | null>(null);
-  const [localReadCodes, setLocalReadCodes] = useState<Set<string>>(() => {
-    if (typeof window === "undefined") return new Set();
-    const set = new Set<string>();
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith("insight_read_")) {
-        set.add(key.replace("insight_read_", ""));
-      }
-    }
-    return set;
-  });
-
   const loadGuidanceFromApi = useCallback(async () => {
     setDbLoading(true);
     try {
@@ -70,7 +61,7 @@ export default function GuidancePage() {
 
   const unlockedSet = useMemo(() => {
     return new Set(
-      journeyData?.state.unlockedInsightCodes ?? ["INSIGHT_TASK_0_CV_BASE"],
+      journeyData?.state.unlockedInsightCodes ?? [],
     );
   }, [journeyData]);
 
@@ -100,11 +91,7 @@ export default function GuidancePage() {
 
       const resources = matchedDb?.resources || [];
 
-      const isRead =
-        Boolean(matchedDb?.isRead) ||
-        localReadCodes.has(catalogItem.code) ||
-        (typeof window !== "undefined" &&
-          localStorage.getItem(`insight_read_${catalogItem.code}`) === "true");
+      const isRead = Boolean(matchedDb?.isRead) || Boolean(journeyData?.state.readInsightCodes?.includes(catalogItem.code));
 
       return {
         id: matchedDb?.id || catalogItem.code,
@@ -119,7 +106,7 @@ export default function GuidancePage() {
         isAdvanced: catalogItem.isAdvanced,
       };
     });
-  }, [dbPosts, locale, localReadCodes]);
+  }, [dbPosts, locale, journeyData?.state.readInsightCodes]);
 
   const unlockedGuidance = useMemo(() => {
     return unifiedItems.filter(
@@ -145,18 +132,12 @@ export default function GuidancePage() {
     }
   }, [deepLinkCode, unlockedGuidance]);
 
-  const handleMarkRead = (postId: string) => {
+  const handleMarkRead = async (postId: string) => {
     const item = unifiedItems.find((i) => i.id === postId || i.code === postId);
-    if (item) {
-      if (typeof window !== "undefined") {
-        localStorage.setItem(`insight_read_${item.code}`, "true");
-      }
-      setLocalReadCodes((prev) => new Set([...prev, item.code]));
-    }
-    // If it's a real backend UUID, call the markFeedbackRead endpoint
-    if (postId.length > 30) {
-      void api.markFeedbackRead(postId).catch(() => {});
-    }
+    if (!item) throw new Error("Guidance is unavailable");
+    await journeyApi.markInsightRead(item.code);
+    await queryClient.invalidateQueries({ queryKey: journeyQueryKeys.all });
+    await loadGuidanceFromApi();
   };
 
   const getWeekBadgeLabel = (week: number) => {

@@ -8,7 +8,7 @@ export type JourneyNodeType =
   | "FINAL_REPORT";
 
 export type SideTaskType =
-  "LINKEDIN_POST" | "OUTREACH_CONTACT" | "WEEKLY_REVIEW";
+  "LINKEDIN_POST" | "OUTREACH_CONTACT" | "WEEKLY_REVIEW" | "USER_CHANGE";
 
 export type OutreachStatus = "SENT" | "REPLIED" | "REFERRED" | "NO_RESPONSE";
 
@@ -61,6 +61,7 @@ export interface UserJourneyState {
   hasUnlockedAdvPrep?: boolean;
   cvVersionNumber?: number;
   unlockedInsightCodes: string[];
+  readInsightCodes: string[];
   completedNodeCodes: string[];
   updatedAt: string;
 }
@@ -79,6 +80,7 @@ export interface JourneyStateResponse {
   currentWeekNodes: EnrichedJourneyNode[];
   nodes: EnrichedJourneyNode[];
   weeklyStats: WeeklyConversionStats;
+  features: { groups: boolean; tableView: boolean; professionalTasks: boolean };
 }
 
 export interface JobMarketCompassPlatform {

@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router";
 import { useI18n } from "../../../i18n";
 import { useAuth } from "../../auth/store/authStore";
 import { useJourneyState } from "../../journey/api/journeyApi";
+import { canUseProfessionalTasks } from "../../journey/lib/journey-policies";
 
 export function ProfessionalDevelopmentNav({
   unreadCount = 0,
@@ -14,20 +15,9 @@ export function ProfessionalDevelopmentNav({
   const { data: journeyData } = useJourneyState({ enabled: Boolean(user) });
 
   const currentWeek = journeyData?.state.currentWeek ?? 0;
-  const unlockedInsights = journeyData?.state.unlockedInsightCodes ?? [];
   const isAdmin = user?.role === "ADMIN";
 
-  const isTimeMgmtRead =
-    typeof window !== "undefined" &&
-    (localStorage.getItem("insight_read_INSIGHT_W3_TIME_MGMT") === "true" ||
-      journeyData?.state.completedNodeCodes?.includes("W3_M2") ||
-      journeyData?.state.completedNodeCodes?.includes("W3_REVIEW") ||
-      currentWeek > 3);
-
-  const canShowTasks =
-    isAdmin ||
-    (currentWeek >= 3 &&
-      (unlockedInsights.includes("INSIGHT_W3_TIME_MGMT") || isTimeMgmtRead));
+  const canShowTasks = canUseProfessionalTasks(journeyData, user);
 
   const canShowFeedback = isAdmin || currentWeek >= 3;
 

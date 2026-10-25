@@ -22,7 +22,7 @@ interface GuidanceReadingModalProps {
     publishedAt?: string;
   };
   onClose: () => void;
-  onMarkRead: (postId: string) => void;
+  onMarkRead: (postId: string) => Promise<void>;
 }
 
 function getYouTubeEmbedUrl(url: string): string | null {
@@ -49,6 +49,7 @@ export function GuidanceReadingModal({
 }: GuidanceReadingModalProps) {
   const toast = useToast();
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [isRead, setIsRead] = useState(Boolean(post.isRead));
 
   const handleCopyPrompt = async () => {
@@ -64,20 +65,15 @@ export function GuidanceReadingModal({
     }
   };
 
-  const handleCompleteReading = () => {
-    setIsRead(true);
-    onMarkRead(post.id);
-
-    if (post.unlockTriggerCode === "INSIGHT_W3_TIME_MGMT") {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("insight_read_INSIGHT_W3_TIME_MGMT", "true");
-      }
-      toast.success(
-        "تم تفعيل أداة إدارة المهام الشخصية! يمكنك الآن تطبيق إرشادات إدارة الوقت وتنظيم مهامك اليومية هنا.",
-      );
-    } else {
-      toast.success("تم تأكيد إتمام قراءة الإرشادات بنجاح");
-    }
+  const handleCompleteReading = async () => {
+    setSaving(true);
+    try {
+      await onMarkRead(post.id);
+      setIsRead(true);
+      toast.success("تم حفظ قراءة الإرشادات بنجاح / Reading saved");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذر الحفظ — أعد المحاولة / Save failed — retry");
+    } finally { setSaving(false); }
   };
 
   const videoResources =
@@ -315,6 +311,7 @@ export function GuidanceReadingModal({
           <button
             type="button"
             onClick={handleCompleteReading}
+            disabled={saving}
             className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all shadow-xs ${
               isRead
                 ? "border border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
