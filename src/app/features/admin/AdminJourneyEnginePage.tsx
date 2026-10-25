@@ -57,6 +57,13 @@ export default function AdminJourneyEnginePage() {
   const tabParam = (searchParams.get("tab") as "nodes" | "guidance") || "nodes";
   const [activeTab, setActiveTab] = useState<"nodes" | "guidance">(tabParam);
 
+  useEffect(() => {
+    const tParam = searchParams.get("tab") as "nodes" | "guidance" | null;
+    if (tParam && (tParam === "nodes" || tParam === "guidance")) {
+      setActiveTab(tParam);
+    }
+  }, [searchParams]);
+
   const switchTab = (tab: "nodes" | "guidance") => {
     setActiveTab(tab);
     setSearchParams((prev) => {

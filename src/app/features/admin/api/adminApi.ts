@@ -432,7 +432,7 @@ export const adminApi = {
       body: JSON.stringify(input),
     }),
   createGroup: (name: string) =>
-    request<AdminGroup>("/groups", {
+    request<AdminGroup>("/admin/groups", {
       method: "POST",
       body: JSON.stringify({ name }),
     }),

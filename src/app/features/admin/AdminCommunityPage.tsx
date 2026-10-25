@@ -368,6 +368,9 @@ export default function AdminCommunityPage() {
                 className="field-control text-xs"
               >
                 <option value="ALL">{isAr ? "كل المجموعات" : "All Groups"}</option>
+                <option value="UNASSIGNED">
+                  {isAr ? "الأعضاء غير المسندين (شاغر)" : "Unassigned Members"}
+                </option>
                 {groups.map((g) => (
                   <option key={g.id} value={g.id}>
                     {g.name} ({g.memberCount}/{g.capacity})
