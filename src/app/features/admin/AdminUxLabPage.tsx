@@ -42,6 +42,7 @@ import {
   MousePointerClick,
   Plus,
   RefreshCw,
+  Search,
   Send,
   Sparkles,
   Trash2,
@@ -187,7 +188,8 @@ export default function AdminUxLabPage() {
     try {
       setSavingCohort(groupId);
       await adminApi.assignUxVariants({
-        groupAssignments: [{ groupId, variant }],
+        variant,
+        groupIds: [groupId],
       });
       toast.show(isAr ? "تم تحديث نسخة المجموعة بنجاح" : "Group variant updated", { type: "success" });
       // Update local state
@@ -213,10 +215,8 @@ export default function AdminUxLabPage() {
     try {
       setIsApplyingOverride(true);
       await adminApi.assignUxVariants({
-        userOverrides: selectedOverrideUsers.map((userId) => ({
-          userId,
-          variant: overrideVariant,
-        })),
+        variant: overrideVariant,
+        userIds: selectedOverrideUsers,
       });
       toast.show(isAr ? "تم تطبيق التخصيص الاستثنائي للأعضاء المحددين" : "User overrides applied successfully", { type: "success" });
       setSelectedOverrideUsers([]);
@@ -234,7 +234,8 @@ export default function AdminUxLabPage() {
     try {
       setIsRemovingOverride(userId);
       await adminApi.assignUxVariants({
-        userOverrides: [{ userId, variant: null }],
+        variant: "DEFAULT",
+        userIds: [userId],
       });
       toast.show(isAr ? "تم إلغاء التخصيص وإعادة العضو لنسخة مجموعته" : "User override removed", { type: "success" });
       await loadData();
@@ -926,7 +927,7 @@ export default function AdminUxLabPage() {
                             {isAr ? "متوسط التقديمات / باحث" : "Avg Apps / User"}
                           </span>
                           <span className="text-xs font-bold text-neutral-950 dark:text-neutral-50">
-                            {m.avgAppsPerUser.toFixed(1)}
+                            {(m?.avgAppsPerUser ?? 0).toFixed(1)}
                           </span>
                         </div>
 
@@ -1204,23 +1205,23 @@ export default function AdminUxLabPage() {
                     <div
                       key={i}
                       className={`rounded-xl border p-3.5 space-y-2 ${
-                        insight.severity === "CRITICAL"
+                        insight.tone === "warning"
                           ? "border-rose-200 bg-rose-50/50 dark:border-rose-900/40 dark:bg-rose-950/20"
-                          : insight.severity === "POSITIVE"
+                          : insight.tone === "success"
                           ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900/40 dark:bg-emerald-950/20"
                           : "border-blue-200 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20"
                       }`}
                     >
                       <div className="flex items-center gap-1.5">
                         <span className="text-sm">
-                          {insight.severity === "CRITICAL" ? "⚠️" : insight.severity === "POSITIVE" ? "✨" : "💡"}
+                          {insight.tone === "warning" ? "⚠️" : insight.tone === "success" ? "✨" : "💡"}
                         </span>
                         <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
                           {isAr ? insight.titleAr : insight.titleEn}
                         </h4>
                       </div>
                       <p className="text-[11px] leading-relaxed text-neutral-700 dark:text-neutral-300">
-                        {isAr ? insight.messageAr : insight.messageEn}
+                        {isAr ? insight.descriptionAr : insight.descriptionEn}
                       </p>
                     </div>
                   ))
