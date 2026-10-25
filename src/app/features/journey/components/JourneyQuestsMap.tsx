@@ -642,7 +642,8 @@ function ReviewStationCard({
             )}
 
             {/* Interactive Lab Form when ACTIVE */}
-            {isActive && (
+            {node.nodeType === "FINAL_REPORT" && (isActive || isCompleted) && <Link className="btn-primary mt-4 inline-flex" to="/reports?final=1">{locale === "ar" ? "اقرأ تقرير الرحلة بالكامل" : "Read the complete journey report"}</Link>}
+            {isActive && node.nodeType !== "FINAL_REPORT" && (
               <form onSubmit={handleCompleteReview} className="mt-4 space-y-3">
                 <div>
                   <label className="field-label text-xs">
