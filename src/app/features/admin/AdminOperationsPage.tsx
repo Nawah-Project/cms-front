@@ -18,6 +18,7 @@ import {
   Archive,
   ArrowRight,
   Bell,
+  Calendar,
   CheckCircle,
   Clock,
   Cpu,
