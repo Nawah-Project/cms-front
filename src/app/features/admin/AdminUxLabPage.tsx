@@ -283,6 +283,37 @@ export default function AdminUxLabPage() {
     }
   };
 
+  // Instant User Variant Switcher for ALL 17 members
+  const [updatingUserVariantId, setUpdatingUserVariantId] = useState<string | null>(null);
+  const [allMembersVariantSearch, setAllMembersVariantSearch] = useState("");
+
+  const handleInstantUserVariantChange = async (userId: string, variant: "A" | "B" | "C" | "DEFAULT") => {
+    try {
+      setUpdatingUserVariantId(userId);
+      const targetMember = members.find((m) => m.id === userId);
+      if (targetMember) {
+        targetMember.uxVariant = variant === "DEFAULT" ? null : variant;
+      }
+      await adminApi.assignUxVariants({
+        variant,
+        userIds: [userId],
+      });
+      toast.show(
+        isAr
+          ? variant === "DEFAULT"
+            ? "تمت إعادة الباحث للنسخة الافتراضية"
+            : `تم تعيين الباحث للنسخة (${variant}) بنجاح`
+          : `User variant updated to ${variant}`,
+        { type: "success" }
+      );
+      await loadData();
+    } catch (err: unknown) {
+      toast.show(isAr ? "تعذر تغيير النسخة للباحث" : "Failed to change user variant", { type: "error" });
+    } finally {
+      setUpdatingUserVariantId(null);
+    }
+  };
+
   // Send Nudge to Stalled Users in Funnel Bottleneck
   const handleSendMotivationalNudge = async () => {
     const targetIds = funnelData?.funnelInsights?.actionableCta?.targetUserIds || [];
@@ -329,6 +360,18 @@ export default function AdminUxLabPage() {
       .filter((m) => m.name.toLowerCase().includes(q) || (m.email && m.email.toLowerCase().includes(q)))
       .slice(0, 10);
   }, [members, userOverrideSearch]);
+
+  // Filtered all 17 members for experiment switcher matrix
+  const filteredAllMembers = useMemo(() => {
+    if (!allMembersVariantSearch.trim()) return members;
+    const q = allMembersVariantSearch.toLowerCase().trim();
+    return members.filter(
+      (m) =>
+        m.name.toLowerCase().includes(q) ||
+        (m.email && m.email.toLowerCase().includes(q)) ||
+        (m.group?.name && m.group.name.toLowerCase().includes(q))
+    );
+  }, [members, allMembersVariantSearch]);
 
   // Cumulative Stages list
   const cumulativeStages: CumulativeFunnelStage[] = useMemo(() => {
@@ -581,31 +624,32 @@ export default function AdminUxLabPage() {
 
           {/* TWO-COLUMN ARCHITECTURE: Funnel SVG (7 cols) + Insights & Inspector (5 cols) */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-            {/* COLUMN 1 (7 cols): Interactive Tapered Trapezoid & Bead Funnel */}
-            <div className="lg:col-span-7 rounded-2xl border border-border-subtle bg-surface p-5 shadow-sm dark:bg-surface-elevated">
-              <div className="border-b border-border-subtle pb-3 flex items-center justify-between">
+            {/* COLUMN 1 (7 cols): Interactive Tapered Trapezoid & Bead Funnel with Dark Observatory Canvas */}
+            <div className="lg:col-span-7 rounded-2xl border border-neutral-800 bg-[#090d16] p-5 shadow-2xl text-neutral-100">
+              <div className="border-b border-white/10 pb-3 flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold text-neutral-950 dark:text-neutral-50 flex items-center gap-2">
-                    <BarChart2 className="h-4 w-4 text-brand-primary" />
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <BarChart2 className="h-4 w-4 text-sky-400" />
                     <span>{isAr ? "الشكل الهندسي لقمع العبور التراكمي (Tapered Funnel)" : "Interactive Tapered Trapezoid Funnel"}</span>
                   </h3>
-                  <p className="mt-0.5 text-xs text-neutral-500">
+                  <p className="mt-0.5 text-xs text-neutral-400">
                     {isAr
                       ? "تدرج رياضي تراكمي تنازلي يبدأ من 100% ويمثل الأعضاء ككرات حية داخل كل شريحة."
                       : "Strictly descending cumulative math with live member beads inside each trapezoid."}
                   </p>
                 </div>
 
-                <div className="text-[11px] font-semibold text-neutral-500">
+                <div className="text-[11px] font-semibold text-neutral-400">
                   {isAr ? "انقر على أي شريحة لفحص المتوقفين 👈" : "Click layer to inspect 👈"}
                 </div>
               </div>
 
-              {/* Tapered Trapezoid SVG Funnel Viewport */}
+              {/* Tapered Trapezoid SVG Funnel Viewport with ample margins and guaranteed contrast */}
               <div className="mt-4 flex justify-center overflow-x-auto">
                 <svg
-                  viewBox="0 0 680 560"
-                  className="w-full max-w-[680px] select-none"
+                  dir="ltr"
+                  viewBox="0 0 880 560"
+                  className="w-full max-w-[880px] select-none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <defs>
@@ -631,11 +675,11 @@ export default function AdminUxLabPage() {
                     // Trapezoid geometry coordinates
                     const y = 30 + idx * 84;
                     const height = 74;
-                    const cx = 340;
+                    const cx = 440;
 
                     // Width calculations progressively tapering down
-                    const topWidths = [440, 380, 310, 240, 180, 130];
-                    const bottomWidths = [380, 310, 240, 180, 130, 90];
+                    const topWidths = [360, 300, 240, 180, 130, 90];
+                    const bottomWidths = [300, 240, 180, 130, 90, 60];
 
                     const wTop = topWidths[idx] || 100;
                     const wBottom = bottomWidths[idx] || 80;
@@ -686,29 +730,29 @@ export default function AdminUxLabPage() {
                             isSelected
                               ? "#38bdf8"
                               : isBottleneckLayer
-                              ? "rgba(244, 63, 94, 0.5)"
-                              : "rgba(255, 255, 255, 0.15)"
+                              ? "rgba(244, 63, 94, 0.6)"
+                              : "rgba(255, 255, 255, 0.18)"
                           }
                           strokeWidth={isSelected ? "2.5" : "1.5"}
                           className="transition-colors duration-200"
                         />
 
-                        {/* Hairline Leader Line (Left Side) */}
+                        {/* Left Leader Line & Stat Callouts (Always High Contrast on Dark Enclosure) */}
                         <g>
                           <line
-                            x1={cx - wTop / 2 + 15}
+                            x1={cx - wTop / 2 + 10}
                             y1={y + height / 2}
-                            x2={80}
+                            x2={210}
                             y2={y + height / 2}
-                            stroke="rgba(255,255,255,0.2)"
+                            stroke="rgba(255,255,255,0.25)"
                             strokeWidth="1"
                             strokeDasharray="2 2"
                           />
-                          <circle cx={cx - wTop / 2 + 15} cy={y + height / 2} r="3" fill="#ffffff" />
+                          <circle cx={cx - wTop / 2 + 10} cy={y + height / 2} r="3" fill="#ffffff" />
 
-                          {/* Left Callout Stats */}
+                          {/* Left Callout: Percentage & Count */}
                           <text
-                            x={72}
+                            x={200}
                             y={y + height / 2 - 4}
                             textAnchor="end"
                             fill="#ffffff"
@@ -720,11 +764,11 @@ export default function AdminUxLabPage() {
 
                           {idx > 0 && (
                             <text
-                              x={72}
+                              x={200}
                               y={y + height / 2 + 14}
                               textAnchor="end"
-                              fill={stage.dropoffCount > 0 ? "#f87171" : "#4ade80"}
-                              fontSize="10"
+                              fill={stage.dropoffCount > 0 ? "#fb7185" : "#4ade80"}
+                              fontSize="11"
                               fontWeight="bold"
                             >
                               {isAr
@@ -734,22 +778,22 @@ export default function AdminUxLabPage() {
                           )}
                         </g>
 
-                        {/* Right Callout Stage Label */}
+                        {/* Right Leader Line & Stage Label (Guaranteed Room & No Edge Collision) */}
                         <g>
                           <line
-                            x1={cx + wTop / 2 - 15}
+                            x1={cx + wTop / 2 - 10}
                             y1={y + height / 2}
-                            x2={560}
+                            x2={670}
                             y2={y + height / 2}
-                            stroke="rgba(255,255,255,0.2)"
+                            stroke="rgba(255,255,255,0.25)"
                             strokeWidth="1"
                             strokeDasharray="2 2"
                           />
-                          <circle cx={cx + wTop / 2 - 15} cy={y + height / 2} r="3" fill="#ffffff" />
+                          <circle cx={cx + wTop / 2 - 10} cy={y + height / 2} r="3" fill="#ffffff" />
 
                           <text
-                            x={568}
-                            y={y + height / 2 - 2}
+                            x={680}
+                            y={y + height / 2 - 3}
                             textAnchor="start"
                             fill="#f8fafc"
                             fontSize="12"
@@ -758,7 +802,7 @@ export default function AdminUxLabPage() {
                             {isAr ? stage.titleAr : stage.titleEn}
                           </text>
                           <text
-                            x={568}
+                            x={680}
                             y={y + height / 2 + 14}
                             textAnchor="start"
                             fill="#94a3b8"
@@ -768,33 +812,30 @@ export default function AdminUxLabPage() {
                               ? isAr
                                 ? `متوقف هنا: ${stage.stalledCount} باحث`
                                 : `Stalled here: ${stage.stalledCount}`
-                              : isAr ? "عبر الجميع للمرحلة التالية" : "All cleared"}
+                              : isAr ? "عبر الجميع بنجاح" : "All cleared"}
                           </text>
                         </g>
 
                         {/* Living Member Beads inside the trapezoid */}
                         <g>
-                          {beads.slice(0, 16).map((bead, bIdx) => {
-                            const beadCols = Math.min(8, beads.length);
-                            const row = Math.floor(bIdx / beadCols);
-                            const col = bIdx % beadCols;
-                            const spread = (wBottom * 0.7) / Math.max(1, beadCols);
-                            const bx = cx - (beadCols * spread) / 2 + col * spread + spread / 2;
-                            const by = y + height / 2 + (row - 0.5) * 12;
+                          {beads.slice(0, 12).map((bead, bIdx) => {
+                            const beadStartX = cx - (Math.min(beads.length, 6) * 16) / 2 + 8;
+                            const beadX = beadStartX + (bIdx % 6) * 16;
+                            const beadY = y + 36 + Math.floor(bIdx / 6) * 16;
+                            const isConverted = bead.status === "CONVERTED";
 
                             return (
-                              <circle
-                                key={bead.id}
-                                cx={bx}
-                                cy={by}
-                                r="4"
-                                fill={bead.status === "STALLED" ? "#f43f5e" : "#10b981"}
-                                stroke="#ffffff"
-                                strokeWidth="1"
-                                className="transition-all"
-                              >
-                                <title>{bead.name} ({bead.status === "STALLED" ? isAr ? "متوقف" : "Stalled" : isAr ? "عبر بنجاح" : "Cleared"})</title>
-                              </circle>
+                              <g key={bead.id || bIdx} className="transition-transform duration-300">
+                                <circle
+                                  cx={beadX}
+                                  cy={beadY}
+                                  r="4"
+                                  fill={isConverted ? "#22c55e" : "#f43f5e"}
+                                  stroke={isConverted ? "rgba(34, 197, 94, 0.4)" : "rgba(244, 63, 94, 0.4)"}
+                                  strokeWidth="3"
+                                  className={isConverted ? "" : "animate-pulse"}
+                                />
+                              </g>
                             );
                           })}
                         </g>
@@ -1357,46 +1398,141 @@ export default function AdminUxLabPage() {
                   </div>
                 )}
 
-                {/* Overridden Users Table */}
-                <div>
-                  <div className="flex items-center justify-between pb-2 text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                    <span>{isAr ? "الأعضاء المخصصون استثنائياً حالياً:" : "Current Overridden Users:"}</span>
-                    <span className="text-[11px] text-neutral-500 font-normal">
-                      {overviewData?.overriddenUsers.length || 0} {isAr ? "باحث" : "users"}
-                    </span>
+                {/* Full 17 Researchers Interactive Matrix & Instant Switchers */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                        {isAr ? "مصفوفة تعيين الباحثين الـ 17 وأزرار التبديل الفورية:" : "17 Researchers Matrix & Instant Switchers:"}
+                      </span>
+                      <span className="rounded-full bg-brand-primary/10 px-2 py-0.5 text-[10px] font-bold text-brand-primary">
+                        {filteredAllMembers.length} {isAr ? "باحث" : "users"}
+                      </span>
+                    </div>
+
+                    <div className="relative min-w-[200px]">
+                      <Search className="absolute right-2.5 top-2 h-3.5 w-3.5 text-neutral-400" />
+                      <input
+                        type="text"
+                        value={allMembersVariantSearch}
+                        onChange={(e) => setAllMembersVariantSearch(e.target.value)}
+                        placeholder={isAr ? "فلترة الباحثين بالاسم أو البريد..." : "Filter researchers..."}
+                        className="w-full rounded-lg border border-border-subtle bg-surface py-1 pr-8 pl-2.5 text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none dark:bg-surface-elevated dark:text-neutral-100"
+                      />
+                    </div>
                   </div>
 
-                  <div className="max-h-48 overflow-y-auto rounded-xl border border-border-subtle divide-y divide-border-subtle">
-                    {(!overviewData?.overriddenUsers || overviewData.overriddenUsers.length === 0) ? (
+                  <div className="max-h-72 overflow-y-auto rounded-xl border border-border-subtle divide-y divide-border-subtle">
+                    {filteredAllMembers.length === 0 ? (
                       <div className="p-4 text-center text-xs text-neutral-500">
-                        {isAr ? "لا توجد أي استثناءات فردية؛ جميع الباحثين يتبعون مجموعاتهم." : "No active user overrides."}
+                        {isAr ? "لا يوجد باحثون مطابقون لبحثك." : "No matching researchers."}
                       </div>
                     ) : (
-                      overviewData.overriddenUsers.map((u) => (
-                        <div key={u.id} className="flex items-center justify-between p-2.5">
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-bold text-neutral-950 dark:text-neutral-50">{u.name}</span>
-                              <span className="rounded bg-purple-100 px-1.5 py-0.2 text-[10px] font-bold text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
-                                {isAr ? `نسخة ${u.uxVariant}` : `Var ${u.uxVariant}`}
+                      filteredAllMembers.map((m) => {
+                        const isOverridden = Boolean(m.uxVariant);
+                        const effectiveVariant =
+                          (m.uxVariant as "A" | "B" | "C") ||
+                          (m.group?.id && overviewData?.groupVariants?.[m.group.id]) ||
+                          overviewData?.defaultVariant ||
+                          "B";
+                        const isUpdating = updatingUserVariantId === m.id;
+
+                        return (
+                          <div
+                            key={m.id}
+                            className="flex flex-wrap items-center justify-between gap-3 p-2.5 transition hover:bg-neutral-50/60 dark:hover:bg-neutral-900/40"
+                          >
+                            {/* User Info */}
+                            <div className="flex items-center gap-2.5 min-w-[190px]">
+                              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-900 text-xs font-bold text-white dark:bg-white dark:text-neutral-900">
+                                {m.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-bold text-neutral-950 dark:text-neutral-50 truncate max-w-[130px]">
+                                    {m.name}
+                                  </span>
+                                  {isOverridden && (
+                                    <span className="rounded bg-purple-100 px-1 py-0.2 text-[9px] font-bold text-purple-800 dark:bg-purple-900/50 dark:text-purple-300">
+                                      {isAr ? "مخصص" : "Override"}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[10px] text-neutral-500 truncate max-w-[150px]">
+                                  {m.group?.name ? `${m.group.name}` : isAr ? "بدون مجموعة" : "No group"}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Current Journey Stage & Apps */}
+                            <div className="text-[11px] text-neutral-600 dark:text-neutral-400 min-w-[110px]">
+                              <div className="font-semibold text-neutral-900 dark:text-neutral-100">
+                                {m.journey?.nodeCode || (!m.profileComplete ? "ONBOARDING" : "TASK_0")}
+                              </div>
+                              <div className="text-[10px] text-neutral-500">
+                                {m.applicationsCount || 0} {isAr ? "تقديمات" : "apps"}
+                              </div>
+                            </div>
+
+                            {/* Active Variant Badge */}
+                            <div className="flex items-center gap-1">
+                              <span
+                                className={`rounded-md px-2 py-0.5 text-xs font-black ${
+                                  effectiveVariant === "A"
+                                    ? "bg-blue-100 text-blue-900 dark:bg-blue-950/60 dark:text-blue-300"
+                                    : effectiveVariant === "B"
+                                    ? "bg-purple-100 text-purple-900 dark:bg-purple-950/60 dark:text-purple-300"
+                                    : "bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300"
+                                }`}
+                              >
+                                {effectiveVariant}
+                              </span>
+                              <span className="text-[9px] text-neutral-400">
+                                {isOverridden ? (isAr ? "يدوي" : "manual") : (isAr ? "تلقائي" : "auto")}
                               </span>
                             </div>
-                            <div className="text-[11px] text-neutral-500">
-                              {u.email} {u.groupName ? `• ${u.groupName}` : ""}
+
+                            {/* Instant Switcher Buttons */}
+                            <div className="flex items-center gap-1">
+                              {(["A", "B", "C"] as const).map((v) => {
+                                const isCurrent = effectiveVariant === v;
+                                return (
+                                  <button
+                                    key={v}
+                                    type="button"
+                                    disabled={isUpdating}
+                                    onClick={() => handleInstantUserVariantChange(m.id, v)}
+                                    className={`rounded-lg px-2 py-0.8 text-xs font-bold transition shadow-2xs ${
+                                      isCurrent
+                                        ? v === "A"
+                                          ? "bg-blue-600 text-white shadow-xs"
+                                          : v === "B"
+                                          ? "bg-purple-600 text-white shadow-xs"
+                                          : "bg-amber-600 text-white shadow-xs"
+                                        : "border border-border-subtle bg-surface text-neutral-600 hover:bg-neutral-100 dark:bg-surface-elevated dark:text-neutral-300"
+                                    }`}
+                                    title={isAr ? `تعيين للنسخة ${v}` : `Set to Variant ${v}`}
+                                  >
+                                    {v}
+                                  </button>
+                                );
+                              })}
+
+                              {isOverridden && (
+                                <button
+                                  type="button"
+                                  disabled={isUpdating}
+                                  onClick={() => handleInstantUserVariantChange(m.id, "DEFAULT")}
+                                  className="rounded-lg border border-border-subtle bg-surface px-1.5 py-0.8 text-[10px] font-semibold text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 dark:bg-surface-elevated dark:text-neutral-400 dark:hover:text-white"
+                                  title={isAr ? "إعادة للنسخة الافتراضية" : "Reset to default"}
+                                >
+                                  {isAr ? "افتراضي" : "Reset"}
+                                </button>
+                              )}
                             </div>
                           </div>
-
-                          <button
-                            type="button"
-                            disabled={isRemovingOverride === u.id}
-                            onClick={() => handleRemoveUserOverride(u.id)}
-                            className="rounded-lg border border-border-subtle bg-surface px-2 py-1 text-[11px] font-bold text-rose-700 hover:bg-rose-50 dark:bg-surface-elevated dark:text-rose-400 dark:hover:bg-rose-950/30"
-                            title={isAr ? "إلغاء التخصيص والعودة لنسخة المجموعة" : "Remove override"}
-                          >
-                            {isRemovingOverride === u.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : isAr ? "إلغاء التخصيص ✕" : "Unassign ✕"}
-                          </button>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>
