@@ -67,6 +67,10 @@ interface CanvasNode {
   guidanceContent?: string;
 }
 
+const MIN_ZOOM = 0.1;
+const MAX_ZOOM = 1.8;
+const CANVAS_PADDING = 40;
+
 // Symmetrical 4-column coordinate layout for the 30-day journey
 // Width fits within ~1440px preventing runaway horizontal overflow
 const NODE_COORDINATES: Record<string, { x: number; y: number; week: number }> = {
@@ -130,11 +134,16 @@ export function JourneyTopologyCanvas({
   const [searchMemberQuery, setSearchMemberQuery] = useState("");
   const [isMemberSearchOpen, setIsMemberSearchOpen] = useState(false);
 
-  // SVG Pan & Zoom state (tuned for balanced 4-column overview)
-  const [pan, setPan] = useState({ x: 20, y: 20 });
-  const [zoom, setZoom] = useState(0.82);
+  // Pan and zoom are applied to the SVG world group, leaving the viewport fixed.
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(0.5);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const hasInitialFitRef = useRef(false);
+  const isAutoFitRef = useRef(true);
+  const previousViewportSizeRef = useRef({ width: 0, height: 0 });
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
 
   // Canvas Zoom Lock & Scroll Hijacking Prevention
   const [isZoomLocked, setIsZoomLocked] = useState(false);
@@ -145,20 +154,6 @@ export function JourneyTopologyCanvas({
   const [selectedNodeCode, setSelectedNodeCode] = useState<string | null>(null);
   const [selectedGuidance, setSelectedGuidance] = useState<CanvasNode | null>(null);
   const [hasCopiedPrompt, setHasCopiedPrompt] = useState(false);
-
-  // Sync external highlight
-  useEffect(() => {
-    if (highlightNodeCode) {
-      setSelectedNodeCode(highlightNodeCode);
-      const coord = NODE_COORDINATES[highlightNodeCode];
-      if (coord) {
-        setPan({
-          x: Math.round(-coord.x * zoom + 500),
-          y: Math.round(-coord.y * zoom + 300),
-        });
-      }
-    }
-  }, [highlightNodeCode, zoom]);
 
   // Filtered members according to scope
   const scopedMembers = useMemo(() => {
@@ -315,6 +310,15 @@ export function JourneyTopologyCanvas({
     return list;
   }, [nodes, plotGuidances]);
 
+  const mapBounds = useMemo(() => {
+    const left = Math.min(0, ...canvasNodes.map((node) => node.x)) - CANVAS_PADDING;
+    const top = Math.min(0, ...canvasNodes.map((node) => node.y)) - CANVAS_PADDING;
+    const right = Math.max(0, ...canvasNodes.map((node) => node.x + node.width)) + CANVAS_PADDING;
+    const bottom = Math.max(0, ...canvasNodes.map((node) => node.y + node.height)) + CANVAS_PADDING;
+
+    return { left, top, right, bottom, width: right - left, height: bottom - top };
+  }, [canvasNodes]);
+
   // Edges connecting sequential core journey nodes
   const journeyEdges = useMemo(() => {
     const edges: Array<{ from: CanvasNode; to: CanvasNode; isLoop?: boolean }> = [];
@@ -334,16 +338,119 @@ export function JourneyTopologyCanvas({
     return edges;
   }, [canvasNodes]);
 
-  // Pan & Zoom Mouse Handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest(".prevent-canvas-drag")) {
-      return;
-    }
-    setIsDragging(true);
-    dragStartRef.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+  // Measure the actual viewport so the initial view and Fit control work at
+  // different screen sizes instead of relying on fixed pan/zoom coordinates.
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const updateSize = () => {
+      const nextSize = { width: viewport.clientWidth, height: viewport.clientHeight };
+      setViewportSize((current) =>
+        current.width === nextSize.width && current.height === nextSize.height ? current : nextSize,
+      );
+    };
+
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, []);
+
+  const fitToScreen = () => {
+    const viewport = viewportRef.current;
+    if (!viewport || mapBounds.width <= 0 || mapBounds.height <= 0) return;
+
+    const width = viewport.clientWidth;
+    const height = viewport.clientHeight;
+    const availableWidth = Math.max(1, width - CANVAS_PADDING * 2);
+    const nextZoom = Math.max(MIN_ZOOM, Math.min(0.82, availableWidth / mapBounds.width));
+
+    isAutoFitRef.current = true;
+    setZoom(nextZoom);
+    setPan({
+      x: Math.round((width - mapBounds.width * nextZoom) / 2 - mapBounds.left * nextZoom),
+      y: Math.round(CANVAS_PADDING - mapBounds.top * nextZoom),
+    });
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const centerOnNode = (nodeCode: string) => {
+    const node = canvasNodes.find((item) => item.code === nodeCode);
+    const viewport = viewportRef.current;
+    if (!node || !viewport) return;
+
+    isAutoFitRef.current = false;
+    setSelectedNodeCode(nodeCode);
+    setPan({
+      x: Math.round(viewport.clientWidth / 2 - (node.x + node.width / 2) * zoom),
+      y: Math.round(viewport.clientHeight / 2 - (node.y + node.height / 2) * zoom),
+    });
+  };
+
+  const zoomTo = (requestedZoom: number, anchor?: { x: number; y: number }) => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const nextZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, requestedZoom));
+    if (nextZoom === zoom) return;
+
+    isAutoFitRef.current = false;
+    const anchorX = anchor?.x ?? viewport.clientWidth / 2;
+    const anchorY = anchor?.y ?? viewport.clientHeight / 2;
+    setPan((currentPan) => ({
+      x: Math.round(anchorX - ((anchorX - currentPan.x) / zoom) * nextZoom),
+      y: Math.round(anchorY - ((anchorY - currentPan.y) / zoom) * nextZoom),
+    }));
+    setZoom(nextZoom);
+  };
+
+  // Fit the full map width initially. Preserve the user's position when resizing
+  // after manual navigation; re-fit automatically only while the map is untouched.
+  useEffect(() => {
+    if (viewportSize.width === 0 || viewportSize.height === 0) return;
+
+    if (!hasInitialFitRef.current) {
+      fitToScreen();
+      hasInitialFitRef.current = true;
+      previousViewportSizeRef.current = viewportSize;
+      return;
+    }
+
+    const previousSize = previousViewportSizeRef.current;
+    const sizeChanged =
+      previousSize.width !== viewportSize.width || previousSize.height !== viewportSize.height;
+
+    if (sizeChanged && isAutoFitRef.current) {
+      fitToScreen();
+    } else if (sizeChanged) {
+      setPan((currentPan) => ({
+        x: currentPan.x + (viewportSize.width - previousSize.width) / 2,
+        y: currentPan.y + (viewportSize.height - previousSize.height) / 2,
+      }));
+    } else if (isAutoFitRef.current) {
+      fitToScreen();
+    }
+
+    previousViewportSizeRef.current = viewportSize;
+  }, [viewportSize.width, viewportSize.height, mapBounds]);
+
+  // Sync external highlights and keep the target centered in the real viewport.
+  useEffect(() => {
+    if (highlightNodeCode) centerOnNode(highlightNodeCode);
+  }, [highlightNodeCode]);
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    if (e.target instanceof Element && e.target.closest(".prevent-canvas-drag")) {
+      return;
+    }
+    isAutoFitRef.current = false;
+    setIsDragging(true);
+    dragStartRef.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDragging) return;
     setPan({
       x: e.clientX - dragStartRef.current.x,
@@ -351,14 +458,22 @@ export function JourneyTopologyCanvas({
     });
   };
 
-  const handleMouseUp = () => setIsDragging(false);
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+    setIsDragging(false);
+  };
 
   // Wheel zoom with Scroll Hijacking Fix
   const handleWheel = (e: React.WheelEvent) => {
     if (e.ctrlKey || e.metaKey || isZoomLocked) {
       e.preventDefault();
-      const zoomDelta = e.deltaY < 0 ? 0.08 : -0.08;
-      setZoom((prev) => Math.min(1.8, Math.max(0.35, prev + zoomDelta)));
+      const rect = viewportRef.current?.getBoundingClientRect();
+      if (rect) {
+        const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+        zoomTo(zoom * factor, { x: e.clientX - rect.left, y: e.clientY - rect.top });
+      }
     } else {
       // Do not preventDefault, allow page to scroll naturally!
       setZoomHint(
@@ -371,15 +486,7 @@ export function JourneyTopologyCanvas({
     }
   };
 
-  const fitToScreen = () => {
-    setPan({ x: 40, y: 30 });
-    setZoom(0.64);
-  };
-
-  const resetView = () => {
-    setPan({ x: 30, y: 20 });
-    setZoom(0.72);
-  };
+  const resetView = fitToScreen;
 
   // Copy prompt action
   const handleCopyPrompt = (text: string) => {
@@ -507,13 +614,7 @@ export function JourneyTopologyCanvas({
                           setTracedMemberId(m.id);
                           setIsMemberSearchOpen(false);
                           const nodeCode = !m.profileComplete ? "ONBOARDING" : (m.journey?.nodeCode || "TASK_0");
-                          const coord = NODE_COORDINATES[nodeCode];
-                          if (coord) {
-                            setPan({
-                              x: Math.round(-coord.x * zoom + 500),
-                              y: Math.round(-coord.y * zoom + 300),
-                            });
-                          }
+                          centerOnNode(nodeCode);
                         }}
                         className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-start text-xs hover:bg-neutral-100 dark:hover:bg-neutral-800"
                       >
@@ -530,7 +631,7 @@ export function JourneyTopologyCanvas({
         </div>
 
         {/* Canvas Controls: Zoom Lock Toggle + Fit to screen + Zoom In/Out */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
           {/* Zoom Lock Button */}
           <button
             type="button"
@@ -554,7 +655,7 @@ export function JourneyTopologyCanvas({
             type="button"
             onClick={fitToScreen}
             className="flex items-center gap-1 rounded-xl border border-border-subtle bg-surface px-2.5 py-1.5 text-xs font-bold text-neutral-700 hover:bg-neutral-100 dark:bg-surface-elevated dark:text-neutral-300 shadow-xs"
-            title={isAr ? "احتواء كامل الخريطة في الشاشة" : "Fit to Screen"}
+            title={isAr ? "إظهار عرض الخريطة بالكامل" : "Fit Map Width"}
           >
             <Maximize2 className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">{isAr ? "احتواء" : "Fit"}</span>
@@ -562,7 +663,7 @@ export function JourneyTopologyCanvas({
 
           <button
             type="button"
-            onClick={() => setZoom((prev) => Math.min(1.8, prev + 0.1))}
+            onClick={() => zoomTo(zoom * 1.15)}
             className="rounded-xl border border-border-subtle bg-surface p-1.5 text-neutral-700 hover:bg-neutral-100 dark:bg-surface-elevated dark:text-neutral-300 shadow-xs"
             title="Zoom In (+)"
           >
@@ -571,7 +672,7 @@ export function JourneyTopologyCanvas({
 
           <button
             type="button"
-            onClick={() => setZoom((prev) => Math.max(0.35, prev - 0.1))}
+            onClick={() => zoomTo(zoom / 1.15)}
             className="rounded-xl border border-border-subtle bg-surface p-1.5 text-neutral-700 hover:bg-neutral-100 dark:bg-surface-elevated dark:text-neutral-300 shadow-xs"
             title="Zoom Out (-)"
           >
@@ -592,14 +693,16 @@ export function JourneyTopologyCanvas({
       {/* 2. MAIN OBSERVE SECTION: TOPOLOGY CANVAS (8-9 cols) + LIVE INSPECTOR PANEL (3-4 cols) */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
         {/* CANVAS VIEWPORT CONTAINER */}
-        <div className="lg:col-span-8 2xl:col-span-9">
+        <div className="min-w-0 lg:col-span-8 2xl:col-span-9">
           <div
+            ref={viewportRef}
             dir="ltr"
-            className="relative h-[720px] w-full overflow-hidden rounded-2xl border border-neutral-800 bg-[#090d16] shadow-inner select-none cursor-grab active:cursor-grabbing"
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={() => setIsDragging(false)}
+            className="relative h-[min(72vh,720px)] min-h-[480px] w-full touch-none overflow-hidden rounded-2xl border border-neutral-800 bg-[#090d16] shadow-inner select-none cursor-grab active:cursor-grabbing"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            onLostPointerCapture={() => setIsDragging(false)}
             onWheel={handleWheel}
           >
             {/* Floating Zoom Hint Toast */}
@@ -623,12 +726,11 @@ export function JourneyTopologyCanvas({
             {/* Main Canvas World */}
             <svg
               className="absolute inset-0 h-full w-full"
-              style={{
-                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-                transformOrigin: "0 0",
-                transition: isDragging ? "none" : "transform 0.1s ease-out",
-              }}
             >
+              <g
+                transform={`translate(${pan.x} ${pan.y}) scale(${zoom})`}
+                style={{ transition: isDragging ? "none" : "transform 0.12s ease-out" }}
+              >
               {/* Week Track Labels */}
               <g opacity="0.6">
                 <text x="80" y="80" fill="#94a3b8" fontSize="18" fontWeight="bold">
@@ -862,13 +964,14 @@ export function JourneyTopologyCanvas({
               </foreignObject>
             );
           })}
-        </svg>
+              </g>
+            </svg>
       </div>
     </div>
 
     {/* LIVE INSPECTOR PANEL (لوحة الفحص الجانبية) */}
-    <div className="lg:col-span-4 2xl:col-span-3">
-      <div className="flex h-[720px] flex-col rounded-2xl border border-border-subtle bg-surface p-4 shadow-sm dark:bg-surface-elevated overflow-y-auto">
+    <div className="min-w-0 lg:col-span-4 2xl:col-span-3">
+      <div className="flex h-[min(72vh,720px)] min-h-[480px] flex-col rounded-2xl border border-border-subtle bg-surface p-4 shadow-sm dark:bg-surface-elevated overflow-y-auto">
         <div className="border-b border-border-subtle pb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
@@ -1104,14 +1207,7 @@ export function JourneyTopologyCanvas({
                 <button
                   type="button"
                   onClick={() => {
-                    setSelectedNodeCode(bottleneckCode);
-                    const coord = NODE_COORDINATES[bottleneckCode];
-                    if (coord) {
-                      setPan({
-                        x: Math.round(-coord.x * zoom + 350),
-                        y: Math.round(-coord.y * zoom + 260),
-                      });
-                    }
+                    centerOnNode(bottleneckCode);
                   }}
                   className="mt-2.5 w-full rounded-lg bg-rose-600 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-rose-700"
                 >
