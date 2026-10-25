@@ -6,7 +6,7 @@ import { AdminMemberTasks } from "./components/AdminMemberTasks";
 import { MemberInspectorDrawer } from "./components/MemberInspectorDrawer";
 import { FeedbackFormDialog } from "../professional-development/components/FeedbackFormDialog";
 import { TaskFormDialog } from "../professional-development/components/TaskFormDialog";
-import type { CreateTaskInput, FeedbackPost } from "../professional-development/types";
+import type { CreateTaskInput, UpdateTaskInput, FeedbackPost } from "../professional-development/types";
 import {
   EmptyState,
   ErrorState,
@@ -169,20 +169,28 @@ export default function AdminMentoringPage() {
     return feedbackPosts.filter((post) => {
       if (post.targetUser?.id === selectedMember.id) return true;
       if (post.visibility === "GROUP" && post.group?.id === selectedMember.group?.id) return true;
-      if (post.visibility === "PUBLIC") return true;
+      if (post.visibility === "ALL") return true;
       return false;
     });
   }, [feedbackPosts, selectedMember, feedbackScope]);
 
   // Handle Task Submit
-  const handleCreateTask = async (input: CreateTaskInput) => {
+  const handleCreateTask = async (input: CreateTaskInput | UpdateTaskInput) => {
+    if (!input.title?.trim()) throw new Error("Task title is required");
+    const createInput: CreateTaskInput = {
+      ...input,
+      title: input.title,
+      description: input.description ?? undefined,
+      startDate: input.startDate ?? undefined,
+      dueDate: input.dueDate ?? undefined,
+    };
     if (!taskFormTarget) return;
     try {
       if (taskFormTarget.type === "MEMBER") {
-        await adminApi.createTask(taskFormTarget.member.id, input);
+        await adminApi.createTask(taskFormTarget.member.id, createInput);
         toast.success(isAr ? "تم إسناد المهمة للعضو بنجاح" : "Task assigned successfully");
       } else {
-        await adminApi.createTaskForGroup(taskFormTarget.group.id, input);
+        await adminApi.createTaskForGroup(taskFormTarget.group.id, createInput);
         toast.success(
           isAr
             ? `تم إسناد المهمة لجميع أعضاء ${taskFormTarget.group.name}`
@@ -516,7 +524,7 @@ export default function AdminMentoringPage() {
                 <div className="pt-2">
                   <AdminMemberTasks
                     member={selectedMember}
-                    onTasksUpdated={loadDirectory}
+                    onChanged={loadDirectory}
                   />
                 </div>
               )}
@@ -612,7 +620,7 @@ export default function AdminMentoringPage() {
                                   </span>
                                 )}
                                 <span className="text-xs text-neutral-500">
-                                  {relativeTime(post.createdAt, locale)}
+                                  {relativeTime(post.publishedAt, locale)}
                                 </span>
                               </div>
                               <h4 className="text-sm font-bold text-neutral-950 dark:text-neutral-100">
@@ -683,6 +691,7 @@ export default function AdminMentoringPage() {
       {/* Cohort Bulk Task Modal */}
       {cohortModalOpen && (
         <Modal
+          isOpen={cohortModalOpen}
           title={isAr ? "📢 إسناد مهمة لمجموعة كاملة" : "📢 Assign Cohort Task"}
           onClose={() => setCohortModalOpen(false)}
         >
@@ -742,8 +751,12 @@ export default function AdminMentoringPage() {
       {/* Task Creation Form Dialog */}
       {taskFormOpen && taskFormTarget && (
         <TaskFormDialog
-          task={null}
-          groupId={taskFormTarget.type === "GROUP" ? taskFormTarget.group.id : undefined}
+          task={undefined}
+          mode={taskFormTarget.type === "GROUP" ? "assignGroup" : "assign"}
+          groups={taskFormTarget.type === "GROUP" ? [taskFormTarget.group] : []}
+          selectedMember={
+            taskFormTarget.type === "MEMBER" ? taskFormTarget.member : undefined
+          }
           onClose={() => {
             setTaskFormOpen(false);
             setTaskFormTarget(null);
