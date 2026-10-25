@@ -9,6 +9,7 @@ import {
 } from "./api/adminApi";
 import { AdminMemberDetail } from "./components/AdminMemberDetail";
 import { AdminActivityList } from "./components/AdminActivityList";
+import { MemberInspectorDrawer } from "./components/MemberInspectorDrawer";
 import { useI18n } from "../../i18n";
 import {
   ActivityBadge,
@@ -87,6 +88,7 @@ export default function AdminCommunityPage() {
   const [weekFilter, setWeekFilter] = useState<string>("ALL");
   const [groupFilter, setGroupFilter] = useState<string>("ALL");
   const [searchInput, setSearchInput] = useState("");
+  const [inspectorMemberId, setInspectorMemberId] = useState<string | null>(null);
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const [selectedMember, setSelectedMember] = useState<AdminMember | null>(null);
@@ -260,19 +262,19 @@ export default function AdminCommunityPage() {
   return (
     <div className="space-y-6">
       {/* Internal Tabs Bar */}
-      <div className="flex border-b border-border/80 gap-2">
+      <div className="flex border-b border-border gap-2">
         <button
           type="button"
           onClick={() => switchTab("members")}
           className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer ${
             activeTab === "members"
-              ? "border-emerald-400 text-emerald-400"
-              : "border-transparent text-neutral-400 hover:text-neutral-200"
+              ? "border-neutral-900 text-neutral-950 font-bold dark:border-white dark:text-white"
+              : "border-transparent text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
           }`}
         >
           <Users className="h-4 w-4" />
           <span>{isAr ? "الأعضاء وحالاتهم" : "Members Management"}</span>
-          <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-xs font-mono text-neutral-300">
+          <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-2 py-0.5 text-xs font-mono text-neutral-700 dark:text-neutral-300">
             {number(totalCount)}
           </span>
         </button>
@@ -282,13 +284,13 @@ export default function AdminCommunityPage() {
           onClick={() => switchTab("groups")}
           className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer ${
             activeTab === "groups"
-              ? "border-emerald-400 text-emerald-400"
-              : "border-transparent text-neutral-400 hover:text-neutral-200"
+              ? "border-neutral-900 text-neutral-950 font-bold dark:border-white dark:text-white"
+              : "border-transparent text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
           }`}
         >
           <Layers className="h-4 w-4" />
           <span>{isAr ? "إدارة المجموعات" : "Cohorts & Groups"}</span>
-          <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-xs font-mono text-neutral-300">
+          <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-2 py-0.5 text-xs font-mono text-neutral-700 dark:text-neutral-300">
             {number(groups.length)}
           </span>
         </button>
@@ -298,8 +300,8 @@ export default function AdminCommunityPage() {
           onClick={() => switchTab("activity")}
           className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer ${
             activeTab === "activity"
-              ? "border-emerald-400 text-emerald-400"
-              : "border-transparent text-neutral-400 hover:text-neutral-200"
+              ? "border-neutral-900 text-neutral-950 font-bold dark:border-white dark:text-white"
+              : "border-transparent text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
           }`}
         >
           <Activity className="h-4 w-4" />
@@ -390,7 +392,7 @@ export default function AdminCommunityPage() {
           ) : (
             <div className="overflow-x-auto rounded-2xl border border-border bg-surface shadow-xs">
               <table className="w-full text-start text-xs sm:text-sm">
-                <thead className="border-b border-border bg-neutral-900/40 text-neutral-400 font-medium">
+                <thead className="border-b border-border bg-neutral-50/90 text-neutral-600 dark:bg-neutral-900/50 dark:text-neutral-400 font-medium">
                   <tr>
                     <th className="px-4 py-3 text-start">{t("admin.member")}</th>
                     <th className="px-3 py-3 text-start">{isAr ? "المحطة الحالية" : "Current Node"}</th>
@@ -403,15 +405,15 @@ export default function AdminCommunityPage() {
                 </thead>
                 <tbody className="divide-y divide-border-subtle">
                   {members.map((member) => (
-                    <tr key={member.id} className="hover:bg-neutral-800/25 transition-colors">
+                    <tr key={member.id} className="hover:bg-neutral-50/80 dark:hover:bg-neutral-800/40 transition-colors">
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">
                           <Initials name={member.name} avatar={member.avatar} />
                           <div className="min-w-0">
                             <button
                               type="button"
-                              onClick={() => setSelectedMember(member)}
-                              className="font-semibold text-neutral-200 hover:text-emerald-400 hover:underline cursor-pointer truncate block"
+                              onClick={() => setInspectorMemberId(member.id)}
+                              className="font-semibold text-neutral-950 dark:text-neutral-100 hover:text-info-strong hover:underline cursor-pointer truncate block"
                             >
                               {member.name}
                             </button>
@@ -426,11 +428,11 @@ export default function AdminCommunityPage() {
                         <JourneyBadge journey={member.journey} />
                       </td>
 
-                      <td className="px-3 py-3.5 text-neutral-300">
+                      <td className="px-3 py-3.5 text-neutral-700 dark:text-neutral-300">
                         {member.group ? (
                           <span className="font-medium">{member.group.name}</span>
                         ) : (
-                          <span className="text-amber-400 font-medium text-xs">
+                          <span className="text-amber-600 dark:text-amber-400 font-medium text-xs">
                             {t("common.unassigned")}
                           </span>
                         )}
@@ -438,45 +440,48 @@ export default function AdminCommunityPage() {
 
                       <td className="px-3 py-3.5">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold tabular-nums text-neutral-200">
+                          <span className="font-bold tabular-nums text-neutral-950 dark:text-neutral-100">
                             {number(member.applicationsCount)}
                           </span>
                           <StageCounts counts={member.currentStageCounts} compact />
                         </div>
                       </td>
 
-                      <td className="px-3 py-3.5 text-neutral-400">
+                      <td className="px-3 py-3.5 text-neutral-600 dark:text-neutral-400">
                         {member.development?.overdue ? (
-                          <span className="text-red-400 font-semibold text-xs">
+                          <span className="text-rose-600 dark:text-rose-400 font-semibold text-xs">
                             {member.development.overdue} {isAr ? "متأخرة" : "overdue"}
                           </span>
                         ) : member.development?.active ? (
-                          <span className="text-emerald-400 text-xs">
+                          <span className="text-emerald-700 dark:text-emerald-400 text-xs">
                             {member.development.active} {isAr ? "نشطة" : "active"}
                           </span>
                         ) : (
-                          <span className="text-neutral-500 text-xs">-</span>
+                          <span className="text-neutral-400 text-xs">-</span>
                         )}
                       </td>
 
                       <td className="px-3 py-3.5">
-                        <ActivityBadge status={member.activityStatus} />
+                        <ActivityBadge
+                          status={member.activityStatus}
+                          days={member.inactivityDays}
+                        />
                       </td>
 
                       <td className="px-4 py-3.5 text-end">
                         <div className="inline-flex items-center gap-1.5">
                           <button
                             type="button"
-                            onClick={() => setSelectedMember(member)}
-                            className="rounded-lg bg-neutral-800 px-2.5 py-1 text-xs font-semibold text-neutral-200 hover:bg-neutral-700 transition-colors cursor-pointer"
+                            onClick={() => setInspectorMemberId(member.id)}
+                            className="button-secondary text-xs px-2.5 py-1"
                           >
-                            {isAr ? "الملف" : "Profile"}
+                            {isAr ? "الملف والتفاصيل" : "Profile 360°"}
                           </button>
                           {member.group ? (
                             <button
                               type="button"
                               onClick={() => setRemovingMember(member)}
-                              className="rounded-lg p-1 text-neutral-500 hover:text-red-400 hover:bg-neutral-800 transition-colors cursor-pointer"
+                              className="rounded-lg p-1 text-neutral-400 hover:text-rose-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
                               title={t("admin.removeFromGroup")}
                             >
                               <UserMinus className="h-4 w-4" />
@@ -485,7 +490,7 @@ export default function AdminCommunityPage() {
                             <button
                               type="button"
                               onClick={() => setAssigningMember(member)}
-                              className="rounded-lg bg-emerald-500/20 px-2 py-1 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition-colors cursor-pointer"
+                              className="rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 px-2 py-1 text-xs font-semibold hover:bg-emerald-100 transition-colors cursor-pointer"
                             >
                               <UserCheck className="h-3.5 w-3.5 inline me-1" />
                               {isAr ? "تعيين" : "Assign"}
@@ -533,7 +538,7 @@ export default function AdminCommunityPage() {
       {activeTab === "groups" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-neutral-200">
+            <h3 className="text-base font-bold text-neutral-950 dark:text-neutral-100">
               {isAr ? "مجموعات المتدربين النشطة" : "Active Cohorts"}
             </h3>
             <button
@@ -551,6 +556,7 @@ export default function AdminCommunityPage() {
               const isExpanded = expandedGroupId === group.id;
               const membersInGroup = groupMembersMap[group.id] ?? [];
               const isLoadingMembers = loadingGroupIds[group.id];
+              const capPercent = Math.min(100, Math.round((group.memberCount / Math.max(1, group.capacity)) * 100));
 
               return (
                 <div
@@ -559,38 +565,46 @@ export default function AdminCommunityPage() {
                 >
                   <div
                     onClick={() => toggleGroup(group.id)}
-                    className="flex flex-wrap items-center justify-between gap-3 p-4 cursor-pointer hover:bg-neutral-800/30 transition-colors"
+                    className="flex flex-wrap items-center justify-between gap-3 p-4 cursor-pointer hover:bg-neutral-50/80 dark:hover:bg-neutral-800/40 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 font-bold border border-neutral-200 dark:border-neutral-700">
                         {group.name.slice(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-neutral-100 flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-neutral-950 dark:text-neutral-100 flex items-center gap-2">
                           {group.name}
-                          <span className="rounded-md bg-neutral-800 px-2 py-0.5 text-[11px] font-mono text-neutral-300">
-                            {group.memberCount} / {group.capacity}
+                          <span className="rounded-md bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-2 py-0.5 text-[11px] font-mono text-neutral-800 dark:text-neutral-200">
+                            {group.memberCount} / {group.capacity} ({capPercent}%)
                           </span>
                         </h4>
-                        <p className="mt-0.5 text-xs text-neutral-500">
-                          {isAr
-                            ? `المقاعد الشاغرة: ${group.availableSlots} مقعد`
-                            : `Open seats: ${group.availableSlots}`}
-                        </p>
+                        <div className="flex items-center gap-3 mt-1">
+                          <div className="w-24 bg-neutral-200 dark:bg-neutral-800 h-1.5 rounded-full overflow-hidden">
+                            <div
+                              className="bg-neutral-900 dark:bg-white h-full rounded-full transition-all"
+                              style={{ width: `${capPercent}%` }}
+                            />
+                          </div>
+                          <span className="text-[11px] text-neutral-500">
+                            {isAr
+                              ? `المقاعد الشاغرة: ${group.availableSlots} مقعد`
+                              : `Open seats: ${group.availableSlots}`}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-4">
                       <div className="hidden sm:flex items-center gap-2 text-xs">
-                        <span className="text-emerald-400 font-medium">
+                        <span className="text-emerald-700 dark:text-emerald-400 font-medium">
                           {group.activeMembers} {isAr ? "نشط" : "active"}
                         </span>
-                        <span className="text-neutral-600">·</span>
-                        <span className="text-amber-400 font-medium">
+                        <span className="text-neutral-400">·</span>
+                        <span className="text-amber-700 dark:text-amber-400 font-medium">
                           {group.warningMembers} {isAr ? "تحذير" : "warning"}
                         </span>
-                        <span className="text-neutral-600">·</span>
-                        <span className="text-red-400 font-medium">
+                        <span className="text-neutral-400">·</span>
+                        <span className="text-rose-700 dark:text-rose-400 font-medium">
                           {group.criticalMembers} {isAr ? "منقطع" : "critical"}
                         </span>
                       </div>
@@ -603,7 +617,7 @@ export default function AdminCommunityPage() {
                   </div>
 
                   {isExpanded && (
-                    <div className="border-t border-border bg-neutral-900/30 p-4 space-y-3 animate-in fade-in duration-150">
+                    <div className="border-t border-border bg-neutral-50/70 dark:bg-neutral-900/40 p-4 space-y-3 animate-in fade-in duration-150">
                       {isLoadingMembers ? (
                         <LoadingState label={isAr ? "جارٍ تحميل الأعضاء..." : "Loading members..."} />
                       ) : !membersInGroup.length ? (
@@ -620,8 +634,8 @@ export default function AdminCommunityPage() {
                                 <div>
                                   <button
                                     type="button"
-                                    onClick={() => setSelectedMember(m)}
-                                    className="text-xs font-semibold text-neutral-200 hover:text-emerald-400 hover:underline cursor-pointer"
+                                    onClick={() => setInspectorMemberId(m.id)}
+                                    className="text-xs font-semibold text-neutral-950 dark:text-neutral-100 hover:text-info-strong hover:underline cursor-pointer"
                                   >
                                     {m.name}
                                   </button>
@@ -629,11 +643,14 @@ export default function AdminCommunityPage() {
                                 </div>
                               </div>
                               <div className="flex items-center gap-3">
-                                <ActivityBadge status={m.activityStatus} />
+                                <ActivityBadge
+                                  status={m.activityStatus}
+                                  days={m.inactivityDays}
+                                />
                                 <button
                                   type="button"
                                   onClick={() => setRemovingMember(m)}
-                                  className="text-xs text-red-400 hover:underline cursor-pointer"
+                                  className="text-xs text-rose-600 hover:underline cursor-pointer"
                                 >
                                   {isAr ? "إزالة" : "Remove"}
                                 </button>
@@ -656,10 +673,10 @@ export default function AdminCommunityPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-base font-bold text-neutral-100">
+              <h3 className="text-base font-bold text-neutral-950 dark:text-neutral-100">
                 {isAr ? "سجل نشاط المنصة المباشر" : "Platform Activity Audit Feed"}
               </h3>
-              <p className="text-xs text-neutral-400 mt-0.5">
+              <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
                 {isAr
                   ? "تحركات الأعضاء، إنشاء وتعديل طلبات التقديم، والانتقال للمقابلات والأسيمنت"
                   : "Live feed of member job applications, stage promotions, and achievements"}
@@ -756,7 +773,7 @@ export default function AdminCommunityPage() {
               {t("admin.assignDescription")}
             </p>
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-neutral-200">
+              <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                 {t("admin.destinationGroup")}
               </label>
               <select
@@ -804,7 +821,7 @@ export default function AdminCommunityPage() {
         >
           <form onSubmit={handleCreateGroup} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-neutral-200">
+              <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                 {isAr ? "اسم المجموعة *" : "Cohort Name *"}
               </label>
               <input
@@ -835,6 +852,13 @@ export default function AdminCommunityPage() {
           </form>
         </Modal>
       )}
+
+      {/* Member 360° Inspector Slide-over Drawer */}
+      <MemberInspectorDrawer
+        memberId={inspectorMemberId}
+        onClose={() => setInspectorMemberId(null)}
+        onMemberUpdated={loadMembers}
+      />
     </div>
   );
 }

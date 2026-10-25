@@ -1,12 +1,12 @@
 FROM node:24-alpine AS development-dependencies-env
 COPY . /app
 WORKDIR /app
-RUN npm ci
+RUN npm ci --include=optional
 
 FROM node:24-alpine AS production-dependencies-env
 COPY ./package.json package-lock.json /app/
 WORKDIR /app
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --include=optional
 
 FROM node:24-alpine AS build-env
 ARG VITE_API_URL

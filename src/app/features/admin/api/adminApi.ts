@@ -130,6 +130,13 @@ export type AdminUserDetail = {
     createdAt: string;
     portfolioUrl: string | null;
     hasCv: boolean;
+    cvHistory?: Array<{
+      id: string;
+      version: number;
+      fileSize: number;
+      mimeType: string;
+      createdAt: string;
+    }>;
     group: { id: string; name: string } | null;
   };
   journey?: JourneySnapshot | null;
@@ -159,6 +166,9 @@ export type AdminUserDetail = {
     applicationDate: string;
     stage: Stage;
     outcome: string | null;
+    jobUrl?: string | null;
+    applicationMethod?: string | null;
+    isTailored?: boolean;
     createdAt: string;
     updatedAt: string;
   }>;
@@ -436,6 +446,35 @@ export const adminApi = {
       method: "POST",
       body: JSON.stringify({ name }),
     }),
+  plotGuidance: () =>
+    request<PlotGuidanceItem[]>("/admin/journey/plot-guidance"),
+  updatePlotGuidance: (code: string, input: Partial<PlotGuidanceItem>) =>
+    request<PlotGuidanceItem>(
+      `/admin/journey/plot-guidance/${encodeURIComponent(code)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      },
+    ),
+  createPlotGuidance: (input: {
+    code: string;
+    title: string;
+    content: string;
+    promptTemplate?: string;
+    tierLevel?: string;
+  }) =>
+    request<PlotGuidanceItem>("/admin/journey/plot-guidance", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  overrideJourneyNode: (userId: string, nodeCode: string) =>
+    request<{ success: boolean; currentNodeCode: string }>(
+      `/admin/users/${encodeURIComponent(userId)}/journey-node`,
+      {
+        method: "POST",
+        body: JSON.stringify({ nodeCode }),
+      },
+    ),
 };
 
 export type NotificationSmtpStatus = {
@@ -658,4 +697,28 @@ export type JourneyNodeItem = {
   requiredOutreachCount: number;
   unlocksInsightCode: string | null;
   nextNodeCode: string | null;
+};
+
+export type PlotGuidanceItem = {
+  id: string;
+  code: string;
+  unlockTriggerCode: string;
+  weekNumber: number;
+  isAdvanced: boolean;
+  title: string;
+  titleAr: string;
+  titleEn: string;
+  content: string;
+  summaryAr: string;
+  summaryEn: string;
+  promptTemplate: string;
+  promptTemplateAr: string;
+  promptTemplateEn: string;
+  tierLevel: string;
+  unlockedCount: number;
+  readsCount: number;
+  unlockedPercent: number;
+  readPercent: number;
+  isCustomized: boolean;
+  updatedAt: string | null;
 };

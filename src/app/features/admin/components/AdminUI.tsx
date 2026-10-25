@@ -38,9 +38,22 @@ export function ActivityBadge({
   days: number | null;
 }) {
   const { t, tp } = useI18n();
-  const label = status === "WARNING" || status === "CRITICAL"
-    ? tp("admin.inactiveDays", days ?? 0)
-    : status === "NEVER_ACTIVE" ? t("admin.neverActive") : t("admin.active");
+  let label = t("admin.active");
+  if (status === "ACTIVE") {
+    label = t("admin.active");
+  } else if (status === "WARNING") {
+    label =
+      days && days > 0
+        ? tp("admin.inactiveDays", days)
+        : t("admin.needsFollowup") || "بحاجة لمتابعة";
+  } else if (status === "CRITICAL") {
+    label =
+      days && days > 0
+        ? `${t("admin.criticalInactive") || "منقطع"} (${days} يوم)`
+        : t("admin.criticalInactive") || "منقطع";
+  } else if (status === "NEVER_ACTIVE") {
+    label = t("admin.noActivity") || t("admin.neverActive");
+  }
   return <span className={`status-badge ${statusStyle[status]}`}>{label}</span>;
 }
 
@@ -75,6 +88,7 @@ export function Initials({
 
 export function StageCounts({
   counts,
+  compact = false,
 }: {
   counts: {
     applied: number;
@@ -83,27 +97,80 @@ export function StageCounts({
     decision: number;
     closed: number;
   };
+  compact?: boolean;
 }) {
   const { t, number } = useI18n();
+
+  const stages = [
+    {
+      label: t("applications.submitted") || "تم التقديم",
+      count: counts.applied,
+      color:
+        "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
+    },
+    {
+      label: t("applications.assignment") || "المهمة",
+      count: counts.assignment ?? 0,
+      color:
+        "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800",
+    },
+    {
+      label: t("applications.interview") || "مقابلة",
+      count: counts.interview,
+      color:
+        "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+    },
+    {
+      label: t("applications.decision") || "عرض",
+      count: counts.decision,
+      color:
+        "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800",
+    },
+    {
+      label: t("applications.closed") || "مغلق",
+      count: counts.closed,
+      color:
+        "bg-neutral-100 text-neutral-600 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700",
+    },
+  ];
+
+  const activeStages = stages.filter((s) => s.count > 0);
+
+  if (compact) {
+    if (activeStages.length === 0) {
+      return (
+        <span className="text-[11px] text-neutral-400">
+          0 {t("admin.applications") || "طلبات"}
+        </span>
+      );
+    }
+    return (
+      <div className="flex flex-wrap gap-1 text-[10px]">
+        {activeStages.map((s) => (
+          <span
+            key={s.label}
+            className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-medium ${s.color}`}
+          >
+            <span>{s.label}</span>
+            <strong className="font-bold font-mono">{number(s.count)}</strong>
+          </span>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-wrap gap-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
-      {(
-        [
-          [t("applications.submitted"), counts.applied],
-          [t("applications.assignment"), counts.assignment ?? 0],
-          [t("applications.interview"), counts.interview],
-          [t("applications.decision"), counts.decision],
-          [t("applications.closed"), counts.closed],
-        ] as const
-      ).map(([label, value]) => (
+    <div className="flex flex-wrap gap-1.5 text-[11px]">
+      {stages.map((s) => (
         <span
-          key={label}
-          className="rounded-md border border-neutral-200 bg-neutral-50 px-2 py-1 dark:border-neutral-800 dark:bg-neutral-900"
+          key={s.label}
+          className={`rounded-md border px-2 py-0.5 ${
+            s.count > 0
+              ? s.color
+              : "border-neutral-200/60 bg-neutral-50/50 text-neutral-400 dark:border-neutral-800 dark:bg-neutral-900/50"
+          }`}
         >
-          {label}{" "}
-          <strong className="font-semibold text-neutral-900 dark:text-neutral-100">
-            {number(value)}
-          </strong>
+          {s.label} <strong className="font-semibold">{number(s.count)}</strong>
         </span>
       ))}
     </div>

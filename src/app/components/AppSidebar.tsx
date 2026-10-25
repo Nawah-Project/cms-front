@@ -307,7 +307,7 @@ export function AppSidebar() {
   const renderAdminPrimaryNav = (mobile = false) => (
     <div className="space-y-1">
       <div className="px-3 pb-1 pt-1">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400/90">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
           {locale === "ar" ? "مركز قيادة المنصة" : "Admin Command Center"}
         </p>
       </div>
@@ -316,11 +316,11 @@ export function AppSidebar() {
         const className = `flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-xs sm:text-sm transition duration-150 hover:scale-[1.01] ${
           mobile
             ? active
-              ? "bg-neutral-100 font-semibold text-neutral-950 shadow-xs"
-              : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+              ? "bg-neutral-900 font-bold text-white shadow-xs dark:bg-white dark:text-neutral-900"
+              : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
             : active
-              ? "bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30 shadow-xs"
-              : "text-neutral-300 hover:bg-neutral-800 hover:text-white"
+              ? "bg-neutral-800 text-white font-bold border border-neutral-700 shadow-xs"
+              : "text-neutral-300 hover:bg-neutral-800/70 hover:text-white"
         }`;
 
         return (

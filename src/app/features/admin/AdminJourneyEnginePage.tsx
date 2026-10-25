@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useI18n } from "../../i18n";
 import {
   adminApi,
+  type AdminMember,
   type JourneyNodeItem,
+  type PlotGuidanceItem,
 } from "./api/adminApi";
-import { GuidanceFormDialog } from "../professional-development/components/GuidanceFormDialog";
-import type { FeedbackPost } from "../professional-development/types";
 import {
   EmptyState,
   ErrorState,
@@ -21,7 +21,9 @@ import {
   Calendar,
   CheckCircle,
   Compass,
+  Copy,
   Edit,
+  ExternalLink,
   Eye,
   FileText,
   Flag,
@@ -32,6 +34,7 @@ import {
   Send,
   Share2,
   Sparkles,
+  User,
   Users,
   Video,
 } from "lucide-react";
@@ -73,6 +76,9 @@ export default function AdminJourneyEnginePage() {
     });
   };
 
+  // --- Members Data (for live node/week metrics) ---
+  const [members, setMembers] = useState<AdminMember[]>([]);
+
   // --- Tab 1: Nodes State ---
   const [nodes, setNodes] = useState<JourneyNodeItem[]>([]);
   const [nodesLoading, setNodesLoading] = useState(true);
@@ -80,6 +86,7 @@ export default function AdminJourneyEnginePage() {
   const [phaseFilter, setPhaseFilter] = useState<string>("ALL");
   const [editingNode, setEditingNode] = useState<JourneyNodeItem | null>(null);
   const [savingNode, setSavingNode] = useState(false);
+  const [selectedNodeForMembers, setSelectedNodeForMembers] = useState<string | null>(null);
 
   // Edit Node Form state
   const [nodeTitleAr, setNodeTitleAr] = useState("");
@@ -95,11 +102,48 @@ export default function AdminJourneyEnginePage() {
   const [nextNode, setNextNode] = useState("");
 
   // --- Tab 2: Plot Guidance State ---
-  const [guidancePosts, setGuidancePosts] = useState<FeedbackPost[]>([]);
+  const [guidanceItems, setGuidanceItems] = useState<PlotGuidanceItem[]>([]);
   const [guidanceLoading, setGuidanceLoading] = useState(false);
   const [guidanceError, setGuidanceError] = useState(false);
-  const [editingGuidance, setEditingGuidance] = useState<FeedbackPost | null>(null);
-  const [guidanceFormOpen, setGuidanceFormOpen] = useState(false);
+  const [editingGuidance, setEditingGuidance] = useState<PlotGuidanceItem | null>(null);
+  const [savingGuidance, setSavingGuidance] = useState(false);
+
+  // Guidance Edit Form
+  const [guidanceTitleAr, setGuidanceTitleAr] = useState("");
+  const [guidanceTitleEn, setGuidanceTitleEn] = useState("");
+  const [guidanceSummaryAr, setGuidanceSummaryAr] = useState("");
+  const [guidancePrompt, setGuidancePrompt] = useState("");
+  const [guidanceContent, setGuidanceContent] = useState("");
+
+  // Load Members
+  useEffect(() => {
+    adminApi
+      .users({ limit: 100 })
+      .then((res) => setMembers(res.items))
+      .catch(() => {});
+  }, []);
+
+  // Compute live member distribution
+  const membersByNode = useMemo(() => {
+    const map: Record<string, AdminMember[]> = {};
+    for (const m of members) {
+      const code = m.journey?.nodeCode;
+      if (code) {
+        if (!map[code]) map[code] = [];
+        map[code].push(m);
+      }
+    }
+    return map;
+  }, [members]);
+
+  const membersByWeek = useMemo(() => {
+    const map: Record<number, number> = {};
+    for (const m of members) {
+      const w = m.journey?.week ?? 0;
+      map[w] = (map[w] || 0) + 1;
+    }
+    return map;
+  }, [members]);
 
   // Load Journey Nodes
   const loadNodes = () => {
@@ -118,31 +162,14 @@ export default function AdminJourneyEnginePage() {
     loadNodes();
   }, []);
 
-  // Load Plot Guidance Posts
+  // Load Plot Guidance Items
   const loadGuidance = () => {
     setGuidanceLoading(true);
     setGuidanceError(false);
     adminApi
-      .feedbackPosts(1, 50, false, "guidance")
-      .then((res) => {
-        // Sort in logical sequence (TASK_0 -> W1 -> W2 -> W3 -> W4 -> ADVANCED)
-        const sorted = res.items.slice().sort((a, b) => {
-          const order = [
-            "INSIGHT_TASK_0_CV_BASE",
-            "INSIGHT_W1_INTERVIEW_BASIC",
-            "INSIGHT_W1_TAILORED_CV",
-            "INSIGHT_W2_CUSTOM_PREP",
-            "INSIGHT_W2_CONTENT_BUILDING",
-            "INSIGHT_W3_TIME_MGMT",
-            "INSIGHT_W3_NETWORKING",
-            "INSIGHT_W4_SELF_CAREER_PLAN",
-            "INSIGHT_INTERVIEW_ADVANCED",
-          ];
-          const idxA = order.indexOf(a.unlockTriggerCode || "");
-          const idxB = order.indexOf(b.unlockTriggerCode || "");
-          return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
-        });
-        setGuidancePosts(sorted);
+      .plotGuidance()
+      .then((items) => {
+        setGuidanceItems(items);
       })
       .catch(() => setGuidanceError(true))
       .finally(() => setGuidanceLoading(false));
@@ -197,27 +224,82 @@ export default function AdminJourneyEnginePage() {
     }
   };
 
-  const filteredNodes = nodes.filter((n) => {
-    if (phaseFilter === "ALL") return true;
-    return String(n.weekNumber) === phaseFilter;
-  });
+  const openGuidanceEditor = (item: PlotGuidanceItem) => {
+    setEditingGuidance(item);
+    setGuidanceTitleAr(item.titleAr || item.title || "");
+    setGuidanceTitleEn(item.titleEn || "");
+    setGuidanceSummaryAr(item.summaryAr || "");
+    setGuidancePrompt(item.promptTemplateAr || item.promptTemplate || "");
+    setGuidanceContent(item.content || "");
+  };
+
+  const handleSaveGuidance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingGuidance) return;
+    setSavingGuidance(true);
+    try {
+      await adminApi.updatePlotGuidance(editingGuidance.code, {
+        titleAr: guidanceTitleAr.trim(),
+        titleEn: guidanceTitleEn.trim(),
+        summaryAr: guidanceSummaryAr.trim(),
+        promptTemplate: guidancePrompt.trim(),
+        promptTemplateAr: guidancePrompt.trim(),
+        content: guidanceContent.trim(),
+      });
+      toast.success(isAr ? "تم حفظ وتحديث إرشاد الحبكة بنجاح" : "Plot guidance updated successfully");
+      setEditingGuidance(null);
+      loadGuidance();
+    } catch {
+      toast.error(isAr ? "فشل تحديث إرشاد الحبكة" : "Failed to update plot guidance");
+    } finally {
+      setSavingGuidance(false);
+    }
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(isAr ? `تم نسخ ${label} إلى الحافظة` : `${label} copied to clipboard`);
+  };
+
+  // Group nodes by weeks: 0, 1, 2, 3, 4
+  const groupedNodes = useMemo(() => {
+    const weeks: Record<number, JourneyNodeItem[]> = { 0: [], 1: [], 2: [], 3: [], 4: [] };
+    for (const node of nodes) {
+      const w = node.weekNumber ?? 0;
+      if (!weeks[w]) weeks[w] = [];
+      weeks[w].push(node);
+    }
+    // Sort each group by orderIndex
+    for (const w in weeks) {
+      weeks[w].sort((a, b) => a.orderIndex - b.orderIndex);
+    }
+    return weeks;
+  }, [nodes]);
+
+  const weekLabels: Record<number, { ar: string; en: string }> = {
+    0: { ar: "الأسبوع 0: التهيئة والتجهيز المبدئي", en: "Week 0: Foundation & Onboarding" },
+    1: { ar: "الأسبوع 1: إطلاق التقديمات وبناء الزخم", en: "Week 1: Pipeline Launch & Momentum" },
+    2: { ar: "الأسبوع 2: التخصيص والمحتوى المهني", en: "Week 2: Customization & Outreach" },
+    3: { ar: "الأسبوع 3: إدارة المقابلات وشبكة العلاقات", en: "Week 3: Interviews & Networking" },
+    4: { ar: "الأسبوع 4: التقييم الختامي وخطة الاستمرار", en: "Week 4: Final Evaluation & Horizon" },
+  };
 
   return (
     <div className="space-y-6">
       {/* Internal Tabs Switcher */}
-      <div className="flex border-b border-border/80 gap-2">
+      <div className="flex border-b border-neutral-200 gap-2 dark:border-neutral-800">
         <button
           type="button"
           onClick={() => switchTab("nodes")}
-          className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer ${
+          className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-bold transition-colors cursor-pointer ${
             activeTab === "nodes"
-              ? "border-emerald-400 text-emerald-400"
-              : "border-transparent text-neutral-400 hover:text-neutral-200"
+              ? "border-neutral-900 text-neutral-950 dark:border-white dark:text-white"
+              : "border-transparent text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
           }`}
         >
           <Compass className="h-4 w-4" />
-          <span>{isAr ? "خريطة المحطات والمهام الفرعية والمواعيد" : "Journey Pipeline & Nodes Map"}</span>
-          <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-xs font-mono text-neutral-300">
+          <span>{isAr ? "خريطة محطات الرحلة (25 محطة)" : "Journey Pipeline Nodes (25 Nodes)"}</span>
+          <span className="rounded-full bg-neutral-200/80 px-2 py-0.5 text-xs font-mono text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200">
             {number(nodes.length)}
           </span>
         </button>
@@ -225,16 +307,16 @@ export default function AdminJourneyEnginePage() {
         <button
           type="button"
           onClick={() => switchTab("guidance")}
-          className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer ${
+          className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-bold transition-colors cursor-pointer ${
             activeTab === "guidance"
-              ? "border-emerald-400 text-emerald-400"
-              : "border-transparent text-neutral-400 hover:text-neutral-200"
+              ? "border-neutral-900 text-neutral-950 dark:border-white dark:text-white"
+              : "border-transparent text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
           }`}
         >
           <Sparkles className="h-4 w-4" />
-          <span>{isAr ? "إرشادات الحبكة والموجهات الذكية" : "Plot Guidance & Smart Prompts"}</span>
-          <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-xs font-mono text-neutral-300">
-            {number(guidancePosts.length)}
+          <span>{isAr ? "إرشادات الحبكة والموجهات الذكية (9 إرشادات)" : "Plot Guidance & Smart Prompts (9 Insights)"}</span>
+          <span className="rounded-full bg-neutral-200/80 px-2 py-0.5 text-xs font-mono text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200">
+            {number(guidanceItems.length || 9)}
           </span>
         </button>
       </div>
@@ -242,15 +324,15 @@ export default function AdminJourneyEnginePage() {
       {/* TAB 1: JOURNEY PIPELINE NODES MAP */}
       {activeTab === "nodes" && (
         <div className="space-y-6">
-          {/* Filter Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 shadow-xs">
+          {/* Phase Filter Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-neutral-200/80 bg-surface p-4 shadow-xs dark:border-neutral-800">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-neutral-400 me-1">
-                {isAr ? "تصفية حسب المرحلة:" : "Filter Phase:"}
+              <span className="text-xs font-bold text-neutral-600 dark:text-neutral-400 me-1">
+                {isAr ? "عرض أسبوع محدد:" : "Filter Week:"}
               </span>
               {[
-                { val: "ALL", labelAr: "كل المراحل", labelEn: "All Phases" },
-                { val: "0", labelAr: "التهيئة: الأسبوع 0", labelEn: "Week 0 (Onboarding)" },
+                { val: "ALL", labelAr: "كل الأسابيع (25 محطة)", labelEn: "All Weeks (25)" },
+                { val: "0", labelAr: "الأسبوع 0", labelEn: "Week 0" },
                 { val: "1", labelAr: "الأسبوع 1", labelEn: "Week 1" },
                 { val: "2", labelAr: "الأسبوع 2", labelEn: "Week 2" },
                 { val: "3", labelAr: "الأسبوع 3", labelEn: "Week 3" },
@@ -262,8 +344,8 @@ export default function AdminJourneyEnginePage() {
                   onClick={() => setPhaseFilter(p.val)}
                   className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
                     phaseFilter === p.val
-                      ? "bg-emerald-500 text-neutral-950 font-bold"
-                      : "bg-neutral-800/70 text-neutral-400 hover:bg-neutral-800 hover:text-white"
+                      ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+                      : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
                   }`}
                 >
                   {isAr ? p.labelAr : p.labelEn}
@@ -271,154 +353,209 @@ export default function AdminJourneyEnginePage() {
               ))}
             </div>
 
-            <span className="text-xs text-neutral-500">
-              {filteredNodes.length} {isAr ? "محطة معروضة" : "nodes displayed"}
+            <span className="text-xs text-neutral-500 font-medium">
+              {nodes.length} {isAr ? "محطة إجمالية في محرك الرحلة" : "total nodes configured"}
             </span>
           </div>
 
-          {/* Connected Pipeline Nodes */}
           {nodesLoading ? (
             <LoadingState label={isAr ? "جارٍ تحميل محطات الرحلة..." : "Loading journey nodes..."} />
           ) : nodesError ? (
             <ErrorState onRetry={loadNodes} />
-          ) : !filteredNodes.length ? (
-            <EmptyState>{isAr ? "لا توجد محطات مطابقة" : "No matching nodes"}</EmptyState>
           ) : (
-            <div className="space-y-4">
-              {filteredNodes.map((node, index) => {
-                const isDay7 = node.nodeType === "DAY_7_CHECKIN";
-                const isFinal = node.nodeType === "FINAL_ASSESSMENT";
+            <div className="space-y-8">
+              {[0, 1, 2, 3, 4]
+                .filter((w) => phaseFilter === "ALL" || phaseFilter === String(w))
+                .map((w) => {
+                  const weekNodes = groupedNodes[w] || [];
+                  const totalDays = weekNodes.reduce((acc, n) => acc + (n.durationDays || 0), 0);
+                  const totalApps = weekNodes.reduce((acc, n) => acc + (n.requiredAppsCount || 0), 0);
+                  const activeInWeek = membersByWeek[w] || 0;
 
-                return (
-                  <div
-                    key={node.code}
-                    className={`rounded-2xl border p-5 transition-all shadow-xs relative ${
-                      isDay7
-                        ? "border-amber-500/40 bg-amber-950/10"
-                        : isFinal
-                        ? "border-purple-500/40 bg-purple-950/10"
-                        : "border-border bg-surface hover:border-emerald-500/30"
-                    }`}
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      {/* Node Header & Title */}
-                      <div className="space-y-1.5 flex-1 min-w-[280px]">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-md bg-neutral-800 font-mono text-xs font-bold text-neutral-200 px-2 py-0.5 border border-neutral-700">
-                            {node.code}
+                  return (
+                    <div key={w} className="space-y-3">
+                      {/* Weekly Summary Bar */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-neutral-100/90 border border-neutral-200/80 px-4 py-3 dark:bg-neutral-800/80 dark:border-neutral-700">
+                        <div className="flex items-center gap-2.5">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neutral-900 text-white text-xs font-black dark:bg-white dark:text-neutral-900">
+                            W{w}
                           </span>
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                              isDay7
-                                ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                                : isFinal
-                                ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                                : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                            }`}
-                          >
-                            {isDay7
-                              ? isAr ? "محطة تقييم اليوم السابع" : "Day 7 Check-in"
-                              : isFinal
-                              ? isAr ? "التقرير النهائي وختام الرحلة" : "Final Journey Assessment"
-                              : isAr ? "مهمة أساسية في المسار" : "Core Journey Task"}
-                          </span>
-                          <span className="inline-flex items-center gap-1 text-xs text-neutral-400">
-                            <Calendar className="h-3.5 w-3.5 text-neutral-500" />
-                            <span>{node.durationDays} {isAr ? "أيام مدة مقترحة" : "days duration"}</span>
-                          </span>
-                          <span className="text-xs text-neutral-500">
-                            · {isAr ? `الأسبوع ${node.weekNumber}` : `Week ${node.weekNumber}`}
-                          </span>
+                          <div>
+                            <h3 className="text-sm font-bold text-neutral-950 dark:text-neutral-100">
+                              {isAr ? weekLabels[w]?.ar : weekLabels[w]?.en}
+                            </h3>
+                            <p className="text-[11px] text-neutral-500">
+                              {weekNodes.length} {isAr ? "محطات فرعية" : "sub-nodes"}
+                            </p>
+                          </div>
                         </div>
 
-                        <h4 className="text-base font-bold text-neutral-100">
-                          {isAr ? node.titleAr : node.titleEn || node.titleAr}
-                        </h4>
-
-                        <p className="text-xs text-neutral-400 leading-relaxed max-w-3xl">
-                          {isAr
-                            ? node.descriptionAr || "لا يوجد وصف مدخل لهذه المحطة بعد."
-                            : node.descriptionEn || node.descriptionAr}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-3 text-xs">
+                          <span className="rounded-lg bg-surface px-2.5 py-1 text-neutral-700 border border-neutral-200 font-semibold dark:border-neutral-700 dark:text-neutral-200">
+                            ⏳ {totalDays} {isAr ? "أيام إجمالية" : "total days"}
+                          </span>
+                          <span className="rounded-lg bg-surface px-2.5 py-1 text-info-strong border border-neutral-200 font-semibold dark:border-neutral-700">
+                            📨 {totalApps} {isAr ? "طلب تقديم مستهدف" : "target apps"}
+                          </span>
+                          <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-emerald-700 border border-emerald-200 font-bold dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+                            👥 {activeInWeek} {isAr ? "عضو متواجد حالياً" : "members here"}
+                          </span>
+                        </div>
                       </div>
 
-                      {/* Action Button */}
-                      <button
-                        type="button"
-                        onClick={() => openNodeEditor(node)}
-                        className="button-secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold cursor-pointer shrink-0"
-                      >
-                        <Edit className="h-3.5 w-3.5 text-emerald-400" />
-                        <span>{isAr ? "تعديل شروط ومواعيد المحطة" : "Edit Node Requirements"}</span>
-                      </button>
-                    </div>
+                      {/* Nodes in this week */}
+                      <div className="grid gap-3">
+                        {weekNodes.map((node) => {
+                          const isDay7 = node.nodeType === "DAY_7_CHECKIN";
+                          const isFinal = node.nodeType === "FINAL_ASSESSMENT";
+                          const membersAtNode = membersByNode[node.code] || [];
 
-                    {/* Digital Requirements & Side Tasks */}
-                    <div className="mt-4 pt-3 border-t border-border-subtle flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-                          {isAr ? "المتطلبات الرقمية:" : "Requirements:"}
-                        </span>
-
-                        <span className="inline-flex items-center gap-1 rounded-lg bg-neutral-800/90 px-2.5 py-1 text-xs font-medium text-neutral-200 border border-neutral-700/60">
-                          <Send className="h-3.5 w-3.5 text-emerald-400" />
-                          <span>{isAr ? "طلبات التقديم:" : "Applications:"}</span>
-                          <strong className="text-emerald-400 font-bold">{node.requiredAppsCount}</strong>
-                        </span>
-
-                        {node.requiredTailoredCount > 0 && (
-                          <span className="inline-flex items-center gap-1 rounded-lg bg-neutral-800/90 px-2.5 py-1 text-xs font-medium text-neutral-200 border border-neutral-700/60">
-                            <FileText className="h-3.5 w-3.5 text-blue-400" />
-                            <span>{isAr ? "تقديمات مخصصة (Tailored):" : "Tailored CVs:"}</span>
-                            <strong className="text-blue-400 font-bold">{node.requiredTailoredCount}</strong>
-                          </span>
-                        )}
-
-                        {node.requiredPostsCount > 0 && (
-                          <span className="inline-flex items-center gap-1 rounded-lg bg-neutral-800/90 px-2.5 py-1 text-xs font-medium text-neutral-200 border border-neutral-700/60">
-                            <Share2 className="h-3.5 w-3.5 text-blue-400" />
-                            <span>{isAr ? "منشورات LinkedIn:" : "LinkedIn Posts:"}</span>
-                            <strong className="text-blue-400 font-bold">{node.requiredPostsCount}</strong>
-                          </span>
-                        )}
-
-                        {node.requiredOutreachCount > 0 && (
-                          <span className="inline-flex items-center gap-1 rounded-lg bg-neutral-800/90 px-2.5 py-1 text-xs font-medium text-neutral-200 border border-neutral-700/60">
-                            <Users className="h-3.5 w-3.5 text-purple-400" />
-                            <span>{isAr ? "بناء علاقات (Outreach):" : "Networking Outreach:"}</span>
-                            <strong className="text-purple-400 font-bold">{node.requiredOutreachCount}</strong>
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Progression Pipeline Link */}
-                      <div className="flex flex-wrap items-center gap-2 text-xs">
-                        {node.nextNodeCode && (
-                          <span className="inline-flex items-center gap-1 text-neutral-400">
-                            <span>{isAr ? "المحطة التالية:" : "Next Node:"}</span>
-                            <span className="rounded bg-neutral-800 px-1.5 py-0.5 font-mono text-[11px] text-emerald-300 font-semibold">
-                              {node.nextNodeCode}
-                            </span>
-                          </span>
-                        )}
-
-                        {node.unlocksInsightCode && (
-                          <span className="inline-flex items-center gap-1 text-neutral-400">
-                            <span>{isAr ? "يكشف إرشاد:" : "Unlocks:"}</span>
-                            <span
-                              onClick={() => switchTab("guidance")}
-                              className="rounded bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 text-[11px] text-amber-300 font-medium cursor-pointer hover:underline"
-                              title={TRIGGER_LABELS[node.unlocksInsightCode] || node.unlocksInsightCode}
+                          return (
+                            <div
+                              key={node.code}
+                              className={`rounded-2xl border p-4.5 transition-all shadow-xs ${
+                                isDay7
+                                  ? "border-amber-300 bg-amber-50/40 dark:border-amber-800 dark:bg-amber-950/20"
+                                  : isFinal
+                                  ? "border-purple-300 bg-purple-50/40 dark:border-purple-800 dark:bg-purple-950/20"
+                                  : "border-neutral-200/80 bg-surface hover:border-neutral-300 dark:border-neutral-800 dark:hover:border-neutral-700"
+                              }`}
                             >
-                              {TRIGGER_LABELS[node.unlocksInsightCode] || node.unlocksInsightCode}
-                            </span>
-                          </span>
-                        )}
+                              <div className="flex flex-wrap items-start justify-between gap-4">
+                                <div className="space-y-1.5 flex-1 min-w-[280px]">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="rounded-md bg-neutral-100 font-mono text-xs font-bold text-neutral-900 px-2 py-0.5 border border-neutral-300 dark:bg-neutral-800 dark:text-neutral-200 dark:border-neutral-700">
+                                      {node.code}
+                                    </span>
+                                    <span
+                                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                                        isDay7
+                                          ? "bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800"
+                                          : isFinal
+                                          ? "bg-purple-100 text-purple-800 border border-purple-300 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800"
+                                          : "bg-neutral-100 text-neutral-700 border border-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700"
+                                      }`}
+                                    >
+                                      {isDay7
+                                        ? isAr ? "محطة تقييم اليوم السابع" : "Day 7 Check-in"
+                                        : isFinal
+                                        ? isAr ? "التقرير الختامي" : "Final Assessment"
+                                        : isAr ? "محطة مسار رئيسية" : "Core Journey Node"}
+                                    </span>
+                                    <span className="inline-flex items-center gap-1 text-xs text-neutral-600 dark:text-neutral-400">
+                                      <Calendar className="h-3.5 w-3.5 text-neutral-500" />
+                                      <span>{node.durationDays} {isAr ? "أيام" : "days"}</span>
+                                    </span>
+
+                                    {/* Members Count Badge */}
+                                    {membersAtNode.length > 0 ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => setSelectedNodeForMembers(node.code)}
+                                        className="rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300 px-2.5 py-0.5 text-[11px] font-bold cursor-pointer hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 inline-flex items-center gap-1 transition-colors"
+                                        title={isAr ? "اضغط لعرض قائمة الأعضاء في هذه المحطة" : "Click to view members"}
+                                      >
+                                        <Users className="h-3 w-3" />
+                                        <span>{membersAtNode.length} {isAr ? "أعضاء هنا" : "members here"}</span>
+                                      </button>
+                                    ) : (
+                                      <span className="rounded-full bg-neutral-100 text-neutral-500 border border-neutral-200 px-2 py-0.5 text-[10px] dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700">
+                                        0 {isAr ? "عضو" : "members"}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <h4 className="text-sm font-bold text-neutral-950 dark:text-neutral-100">
+                                    {isAr ? node.titleAr : node.titleEn || node.titleAr}
+                                  </h4>
+
+                                  <p className="text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed max-w-3xl">
+                                    {isAr
+                                      ? node.descriptionAr || "لا يوجد وصف مدخل لهذه المحطة بعد."
+                                      : node.descriptionEn || node.descriptionAr}
+                                  </p>
+                                </div>
+
+                                {/* Edit Node Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => openNodeEditor(node)}
+                                  className="button-secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold cursor-pointer shrink-0"
+                                >
+                                  <Edit className="h-3.5 w-3.5 text-neutral-600 dark:text-neutral-300" />
+                                  <span>{isAr ? "تعديل الشروط" : "Edit Conditions"}</span>
+                                </button>
+                              </div>
+
+                              {/* Requirements strip */}
+                              <div className="mt-3 pt-2.5 border-t border-neutral-100 dark:border-neutral-800 flex flex-wrap items-center justify-between gap-3">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-[11px] font-bold text-neutral-500">
+                                    {isAr ? "المتطلبات:" : "Requirements:"}
+                                  </span>
+
+                                  <span className="inline-flex items-center gap-1 rounded-lg bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-800 border border-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:border-neutral-700">
+                                    <Send className="h-3 w-3 text-info-strong" />
+                                    <span>{isAr ? "تقديمات:" : "Apps:"}</span>
+                                    <strong className="text-neutral-950 dark:text-white font-black">{node.requiredAppsCount}</strong>
+                                  </span>
+
+                                  {node.requiredTailoredCount > 0 && (
+                                    <span className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-800 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800">
+                                      <FileText className="h-3 w-3 text-blue-600" />
+                                      <span>{isAr ? "مخصصة:" : "Tailored:"}</span>
+                                      <strong className="font-black">{node.requiredTailoredCount}</strong>
+                                    </span>
+                                  )}
+
+                                  {node.requiredPostsCount > 0 && (
+                                    <span className="inline-flex items-center gap-1 rounded-lg bg-purple-50 px-2.5 py-1 text-xs font-semibold text-purple-800 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800">
+                                      <Share2 className="h-3 w-3 text-purple-600" />
+                                      <span>{isAr ? "LinkedIn:" : "Posts:"}</span>
+                                      <strong className="font-black">{node.requiredPostsCount}</strong>
+                                    </span>
+                                  )}
+
+                                  {node.requiredOutreachCount > 0 && (
+                                    <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+                                      <Users className="h-3 w-3 text-emerald-600" />
+                                      <span>{isAr ? "علاقات:" : "Outreach:"}</span>
+                                      <strong className="font-black">{node.requiredOutreachCount}</strong>
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Linked insight & next node */}
+                                <div className="flex flex-wrap items-center gap-2 text-xs">
+                                  {node.nextNodeCode && (
+                                    <span className="inline-flex items-center gap-1 text-neutral-500">
+                                      <span>{isAr ? "المحطة التالية:" : "Next:"}</span>
+                                      <span className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[11px] text-neutral-800 font-semibold border border-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:border-neutral-700">
+                                        {node.nextNodeCode}
+                                      </span>
+                                    </span>
+                                  )}
+
+                                  {node.unlocksInsightCode && (
+                                    <button
+                                      type="button"
+                                      onClick={() => switchTab("guidance")}
+                                      className="inline-flex items-center gap-1 rounded-lg bg-amber-50 border border-amber-200 px-2 py-0.5 text-[11px] font-bold text-amber-800 hover:bg-amber-100 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300 transition-colors cursor-pointer"
+                                    >
+                                      <Sparkles className="h-3 w-3" />
+                                      <span>{isAr ? "يكشف إرشاد:" : "Unlocks:"}</span>
+                                      <span>{TRIGGER_LABELS[node.unlocksInsightCode] || node.unlocksInsightCode}</span>
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           )}
         </div>
@@ -429,107 +566,115 @@ export default function AdminJourneyEnginePage() {
         <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="text-base font-bold text-neutral-100">
-                {isAr ? "إرشادات الحبكة والموجهات الذكية (Plot Guidance)" : "Plot Guidance & Smart Prompts"}
+              <h3 className="text-base font-bold text-neutral-950 dark:text-neutral-100">
+                {isAr ? "إرشادات وتوجيهات الحبكة الـ 9 (Plot Guidance Engine)" : "9 Core Plot Guidance Milestones"}
               </h3>
-              <p className="text-xs text-neutral-400 mt-0.5">
+              <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
                 {isAr
-                  ? "المحتوى التوجيهي التفاعلي الذي ينفتح تلقائياً عند إتمام محطات معينة في الرحلة، مع البرومبتات الذكية وروابط الموارد"
-                  : "Story-driven coaching insights unlocked upon reaching specific journey milestones"}
+                  ? "المحتوى التوجيهي السردي لبرنامج الـ 28 يوماً، قوالب البرومبتات الذكية، وإحصائيات فتح وقراءة كل إرشاد"
+                  : "Curated narrative milestones unlocked dynamically across the 28-day journey"}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setEditingGuidance(null);
-                setGuidanceFormOpen(true);
-              }}
-              className="button-primary inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold cursor-pointer"
-            >
-              <Plus className="h-4 w-4" />
-              <span>{isAr ? "+ إضافة إرشاد حبكة جديد" : "+ Add Plot Insight"}</span>
-            </button>
           </div>
 
           {guidanceLoading ? (
             <LoadingState label={isAr ? "جارٍ تحميل إرشادات الحبكة..." : "Loading plot guidance..."} />
           ) : guidanceError ? (
             <ErrorState onRetry={loadGuidance} />
-          ) : !guidancePosts.length ? (
+          ) : !guidanceItems.length ? (
             <EmptyState>{isAr ? "لا توجد إرشادات حبكة مدخلة" : "No plot guidance items"}</EmptyState>
           ) : (
             <div className="grid gap-4">
-              {guidancePosts.map((post, idx) => (
+              {guidanceItems.map((item, idx) => (
                 <div
-                  key={post.id}
-                  className="rounded-2xl border border-border bg-surface p-5 space-y-3 shadow-xs hover:border-emerald-500/30 transition-all"
+                  key={item.code}
+                  className="rounded-2xl border border-neutral-200/80 bg-surface p-5 space-y-3.5 shadow-xs dark:border-neutral-800"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-[10px] font-bold text-emerald-400 border border-emerald-500/30">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-white text-[10px] font-bold dark:bg-white dark:text-neutral-900">
                           {idx + 1}
                         </span>
-                        <span className="rounded-md bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-xs font-semibold text-amber-300">
-                          {TRIGGER_LABELS[post.unlockTriggerCode || ""] || post.unlockTriggerCode}
+                        <span className="rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300">
+                          {TRIGGER_LABELS[item.unlockTriggerCode || item.code] || item.code}
                         </span>
-                        {post.promptTemplate && (
-                          <span className="rounded-md bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-xs font-semibold text-blue-300 inline-flex items-center gap-1">
-                            <Sparkles className="h-3 w-3" />
-                            <span>{isAr ? "برومبت ذكي مدمج" : "Prompt Template"}</span>
+                        <span className="rounded-md bg-neutral-100 border border-neutral-200 px-2 py-0.5 text-[11px] font-mono text-neutral-700 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300">
+                          W{item.weekNumber}
+                        </span>
+                        {item.isCustomized && (
+                          <span className="rounded-md bg-purple-50 border border-purple-200 px-1.5 py-0.5 text-[10px] font-bold text-purple-700 dark:bg-purple-950/40 dark:border-purple-800 dark:text-purple-300">
+                            {isAr ? "مُعدّل ومحفوظ" : "Customized"}
                           </span>
                         )}
-                        <span className="text-xs text-neutral-500">
-                          {isAr
-                            ? `قرأه ${(post as any)._count?.reads ?? 0} عضو`
-                            : `Read by ${(post as any)._count?.reads ?? 0} members`}
-                        </span>
                       </div>
-                      <h4 className="text-base font-bold text-neutral-100">{post.title}</h4>
+
+                      <h4 className="text-base font-bold text-neutral-950 dark:text-neutral-100">
+                        {isAr ? item.titleAr || item.title : item.titleEn || item.title}
+                      </h4>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingGuidance(post);
-                        setGuidanceFormOpen(true);
-                      }}
-                      className="button-secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold cursor-pointer"
-                    >
-                      <Edit className="h-3.5 w-3.5 text-emerald-400" />
-                      <span>{isAr ? "تعديل المحتوى والبرومبت" : "Edit Guidance"}</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openGuidanceEditor(item)}
+                        className="button-primary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold cursor-pointer"
+                      >
+                        <Edit className="h-3.5 w-3.5" />
+                        <span>{isAr ? "تعديل المحتوى والبرومبت" : "Edit Guidance"}</span>
+                      </button>
+                    </div>
                   </div>
 
-                  <p className="text-xs text-neutral-300 leading-relaxed whitespace-pre-line line-clamp-3">
-                    {post.content.replace(/<[^>]*>?/gm, "")}
+                  {/* Summary / Content */}
+                  <p className="text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed whitespace-pre-line">
+                    {item.summaryAr || item.content.slice(0, 280)}
+                    {item.content && item.content.length > 280 ? "..." : ""}
                   </p>
 
-                  {post.promptTemplate && (
-                    <div className="rounded-xl border border-neutral-800 bg-neutral-950/80 p-3 text-[11px] font-mono text-neutral-300">
-                      <p className="text-[10px] text-neutral-500 font-bold mb-1">
-                        {isAr ? "صندوق الموجه الذكي (AI Prompt Box):" : "Smart Prompt Preview:"}
+                  {/* Smart Prompt Box */}
+                  {(item.promptTemplateAr || item.promptTemplate) && (
+                    <div className="rounded-xl border border-neutral-200 bg-neutral-50/80 p-3.5 space-y-2 dark:border-neutral-700 dark:bg-neutral-800/60">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-neutral-700 dark:text-neutral-300 inline-flex items-center gap-1.5">
+                          <Sparkles className="h-3.5 w-3.5 text-info-strong" />
+                          <span>{isAr ? "قالب الموجه الذكي (AI Prompt):" : "Smart Prompt Template:"}</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(item.promptTemplateAr || item.promptTemplate, isAr ? "البرومبت الذكي" : "Prompt")}
+                          className="text-[11px] font-semibold text-info-strong hover:underline inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="h-3 w-3" />
+                          <span>{isAr ? "نسخ البرومبت" : "Copy"}</span>
+                        </button>
+                      </div>
+                      <p className="text-xs font-mono text-neutral-800 dark:text-neutral-200 leading-relaxed bg-surface p-2.5 rounded-lg border border-neutral-200/60 dark:border-neutral-700">
+                        {item.promptTemplateAr || item.promptTemplate}
                       </p>
-                      <p className="line-clamp-2 text-emerald-400/90">{post.promptTemplate}</p>
                     </div>
                   )}
 
-                  {Boolean(post.resources?.length) && (
-                    <div className="pt-2 flex flex-wrap gap-2 border-t border-border-subtle">
-                      {post.resources?.map((r, i) => (
-                        <a
-                          key={i}
-                          href={r.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-800/80 px-2.5 py-1 text-[11px] font-medium text-emerald-400 hover:bg-neutral-800 hover:underline"
-                        >
-                          <Video className="h-3 w-3" />
-                          <span>{r.title}</span>
-                        </a>
-                      ))}
+                  {/* Metrics strip */}
+                  <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs border-t border-neutral-100 dark:border-neutral-800">
+                    <div className="flex items-center gap-4 text-neutral-600 dark:text-neutral-400">
+                      <span className="inline-flex items-center gap-1">
+                        <Eye className="h-3.5 w-3.5 text-neutral-400" />
+                        <span>{isAr ? "فتحه:" : "Unlocked:"}</span>
+                        <strong className="text-neutral-900 dark:text-neutral-100">{item.unlockedCount} {isAr ? "عضو" : "members"} ({item.unlockedPercent}%)</strong>
+                      </span>
+                      <span>·</span>
+                      <span className="inline-flex items-center gap-1">
+                        <BookOpen className="h-3.5 w-3.5 text-neutral-400" />
+                        <span>{isAr ? "قرأه:" : "Read:"}</span>
+                        <strong className="text-neutral-900 dark:text-neutral-100">{item.readsCount} {isAr ? "عضو" : "members"} ({item.readPercent}%)</strong>
+                      </span>
                     </div>
-                  )}
+
+                    <span className="text-[11px] text-neutral-500">
+                      {isAr ? "كود التفعيل:" : "Trigger:"} <code className="font-mono text-neutral-700 dark:text-neutral-300">{item.code}</code>
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -547,7 +692,7 @@ export default function AdminJourneyEnginePage() {
           <form onSubmit={handleSaveNode} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-neutral-200">
+                <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                   {isAr ? "العنوان بالعربية *" : "Title (Arabic) *"}
                 </label>
                 <input
@@ -555,11 +700,11 @@ export default function AdminJourneyEnginePage() {
                   required
                   value={nodeTitleAr}
                   onChange={(e) => setNodeTitleAr(e.target.value)}
-                  className="field-control w-full text-xs"
+                  className="w-full rounded-xl border border-neutral-300 bg-surface px-3 py-2 text-xs text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-neutral-200">
+                <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                   {isAr ? "العنوان بالإنجليزية *" : "Title (English) *"}
                 </label>
                 <input
@@ -567,26 +712,26 @@ export default function AdminJourneyEnginePage() {
                   required
                   value={nodeTitleEn}
                   onChange={(e) => setNodeTitleEn(e.target.value)}
-                  className="field-control w-full text-xs"
+                  className="w-full rounded-xl border border-neutral-300 bg-surface px-3 py-2 text-xs text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-neutral-200">
+              <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                 {isAr ? "الوصف بالعربية" : "Description (Arabic)"}
               </label>
               <textarea
                 rows={2}
                 value={nodeDescAr}
                 onChange={(e) => setNodeDescAr(e.target.value)}
-                className="field-control w-full text-xs resize-none"
+                className="w-full rounded-xl border border-neutral-300 bg-surface px-3 py-2 text-xs text-neutral-900 resize-none dark:border-neutral-700 dark:text-neutral-100"
               />
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-neutral-200">
+                <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                   {isAr ? "المدة (أيام) *" : "Duration Days *"}
                 </label>
                 <input
@@ -595,11 +740,11 @@ export default function AdminJourneyEnginePage() {
                   required
                   value={nodeDuration}
                   onChange={(e) => setNodeDuration(Number(e.target.value))}
-                  className="field-control w-full text-xs"
+                  className="w-full rounded-xl border border-neutral-300 bg-surface px-3 py-2 text-xs text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-neutral-200">
+                <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                   {isAr ? "طلبات عامة *" : "Req. Apps *"}
                 </label>
                 <input
@@ -608,11 +753,11 @@ export default function AdminJourneyEnginePage() {
                   required
                   value={reqApps}
                   onChange={(e) => setReqApps(Number(e.target.value))}
-                  className="field-control w-full text-xs"
+                  className="w-full rounded-xl border border-neutral-300 bg-surface px-3 py-2 text-xs text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-neutral-200">
+                <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                   {isAr ? "طلبات مخصصة" : "Tailored Apps"}
                 </label>
                 <input
@@ -620,11 +765,11 @@ export default function AdminJourneyEnginePage() {
                   min={0}
                   value={reqTailored}
                   onChange={(e) => setReqTailored(Number(e.target.value))}
-                  className="field-control w-full text-xs"
+                  className="w-full rounded-xl border border-neutral-300 bg-surface px-3 py-2 text-xs text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-neutral-200">
+                <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                   {isAr ? "منشورات LinkedIn" : "LinkedIn Posts"}
                 </label>
                 <input
@@ -632,14 +777,14 @@ export default function AdminJourneyEnginePage() {
                   min={0}
                   value={reqPosts}
                   onChange={(e) => setReqPosts(Number(e.target.value))}
-                  className="field-control w-full text-xs"
+                  className="w-full rounded-xl border border-neutral-300 bg-surface px-3 py-2 text-xs text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-neutral-200">
+                <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                   {isAr ? "المحطة التالية (Next Node Code)" : "Next Node Code"}
                 </label>
                 <input
@@ -647,17 +792,17 @@ export default function AdminJourneyEnginePage() {
                   value={nextNode}
                   onChange={(e) => setNextNode(e.target.value)}
                   placeholder="e.g. W1_M2"
-                  className="field-control w-full text-xs font-mono"
+                  className="w-full rounded-xl border border-neutral-300 bg-surface px-3 py-2 text-xs text-neutral-900 font-mono dark:border-neutral-700 dark:text-neutral-100"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-neutral-200">
+                <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                   {isAr ? "كود إرشاد الحبكة المربوط" : "Unlocks Insight Code"}
                 </label>
                 <select
                   value={unlocksInsight}
                   onChange={(e) => setUnlocksInsight(e.target.value)}
-                  className="field-control w-full text-xs"
+                  className="w-full rounded-xl border border-neutral-300 bg-surface px-3 py-2 text-xs text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
                 >
                   <option value="">{isAr ? "بدون إرشاد مربوط" : "None"}</option>
                   {Object.entries(TRIGGER_LABELS).map(([k, label]) => (
@@ -669,18 +814,18 @@ export default function AdminJourneyEnginePage() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-border">
+            <div className="flex justify-end gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-800">
               <button
                 type="button"
                 onClick={() => setEditingNode(null)}
-                className="button-secondary px-3 py-1.5 text-xs"
+                className="button-secondary px-3 py-1.5 text-xs cursor-pointer"
               >
                 {t("common.cancel")}
               </button>
               <button
                 type="submit"
                 disabled={savingNode}
-                className="button-primary px-4 py-1.5 text-xs font-bold disabled:opacity-40"
+                className="button-primary px-4 py-1.5 text-xs font-bold disabled:opacity-40 cursor-pointer"
               >
                 {savingNode ? (isAr ? "جارٍ الحفظ..." : "Saving...") : (isAr ? "حفظ التعديلات" : "Save Changes")}
               </button>
@@ -689,23 +834,139 @@ export default function AdminJourneyEnginePage() {
         </Modal>
       )}
 
-      {/* Plot Guidance Form Dialog */}
-      {guidanceFormOpen && (
-        <GuidanceFormDialog
-          post={editingGuidance}
-          onClose={() => {
-            setGuidanceFormOpen(false);
-            setEditingGuidance(null);
-          }}
-          onSaved={(msg) => {
-            setGuidanceFormOpen(false);
-            setEditingGuidance(null);
-            toast.success(t(`professionalDevelopment.${msg}`));
-            loadGuidance();
-          }}
-        />
+      {/* Edit Plot Guidance Modal */}
+      {editingGuidance && (
+        <Modal
+          isOpen={Boolean(editingGuidance)}
+          onClose={() => setEditingGuidance(null)}
+          title={isAr ? `تعديل إرشاد الحبكة: ${editingGuidance.code}` : `Edit Plot Guidance: ${editingGuidance.code}`}
+        >
+          <form onSubmit={handleSaveGuidance} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                  {isAr ? "العنوان بالعربية *" : "Title (Arabic) *"}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={guidanceTitleAr}
+                  onChange={(e) => setGuidanceTitleAr(e.target.value)}
+                  className="w-full rounded-xl border border-neutral-300 bg-surface px-3 py-2 text-xs text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                  {isAr ? "العنوان بالإنجليزية" : "Title (English)"}
+                </label>
+                <input
+                  type="text"
+                  value={guidanceTitleEn}
+                  onChange={(e) => setGuidanceTitleEn(e.target.value)}
+                  className="w-full rounded-xl border border-neutral-300 bg-surface px-3 py-2 text-xs text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                {isAr ? "الملخص السريع بالعربية" : "Summary (Arabic)"}
+              </label>
+              <input
+                type="text"
+                value={guidanceSummaryAr}
+                onChange={(e) => setGuidanceSummaryAr(e.target.value)}
+                className="w-full rounded-xl border border-neutral-300 bg-surface px-3 py-2 text-xs text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                {isAr ? "قالب الموجه الذكي (AI Prompt Box)" : "Smart Prompt Template"}
+              </label>
+              <textarea
+                rows={3}
+                value={guidancePrompt}
+                onChange={(e) => setGuidancePrompt(e.target.value)}
+                className="w-full rounded-xl border border-neutral-300 bg-surface px-3 py-2 text-xs font-mono text-neutral-900 resize-none dark:border-neutral-700 dark:text-neutral-100"
+                placeholder="اكتب البرومبت التوجيهي الذكي الذي ينسخه العضو للاستعانة به..."
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                {isAr ? "المحتوى التوجيهي التفصيلي" : "Detailed Content"}
+              </label>
+              <textarea
+                rows={4}
+                value={guidanceContent}
+                onChange={(e) => setGuidanceContent(e.target.value)}
+                className="w-full rounded-xl border border-neutral-300 bg-surface px-3 py-2 text-xs text-neutral-900 resize-none dark:border-neutral-700 dark:text-neutral-100"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-800">
+              <button
+                type="button"
+                onClick={() => setEditingGuidance(null)}
+                className="button-secondary px-3.5 py-2 text-xs cursor-pointer"
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                type="submit"
+                disabled={savingGuidance}
+                className="button-primary px-4 py-2 text-xs font-bold disabled:opacity-40 cursor-pointer"
+              >
+                {savingGuidance ? (isAr ? "جارٍ الحفظ..." : "Saving...") : (isAr ? "حفظ التغييرات" : "Save Changes")}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Members At Node Modal */}
+      {selectedNodeForMembers && (
+        <Modal
+          isOpen={Boolean(selectedNodeForMembers)}
+          onClose={() => setSelectedNodeForMembers(null)}
+          title={isAr ? `الأعضاء المتواجدون في المحطة: ${selectedNodeForMembers}` : `Members at node: ${selectedNodeForMembers}`}
+        >
+          <div className="space-y-3">
+            <p className="text-xs text-neutral-600 dark:text-neutral-400">
+              {isAr
+                ? `قائمة الأعضاء الذين يعملون حالياً على إنجاز متطلبات المحطة (${selectedNodeForMembers}):`
+                : `Members currently progressing through ${selectedNodeForMembers}:`}
+            </p>
+
+            <div className="max-h-72 overflow-y-auto divide-y divide-neutral-100 dark:divide-neutral-800">
+              {(membersByNode[selectedNodeForMembers] || []).map((m) => (
+                <div key={m.id} className="py-2.5 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-neutral-950 dark:text-neutral-100">{m.name}</p>
+                    <p className="text-[11px] text-neutral-500">{m.email} · {m.group?.name || t("common.unassigned")}</p>
+                  </div>
+                  <div className="text-end">
+                    <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
+                      {m.journey?.nodeApps ?? 0} / {m.journey?.requiredApps ?? 0} {isAr ? "طلب" : "apps"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-neutral-200 dark:border-neutral-800">
+              <button
+                type="button"
+                onClick={() => setSelectedNodeForMembers(null)}
+                className="button-primary px-4 py-1.5 text-xs font-bold cursor-pointer"
+              >
+                {isAr ? "إغلاق" : "Close"}
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
 }
-
