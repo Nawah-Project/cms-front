@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { Outlet, useNavigate } from "react-router";
+import { Outlet, useLocation, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { AddApplicationModal } from "../features/applications/components/AddApplicationModal";
 import { AppSidebar } from "../components/AppSidebar";
@@ -47,6 +47,7 @@ export default function Layout() {
   const [celebrationData, setCelebrationData] =
     useState<MilestoneCelebrationData | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -108,7 +109,9 @@ export default function Layout() {
             <AppContext.Provider value={{ openAddModal }}>
               <div className="min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200">
                 <AppSidebar />
-                <JourneyTasksPanel />
+                {!location.pathname.startsWith("/admin") && (
+                  <JourneyTasksPanel />
+                )}
 
                 <div className="min-h-screen w-full lg:ps-64">
                   <main className="w-full px-5 py-7 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 lg:py-10">

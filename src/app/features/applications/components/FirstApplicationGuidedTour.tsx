@@ -11,6 +11,7 @@ import { useAuth } from "../../../features/auth/store/authStore";
 import { useI18n } from "../../../i18n";
 import { useToast } from "../../../components/ui/ToastProvider";
 import { profileApi } from "../../../features/profile/profileApi";
+import { trackUxEvent } from "../../../utils/uxAnalytics";
 
 export type TourStep = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
@@ -317,6 +318,7 @@ export function FirstApplicationGuidedTourProvider({
         // ignore
       }
     }
+    trackUxEvent("tour_completed");
     setIsTourActive(false);
     showToast({
       message: isRtl

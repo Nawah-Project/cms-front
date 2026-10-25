@@ -7,6 +7,7 @@ import {
   SparklesIcon,
 } from "../../../components/Icons";
 import { useToast } from "../../../components/ui/ToastProvider";
+import { trackUxEvent } from "../../../utils/uxAnalytics";
 import type { FeedbackPost, FeedbackResource } from "../types";
 
 interface GuidanceReadingModalProps {
@@ -54,6 +55,7 @@ export function GuidanceReadingModal({
     if (!post.promptTemplate) return;
     try {
       await navigator.clipboard.writeText(post.promptTemplate);
+      trackUxEvent("prompt_copied");
       setCopied(true);
       toast.success("تم نسخ موجه الذكاء الاصطناعي بنجاح");
       setTimeout(() => setCopied(false), 2500);

@@ -1,100 +1,109 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import { useAuth } from "../auth/store/authStore";
 import { useI18n } from "../../i18n";
-import { adminApi } from "./api/adminApi";
 
-const tabs = [
-  ["overview", "/admin"],
-  ["members", "/admin/members"],
-  ["professionalDevelopment", "/admin/professional-development"],
-  ["groups", "/admin/groups"],
-  ["activity", "/admin/activity"],
-  ["notifications", "/admin/notifications"],
-] as const;
+function getSectionMeta(pathname: string, locale: string) {
+  const isAr = locale === "ar";
+  if (pathname === "/admin") {
+    return {
+      title: isAr ? "نظرة عامة تنفيذية" : "Executive Overview",
+      description: isAr
+        ? "لوحة القيادة المركزية: المؤشرات الحيوية، شريط نبض الأقسام، وأعضاء يحتاجون تدخلك"
+        : "Central dashboard: vital metrics, pulse strips, and priority member interventions",
+    };
+  }
+  if (pathname.startsWith("/admin/community")) {
+    return {
+      title: isAr ? "إدارة المنصة والأعضاء" : "Community & Members",
+      description: isAr
+        ? "إدارة وتوزيع المجموعات، متابعة الأعضاء حسب مراحل الرحلة، وسجل نشاط المنصة المباشر"
+        : "Manage cohorts, track member progress across journey weeks, and inspect real-time platform activity",
+    };
+  }
+  if (pathname.startsWith("/admin/mentoring")) {
+    return {
+      title: isAr ? "التوجيه والإرشاد" : "Mentoring & Guidance",
+      description: isAr
+        ? "إسناد ومتابعة المهام التخصصية والملاحظات التوجيهية المباشرة للأعضاء والمجموعات"
+        : "Assign & review tasks, provide direct member feedback, and manage checklists",
+    };
+  }
+  if (pathname.startsWith("/admin/journey")) {
+    return {
+      title: isAr ? "هندسة الرحلة والحبكة" : "Journey & Plot Engine",
+      description: isAr
+        ? "غرفة التحكم في محطات مسار الـ 30 يوماً، مواعيدها، شروط الإنجاز، وإرشادات الحبكة والبرومبتات الذكية"
+        : "Control room for the 30-day journey nodes, milestone requirements, plot insights, and smart prompts",
+    };
+  }
+  if (pathname.startsWith("/admin/ux-lab")) {
+    return {
+      title: isAr ? "تحليلات التجربة والسلوك" : "UX & Behavior Lab",
+      description: isAr
+        ? "خريطة قمع العبور ونقاط التوقف الدقيقة، تجارب A/B/C، ومؤشرات تبني أدوات الإصدار الثاني"
+        : "Granular funnel analysis, top drop-off bottlenecks, A/B/C experimentation, and V2 feature adoption",
+    };
+  }
+  if (pathname.startsWith("/admin/operations")) {
+    return {
+      title: isAr ? "العمليات والموارد التشغيلية" : "Operations & Resources",
+      description: isAr
+        ? "مراقبة استهلاك البريد اليومي/الشهري، المعالجات الخلفية التلقائية، سعة التخزين، وصحة النظام"
+        : "Email quotas, background processors, CV storage monitoring, and database health",
+    };
+  }
+  return {
+    title: isAr ? "مركز قيادة المنصة" : "Admin Command Center",
+    description: isAr ? "إدارة مساحة العمل والمنصة" : "Platform workspace management",
+  };
+}
 
 export default function AdminLayout() {
   const { user, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { t } = useI18n();
-  const [smtpStatus, setSmtpStatus] = useState<"ACTIVE" | "STANDBY" | null>(null);
-
-  useEffect(() => {
-    adminApi
-      .notificationStats()
-      .then((res) => {
-        setSmtpStatus(res.smtp?.active ? "ACTIVE" : "STANDBY");
-      })
-      .catch(() => {
-        setSmtpStatus(null);
-      });
-  }, [location.pathname]);
+  const { t, locale } = useI18n();
 
   useEffect(() => {
     if (!loading && user?.role !== "ADMIN") navigate("/", { replace: true });
   }, [loading, user, navigate]);
+
   if (loading || user?.role !== "ADMIN")
     return (
       <div className="py-20 text-center text-sm text-neutral-500" role="status">
         {t("admin.checkingAccess")}
       </div>
     );
+
+  const section = getSectionMeta(location.pathname, locale);
+
   return (
     <section className="space-y-6">
-      <header className="border-b border-stone-300/80 pb-3 dark:border-neutral-800">
+      <header className="border-b border-border/80 pb-4 dark:border-neutral-800">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-neutral-500">
-              {t("admin.eyebrow")}
-            </p>
-            <h1 className="mt-0.5 text-xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-100">
-              {t("admin.title")}
-            </h1>
-          </div>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            {t("admin.description")}
-          </p>
-        </div>
-        <nav
-          aria-label={t("admin.sections")}
-          className="mt-3 flex gap-1 overflow-x-auto"
-        >
-          {tabs.map(([label, to]) => {
-            const active =
-              to === "/admin"
-                ? location.pathname === to
-                : location.pathname.startsWith(to);
-            return (
-              <Link
-                key={to}
-                to={to}
-                aria-current={active ? "page" : undefined}
-                className={`inline-flex items-center gap-2 shrink-0 border-b-2 px-3 py-2.5 text-sm transition-colors ${
-                  active
-                    ? "border-neutral-900 font-medium text-neutral-950 dark:border-white dark:text-white"
-                    : "border-transparent text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-900 dark:hover:text-neutral-100"
-                }`}
-              >
-                <span>{t(`admin.${label}`)}</span>
-                {label === "notifications" && smtpStatus && (
-                  <span
-                    className={`h-2 w-2 rounded-full ${
-                      smtpStatus === "ACTIVE"
-                        ? "bg-emerald-500 shadow-xs shadow-emerald-500/50"
-                        : "bg-amber-500"
-                    }`}
-                    title={
-                      smtpStatus === "ACTIVE"
-                        ? "متصل ونشط"
-                        : "في انتظار ربط SMTP"
-                    }
-                  />
-                )}
+            <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-neutral-500">
+              <Link to="/admin" className="hover:text-emerald-400 transition-colors">
+                {locale === "ar" ? "مركز قيادة المنصة" : "Admin Command Center"}
               </Link>
-            );
-          })}
-        </nav>
+              <span>/</span>
+              <span className="text-neutral-300 font-medium">{section.title}</span>
+            </nav>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+              {section.title}
+            </h1>
+            <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+              {section.description}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400 border border-emerald-500/20">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              {locale === "ar" ? "لوحة الإدارة نشطة" : "Admin Center Active"}
+            </span>
+          </div>
+        </div>
       </header>
       <Outlet />
     </section>

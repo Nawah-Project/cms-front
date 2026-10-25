@@ -33,14 +33,23 @@ export default [
     route("applications/:id", "routes/application-details.tsx"),
     route("admin", "features/admin/AdminLayout.tsx", [
       index("features/admin/AdminOverviewPage.tsx"),
-      route("members", "features/admin/AdminMembersPage.tsx"),
+      route("community", "features/admin/AdminCommunityPage.tsx"),
+      route("mentoring", "features/admin/AdminMentoringPage.tsx"),
+      route("journey", "features/admin/AdminJourneyEnginePage.tsx"),
+      route("ux-lab", "features/admin/AdminUxLabPage.tsx"),
+      route("operations", "features/admin/AdminOperationsPage.tsx"),
+      // Backwards-compatibility redirects:
+      route("members", "features/admin/redirects/AdminMembersRedirect.tsx"),
+      route("groups", "features/admin/redirects/AdminGroupsRedirect.tsx"),
+      route("activity", "features/admin/redirects/AdminActivityRedirect.tsx"),
       route(
         "professional-development",
-        "features/admin/AdminProfessionalDevelopmentPage.tsx",
+        "features/admin/redirects/AdminProfDevRedirect.tsx",
       ),
-      route("groups", "features/admin/AdminGroupsPage.tsx"),
-      route("activity", "features/admin/AdminActivityPage.tsx"),
-      route("notifications", "features/admin/AdminNotificationsPage.tsx"),
+      route(
+        "notifications",
+        "features/admin/redirects/AdminNotificationsRedirect.tsx",
+      ),
     ]),
   ]),
 ] satisfies RouteConfig;

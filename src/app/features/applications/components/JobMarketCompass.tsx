@@ -3,6 +3,7 @@ import { Compass, ChevronDown, ChevronUp, ExternalLink, Globe, AlertCircle } fro
 import { useI18n } from "../../../i18n";
 import { useAuth } from "../../auth/store/authStore";
 import { useToast } from "../../../components/ui/ToastProvider";
+import { trackUxEvent } from "../../../utils/uxAnalytics";
 import type { ApplicationMethod, CreateApplicationInput } from "../../../types";
 
 // ============================================================================
@@ -676,6 +677,7 @@ export function JobMarketCompass({
   };
 
   const handlePlatformClick = (platform: PlatformConfig) => {
+    trackUxEvent("job_explorer_clicked", { platform: platform.name });
     const finalUrl = platform.buildUrl(targetJobTitle, effectiveLocationQuery, workMode);
     window.open(finalUrl, "_blank", "noopener,noreferrer");
 

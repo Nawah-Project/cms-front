@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check, Copy, Sparkles } from "lucide-react";
 import { useI18n } from "../../../i18n";
 import { useToast } from "../../../components/ui/ToastProvider";
+import { trackUxEvent } from "../../../utils/uxAnalytics";
 
 export function PromptCopyBox({
   promptTemplate,
@@ -18,6 +19,7 @@ export function PromptCopyBox({
     if (locked || !promptTemplate) return;
     try {
       await navigator.clipboard.writeText(promptTemplate);
+      trackUxEvent("prompt_copied");
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2200);
     } catch {

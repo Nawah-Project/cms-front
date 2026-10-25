@@ -9,7 +9,10 @@ export type SupportedBackendUxEvent =
   | "application_created"
   | "application_stage_updated"
   | "task_status_changed"
-  | "feedback_read";
+  | "feedback_read"
+  | "tour_completed"
+  | "job_explorer_clicked"
+  | "prompt_copied";
 
 export type UxEventName =
   | SupportedBackendUxEvent
@@ -46,6 +49,9 @@ const SUPPORTED_BACKEND_EVENTS = new Set<SupportedBackendUxEvent>([
   "application_stage_updated",
   "task_status_changed",
   "feedback_read",
+  "tour_completed",
+  "job_explorer_clicked",
+  "prompt_copied",
 ]);
 
 export function isValidVariant(value: unknown): value is ExperimentVariant {

@@ -404,6 +404,38 @@ export const adminApi = {
       failedCount: number;
       message: string;
     }>("/admin/notifications/remind-unverified", { method: "POST" }),
+  granularFunnel: () =>
+    request<GranularFunnelResponse>("/admin/monitoring/granular-funnel"),
+  operationsStats: () =>
+    request<OperationsStatsResponse>("/admin/operations/stats"),
+  runNoResponseProcessor: () =>
+    request<{
+      success: boolean;
+      closedCount: number;
+      timestamp: string;
+      message: string;
+    }>("/admin/operations/run-no-response-processor", { method: "POST" }),
+  cleanupOrphanedFiles: () =>
+    request<{
+      success: boolean;
+      deletedCount: number;
+      freedBytes: number;
+      freedMegabytes: number;
+      timestamp: string;
+      message: string;
+    }>("/admin/operations/cleanup-orphaned-files", { method: "POST" }),
+  journeyNodes: () =>
+    request<JourneyNodeItem[]>("/admin/journey/nodes"),
+  updateJourneyNode: (code: string, input: Partial<JourneyNodeItem>) =>
+    request<JourneyNodeItem>(`/admin/journey/nodes/${encodeURIComponent(code)}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }),
+  createGroup: (name: string) =>
+    request<AdminGroup>("/groups", {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    }),
 };
 
 export type NotificationSmtpStatus = {
@@ -508,4 +540,122 @@ export type UpdateNotificationConfigInput = {
   monthlyEmailLimit?: number;
   otpSafeReserve?: number;
   otpSafeReserveEnabled?: boolean;
+};
+
+export type GranularFunnelStage = {
+  code: string;
+  titleAr: string;
+  titleEn: string;
+  descriptionAr: string;
+  descriptionEn: string;
+  count: number;
+  percent: number;
+  isTopBottleneck?: boolean;
+  stuckUsers: Array<{
+    id: string;
+    name: string;
+    email: string | null;
+    groupName: string | null;
+    daysAtStage: number;
+    applicationsCount: number;
+  }>;
+};
+
+export type GranularFunnelResponse = {
+  stages: GranularFunnelStage[];
+  topBottleneck: {
+    code: string;
+    titleAr: string;
+    titleEn: string;
+    count: number;
+    percent: number;
+    stuckUsers: Array<{
+      id: string;
+      name: string;
+      email: string | null;
+      groupName: string | null;
+      daysAtStage: number;
+      applicationsCount: number;
+    }>;
+  } | null;
+  totalUsers: number;
+  adoptionMetrics: {
+    tourCompletedCount: number;
+    tourCompletionRate: number;
+    jobExplorerClicksCount: number;
+    topPlatforms: Array<{ name: string; clicks: number }>;
+    plotGuidanceReadsCount: number;
+    plotGuidancePostsCount: number;
+    promptCopiesCount: number;
+  };
+};
+
+export type OperationsStatsResponse = {
+  notifications: {
+    daily: {
+      sent: number;
+      limit: number;
+      remaining: number;
+      percentUsed: number;
+      otpSafeReserve: number;
+      safeAvailableForBulk: number;
+    };
+    monthly: {
+      sent: number;
+      limit: number;
+      remaining: number;
+      percentUsed: number;
+    };
+    smtp: NotificationSmtpStatus;
+    stats: {
+      totalNotifications: number;
+      unreadNotifications: number;
+      readNotifications: number;
+      readRate: number;
+    };
+    recentLogs: NotificationLogItem[];
+  };
+  noResponseProcessor: {
+    status: string;
+    interval: string;
+    autoClosedCount: number;
+    candidatesNext24h: number;
+  };
+  storage: {
+    activeCvCount: number;
+    cvHistoryCount: number;
+    totalFiles: number;
+    totalBytes: number;
+    totalMegabytes: number;
+    limitMegabytes: number;
+    percentUsed: number;
+  };
+  systemHealth: {
+    dbStatus: string;
+    dbLatencyMs: number;
+    domainEventsCount: number;
+    rateLimiter: {
+      limit: number;
+      ttlSeconds: number;
+      status: string;
+    };
+  };
+};
+
+export type JourneyNodeItem = {
+  code: string;
+  weekNumber: number;
+  orderIndex: number;
+  nodeType: "MAIN" | "DAY_7_CHECKIN" | "FINAL_ASSESSMENT";
+  titleAr: string;
+  titleEn: string;
+  descriptionAr: string | null;
+  descriptionEn: string | null;
+  durationDays: number;
+  requiredAppsCount: number;
+  requiredTailoredCount: number;
+  requiredPostsCount: number;
+  requiredOutreachCount: number;
+  unlocksInsightCode: string | null;
+  nextNodeCode: string | null;
 };

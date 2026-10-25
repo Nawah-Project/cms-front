@@ -28,6 +28,10 @@ export function JourneyTasksPanel() {
     }
   });
 
+  if (location.pathname.startsWith("/admin")) {
+    return null;
+  }
+
   const dismissCoachmark = () => {
     try {
       localStorage.setItem("nawah_journey_coachmark_seen", "true");
