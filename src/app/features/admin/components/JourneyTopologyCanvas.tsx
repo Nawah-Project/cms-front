@@ -29,6 +29,8 @@ import {
   Filter,
   Lock,
   Unlock,
+  PanelRightClose,
+  PanelRightOpen,
   Copy,
   Check,
 } from "lucide-react";
@@ -147,6 +149,7 @@ export function JourneyTopologyCanvas({
 
   // Canvas Zoom Lock & Scroll Hijacking Prevention
   const [isZoomLocked, setIsZoomLocked] = useState(false);
+  const [showLiveInspector, setShowLiveInspector] = useState(false);
   const [zoomHint, setZoomHint] = useState<string | null>(null);
   const hintTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -632,6 +635,29 @@ export function JourneyTopologyCanvas({
 
         {/* Canvas Controls: Zoom Lock Toggle + Fit to screen + Zoom In/Out */}
         <div className="flex flex-wrap items-center justify-end gap-1.5">
+          <button
+            type="button"
+            onClick={() => setShowLiveInspector((visible) => !visible)}
+            aria-expanded={showLiveInspector}
+            className="flex items-center gap-1.5 rounded-xl border border-border-subtle bg-surface px-2.5 py-1.5 text-xs font-semibold text-neutral-700 shadow-xs transition-colors hover:bg-neutral-100 dark:bg-surface-elevated dark:text-neutral-300 dark:hover:bg-neutral-800"
+            title={
+              isAr
+                ? showLiveInspector
+                  ? "إخفاء لوحة الفحص وتوسيع المخطط"
+                  : "إظهار لوحة الفحص"
+                : showLiveInspector
+                  ? "Hide readout and expand map"
+                  : "Show live readout"
+            }
+          >
+            {showLiveInspector ? (
+              <PanelRightClose className="h-3.5 w-3.5" />
+            ) : (
+              <PanelRightOpen className="h-3.5 w-3.5" />
+            )}
+            <span>{isAr ? (showLiveInspector ? "توسيع المخطط" : "لوحة الفحص") : (showLiveInspector ? "Expand map" : "Readout")}</span>
+          </button>
+
           {/* Zoom Lock Button */}
           <button
             type="button"
@@ -691,13 +717,13 @@ export function JourneyTopologyCanvas({
       </div>
 
       {/* 2. MAIN OBSERVE SECTION: TOPOLOGY CANVAS (8-9 cols) + LIVE INSPECTOR PANEL (3-4 cols) */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+      <div className={`grid grid-cols-1 gap-5 ${showLiveInspector ? "lg:grid-cols-12" : ""}`}>
         {/* CANVAS VIEWPORT CONTAINER */}
-        <div className="min-w-0 lg:col-span-8 2xl:col-span-9">
+        <div className={`min-w-0 ${showLiveInspector ? "lg:col-span-8 2xl:col-span-9" : "lg:col-span-12"}`}>
           <div
             ref={viewportRef}
             dir="ltr"
-            className="relative h-[min(72vh,720px)] min-h-[480px] w-full touch-none overflow-hidden rounded-2xl border border-neutral-800 bg-[#090d16] shadow-inner select-none cursor-grab active:cursor-grabbing"
+            className={`relative w-full touch-none overflow-hidden rounded-2xl border border-neutral-700 bg-[#25272b] shadow-inner select-none cursor-grab active:cursor-grabbing ${showLiveInspector ? "h-[min(72vh,760px)] min-h-[480px]" : "h-[min(80vh,900px)] min-h-[560px]"}`}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -716,8 +742,8 @@ export function JourneyTopologyCanvas({
             <svg className="absolute inset-0 h-full w-full pointer-events-none">
               <defs>
                 <pattern id="topology-grid" width="48" height="48" patternUnits="userSpaceOnUse">
-                  <path d="M 48 0 L 0 0 0 48" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-                  <circle cx="24" cy="24" r="1" fill="rgba(255,255,255,0.08)" />
+                  <path d="M 48 0 L 0 0 0 48" fill="none" stroke="rgba(255,255,255,0.055)" strokeWidth="1" />
+                  <circle cx="24" cy="24" r="1" fill="rgba(255,255,255,0.12)" />
                 </pattern>
               </defs>
               <rect width="100%" height="100%" fill="url(#topology-grid)" />
@@ -733,16 +759,16 @@ export function JourneyTopologyCanvas({
               >
               {/* Week Track Labels */}
               <g opacity="0.6">
-                <text x="80" y="80" fill="#94a3b8" fontSize="18" fontWeight="bold">
+                <text x="80" y="80" fill="#c4c5ca" fontSize="18" fontWeight="bold">
                   {isAr ? "الأسبوع 0 والأسبوع 1: التهيئة وبناء زخم التقديم الأساسي" : "Week 0 & 1: Onboarding & Momentum"}
                 </text>
-                <text x="80" y="660" fill="#94a3b8" fontSize="18" fontWeight="bold">
+                <text x="80" y="660" fill="#c4c5ca" fontSize="18" fontWeight="bold">
                   {isAr ? "الأسبوع 2: بداية التقديم المخصص وتعديل السيرة الذاتية" : "Week 2: Tailored Submissions"}
                 </text>
-                <text x="80" y="1220" fill="#94a3b8" fontSize="18" fontWeight="bold">
+                <text x="80" y="1220" fill="#c4c5ca" fontSize="18" fontWeight="bold">
                   {isAr ? "الأسبوع 3: الحضور الرقمي والمحتوى المهني المستمر" : "Week 3: Digital Presence & Visibility"}
                 </text>
-                <text x="80" y="1500" fill="#94a3b8" fontSize="18" fontWeight="bold">
+                <text x="80" y="1500" fill="#c4c5ca" fontSize="18" fontWeight="bold">
                   {isAr ? "الأسبوع 4: التوسع وشبكة العلاقات والتقرير النهائي" : "Week 4: Outreach & Graduation"}
                 </text>
               </g>
@@ -772,12 +798,12 @@ export function JourneyTopologyCanvas({
                 {/* Background Shadow edge */}
                 <path d={pathD} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" strokeLinecap="round" />
                 {/* Core edge */}
-                <path d={pathD} fill="none" stroke="rgba(56,189,248,0.3)" strokeWidth="2.5" strokeLinecap="round" />
+                <path d={pathD} fill="none" stroke="rgba(156,173,185,0.38)" strokeWidth="2.5" strokeLinecap="round" />
                 {/* Animated active dash flow */}
                 <path
                   d={pathD}
                   fill="none"
-                  stroke="#38bdf8"
+                  stroke="#9cadb9"
                   strokeWidth="2.5"
                   strokeDasharray="6 6"
                   className="active-flow-path"
@@ -803,13 +829,13 @@ export function JourneyTopologyCanvas({
                   <path
                     d={pathD}
                     fill="none"
-                    stroke="#f59e0b"
+                    stroke="#bd8b25"
                     strokeWidth="2"
                     strokeDasharray="4 4"
                     className="opacity-80"
                   />
-                  <circle cx={startX} cy={startY} r="3" fill="#f59e0b" />
-                  <circle cx={endX} cy={endY} r="3" fill="#f59e0b" />
+                  <circle cx={startX} cy={startY} r="3" fill="#bd8b25" />
+                  <circle cx={endX} cy={endY} r="3" fill="#bd8b25" />
                 </g>
               );
             })}
@@ -842,7 +868,7 @@ export function JourneyTopologyCanvas({
                       setSelectedGuidance(node);
                       setSelectedNodeCode(null);
                     }}
-                    className="group relative flex h-full w-full items-center justify-between rounded-xl border border-amber-500/80 bg-neutral-900/95 px-3 py-1.5 text-amber-200 shadow-xl backdrop-blur-md cursor-pointer transition-all hover:scale-102 hover:border-amber-300 hover:shadow-amber-500/25"
+                    className="group relative flex h-full w-full items-center justify-between rounded-xl border border-amber-600/70 bg-[#303237] px-3 py-1.5 text-amber-100 shadow-lg cursor-pointer transition-all hover:border-amber-400 hover:bg-[#393b40]"
                     title={isAr ? "انقر لعرض تفاصيل الإرشاد ومن قرأه" : "View guidance details"}
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -876,14 +902,14 @@ export function JourneyTopologyCanvas({
                   onClick={() => setSelectedNodeCode(node.code)}
                   className={`group relative h-full w-full rounded-2xl border p-3 cursor-pointer select-none transition-all duration-200 shadow-md ${
                     isBottleneck
-                      ? "border-rose-400 bg-linear-to-b from-rose-950/80 to-[#121624] ring-2 ring-rose-500/60 shadow-rose-950/60"
+                      ? "border-rose-400/90 bg-[#303237] ring-2 ring-rose-500/30 shadow-neutral-950/40"
                       : isSelected
-                      ? "border-sky-400 bg-linear-to-b from-sky-950/70 to-[#121624] ring-2 ring-sky-400/60 shadow-sky-950/60"
+                      ? "border-sky-300/90 bg-[#303237] ring-2 ring-sky-400/30 shadow-neutral-950/40"
                       : isTracedUserHere
-                      ? "border-emerald-400 bg-linear-to-b from-emerald-950/70 to-[#121624] ring-2 ring-emerald-400/60 shadow-emerald-950/60"
+                      ? "border-emerald-400/90 bg-[#303237] ring-2 ring-emerald-400/30 shadow-neutral-950/40"
                       : node.type === "REVIEW_STATION"
-                      ? "border-indigo-500/60 bg-linear-to-b from-indigo-950/40 to-[#121624] hover:border-indigo-400"
-                      : "border-neutral-700/80 bg-[#151b2b] hover:border-neutral-500 hover:bg-[#1a2236]"
+                      ? "border-neutral-500/70 bg-[#303237] hover:border-neutral-400 hover:bg-[#393b40]"
+                      : "border-neutral-600/80 bg-[#303237] hover:border-neutral-400 hover:bg-[#393b40]"
                   }`}
                 >
                   {/* Card Header: Node Code + Week + Bottleneck Badge */}
@@ -924,12 +950,12 @@ export function JourneyTopologyCanvas({
                       </span>
                     )}
                     {(node.requiredTailored ?? 0) > 0 && (
-                      <span className="rounded bg-purple-950/80 border border-purple-800/60 px-1.5 py-0.2 text-[10px] font-semibold text-purple-300">
+                      <span className="rounded bg-sky-950/60 border border-sky-800/60 px-1.5 py-0.2 text-[10px] font-semibold text-sky-200">
                         {node.requiredTailored} {isAr ? "مخصصة" : "tailored"}
                       </span>
                     )}
                     {(node.requiredPosts ?? 0) > 0 && (
-                      <span className="rounded bg-indigo-950/80 border border-indigo-800/60 px-1.5 py-0.2 text-[10px] font-semibold text-indigo-300">
+                      <span className="rounded bg-neutral-800 border border-neutral-600/70 px-1.5 py-0.2 text-[10px] font-semibold text-neutral-200">
                         {node.requiredPosts} {isAr ? "منشور" : "post"}
                       </span>
                     )}
@@ -970,7 +996,7 @@ export function JourneyTopologyCanvas({
     </div>
 
     {/* LIVE INSPECTOR PANEL (لوحة الفحص الجانبية) */}
-    <div className="min-w-0 lg:col-span-4 2xl:col-span-3">
+    {showLiveInspector && <div className="min-w-0 lg:col-span-4 2xl:col-span-3">
       <div className="flex h-[min(72vh,720px)] min-h-[480px] flex-col rounded-2xl border border-border-subtle bg-surface p-4 shadow-sm dark:bg-surface-elevated overflow-y-auto">
         <div className="border-b border-border-subtle pb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -1230,7 +1256,7 @@ export function JourneyTopologyCanvas({
           )}
         </div>
       </div>
-    </div>
+    </div>}
   </div>
 
       {/* 3. NODE DETAILS SLIDE-OVER DRAWER */}

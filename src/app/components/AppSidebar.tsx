@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
-import { ChevronDown, Eye, Lock } from "lucide-react";
+import {
+  ChevronDown,
+  Eye,
+  Lock,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
 import { useAuth } from "../features/auth/store/authStore";
 import { useLogout } from "../features/auth/hooks/useLogout";
 import { useI18n } from "../i18n";
@@ -260,7 +266,13 @@ function isPathActive(pathname: string, to: string, end?: boolean) {
   return pathname === to || pathname.startsWith(`${to}/`);
 }
 
-export function AppSidebar() {
+export function AppSidebar({
+  collapsed,
+  onToggleCollapsed,
+}: {
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+}) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const { user } = useAuth();
@@ -306,7 +318,7 @@ export function AppSidebar() {
 
   const renderAdminPrimaryNav = (mobile = false) => (
     <div className="space-y-1">
-      <div className="px-3 pb-1 pt-1">
+      <div className={`px-3 pb-1 pt-1 ${collapsed && !mobile ? "sr-only" : ""}`}>
         <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
           {locale === "ar" ? "مركز قيادة المنصة" : "Admin Command Center"}
         </p>
@@ -321,7 +333,7 @@ export function AppSidebar() {
             : active
               ? "bg-neutral-800 text-white font-bold border border-neutral-700 shadow-xs"
               : "text-neutral-300 hover:bg-neutral-800/70 hover:text-white"
-        }`;
+        } ${collapsed && !mobile ? "justify-center px-2" : ""}`;
 
         return (
           <Link
@@ -329,15 +341,17 @@ export function AppSidebar() {
             to={item.to}
             onClick={() => mobile && setMobileOpen(false)}
             aria-current={active ? "page" : undefined}
+            aria-label={locale === "ar" ? item.labelAr : item.labelEn}
+            title={collapsed && !mobile ? (locale === "ar" ? item.labelAr : item.labelEn) : undefined}
             className={className}
           >
-            <span className="flex min-w-0 items-center gap-2.5">
+            <span className={`flex min-w-0 items-center gap-2.5 ${collapsed && !mobile ? "justify-center" : ""}`}>
               <NavIcon name={item.icon} />
-              <span className="truncate">
+              <span className={collapsed && !mobile ? "sr-only" : "truncate"}>
                 {locale === "ar" ? item.labelAr : item.labelEn}
               </span>
             </span>
-            {item.hasStatusDot && (
+            {item.hasStatusDot && !(collapsed && !mobile) && (
               <span className="relative flex h-2 w-2 shrink-0">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
@@ -350,26 +364,28 @@ export function AppSidebar() {
   );
 
   const renderResearcherPreviewNav = (mobile = false) => (
-    <div className="mt-4 pt-3 border-t border-neutral-800/80">
+    <div className="mt-4 border-t border-neutral-800/80 pt-3">
       <button
         type="button"
         onClick={() => setUserViewOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between px-3 py-2 text-xs font-semibold text-neutral-400 hover:text-neutral-200 transition-colors rounded-lg hover:bg-neutral-800/50 cursor-pointer"
+        aria-label={locale === "ar" ? "منظور الباحث (معاينة)" : "Researcher View (Preview)"}
+        title={collapsed && !mobile ? (locale === "ar" ? "منظور الباحث (معاينة)" : "Researcher View (Preview)") : undefined}
+        className={`flex w-full items-center justify-between px-3 py-2 text-xs font-semibold text-neutral-400 hover:text-neutral-200 transition-colors rounded-lg hover:bg-neutral-800/50 cursor-pointer ${collapsed && !mobile ? "justify-center px-2" : ""}`}
         aria-expanded={userViewOpen}
       >
-        <span className="flex items-center gap-2">
+        <span className={`flex items-center gap-2 ${collapsed && !mobile ? "justify-center" : ""}`}>
           <Eye className="h-4 w-4 text-neutral-400" />
-          <span>
+          <span className={collapsed && !mobile ? "sr-only" : ""}>
             {locale === "ar"
               ? "منظور الباحث (معاينة)"
               : "Researcher View (Preview)"}
           </span>
         </span>
-        <ChevronDown
+        {!collapsed || mobile ? <ChevronDown
           className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${
             userViewOpen ? "rotate-180" : ""
           }`}
-        />
+        /> : null}
       </button>
 
       {userViewOpen && (
@@ -384,7 +400,7 @@ export function AppSidebar() {
                 : active
                   ? "bg-neutral-700/80 font-medium text-white shadow-xs"
                   : "text-neutral-400 hover:bg-neutral-800/70 hover:text-white"
-            }`;
+            } ${collapsed && !mobile ? "justify-center px-2" : ""}`;
 
             return (
               <Link
@@ -392,11 +408,13 @@ export function AppSidebar() {
                 to={item.to}
                 onClick={() => mobile && setMobileOpen(false)}
                 aria-current={active ? "page" : undefined}
+                aria-label={t(item.labelKey)}
+                title={collapsed && !mobile ? t(item.labelKey) : undefined}
                 className={className}
               >
-                <span className="flex min-w-0 items-center gap-2.5">
+                <span className={`flex min-w-0 items-center gap-2.5 ${collapsed && !mobile ? "justify-center" : ""}`}>
                   <NavIcon name={item.icon} />
-                  <span className="truncate">{t(item.labelKey)}</span>
+                  <span className={collapsed && !mobile ? "sr-only" : "truncate"}>{t(item.labelKey)}</span>
                 </span>
               </Link>
             );
@@ -427,15 +445,15 @@ export function AppSidebar() {
               : isLocked
                 ? "text-neutral-500 hover:bg-neutral-800/60 hover:text-neutral-400"
                 : "text-neutral-300 hover:bg-neutral-800 hover:text-white"
-        }`;
+        } ${collapsed && !mobile ? "justify-center px-2" : ""}`;
 
         const content = (
           <>
-            <span className="flex min-w-0 items-center gap-3">
+            <span className={`flex min-w-0 items-center gap-3 ${collapsed && !mobile ? "justify-center" : ""}`}>
               <NavIcon name={item.icon} />
-              <span className="truncate">{t(item.labelKey)}</span>
+              <span className={collapsed && !mobile ? "sr-only" : "truncate"}>{t(item.labelKey)}</span>
             </span>
-            {isLocked && (
+            {isLocked && !(collapsed && !mobile) && (
               <span
                 className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300"
                 aria-label={t("journey.lockedBadge")}
@@ -468,6 +486,8 @@ export function AppSidebar() {
                   )
                 }
                 aria-expanded={isBubbleOpen}
+                aria-label={`${lockTitle}: ${lockRequirement}`}
+                title={collapsed && !mobile ? lockTitle : undefined}
                 className={`${className} w-full text-start cursor-pointer`}
               >
                 {content}
@@ -495,6 +515,8 @@ export function AppSidebar() {
             to={item.to}
             onClick={() => mobile && setMobileOpen(false)}
             aria-current={active ? "page" : undefined}
+            aria-label={t(item.labelKey)}
+            title={collapsed && !mobile ? t(item.labelKey) : undefined}
             className={className}
           >
             {content}
@@ -515,7 +537,9 @@ export function AppSidebar() {
         mobile
           ? "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
           : "text-neutral-400 hover:bg-neutral-800 hover:text-white"
-      }`}
+      } ${collapsed && !mobile ? "justify-center px-2" : ""}`}
+      aria-label={t("common.signOut")}
+      title={collapsed && !mobile ? t("common.signOut") : undefined}
     >
       <svg
         className="h-[18px] w-[18px]"
@@ -531,24 +555,26 @@ export function AppSidebar() {
           d="M10 17l5-5-5-5m5 5H3.5m8-8.5h5A3.5 3.5 0 0 1 20 7v10a3.5 3.5 0 0 1-3.5 3.5h-5"
         />
       </svg>
-      <span>{t("common.signOut")}</span>
+      <span className={collapsed && !mobile ? "sr-only" : ""}>{t("common.signOut")}</span>
     </button>
   );
 
   return (
     <>
-      <aside className="fixed inset-y-0 start-0 z-[65] hidden w-64 flex-col border-e border-neutral-800 bg-neutral-900 px-5 py-7 lg:flex overflow-y-auto">
-        <div className="mb-6 px-1">
+      <aside className={`fixed inset-y-0 start-0 z-[65] hidden flex-col border-e border-neutral-800 bg-neutral-900 py-7 transition-[width,padding] duration-200 lg:flex overflow-y-auto ${collapsed ? "w-20 px-2.5" : "w-64 px-5"}`}>
+        <div className={`mb-6 ${collapsed ? "" : "px-1"}`}>
+          <div className={`flex ${collapsed ? "flex-col items-center gap-3" : "items-start justify-between gap-2"}`}>
           <Link
             to={isAdmin ? "/admin" : "/"}
-            className="flex min-w-0 items-start gap-3 text-sm font-semibold tracking-tight text-white"
+            title={collapsed ? t("common.brand") : undefined}
+            className={`flex min-w-0 items-start gap-3 text-sm font-semibold tracking-tight text-white ${collapsed ? "justify-center" : ""}`}
           >
             <img
               src="/nawah-logo.svg"
               alt=""
               className="h-9 w-9 shrink-0 rounded-md object-contain"
             />
-            <span className="min-w-0 flex-1 pt-0.5">
+            <span className={collapsed ? "sr-only" : "min-w-0 flex-1 pt-0.5"}>
               <span className="block whitespace-nowrap leading-tight">
                 {t("common.brand")}
               </span>
@@ -560,7 +586,17 @@ export function AppSidebar() {
               </time>
             </span>
           </Link>
-          <div className="mt-3 flex items-center justify-end gap-1.5">
+          <button
+            type="button"
+            onClick={onToggleCollapsed}
+            aria-label={collapsed ? (locale === "ar" ? "توسيع القائمة الجانبية" : "Expand sidebar") : (locale === "ar" ? "تصغير القائمة الجانبية" : "Collapse sidebar")}
+            title={collapsed ? (locale === "ar" ? "توسيع القائمة الجانبية" : "Expand sidebar") : (locale === "ar" ? "تصغير القائمة الجانبية" : "Collapse sidebar")}
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-neutral-700 text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-white focus-visible:outline-2 focus-visible:outline-info-strong"
+          >
+            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
+          </div>
+          <div className={`mt-3 flex items-center gap-1.5 ${collapsed ? "flex-col" : "justify-end"}`}>
             <NotificationCenter variant="dark" />
             {localeToggle}
           </div>

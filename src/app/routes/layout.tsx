@@ -42,12 +42,26 @@ export default function Layout() {
   const queryClient = useQueryClient();
   const createAppMutation = useCreateApplication();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [draftValues, setDraftValues] =
     useState<Partial<CreateApplicationInput> | null>(null);
   const [celebrationData, setCelebrationData] =
     useState<MilestoneCelebrationData | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    if (window.localStorage.getItem("nawah.sidebar.collapsed") === "true") {
+      setIsSidebarCollapsed(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      "nawah.sidebar.collapsed",
+      String(isSidebarCollapsed),
+    );
+  }, [isSidebarCollapsed]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -108,12 +122,21 @@ export default function Layout() {
           <FirstApplicationGuidedTourProvider>
             <AppContext.Provider value={{ openAddModal }}>
               <div className="min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200">
-                <AppSidebar />
+                <AppSidebar
+                  collapsed={isSidebarCollapsed}
+                  onToggleCollapsed={() =>
+                    setIsSidebarCollapsed((collapsed) => !collapsed)
+                  }
+                />
                 {!location.pathname.startsWith("/admin") && (
                   <JourneyTasksPanel />
                 )}
 
-                <div className="min-h-screen w-full lg:ps-64">
+                <div
+                  className={`min-h-screen w-full transition-[padding] duration-200 ${
+                    isSidebarCollapsed ? "lg:ps-20" : "lg:ps-64"
+                  }`}
+                >
                   <main className="w-full px-5 py-7 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 lg:py-10">
                     <Outlet context={{ openAddModal }} />
                   </main>

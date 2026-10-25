@@ -9,6 +9,7 @@ import {
   type JourneyNodeItem,
   type PlotGuidanceItem,
   type UxLabOverviewResponse,
+  type UxEventTrendResponse,
   type VariantScorecardMetrics,
 } from "./api/adminApi";
 import { JourneyTopologyCanvas } from "./components/JourneyTopologyCanvas";
@@ -24,6 +25,7 @@ import {
 } from "./components/AdminUI";
 import { useToast } from "../../components/ui/ToastProvider";
 import {
+  Activity,
   AlertTriangle,
   ArrowDown,
   BarChart2,
@@ -57,7 +59,7 @@ import {
 } from "lucide-react";
 import { type ExperimentVariant, isValidVariant } from "../../utils/uxAnalytics";
 
-type ActiveTab = "MAP" | "FUNNEL" | "STUDIO";
+type ActiveTab = "MAP" | "FUNNEL" | "STUDIO" | "EVENTS";
 
 export default function AdminUxLabPage() {
   const { t, locale, number } = useI18n();
@@ -77,6 +79,11 @@ export default function AdminUxLabPage() {
   const [plotGuidances, setPlotGuidances] = useState<PlotGuidanceItem[]>([]);
   const [members, setMembers] = useState<AdminMember[]>([]);
   const [groups, setGroups] = useState<AdminGroup[]>([]);
+  const [eventTrendData, setEventTrendData] = useState<UxEventTrendResponse | null>(null);
+  const [eventTrendDays, setEventTrendDays] = useState<7 | 30 | 90>(30);
+  const [eventTrendRefresh, setEventTrendRefresh] = useState(0);
+  const [eventTrendLoading, setEventTrendLoading] = useState(false);
+  const [eventTrendError, setEventTrendError] = useState<string | null>(null);
 
   // Loading & Error states
   const [loading, setLoading] = useState(true);
@@ -178,6 +185,31 @@ export default function AdminUxLabPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== "EVENTS") return;
+    let isCurrent = true;
+    setEventTrendLoading(true);
+    setEventTrendError(null);
+    adminApi
+      .uxEventTrends(eventTrendDays)
+      .then((data) => {
+        if (isCurrent) setEventTrendData(data);
+      })
+      .catch((err: unknown) => {
+        if (isCurrent) {
+          setEventTrendError(
+            err instanceof Error ? err.message : "Failed to load event trends",
+          );
+        }
+      })
+      .finally(() => {
+        if (isCurrent) setEventTrendLoading(false);
+      });
+    return () => {
+      isCurrent = false;
+    };
+  }, [activeTab, eventTrendDays, eventTrendRefresh]);
 
   // Inspect Friction Node
   const handleInspectFrictionNode = (nodeCode: string) => {
@@ -387,6 +419,29 @@ export default function AdminUxLabPage() {
     return cumulativeStages[selectedFunnelIndex] || cumulativeStages[0];
   }, [cumulativeStages, selectedFunnelIndex]);
 
+  const eventTrendSeries = useMemo(() => {
+    const byDate = new Map(
+      (eventTrendData?.daily ?? []).map((day) => [day.date, day]),
+    );
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    return Array.from({ length: eventTrendDays }, (_, index) => {
+      const date = new Date(today);
+      date.setUTCDate(today.getUTCDate() - eventTrendDays + index + 1);
+      const key = date.toISOString().slice(0, 10);
+      const item = byDate.get(key);
+      return {
+        date: key,
+        eventCount: item?.eventCount ?? 0,
+        activeUsers: item?.activeUsers ?? 0,
+      };
+    });
+  }, [eventTrendData, eventTrendDays]);
+  const maxEventTrendCount = Math.max(
+    1,
+    ...eventTrendSeries.map((day) => day.eventCount),
+  );
+
   if (loading && !overviewData && !funnelData) {
     return <LoadingState message={isAr ? "جاري تحميل مرصد تحليلات السلوك..." : "Loading UX Observatory..."} />;
   }
@@ -418,9 +473,9 @@ export default function AdminUxLabPage() {
             }`}
           >
             <Compass className="h-4 w-4" />
-            <span>{isAr ? "🗺️ مرصد تدفق الرحلة (Journey Flow Map)" : "🗺️ Journey Flow Map"}</span>
+            <span>{isAr ? "خريطة الرحلة" : "Journey map"}</span>
             <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${activeTab === "MAP" ? "bg-white/20 text-white dark:bg-black/20 dark:text-black" : "bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"}`}>
-              26
+              {number(journeyNodes.length)}
             </span>
           </button>
 
@@ -435,9 +490,9 @@ export default function AdminUxLabPage() {
             }`}
           >
             <BarChart2 className="h-4 w-4" />
-            <span>{isAr ? "🔻 قمع العبور والتسرب (Conversion Funnel & Insights)" : "🔻 Conversion Funnel & Insights"}</span>
+            <span>{isAr ? "مسار التحويل" : "Conversion funnel"}</span>
             <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${activeTab === "FUNNEL" ? "bg-white/20 text-white dark:bg-black/20 dark:text-black" : "bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"}`}>
-              6
+              {number(cumulativeStages.length)}
             </span>
           </button>
 
@@ -452,9 +507,26 @@ export default function AdminUxLabPage() {
             }`}
           >
             <FlaskConical className="h-4 w-4" />
-            <span>{isAr ? "🧪 معمل التجارب (A/B/C Experiment Studio)" : "🧪 A/B/C Experiment Studio"}</span>
+            <span>{isAr ? "مقارنة التجارب" : "Experiments"}</span>
             <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${activeTab === "STUDIO" ? "bg-white/20 text-white dark:bg-black/20 dark:text-black" : "bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"}`}>
-              A/B/C
+              3
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("EVENTS")}
+            aria-pressed={activeTab === "EVENTS"}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-bold transition-all ${
+              activeTab === "EVENTS"
+                ? "bg-neutral-950 text-white shadow-md dark:bg-white dark:text-neutral-950"
+                : "text-neutral-600 hover:text-neutral-950 hover:bg-white/60 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800/60"
+            }`}
+          >
+            <Activity className="h-4 w-4" />
+            <span>{isAr ? "سلوك المستخدم" : "User behavior"}</span>
+            <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${activeTab === "EVENTS" ? "bg-white/20 text-white dark:bg-black/20 dark:text-black" : "bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"}`}>
+              {number(eventTrendData?.totalEvents ?? 0)}
             </span>
           </button>
         </div>
@@ -462,7 +534,10 @@ export default function AdminUxLabPage() {
         {/* Refresh Telemetry Button embedded in the bar */}
         <button
           type="button"
-          onClick={loadData}
+          onClick={() => {
+            void loadData();
+            setEventTrendRefresh((refresh) => refresh + 1);
+          }}
           disabled={loading}
           className="inline-flex items-center gap-1.5 rounded-xl border border-border-subtle bg-surface px-3 py-1.5 text-xs font-bold text-neutral-800 shadow-xs transition hover:bg-neutral-100 disabled:opacity-50 dark:bg-surface-elevated dark:text-neutral-200 dark:hover:bg-neutral-800"
           title={isAr ? "تحديث كافة بيانات ومقاييس المرصد" : "Refresh Telemetry"}
@@ -477,6 +552,12 @@ export default function AdminUxLabPage() {
       {/* ========================================================================= */}
       {activeTab === "MAP" && (
         <section aria-label="Journey Topology Section" className="space-y-4">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-border-subtle bg-surface px-4 py-2.5 text-xs text-neutral-600 shadow-xs dark:bg-surface-elevated dark:text-neutral-300">
+            <span className="font-semibold text-neutral-800 dark:text-neutral-100">{isAr ? "دليل الخريطة" : "Map legend"}</span>
+            <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full bg-rose-500" />{isAr ? "أكبر نقطة توقف" : "Largest bottleneck"}</span>
+            <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full bg-emerald-500" />{isAr ? "موقع العضو المتتبع" : "Tracked member"}</span>
+            <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full bg-sky-500" />{isAr ? "المحطة المحددة" : "Selected station"}</span>
+          </div>
           {/* Compact Telemetry Strip for Map Tab */}
           {ribbon && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -535,7 +616,7 @@ export default function AdminUxLabPage() {
                       {number(members.length)}
                     </span>
                     <span className="text-xs text-neutral-500">
-                      {isAr ? "عبر كافة المحطات الـ 26" : "across all 26 nodes"}
+                      {isAr ? `عبر ${number(journeyNodes.length)} محطة` : `across ${number(journeyNodes.length)} stations`}
                     </span>
                   </div>
                 </div>
@@ -609,10 +690,10 @@ export default function AdminUxLabPage() {
                 </span>
                 <div className="mt-1 flex items-baseline gap-2">
                   <span className="text-xl font-black text-rose-950 dark:text-rose-100">
-                    {insights?.biggestLeak ? `-${number(insights.biggestLeak.droppedCount)} ${isAr ? "باحث" : "users"}` : "10 باحثين"}
+                    {insights?.biggestLeak ? `-${number(insights.biggestLeak.droppedCount)} ${isAr ? "باحث" : "users"}` : (isAr ? "لا توجد بيانات كافية" : "Not enough data")}
                   </span>
                   <span className="text-xs font-bold text-rose-700 dark:text-rose-300">
-                    ({insights?.biggestLeak ? `${number(insights.biggestLeak.droppedPercent)}%` : "67%"})
+                    {insights?.biggestLeak ? `(${number(insights.biggestLeak.droppedPercent)}%)` : "—"}
                   </span>
                 </div>
                 <p className="mt-0.5 text-[11px] text-rose-700/80 dark:text-rose-400/80">
@@ -997,7 +1078,7 @@ export default function AdminUxLabPage() {
       {activeTab === "STUDIO" && (
         <section aria-label="Experiment Studio" className="space-y-6">
           {/* Winner Banner */}
-          {scorecard && (
+          {scorecard && scorecard.winnerVariant && (
             <div className="flex flex-col gap-4 rounded-2xl border border-amber-300 bg-linear-to-r from-amber-50 to-amber-100/60 p-5 shadow-sm dark:border-amber-800/60 dark:from-amber-950/30 dark:to-amber-900/20 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-2xl text-white shadow-md">
@@ -1006,22 +1087,18 @@ export default function AdminUxLabPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="rounded-full bg-amber-200 px-2.5 py-0.5 text-xs font-black text-amber-950 dark:bg-amber-900 dark:text-amber-200">
-                      {isAr ? "التوصية السلوكية الذكية" : "Behavioral Recommendation"}
+                      {isAr ? "قراءة وصفية للعينة الحالية" : "Descriptive sample readout"}
                     </span>
                     <h3 className="text-base font-black text-neutral-950 dark:text-neutral-50">
                       {isAr
-                        ? `🏆 النسخة الأعلى أداءً حالياً: النسخة (${scorecard.winnerVariant})`
-                        : `🏆 Winning Variant: Variant (${scorecard.winnerVariant})`}
+                        ? `المتقدمة حاليًا في المؤشر المركب: النسخة (${scorecard.winnerVariant})`
+                        : `Current composite-score leader: Variant ${scorecard.winnerVariant}`}
                     </h3>
                   </div>
                   <p className="mt-1 text-xs text-neutral-700 dark:text-neutral-300">
-                    {scorecard.winnerVariant === "B"
-                      ? isAr
-                        ? "حققت النسخة B أعلى معدل إنجاز لمرحلة الصفر (Task 0) وقراءة التوجيهات بنسبة استبقاء ممتازة بفضل الجولة التفاعلية."
-                        : "Variant B achieved the highest Task 0 completion and guidance interaction rate."
-                      : isAr
-                      ? `النسخة ${scorecard.winnerVariant} تتصدر حالياً مقاييس التحويل والاستبقاء التراكمي في التجربة الحية.`
-                      : `Variant ${scorecard.winnerVariant} currently leads conversion and active retention metrics.`}
+                    {isAr
+                      ? "المقارنة تصف الأعضاء المعيّنين لكل نسخة حاليًا؛ ولا تثبت أن تصميمًا بعينه سبّب الفرق. راجع عدد الأعضاء ومؤشرات كل نسخة قبل اتخاذ قرار."
+                      : "This compares members currently assigned to each variant. It does not establish that a design caused the difference; review each sample size and metric before deciding."}
                   </p>
                 </div>
               </div>
@@ -1029,10 +1106,10 @@ export default function AdminUxLabPage() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => handleApplyVariantToAllGroups(scorecard.winnerVariant)}
+                  onClick={() => handleApplyVariantToAllGroups(scorecard.winnerVariant!)}
                   className="rounded-xl bg-neutral-900 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-neutral-800 dark:bg-white dark:text-neutral-950 transition"
                 >
-                  {isAr ? `تعميم النسخة (${scorecard.winnerVariant}) على جميع المجموعات` : `Apply Winner (${scorecard.winnerVariant}) to All Cohorts`}
+                  {isAr ? `تطبيق النسخة (${scorecard.winnerVariant}) على جميع المجموعات` : `Apply variant ${scorecard.winnerVariant} to all cohorts`}
                 </button>
               </div>
             </div>
@@ -1047,8 +1124,8 @@ export default function AdminUxLabPage() {
               </h2>
               <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
                 {isAr
-                  ? "مقارنة دقيقة توضح الفارق في تجربة الباحث لكل نسخة ومقاييس الأداء الحقيقية مع أشرطة تقدم بصرية."
-                  : "Side-by-side comparison illustrating the researcher UI experience and live performance progress bars."}
+                  ? "مقارنة المؤشرات المسجلة لكل نسخة. الأعداد توضح حجم العينة الحالية، والنتائج وصفية وليست اختبارًا سببيًا محسومًا."
+                  : "Compare recorded metrics for each assigned variant. Sample sizes are shown; these descriptive results are not a conclusive causal experiment."}
               </p>
             </div>
 
@@ -1172,22 +1249,22 @@ export default function AdminUxLabPage() {
                           {/* Guidance Read Rate */}
                           <div>
                             <div className="flex items-center justify-between text-xs">
-                              <span className="text-neutral-600 dark:text-neutral-400">{isAr ? "قراءة التوجيهات والقوالب" : "Guidance Engagement"}</span>
-                              <span className="font-bold text-neutral-950 dark:text-neutral-50">{number(m.guidanceReadRate)}%</span>
+                  <span className="text-neutral-600 dark:text-neutral-400">{isAr ? "أعضاء قرؤوا توجيهًا واحدًا على الأقل" : "Members who read at least one guidance"}</span>
+                  <span className="font-bold text-neutral-950 dark:text-neutral-50">{number(m.guidanceReadUsersCount)} / {number(m.usersCount)} · {number(m.guidanceReadRate)}%</span>
                             </div>
                             <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800">
                               <div className="h-full rounded-full bg-amber-500" style={{ width: `${Math.min(100, m.guidanceReadRate)}%` }} />
                             </div>
                           </div>
 
-                          {/* Active Retention */}
+                          {/* Recent Activity */}
                           <div>
                             <div className="flex items-center justify-between text-xs">
-                              <span className="text-neutral-600 dark:text-neutral-400">{isAr ? "معدل النشاط الأسبوعي" : "Active Weekly Retention"}</span>
-                              <span className="font-bold text-neutral-950 dark:text-neutral-50">{number(m.activeRetentionRate)}%</span>
+                              <span className="text-neutral-600 dark:text-neutral-400">{isAr ? "نشطون خلال آخر 3 أيام" : "Active in the last 3 days"}</span>
+                              <span className="font-bold text-neutral-950 dark:text-neutral-50">{number(m.activeLast3DaysRate)}%</span>
                             </div>
                             <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800">
-                              <div className="h-full rounded-full bg-indigo-500" style={{ width: `${Math.min(100, m.activeRetentionRate)}%` }} />
+                              <div className="h-full rounded-full bg-indigo-500" style={{ width: `${Math.min(100, m.activeLast3DaysRate)}%` }} />
                             </div>
                           </div>
                         </div>
@@ -1589,6 +1666,148 @@ export default function AdminUxLabPage() {
               </div>
             </div>
           </div>
+        </section>
+      )}
+
+      {activeTab === "EVENTS" && (
+        <section aria-label={isAr ? "اتجاهات أحداث الاستخدام" : "User event trends"} className="space-y-5">
+          <div className="flex flex-col gap-4 rounded-2xl border border-border-subtle bg-surface p-5 shadow-sm dark:bg-surface-elevated sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="flex items-center gap-2 text-base font-bold text-neutral-950 dark:text-neutral-50">
+                <Activity className="h-5 w-5 text-brand-primary" />
+                {isAr ? "اتجاهات تفاعل المستخدمين" : "User interaction trends"}
+              </h2>
+              <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
+                {isAr
+                  ? "أحداث الاستخدام المسجلة فعليًا حسب اليوم ونوع الحدث. لا تُعرض أسماء أو بيانات شخصية هنا."
+                  : "Recorded usage events grouped by day and event type. Personal names and profile data are not shown here."}
+              </p>
+            </div>
+            <div className="flex items-center gap-2" role="group" aria-label={isAr ? "الفترة الزمنية" : "Time range"}>
+              {([7, 30, 90] as const).map((days) => (
+                <button
+                  key={days}
+                  type="button"
+                  aria-pressed={eventTrendDays === days}
+                  onClick={() => setEventTrendDays(days)}
+                  className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${eventTrendDays === days ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "border border-border-subtle text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"}`}
+                >
+                  {days} {isAr ? "يوم" : "days"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {eventTrendError ? (
+            <ErrorState
+              message={eventTrendError}
+              onRetry={() => setEventTrendRefresh((refresh) => refresh + 1)}
+            />
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-border-subtle bg-surface p-4 shadow-xs dark:bg-surface-elevated">
+                  <p className="text-xs font-semibold text-neutral-500">{isAr ? `إجمالي الأحداث خلال ${eventTrendDays} يومًا` : `Events in the last ${eventTrendDays} days`}</p>
+                  <p className="mt-2 text-2xl font-bold tabular-nums text-neutral-950 dark:text-neutral-50">
+                    {eventTrendLoading ? "—" : number(eventTrendData?.totalEvents ?? 0)}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-border-subtle bg-surface p-4 shadow-xs dark:bg-surface-elevated">
+                  <p className="text-xs font-semibold text-neutral-500">{isAr ? "مستخدمون فريدون سجلوا حدثًا" : "Unique users with a recorded event"}</p>
+                  <p className="mt-2 text-2xl font-bold tabular-nums text-neutral-950 dark:text-neutral-50">
+                    {eventTrendLoading ? "—" : number(eventTrendData?.uniqueUsers ?? 0)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-border-subtle bg-surface p-5 shadow-sm dark:bg-surface-elevated">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-neutral-950 dark:text-neutral-50">{isAr ? "الأحداث المسجلة يوميًا" : "Recorded events per day"}</h3>
+                    <p className="mt-1 text-xs text-neutral-500">{isAr ? "مرر المؤشر فوق العمود لعرض عدد الأحداث والمستخدمين الفريدين لذلك اليوم." : "Hover a bar to see event and unique-user counts for that day."}</p>
+                  </div>
+                  {eventTrendLoading && <RefreshCw className="h-4 w-4 animate-spin text-neutral-400" />}
+                </div>
+
+                <div className="mt-6 flex h-64 items-end gap-1 overflow-x-auto border-b border-border-subtle pb-2">
+                  {eventTrendSeries.map((day, index) => {
+                    const heightPercent = day.eventCount ? Math.max(3, (day.eventCount / maxEventTrendCount) * 100) : 0;
+                    const showDate = index === 0 || index === eventTrendSeries.length - 1 || index % Math.ceil(eventTrendSeries.length / 6) === 0;
+                    const dateLabel = new Intl.DateTimeFormat(locale, {
+                      month: "short",
+                      day: "numeric",
+                      timeZone: "UTC",
+                    }).format(new Date(`${day.date}T00:00:00Z`));
+                    return (
+                      <div key={day.date} className="flex h-full min-w-[14px] flex-1 flex-col items-center justify-end gap-2" title={`${dateLabel}: ${number(day.eventCount)} ${isAr ? "حدث" : "events"}, ${number(day.activeUsers)} ${isAr ? "مستخدم" : "users"}`}>
+                        <div className="flex h-[calc(100%-1rem)] w-full items-end justify-center">
+                          <div
+                            className={`w-full max-w-8 rounded-t-sm transition-[height] ${day.eventCount ? "bg-sky-600" : "bg-neutral-100 dark:bg-neutral-800"}`}
+                            style={{ height: `${heightPercent}%` }}
+                          />
+                        </div>
+                        <span className="h-4 whitespace-nowrap text-[9px] text-neutral-500">
+                          {showDate ? dateLabel : ""}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {!eventTrendLoading && (eventTrendData?.totalEvents ?? 0) === 0 && (
+                  <p className="mt-4 text-center text-xs text-neutral-500">
+                    {isAr ? "لا توجد أحداث استخدام مسجلة في هذه الفترة." : "No usage events were recorded in this period."}
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-border-subtle bg-surface p-5 shadow-sm dark:bg-surface-elevated">
+                <h3 className="text-sm font-bold text-neutral-950 dark:text-neutral-50">{isAr ? "توزيع الأحداث حسب النوع" : "Event breakdown"}</h3>
+                {eventTrendData?.eventBreakdown.length ? (
+                  <div className="mt-4 overflow-x-auto">
+                    <table className="w-full min-w-[520px] text-start text-xs">
+                      <thead>
+                        <tr className="border-b border-border-subtle text-neutral-500">
+                          <th className="pb-2 text-start font-semibold">{isAr ? "الحدث" : "Event"}</th>
+                          <th className="pb-2 text-end font-semibold">{isAr ? "عدد الأحداث" : "Events"}</th>
+                          <th className="pb-2 text-end font-semibold">{isAr ? "مستخدمون فريدون" : "Unique users"}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {eventTrendData.eventBreakdown.map((event) => {
+                          const eventName = event.eventName.replace(/^ux\./, "");
+                          const arabicNames: Record<string, string> = {
+                            onboarding_started: "بدء التهيئة",
+                            onboarding_video_watched: "مشاهدة فيديو التهيئة",
+                            onboarding_completed: "إكمال التهيئة",
+                            application_created: "إضافة طلب توظيف",
+                            application_stage_updated: "تحديث مرحلة طلب",
+                            task_status_changed: "تحديث حالة مهمة",
+                            feedback_read: "قراءة توجيه",
+                            tour_completed: "إكمال الجولة الإرشادية",
+                            job_explorer_clicked: "فتح مستكشف الوظائف",
+                            prompt_copied: "نسخ قالب توجيه",
+                          };
+                          return (
+                            <tr key={event.eventName} className="border-b border-border-subtle last:border-0">
+                              <td className="py-2.5 font-medium text-neutral-800 dark:text-neutral-200">
+                                {isAr ? arabicNames[eventName] ?? eventName : eventName.replaceAll("_", " ")}
+                              </td>
+                              <td className="py-2.5 text-end tabular-nums text-neutral-700 dark:text-neutral-300">{number(event.eventCount)}</td>
+                              <td className="py-2.5 text-end tabular-nums text-neutral-700 dark:text-neutral-300">{number(event.uniqueUsers)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="mt-4 rounded-xl bg-neutral-50 p-4 text-center text-xs text-neutral-500 dark:bg-neutral-900/60">
+                    {eventTrendLoading ? (isAr ? "جاري تحميل الأحداث..." : "Loading events…") : (isAr ? "لا توجد بيانات أحداث لهذه الفترة." : "No event data for this period.")}
+                  </p>
+                )}
+              </div>
+            </>
+          )}
         </section>
       )}
 

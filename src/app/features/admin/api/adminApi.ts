@@ -350,6 +350,8 @@ export const adminApi = {
     request<any>("/admin/monitoring/ux-analytics"),
   uxLabOverview: () =>
     request<UxLabOverviewResponse>("/admin/ux-lab/overview"),
+  uxEventTrends: (days: 7 | 30 | 90) =>
+    request<UxEventTrendResponse>(`/admin/ux-lab/event-trends?days=${days}`),
   assignUxVariants: (input: AssignUxVariantsInput) =>
     request<{ success: boolean; updatedGroups: number; updatedUsers: number }>(
       "/admin/ux-lab/variants/assign",
@@ -796,8 +798,25 @@ export interface VariantScorecardMetrics {
   onboardingRate: number;
   task0CompletionRate: number;
   avgAppsPerUser: number;
+  guidanceReadUsersCount: number;
   guidanceReadRate: number;
-  activeRetentionRate: number;
+  activeLast3DaysRate: number;
+}
+
+export interface UxEventTrendResponse {
+  days: number;
+  totalEvents: number;
+  uniqueUsers: number;
+  daily: Array<{
+    date: string;
+    eventCount: number;
+    activeUsers: number;
+  }>;
+  eventBreakdown: Array<{
+    eventName: string;
+    eventCount: number;
+    uniqueUsers: number;
+  }>;
 }
 
 export interface UxLabOverviewResponse {
@@ -833,7 +852,7 @@ export interface UxLabOverviewResponse {
     A: VariantScorecardMetrics;
     B: VariantScorecardMetrics;
     C: VariantScorecardMetrics;
-    winnerVariant: "A" | "B" | "C";
+    winnerVariant: "A" | "B" | "C" | null;
   };
   overriddenUsers: Array<{
     id: string;
