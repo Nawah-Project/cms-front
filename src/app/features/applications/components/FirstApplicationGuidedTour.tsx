@@ -361,9 +361,9 @@ export function FirstApplicationGuidedTourProvider({
           const computed = window.getComputedStyle(el);
           const radius = computed.borderRadius;
           if (radius && radius !== "0px") {
-            setTargetBorderRadius(radius);
+            setTargetBorderRadius((prev) => (prev !== radius ? radius : prev));
           } else {
-            setTargetBorderRadius("12px");
+            setTargetBorderRadius((prev) => (prev !== "12px" ? "12px" : prev));
           }
 
           setTargetRect((prev) => {
@@ -421,7 +421,7 @@ export function FirstApplicationGuidedTourProvider({
     }
   }, [isTourActive, step]);
 
-  // Track inputs for steps 5 & 6 (smooth non-interfering sync)
+  // Track inputs for steps 5 & 6 (instant keystroke + interval fallback)
   useEffect(() => {
     if (!isTourActive) return;
     if (step !== 5 && step !== 6) return;
@@ -447,8 +447,30 @@ export function FirstApplicationGuidedTourProvider({
     };
 
     checkInputs();
-    const interval = window.setInterval(checkInputs, 50);
-    return () => window.clearInterval(interval);
+
+    const handleInput = (e: Event) => {
+      const target = e.target as HTMLInputElement | null;
+      if (!target) return;
+      if (
+        step === 5 &&
+        target.getAttribute("data-tour-step") === "add-app-company"
+      ) {
+        setCompanyValue(target.value || "");
+      } else if (
+        step === 6 &&
+        target.getAttribute("data-tour-step") === "add-app-url"
+      ) {
+        setUrlValue(target.value || "");
+      }
+    };
+
+    window.addEventListener("input", handleInput, false);
+    const interval = window.setInterval(checkInputs, 40);
+
+    return () => {
+      window.removeEventListener("input", handleInput, false);
+      window.clearInterval(interval);
+    };
   }, [isTourActive, step]);
 
   // Keyboard navigation: Enter in steps 5 & 6 advances
@@ -685,7 +707,7 @@ export function FirstApplicationGuidedTourProvider({
                   <span
                     className={`text-[10px] truncate transition-colors ${
                       isStep5Valid
-                        ? "text-emerald-400 font-medium"
+                        ? "text-[#34d399] font-bold"
                         : "text-neutral-400"
                     }`}
                   >
@@ -697,10 +719,10 @@ export function FirstApplicationGuidedTourProvider({
                     type="button"
                     disabled={!isStep5Valid}
                     onClick={nextStep}
-                    className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all duration-150 shrink-0 ${
+                    className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition-all duration-150 shrink-0 ${
                       isStep5Valid
-                        ? "bg-emerald-400 hover:bg-emerald-300 text-neutral-950 shadow-md shadow-emerald-400/25 ring-1 ring-emerald-300/50 cursor-pointer active:scale-95"
-                        : "bg-emerald-500/35 text-neutral-400/90 cursor-not-allowed border border-emerald-500/20"
+                        ? "bg-[#34d399] hover:bg-[#10b981] text-neutral-950 shadow-md shadow-[#34d399]/35 ring-1 ring-[#6ee7b7]/60 cursor-pointer active:scale-95"
+                        : "bg-emerald-500/15 text-emerald-300/40 border border-emerald-500/20 cursor-not-allowed"
                     }`}
                   >
                     <span>{isRtl ? "التالي ←" : "Next →"}</span>
@@ -713,7 +735,7 @@ export function FirstApplicationGuidedTourProvider({
                   <span
                     className={`text-[10px] truncate transition-colors ${
                       isStep6Valid
-                        ? "text-emerald-400 font-medium"
+                        ? "text-[#34d399] font-bold"
                         : "text-neutral-400"
                     }`}
                   >
@@ -725,10 +747,10 @@ export function FirstApplicationGuidedTourProvider({
                     type="button"
                     disabled={!isStep6Valid}
                     onClick={nextStep}
-                    className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all duration-150 shrink-0 ${
+                    className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition-all duration-150 shrink-0 ${
                       isStep6Valid
-                        ? "bg-emerald-400 hover:bg-emerald-300 text-neutral-950 shadow-md shadow-emerald-400/25 ring-1 ring-emerald-300/50 cursor-pointer active:scale-95"
-                        : "bg-emerald-500/35 text-neutral-400/90 cursor-not-allowed border border-emerald-500/20"
+                        ? "bg-[#34d399] hover:bg-[#10b981] text-neutral-950 shadow-md shadow-[#34d399]/35 ring-1 ring-[#6ee7b7]/60 cursor-pointer active:scale-95"
+                        : "bg-emerald-500/15 text-emerald-300/40 border border-emerald-500/20 cursor-not-allowed"
                     }`}
                   >
                     <span>{isRtl ? "التالي ←" : "Next →"}</span>
