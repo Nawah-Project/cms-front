@@ -24,6 +24,10 @@ interface ToastItem extends ToastOptions {
 
 export interface ToastContextValue {
   showToast: (options: ToastOptions) => void;
+  show: (
+    message: string,
+    options?: { type?: ToastVariant; variant?: ToastVariant; duration?: number },
+  ) => void;
   success: (message: string) => void;
   error: (message: string) => void;
   info: (message: string) => void;
@@ -116,9 +120,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     [showToast],
   );
 
+  const show = useCallback(
+    (
+      message: string,
+      options?: { type?: ToastVariant; variant?: ToastVariant; duration?: number },
+    ) => {
+      const variant = options?.variant || options?.type || "info";
+      showToast({ message, variant, duration: options?.duration });
+    },
+    [showToast],
+  );
+
   const value = useMemo(
-    () => ({ showToast, success, error, info, warning }),
-    [showToast, success, error, info, warning],
+    () => ({ showToast, show, success, error, info, warning }),
+    [showToast, show, success, error, info, warning],
   );
 
   return (

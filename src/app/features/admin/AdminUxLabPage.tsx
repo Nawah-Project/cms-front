@@ -193,7 +193,7 @@ export default function AdminUxLabPage() {
         variant,
         groupIds: [groupId],
       });
-      toast.show(isAr ? "تم تحديث نسخة المجموعة بنجاح" : "Group variant updated", { type: "success" });
+      toast.success(isAr ? "تم تحديث نسخة المجموعة بنجاح" : "Group variant updated");
       if (overviewData) {
         setOverviewData({
           ...overviewData,
@@ -204,7 +204,7 @@ export default function AdminUxLabPage() {
         });
       }
     } catch (err: unknown) {
-      toast.show(isAr ? "تعذر تحديث نسخة المجموعة" : "Failed to update group variant", { type: "error" });
+      toast.error(isAr ? "تعذر تحديث نسخة المجموعة" : "Failed to update group variant");
     } finally {
       setSavingCohort(null);
     }
@@ -218,10 +218,10 @@ export default function AdminUxLabPage() {
         variant,
         groupIds: groups.map((g) => g.id),
       });
-      toast.show(isAr ? `تم تعميم النسخة (${variant}) على جميع المجموعات` : `Variant ${variant} applied to all groups`, { type: "success" });
+      toast.success(isAr ? `تم تعميم النسخة (${variant}) على جميع المجموعات` : `Variant ${variant} applied to all groups`);
       await loadData();
     } catch (err: unknown) {
-      toast.show(isAr ? "تعذر تعميم النسخة" : "Failed to apply variant to all groups", { type: "error" });
+      toast.error(isAr ? "تعذر تعميم النسخة" : "Failed to apply variant to all groups");
     } finally {
       setSavingCohort(null);
     }
@@ -232,7 +232,7 @@ export default function AdminUxLabPage() {
     try {
       setIsSettingDefaultVariant(true);
       await adminApi.updateUxConfig({ defaultVariant: variant });
-      toast.show(isAr ? `تم تعيين النسخة (${variant}) كنسخة افتراضية للمنصة` : `Variant ${variant} is now platform default`, { type: "success" });
+      toast.success(isAr ? `تم تعيين النسخة (${variant}) كنسخة افتراضية للمنصة` : `Variant ${variant} is now platform default`);
       if (overviewData) {
         setOverviewData({
           ...overviewData,
@@ -240,7 +240,7 @@ export default function AdminUxLabPage() {
         });
       }
     } catch (err: unknown) {
-      toast.show(isAr ? "تعذر تعيين النسخة الافتراضية" : "Failed to set default variant", { type: "error" });
+      toast.error(isAr ? "تعذر تعيين النسخة الافتراضية" : "Failed to set default variant");
     } finally {
       setIsSettingDefaultVariant(false);
     }
@@ -255,12 +255,12 @@ export default function AdminUxLabPage() {
         variant: overrideVariant,
         userIds: selectedOverrideUsers,
       });
-      toast.show(isAr ? "تم تطبيق التخصيص الاستثنائي للأعضاء المحددين" : "User overrides applied successfully", { type: "success" });
+      toast.success(isAr ? "تم تطبيق التخصيص الاستثنائي للأعضاء المحددين" : "User overrides applied successfully");
       setSelectedOverrideUsers([]);
       setUserOverrideSearch("");
       await loadData();
     } catch (err: unknown) {
-      toast.show(isAr ? "تعذر تطبيق التخصيص" : "Failed to apply user overrides", { type: "error" });
+      toast.error(isAr ? "تعذر تطبيق التخصيص" : "Failed to apply user overrides");
     } finally {
       setIsApplyingOverride(false);
     }
@@ -274,10 +274,10 @@ export default function AdminUxLabPage() {
         variant: "DEFAULT",
         userIds: [userId],
       });
-      toast.show(isAr ? "تم إلغاء التخصيص وإعادة العضو لنسخة مجموعته" : "User override removed", { type: "success" });
+      toast.success(isAr ? "تم إلغاء التخصيص وإعادة العضو لنسخة مجموعته" : "User override removed");
       await loadData();
     } catch (err: unknown) {
-      toast.show(isAr ? "تعذر إلغاء التخصيص" : "Failed to remove user override", { type: "error" });
+      toast.error(isAr ? "تعذر إلغاء التخصيص" : "Failed to remove user override");
     } finally {
       setIsRemovingOverride(null);
     }
@@ -298,17 +298,16 @@ export default function AdminUxLabPage() {
         variant,
         userIds: [userId],
       });
-      toast.show(
+      toast.success(
         isAr
           ? variant === "DEFAULT"
             ? "تمت إعادة الباحث للنسخة الافتراضية"
             : `تم تعيين الباحث للنسخة (${variant}) بنجاح`
-          : `User variant updated to ${variant}`,
-        { type: "success" }
+          : `User variant updated to ${variant}`
       );
       await loadData();
     } catch (err: unknown) {
-      toast.show(isAr ? "تعذر تغيير النسخة للباحث" : "Failed to change user variant", { type: "error" });
+      toast.error(isAr ? "تعذر تغيير النسخة للباحث" : "Failed to change user variant");
     } finally {
       setUpdatingUserVariantId(null);
     }
@@ -318,22 +317,23 @@ export default function AdminUxLabPage() {
   const handleSendMotivationalNudge = async () => {
     const targetIds = funnelData?.funnelInsights?.actionableCta?.targetUserIds || [];
     if (targetIds.length === 0) {
-      toast.show(isAr ? "لا يوجد باحثون متوقفون لإرسال التنبيه لهم" : "No target users", { type: "error" });
+      toast.error(isAr ? "لا يوجد باحثون متوقفون لإرسال التنبيه لهم" : "No target users");
       return;
     }
     try {
       setIsSendingNudge(true);
       await adminApi.sendCustomNotification({
-        recipientUserIds: targetIds,
+        targetType: "MEMBERS",
+        memberIds: targetIds,
+        channel: "BELL_ONLY",
         subject: isAr ? "دفعة حماسية لمواصلة انطلاقة التقديم! 🚀" : "Keep up your application momentum! 🚀",
-        message: isAr
+        body: isAr
           ? "أنت قريب جداً من إتمام أول 5 تقديمات وفتح مجموعتك الخاصة! راجع مستكشف الوظائف وسجل تقديمك اليوم."
           : "You are very close to reaching 5 applications and unlocking your cohort group! Keep going.",
-        channels: ["IN_APP"],
       });
-      toast.show(isAr ? `تم إرسال التنبيه التحفيزي بنجاح إلى ${targetIds.length} باحث` : `Nudge sent to ${targetIds.length} users`, { type: "success" });
+      toast.success(isAr ? `تم إرسال التنبيه التحفيزي بنجاح إلى ${targetIds.length} باحث` : `Nudge sent to ${targetIds.length} users`);
     } catch (err: unknown) {
-      toast.show(isAr ? "تعذر إرسال التنبيه التحفيزي" : "Failed to send nudge", { type: "error" });
+      toast.error(isAr ? "تعذر إرسال التنبيه التحفيزي" : "Failed to send nudge");
     } finally {
       setIsSendingNudge(false);
     }
@@ -344,9 +344,9 @@ export default function AdminUxLabPage() {
     try {
       setIsSavingVideo(true);
       await adminApi.updateUxConfig({ introVideoUrl });
-      toast.show(isAr ? "تم تحديث رابط فيديو التهيئة بنجاح" : "Intro video URL saved", { type: "success" });
+      toast.success(isAr ? "تم تحديث رابط فيديو التهيئة بنجاح" : "Intro video URL saved");
     } catch (err: unknown) {
-      toast.show(isAr ? "تعذر حفظ رابط الفيديو" : "Failed to save video URL", { type: "error" });
+      toast.error(isAr ? "تعذر حفظ رابط الفيديو" : "Failed to save video URL");
     } finally {
       setIsSavingVideo(false);
     }
@@ -1611,7 +1611,7 @@ export default function AdminUxLabPage() {
           onClose={() => setFeedbackMember(null)}
           onSubmitted={() => {
             setFeedbackMember(null);
-            toast.show(isAr ? "تم إرسال التوجيه بنجاح" : "Guidance sent successfully", { type: "success" });
+            toast.success(isAr ? "تم إرسال التوجيه بنجاح" : "Guidance sent successfully");
             loadData();
           }}
         />
