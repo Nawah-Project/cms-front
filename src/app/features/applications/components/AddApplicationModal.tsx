@@ -467,7 +467,7 @@ export function AddApplicationModal({
         </div>
 
         {/* V2 Strategic Options: Tailored Application & Group Sharing */}
-        <div className="space-y-3 rounded-xl border border-border bg-neutral-50/70 p-3.5 dark:bg-neutral-900/50">
+        {(showTailoredOption || canShare) && <div data-application-options className="space-y-3 rounded-xl border border-border bg-surface p-3.5">
           {showTailoredOption && (
             <label className="flex cursor-pointer items-start gap-3">
               <input
@@ -504,7 +504,7 @@ export function AddApplicationModal({
               </span>
             </span>
           </label>}
-        </div>
+        </div>}
       </form>
     </Modal>
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useI18n } from "../../i18n";
 import { MemberAvatar } from "../members-progress/components/MemberAvatar";
 import type { MemberProgress } from "../members-progress/types/membersProgress.types";
@@ -23,6 +23,10 @@ export function ProfessionalProfileActions({ portfolioUrl, hasCv, userId }: { po
 export function MemberProfessionalCard({ member, onClose }: { member: MemberProgress; onClose: () => void }) {
   const { t } = useI18n();
   const close = () => { window.dispatchEvent(new Event("nawah:member-profile-closed")); onClose(); };
+  useEffect(() => {
+    window.addEventListener("nawah:group-tour-ended", close);
+    return () => window.removeEventListener("nawah:group-tour-ended", close);
+  }, [onClose]);
   return (
     <FocusDialog labelledBy="member-profile-title" onClose={close} className="max-w-md p-6">
       <header className="flex items-start justify-between gap-4">

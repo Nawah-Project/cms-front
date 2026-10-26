@@ -108,7 +108,7 @@ export function ProfileForm({
         setUploadState("uploaded");
       }
       if (!next.profileComplete) throw new Error("Profile is incomplete");
-      toast.success(t("profile.savedSuccess"));
+      if (!onboarding) toast.success(t("profile.savedSuccess"));
       onSaved(next);
     } catch {
       setUploadState(file ? "error" : uploadState);

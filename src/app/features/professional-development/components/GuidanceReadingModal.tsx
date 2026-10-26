@@ -60,7 +60,8 @@ export function GuidanceReadingModal({
   const text = (a: string, e: string) => (ar ? a : e);
   const dialogRef = useRef<HTMLDivElement>(null);
   const mustComplete = Boolean(cvUpdate && !cvUpdate.completed && !post.isRead);
-  const attemptClose = () => { if(mustComplete) { setUploadError(text("ارفع سيرتك المحدّثة هنا؛ الإرشاد هيكتمل تلقائيًا بعد حفظها.","Upload your revised CV here. This guide completes automatically once it is saved.")); document.getElementById("guidance-cv-upload")?.scrollIntoView({block:"center"}); } else onClose(); };
+  const [closeMessage, setCloseMessage] = useState("");
+  const attemptClose = () => { if(mustComplete) { setCloseMessage(text("لازم ترفع الـCV المحدّث علشان تكمل الخطوة اللي بعدها. بعد حفظه، الإرشاد هيكتمل ويتقفل تلقائيًا.","Upload your revised CV to continue to the next step. Once saved, this guide completes and closes automatically.")); document.getElementById("guidance-cv-upload")?.scrollIntoView({block:"center"}); } else onClose(); };
   useDialogFocus(dialogRef, true, attemptClose);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -137,8 +138,8 @@ export function GuidanceReadingModal({
         <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-surface/95 px-5 py-4 backdrop-blur-md">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-xs font-semibold text-purple-700 border border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800">
-                <SparklesIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+              <span className="inline-flex items-center gap-1 rounded-md bg-surface px-2 py-0.5 text-xs font-semibold text-accent border border-border-strong">
+                <SparklesIcon className="h-3 w-3 text-accent" />
                 <span>{text("إرشادات الحبكة الذكية", "Journey guidance")}</span>
               </span>
               {isRead ? (
@@ -164,7 +165,7 @@ export function GuidanceReadingModal({
           <button
             type="button"
             onClick={attemptClose}
-            aria-disabled={mustComplete}
+            aria-describedby={closeMessage ? "guidance-close-reason" : undefined}
             aria-label={text("إغلاق", "Close")}
             className="rounded-lg p-2 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 transition-colors"
           >
@@ -361,10 +362,11 @@ export function GuidanceReadingModal({
 
         {/* 3. Sticky Footer */}
         <footer className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface/95 px-5 py-3.5 backdrop-blur-md">
+          {closeMessage && <p id="guidance-close-reason" role="alert" className="w-full border-s-2 border-accent ps-3 text-sm font-medium leading-6 text-text-primary">{closeMessage}</p>}
           <button
             type="button"
             onClick={attemptClose}
-            disabled={mustComplete}
+            aria-describedby={closeMessage ? "guidance-close-reason" : undefined}
             className="button-ghost px-4 py-2 text-xs text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-200"
           >
             {text("إغلاق", "Close")}

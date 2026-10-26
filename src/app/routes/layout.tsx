@@ -110,7 +110,7 @@ export default function Layout() {
             enabled={!location.pathname.startsWith("/admin")}
           >
             <AppContext.Provider value={{ openAddModal }}>
-              <div className="min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200">
+              <div className="workspace-shell min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200">
                 <AppSidebar
                   collapsed={isSidebarCollapsed}
                   onToggleCollapsed={() =>

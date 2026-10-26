@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, ArrowUpRight } from "lucide-react";
+import { Check } from "lucide-react";
 import { useI18n } from "../../../i18n";
 import {
   closeJourneyTasksPanel,
@@ -160,14 +160,6 @@ export function JourneyContinueCoachmark({
               : "The tasks drawer on the edge of your screen holds your current quest and progress. Open it when ready, or choose Got it and keep exploring."}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-xl bg-emerald-400 px-3 text-sm font-bold text-neutral-950"
-              onClick={open}
-            >
-              {ar ? "افتح المهام" : "Open tasks"}
-              <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-            </button>
             <button
               type="button"
               className="min-h-11 rounded-xl border border-border-strong px-4 text-sm font-semibold hover:bg-surface-hover"

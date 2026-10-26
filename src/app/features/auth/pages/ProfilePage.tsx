@@ -232,7 +232,7 @@ export default function ProfilePage() {
                 >
                   {targetJobTitle || user?.targetJobTitle || "Specialization"}
                 </span>
-                <span className="rounded-lg border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-700 dark:border-purple-800 dark:bg-purple-950/50 dark:text-purple-300 shadow-2xs">
+                <span className="rounded-lg border border-border-strong bg-surface px-2.5 py-1 text-xs font-bold text-accent shadow-2xs">
                   {`CV ${Math.max(0, (profile?.cvVersionNumber || 1) - 1)}`}
                 </span>
               </div>

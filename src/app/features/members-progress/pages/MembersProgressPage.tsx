@@ -70,6 +70,7 @@ function MembersProgressContent() {
   const { user } = useAuth();
   const { t, tp } = useI18n();
   const { members, loading, error, retry } = useMembersProgress();
+  const { data: journey } = useJourneyState({enabled:Boolean(user)});
   const navigate = useNavigate();
   const activity = useRecentMemberProgress(50);
 
@@ -85,7 +86,10 @@ function MembersProgressContent() {
         </p>
       </header>
 
-      <FeatureTour feature="groups-week1-v1" enabled={!loading && !error && members.length > 0} steps={GROUP_TOUR} finishAr="افتح إرشاد السيرة" finishEn="Open CV guide" onFinish={(skipped,fromTarget) => {if(!skipped && !fromTarget) navigate('/professional-development?guidance=INSIGHT_TASK_0_CV_BASE');}} />
+      <FeatureTour feature="groups-week1-v1" enabled={!loading && !error && members.length > 0} steps={GROUP_TOUR} onFinish={() => {
+        window.dispatchEvent(new Event("nawah:group-tour-ended"));
+        if (!journey?.cvFoundation?.completed) requestAnimationFrame(() => window.dispatchEvent(new Event("nawah:guidance-available")));
+      }} />
 
       <section data-guide="group-activity" aria-labelledby="recent-activity-heading" className="space-y-3">
         <header className="flex items-end justify-between border-b border-border pb-3">

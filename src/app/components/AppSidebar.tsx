@@ -280,6 +280,16 @@ export function AppSidebar({
   onToggleCollapsed: () => void;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [guidanceHint, setGuidanceHint] = useState<{mobile:boolean} | null>(null);
+  useEffect(() => {
+    const show = () => {
+      const mobile = window.matchMedia("(max-width: 1023px)").matches;
+      if (mobile) setMobileOpen(true);
+      setGuidanceHint({mobile});
+    };
+    window.addEventListener("nawah:guidance-available", show);
+    return () => window.removeEventListener("nawah:guidance-available", show);
+  }, []);
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -456,10 +466,10 @@ export function AppSidebar({
                 ? "text-neutral-400 hover:bg-neutral-50/60 hover:text-neutral-500"
                 : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
             : active && !isLocked
-              ? "bg-neutral-700 font-medium text-white shadow-xs"
+              ? "bg-white font-semibold text-neutral-950 shadow-xs"
               : isLocked
-                ? "text-neutral-500 hover:bg-neutral-800/60 hover:text-neutral-400"
-                : "text-neutral-300 hover:bg-neutral-800 hover:text-white"
+                ? "text-neutral-400 hover:bg-neutral-800 hover:text-white"
+                : "text-white hover:bg-neutral-800"
         } ${collapsed && !mobile ? "justify-center px-2" : ""}`;
 
         const content = (
@@ -525,10 +535,10 @@ export function AppSidebar({
         }
 
         return (
+          <div key={item.to} className="relative">
           <Link
-            key={item.to}
             to={item.to}
-            onClick={() => mobile && setMobileOpen(false)}
+            onClick={() => {setGuidanceHint(null); if(mobile)setMobileOpen(false);}}
             aria-current={active ? "page" : undefined}
             aria-label={t(item.labelKey)}
             data-tour-step={item.to === "/reports" ? "analytics-unlocked-nav" : undefined}
@@ -537,6 +547,17 @@ export function AppSidebar({
           >
             {content}
           </Link>
+          {item.to === "/professional-development" && <ContextualLockBubble
+            kind="guidance"
+            isOpen={Boolean(guidanceHint && guidanceHint.mobile === mobile)}
+            onClose={() => setGuidanceHint(null)}
+            title={locale === "ar" ? "إرشاد جديد متاح ليك" : "New guidance is available"}
+            requirement={locale === "ar" ? "خطوتك الجاية هنا: راجع إرشاد تحسين السيرة وطبّقه على نسختك الجديدة. تقدر تفتحه دلوقتي أو ترجع له من التطوير المهني." : "Your next step is the CV guide. Apply it to your revised CV now, or return from Professional Development when ready."}
+            ctaLabel={locale === "ar" ? "افتح الإرشاد" : "Open the guide"}
+            onCtaClick={() => {if(mobile)setMobileOpen(false);navigate('/professional-development?guidance=INSIGHT_TASK_0_CV_BASE');}}
+            placement={mobile ? "bottom" : "inline-end"}
+          />}
+          </div>
         );
       })}
     </div>
@@ -577,7 +598,7 @@ export function AppSidebar({
 
   return (
     <>
-      <aside className={`fixed inset-y-0 start-0 z-[65] hidden flex-col border-e border-neutral-800 bg-neutral-900 py-7 transition-[width,padding] duration-200 lg:flex overflow-y-auto ${collapsed ? "w-20 px-2.5" : "w-64 px-5"}`}>
+      <aside className={`workspace-sidebar fixed inset-y-0 start-0 z-[65] hidden flex-col border-e border-neutral-800 bg-neutral-900 py-7 transition-[width,padding] duration-200 lg:flex overflow-y-auto ${collapsed ? "w-20 px-2.5" : "w-64 px-5"}`}>
         <div className={`mb-6 ${collapsed ? "" : "px-1"}`}>
           <div className={`flex ${collapsed ? "flex-col items-center gap-3" : "items-start justify-between gap-2"}`}>
           <Link

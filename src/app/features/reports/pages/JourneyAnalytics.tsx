@@ -298,7 +298,7 @@ export function ChangeLab({
       </p>
       <Modal
         isOpen={Boolean(opened)}
-        onClose={() => setOpenedId(null)}
+        onClose={() => { setOpenedId(null); window.dispatchEvent(new Event("nawah:cohort-closed")); }}
         title={
           opened
             ? t(`طلبات ${title(opened)}`, `Applications · ${title(opened)}`)
@@ -311,7 +311,7 @@ export function ChangeLab({
             {opened &&
               `${date(opened.startAt, true)} — ${opened.endAt ? date(opened.endAt, true) : t("حتى الآن", "Present")}`}
           </p>
-          {rows.length ? (
+          <div data-guide="analytics-cohort-list">{rows.length ? (
             <>
               <ul className="divide-y divide-border">
                 {rows.slice(page * 8, page * 8 + 8).map((app) => (
@@ -376,9 +376,10 @@ export function ChangeLab({
                     "No applications have been recorded in this period yet.",
                   )}
             </p>
-          )}
+          )}</div>
           {opened && !admin && (
             <Link
+              data-guide="analytics-cohort-link"
               to={cohortApplicationsUrl(opened, title(opened))}
               className="button-primary inline-flex min-h-11 items-center gap-2"
             >

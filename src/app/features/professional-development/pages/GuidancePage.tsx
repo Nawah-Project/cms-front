@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useBlocker, useSearchParams } from "react-router";
-import { Lock, Sparkles, Unlock } from "lucide-react";
+import { Lock, Sparkles, Check } from "lucide-react";
 import { useAuth } from "../../auth/store/authStore";
 import { PageHeading } from "../../../components/ui/PageHeading";
 import { ProfessionalDevelopmentNav } from "../components/ProfessionalDevelopmentNav";
@@ -228,7 +228,7 @@ export default function GuidancePage() {
       {/* Guidance Header Banner */}
       <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border-strong bg-surface text-accent">
             <Sparkles className="h-6 w-6" />
           </div>
           <div>
@@ -295,12 +295,12 @@ export default function GuidancePage() {
 
                     {item.isRead ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                        <Unlock className="h-3 w-3" />
-                        <span>{text("تمت القراءة ✓", "Read ✓")}</span>
+                        <Check className="h-3 w-3" />
+                        <span>{text("تمت القراءة", "Read")}</span>
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-bold text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
-                        <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-bold text-white">
+                        <span className="h-1.5 w-1.5 rounded-full bg-white" />
                         <span>{text("جديد • غير مقروء", "New • unread")}</span>
                       </span>
                     )}
@@ -319,12 +319,12 @@ export default function GuidancePage() {
                   {/* Content Feature Badges */}
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {item.promptTemplate && (
-                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
-                        <Sparkles className="h-3 w-3 text-amber-500" />
+                      <span className="inline-flex items-center gap-1 rounded-md bg-surface px-2 py-0.5 text-[11px] font-semibold text-accent border border-border-strong">
+                        <Sparkles className="h-3 w-3 text-accent" />
                         <span>
                           {text(
-                            "✨ موجه ذكاء اصطناعي للنسخ",
-                            "✨ Copyable AI prompt",
+                            "موجه ذكاء اصطناعي للنسخ",
+                            "Copyable AI prompt",
                           )}
                         </span>
                       </span>
@@ -359,7 +359,7 @@ export default function GuidancePage() {
 
           {/* Exactly ONE Mystery Card (Fog of War) */}
           {nextLockedItem && (
-            <article className="flex flex-col justify-between rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/60 p-5 dark:border-neutral-700 dark:bg-neutral-900/30 select-none opacity-85">
+            <article className="flex flex-col justify-between rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/60 p-5 dark:border-neutral-700 dark:bg-neutral-900/30 select-none">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-200 px-2.5 py-0.5 text-[11px] font-bold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">

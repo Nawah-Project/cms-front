@@ -500,3 +500,52 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--color-accent);
 .entry-form-card { box-shadow:0 20px 70px -34px #183b3738; }
 .onboarding-world { background:radial-gradient(ellipse at 15% 15%,#e6ebdf,transparent 62%),#f4f4ed; }
 .onboarding-shell { border-color:var(--color-border); box-shadow:0 24px 80px -35px #183b3738; }
+
+/* Inside the workspace, use the entry pages' white / ink / deep-green hierarchy. */
+.workspace-shell, body:has(.workspace-shell) {
+  --color-text-primary:#172b24;
+  --color-text-secondary:#3c4942;
+  --color-text-muted:#505b54;
+  --color-border:#c9d2cc;
+  --color-border-subtle:#d6ddd8;
+  --color-border-strong:#879b8d;
+  --color-surface-hover:#ffffff;
+  --color-neutral-50:#ffffff;
+  --color-neutral-100:#ffffff;
+  --color-neutral-200:#d0d9d2;
+  --color-neutral-300:#9eafa4;
+  --color-neutral-400:#53645a;
+  --color-neutral-500:#4d5c53;
+  --color-neutral-600:#3d5145;
+  --color-info-soft:#ffffff;
+  --color-info-strong:#145344;
+  --color-info-border:#829e8c;
+  --color-success-soft:#ffffff;
+  --color-emerald-50:#ffffff;
+  --color-emerald-100:#ffffff;
+  --color-emerald-200:#a3bcae;
+  --color-emerald-300:#32644d;
+  --color-emerald-400:#167356;
+  --color-emerald-500:#12664b;
+  --color-emerald-600:#145e49;
+  --color-emerald-700:#104c3b;
+}
+.workspace-sidebar {
+  --color-neutral-300:#edf4ef;
+  --color-neutral-400:#d7e4dc;
+  --color-neutral-500:#d7e4dc;
+  --color-neutral-600:#bed3c7;
+  --color-neutral-700:#527363;
+  --color-neutral-800:#284f42;
+  background:#103c32;
+}
+/* One scrim owns dimming while a coachmark guides actions inside a dialog. */
+body:has([data-feature-tour-overlay]) [data-dialog-backdrop],
+[data-dialog-backdrop]:has([data-dialog-backdrop]) {
+  background:transparent;
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
+}
+
+body:has(.workspace-shell) .text-neutral-300 { color:#53645a; }
+body:has(.workspace-shell) .workspace-sidebar .text-neutral-300 { color:#edf4ef; }

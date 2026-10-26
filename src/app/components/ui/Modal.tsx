@@ -78,6 +78,7 @@ export function Modal({
     >
       {/* Backdrop */}
       <div
+        data-dialog-backdrop
         className="fixed inset-0 bg-neutral-950/25 backdrop-blur-sm transition-opacity animate-in fade-in duration-150"
         onClick={() => {
           if (!disableClose) onClose();
@@ -104,6 +105,7 @@ export function Modal({
               )}
             </div>
             <button
+              data-modal-close
               type="button"
               onClick={onClose}
               disabled={disableClose}

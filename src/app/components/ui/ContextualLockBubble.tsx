@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Lock, X, ListChecks } from "lucide-react";
+import { Lock, X, ListChecks, Sparkles } from "lucide-react";
 import { useI18n } from "../../i18n";
 
 export interface ContextualLockBubbleProps {
@@ -12,6 +12,7 @@ export interface ContextualLockBubbleProps {
   onCtaClick?: () => void;
   placement?: "inline-end" | "bottom" | "top";
   className?: string;
+  kind?: "locked" | "guidance";
 }
 
 export function ContextualLockBubble({
@@ -23,6 +24,7 @@ export function ContextualLockBubble({
   onCtaClick,
   placement = "inline-end",
   className = "",
+  kind = "locked",
 }: ContextualLockBubbleProps) {
   const { t } = useI18n();
   const anchorRef = useRef<HTMLSpanElement>(null);
@@ -68,7 +70,7 @@ export function ContextualLockBubble({
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300">
-            <Lock className="h-4 w-4" aria-hidden="true" />
+            {kind === "guidance" ? <Sparkles className="h-4 w-4" aria-hidden="true" /> : <Lock className="h-4 w-4" aria-hidden="true" />}
           </span>
           <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
             {title || t("journey.lockedBadge")}

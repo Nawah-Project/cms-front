@@ -193,6 +193,12 @@ export function FeatureTour({
     return () =>
       window.removeEventListener("nawah:member-profile-closed", close);
   }, [active, index, feature]);
+  useEffect(() => {
+    if (feature !== "analytics-week1-v1" || !active) return;
+    const resume = () => { if (index >= 4 && index <= 6) { setRect(null); setIndex(7); } };
+    window.addEventListener("nawah:cohort-closed", resume);
+    return () => window.removeEventListener("nawah:cohort-closed", resume);
+  }, [active, index, feature]);
   const visible = Boolean(active && rect && viewport && !paused);
   useDialogFocus(card, visible, () => finish(true));
   useLayoutEffect(() => {
@@ -219,7 +225,8 @@ export function FeatureTour({
     return () => document.removeEventListener("click", click, true);
   }, [active, index, steps]);
   if (!active || typeof document === "undefined") return null;
-  if (paused) return createPortal(<div data-tour-pending className="tour-scrim fixed inset-0 z-[99]" aria-hidden="true" />,document.body);
+  // The open dialog already owns its backdrop while the guide waits for it.
+  if (paused) return null;
   if (!rect || !viewport || !steps[index])
     return createPortal(
       <div
