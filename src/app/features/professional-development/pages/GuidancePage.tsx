@@ -6,12 +6,13 @@ import { PageHeading } from "../../../components/ui/PageHeading";
 import { ProfessionalDevelopmentNav } from "../components/ProfessionalDevelopmentNav";
 import { GuidanceReadingModal } from "../components/GuidanceReadingModal";
 import { journeyApi, useJourneyState } from "../../journey/api/journeyApi";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { journeyQueryKeys } from "../../journey/config/query-keys";
 import { JOURNEY_INSIGHTS_CATALOG } from "../../journey/lib/journey-insights-catalog";
 import { api } from "../../../services/api";
 import { useI18n } from "../../../i18n";
 import type { FeedbackPost, FeedbackResource } from "../types";
+import { profileApi } from "../../profile/profileApi";
 import { LoadingState } from "../../admin/components/AdminUI";
 import { PlayCircleIcon } from "../../../components/Icons";
 
@@ -33,6 +34,7 @@ export default function GuidancePage() {
   const text = (a: string, e: string) => (locale === "ar" ? a : e);
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: () => profileApi.get(), enabled: Boolean(user) });
   const {
     data: journeyData,
     isLoading: journeyLoading,
@@ -88,7 +90,7 @@ export default function GuidancePage() {
 
       const content =
         matchedDb?.content ||
-        `<p>${locale === "ar" ? catalogItem.summaryAr : catalogItem.summaryEn}</p>`;
+        (locale === "ar" ? catalogItem.contentAr : catalogItem.contentEn) || `<p>${locale === "ar" ? catalogItem.summaryAr : catalogItem.summaryEn}</p>`;
 
       const promptTemplate =
         matchedDb?.promptTemplate !== undefined
@@ -99,7 +101,7 @@ export default function GuidancePage() {
 
       const resources = matchedDb?.resources || [];
 
-      const isRead =
+      const recordedRead =
         Boolean(matchedDb?.isRead) ||
         Boolean(
           journeyData?.state.readInsightCodes?.includes(catalogItem.code),
@@ -111,14 +113,16 @@ export default function GuidancePage() {
         weekNumber: catalogItem.weekNumber,
         title,
         content,
-        promptTemplate: promptTemplate || null,
+        promptTemplate: promptTemplate ? promptTemplate
+          .replaceAll("{{specialization}}", profile?.targetJobTitle || user?.targetJobTitle || text("[حدّد تخصصك]", "[Your specialization]"))
+          .replaceAll("{{portfolioUrl}}", profile?.portfolioUrl || text("[أضف رابط بورتفوليوك من ملفك]", "[Add your portfolio URL]")) : null,
         resources,
-        isRead,
+        isRead: catalogItem.code === "INSIGHT_TASK_0_CV_BASE" ? Boolean(journeyData?.cvFoundation?.completed) : recordedRead,
         publishedAt: matchedDb?.publishedAt,
         isAdvanced: catalogItem.isAdvanced,
       };
     });
-  }, [dbPosts, locale, journeyData?.state.readInsightCodes]);
+  }, [dbPosts, locale, journeyData?.state.readInsightCodes, journeyData?.cvFoundation, profile?.targetJobTitle, profile?.portfolioUrl, user?.targetJobTitle]);
 
   const unlockedGuidance = useMemo(() => {
     return unifiedItems.filter((item) => isAdmin || unlockedSet.has(item.code));
@@ -146,7 +150,7 @@ export default function GuidancePage() {
     const item = unifiedItems.find((i) => i.id === postId || i.code === postId);
     if (!item) throw new Error("Guidance is unavailable");
     await journeyApi.markInsightRead(item.code);
-    await queryClient.invalidateQueries({ queryKey: journeyQueryKeys.all });
+    await Promise.all([queryClient.invalidateQueries({ queryKey: journeyQueryKeys.all }), queryClient.invalidateQueries({ queryKey: ["journey", "reports"] })]);
     await loadGuidanceFromApi();
   };
 
@@ -383,6 +387,16 @@ export default function GuidancePage() {
           post={selectedItem}
           onClose={() => setSelectedItem(null)}
           onMarkRead={handleMarkRead}
+          cvUpdate={selectedItem.code === "INSIGHT_TASK_0_CV_BASE" && user?.role !== "ADMIN" ? {
+            canComplete: Boolean(journeyData?.cvFoundation?.canComplete),
+            completed: Boolean(journeyData?.cvFoundation?.completed),
+            onUpload: async (file: File) => {
+              await profileApi.uploadCv(file);
+              await Promise.all([queryClient.invalidateQueries({queryKey:["profile"]}),queryClient.invalidateQueries({queryKey:journeyQueryKeys.all})]);
+              const next = await journeyApi.getJourneyState();
+              if (!next.cvFoundation?.canComplete) throw new Error(text("دي نفس النسخة الحالية. ارفع نسخة فيها التعديلات اللي نفذتها بعد الإرشاد.", "This is the current file. Upload a revised CV containing your changes."));
+            },
+          } : undefined}
         />
       )}
     </div>

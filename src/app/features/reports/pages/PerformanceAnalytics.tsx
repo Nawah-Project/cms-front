@@ -18,6 +18,8 @@ import {
 } from "recharts";
 import { useI18n } from "../../../i18n";
 import type { Metrics, Report } from "./ReportsPage";
+import { FeatureTour } from "../../../components/FeatureTour";
+import { ANALYTICS_TOUR } from "../../journey/lib/week-one-tours";
 import { analyticsAccess, ChangeLab } from "./JourneyAnalytics";
 
 type Props = {
@@ -52,7 +54,7 @@ function ProgressChart({ report, admin }: { report: Report; admin: boolean }) {
   const markers = [
     ...report.cvs.map((c) => ({
       date: c.uploadedAt.slice(0, 10),
-      title: `CV v${c.versionNumber}`,
+      title: `CV ${Math.max(0, c.versionNumber - 1)}`,
     })),
     ...report.activities
       .filter(
@@ -136,7 +138,7 @@ function ProgressChart({ report, admin }: { report: Report; admin: boolean }) {
   const total = period?.metrics ?? report.overall;
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-surface">
+    <section data-guide="analytics-chart" className="overflow-hidden rounded-2xl border border-border bg-surface">
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border p-4 sm:p-5">
         <div>
           <h2 className="text-lg font-bold">
@@ -468,7 +470,8 @@ export default function PerformanceAnalytics({
   ];
   return (
     <div className="space-y-5">
-      <section>
+      <FeatureTour feature="analytics-week1-v1" enabled={!admin} steps={ANALYTICS_TOUR} />
+      <section data-guide="analytics-summary">
         <div className="mb-3">
           <h2 className="text-lg font-semibold">
             {t("ملخص الأداء", "Performance overview")}

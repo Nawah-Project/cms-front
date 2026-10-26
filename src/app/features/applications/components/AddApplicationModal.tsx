@@ -15,6 +15,8 @@ import { useJourneyState } from "../../journey/api/journeyApi";
 import { canAddTailoredApplication } from "../../journey/lib/journey-policies";
 import { useAuth } from "../../auth/store/authStore";
 import { useTour } from "./FirstApplicationGuidedTour";
+import { FeatureTour, markFeatureTourSeen } from "../../../components/FeatureTour";
+import { EXPLORER_INTRO_TOUR, EXPLORER_TOUR } from "../../journey/lib/week-one-tours";
 import { sanitizeJobUrl } from "../../../utils/urlSanitizer";
 
 interface AddApplicationModalProps {
@@ -35,6 +37,15 @@ export function AddApplicationModal({
   const { t, locale } = useI18n();
   const { user } = useAuth();
   const { isTourActive, step, setStep } = useTour();
+  const [postTourEntry, setPostTourEntry] = useState(false);
+  const priorEntryOpen = React.useRef(false);
+  useEffect(() => {
+    if (isOpen && !priorEntryOpen.current) {
+      try { setPostTourEntry(!isTourActive && Boolean(user?.id && localStorage.getItem(`nawah_v2_guided_tour_done_${user.id}`) === "true")); } catch { setPostTourEntry(false); }
+    }
+    if (!isOpen) setPostTourEntry(false);
+    priorEntryOpen.current = isOpen;
+  }, [isOpen, user?.id]);
   const { data: journeyData } = useJourneyState({
     enabled: Boolean(user) && journeyQueryEnabled,
   });
@@ -219,7 +230,9 @@ export function AddApplicationModal({
 
   return (
     <>
-      <Modal
+      <FeatureTour feature="explorer-intro-week1-v1" enabled={isOpen && postTourEntry && !isTourActive} steps={EXPLORER_INTRO_TOUR} />
+    <FeatureTour feature="explorer-filters-week1-v1" enabled={showExplorerModal && postTourEntry && !isTourActive} steps={EXPLORER_TOUR} />
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       title={t("applications.addTitle")}
@@ -495,7 +508,7 @@ export function AddApplicationModal({
         isOpen={true}
         zIndex={110}
         onClose={() => {
-          if (!isTourActive) setShowExplorerModal(false);
+          if (!isTourActive) { setShowExplorerModal(false); if(postTourEntry) markFeatureTourSeen(user?.id,"explorer-filters-week1-v1"); }
         }}
         disableClose={isTourActive}
         title={locale === "ar" ? "مستكشف الوظائف" : "Job Explorer"}

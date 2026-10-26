@@ -34,6 +34,7 @@ function MemberIdentity({
     <div className="flex min-w-0 items-center gap-2">
       <button
         type="button"
+        data-guide="group-name"
         aria-label={t("members.viewProfessionalProfile", { name: member.name })}
         onClick={onOpenProfile}
         className="group flex min-w-0 items-center gap-3 rounded-lg text-start focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info-strong"
@@ -241,6 +242,7 @@ export function MemberProgressRow(props: MemberRowState) {
     return (
       <>
         <tr
+          data-guide={isCurrentUser ? "group-own-row" : undefined}
           tabIndex={0}
           aria-expanded={expanded}
           aria-label={`${member.name}: ${expanded ? t("members.hideApplications") : t("members.viewApplications")}`}
@@ -307,6 +309,7 @@ export function MemberProgressRow(props: MemberRowState) {
   }
   return (
     <article
+      data-guide={isCurrentUser ? "group-own-row" : undefined}
       tabIndex={0}
       aria-expanded={expanded}
       aria-label={`${member.name}: ${expanded ? t("members.hideApplications") : t("members.viewApplications")}`}

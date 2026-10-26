@@ -32,15 +32,13 @@ export function celebrateJourneyUnlocks(
         locale === "ar"
           ? [
               "قسم متابعة تقدم المجموعة (Group Progress)",
-              "المهام المهنية تفتح بعد قراءة دليل إدارة الوقت في الأسبوع الثالث",
-              "ملاحظة تأسيس السيرة الذاتية (CV Baseline Insight)",
-              "فتح مسار الأسبوع الأول (Week 1 Quests)",
+                            "ملاحظة تأسيس السيرة الذاتية (CV Baseline Insight)",
+              "تحديث السيرة من داخل الإرشاد لفتح تحليل الأداء",
             ]
           : [
               "Group Progress Section",
-              "Professional tasks open after reading the Week 3 time-management guide",
-              "CV Baseline Strategy Insight",
-              "Week 1 Quests Unlocked",
+                            "CV Baseline Strategy Insight",
+              "Update your CV inside the guide to unlock analytics",
             ],
       ctaLabel:
         locale === "ar" ? "انتقل إلى مجموعتك الآن" : "Go to Group Section",

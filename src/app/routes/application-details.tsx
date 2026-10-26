@@ -448,7 +448,7 @@ export default function ApplicationDetailsPage() {
               CV:
             </span>
             <span className="font-bold text-neutral-900 dark:text-neutral-100">
-              CV v{cvVersion}
+              CV {Math.max(0, cvVersion - 1)}
             </span>
           </span>
 

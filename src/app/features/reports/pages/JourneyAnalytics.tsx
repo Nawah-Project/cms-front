@@ -126,6 +126,7 @@ export function ChangeLab({
   return (
     <section
       id="change-lab"
+      data-guide="analytics-periods"
       className="overflow-hidden rounded-2xl border border-border bg-surface"
     >
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border p-4 sm:p-5">
@@ -199,6 +200,7 @@ export function ChangeLab({
                 </div>
                 <button
                   type="button"
+                  data-guide={p.id === (previous?.id ?? selected?.id) ? "analytics-first-cohort" : undefined}
                   aria-label={t(
                     `عرض ${number(p.metrics.logged)} طلبات مرتبطة بـ ${title(p)}`,
                     `View ${number(p.metrics.logged)} applications for ${title(p)}`,

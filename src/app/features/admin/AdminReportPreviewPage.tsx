@@ -141,7 +141,7 @@ export default function AdminReportPreviewPage() {
             {text("حالة البيانات التجريبية", "Synthetic scenario")}
             <select className="field-control mt-1" value={scenario} onChange={(event) => setScenario(event.target.value as DemoScenario)}>
               <option value="EMPTY">{text("DEMO — من غير طلبات أو CV", "DEMO — no applications or CV")}</option>
-              <option value="ONE">{text("DEMO — طلب واحد وCV v1", "DEMO — one application and CV v1")}</option>
+              <option value="ONE">{text("DEMO — طلب واحد وCV 0", "DEMO — one application and CV 0")}</option>
               <option value="EARLY">{text("DEMO — 5 طلبات ومراحل مختلطة", "DEMO — five applications, mixed stages")}</option>
               <option value="WEEK1_COMPLETE">{text("DEMO — إكمال الأسبوع الأول", "DEMO — completed Week 1")}</option>
               <option value="WEEK3_COMPLETE">{text("DEMO — إكمال الأسابيع 1–3", "DEMO — Weeks 1–3 completed")}</option>

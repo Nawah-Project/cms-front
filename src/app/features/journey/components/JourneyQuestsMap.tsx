@@ -943,6 +943,7 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
         </div>
       </div>
 
+      {journeyData.cvFoundation?.unlocked && !journeyData.cvFoundation.completed && <Link to="/professional-development?guidance=INSIGHT_TASK_0_CV_BASE" className="block rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 font-medium text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">{locale === "ar" ? "خطوتك الحالية: طبّق إرشاد السيرة وارفع النسخة المحدّثة من داخله. إكماله يفتح التحليلات ويتيح تقدم مهام الأسبوع الأول." : "Your next step: apply the CV guide and upload your revised file inside it. Completion unlocks analytics and Week 1 quest progression."}</Link>}
       {/* Selected Week Progress Bar */}
       <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-neutral-50/60 px-4 py-3 dark:bg-neutral-900/50">
         <div className="min-w-0 flex-1">

@@ -325,7 +325,7 @@ export function KanbanView({
                                 </span>
                                 {appCvVersionMap && (
                                   <span className="rounded px-1.5 py-0.2 text-[9px] font-semibold bg-neutral-200/70 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 shrink-0">
-                                    CV v{appCvVersionMap[app.id] || 1}
+                                    CV {Math.max(0, (appCvVersionMap[app.id] || 1) - 1)}
                                   </span>
                                 )}
                               </div>

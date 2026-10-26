@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useAuth } from "../../auth/store/authStore";
 import { useMembersProgress } from "../hooks/useMembersProgress";
 import { useRecentMemberProgress } from "../hooks/useRecentMemberProgress";
@@ -11,6 +11,8 @@ import { useI18n } from "../../../i18n";
 import { useJourneyState } from "../../journey/api/journeyApi";
 import { canAccessGroupSection } from "../../journey/lib/journey-policies";
 import { LockedStateView } from "../../../components/ui/LockedStateView";
+import { FeatureTour } from "../../../components/FeatureTour";
+import { GROUP_TOUR } from "../../journey/lib/week-one-tours";
 import { openJourneyTasksPanel } from "../../../components/journeyTasksPanelEvents";
 
 export default function MembersProgressPage() {
@@ -68,6 +70,7 @@ function MembersProgressContent() {
   const { user } = useAuth();
   const { t, tp } = useI18n();
   const { members, loading, error, retry } = useMembersProgress();
+  const navigate = useNavigate();
   const activity = useRecentMemberProgress(50);
 
   return (
@@ -81,7 +84,9 @@ function MembersProgressContent() {
         </p>
       </header>
 
-      <section aria-labelledby="recent-activity-heading" className="space-y-3">
+      <FeatureTour feature="groups-week1-v1" enabled={!loading && !error && members.length > 0} steps={GROUP_TOUR} finishAr="افتح إرشاد السيرة" finishEn="Open CV guide" onFinish={(skipped,fromTarget) => {if(!skipped && !fromTarget) navigate('/professional-development?guidance=INSIGHT_TASK_0_CV_BASE');}} />
+      <Link data-guide="group-cv-guidance" to="/professional-development?guidance=INSIGHT_TASK_0_CV_BASE" className="block rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">{t("common.navProfessionalDevelopment")} · {user?.role === "ADMIN" ? "CV" : "إرشاد تحسين السيرة: مهاراتك، الحل، والأثر"} ↗</Link>
+      <section data-guide="group-activity" aria-labelledby="recent-activity-heading" className="space-y-3">
         <header className="flex items-end justify-between border-b border-border pb-3">
           <div>
             <p className="text-xs text-neutral-500">

@@ -150,7 +150,7 @@ export function TableView({ applications, appCvVersionMap }: TableViewProps) {
                         </span>
                         {appCvVersionMap && (
                           <span className="rounded px-1.5 py-0.2 text-[10px] font-semibold bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-                            CV v{appCvVersionMap[app.id] || 1}
+                            CV {Math.max(0, (appCvVersionMap[app.id] || 1) - 1)}
                           </span>
                         )}
                         {app.isTailored && (

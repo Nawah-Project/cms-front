@@ -438,7 +438,7 @@ export function AppSidebar({
         const active = isPathActive(location.pathname, item.to, item.end);
         const isLocked =
           !journeyLoading &&
-          ((item.to === "/members-progress" && !isGroupUnlocked) ||
+          ((item.to === "/reports" && !journeyData?.features.analytics) || (item.to === "/members-progress" && !isGroupUnlocked) ||
             (item.to === "/professional-development" && !isProfDevUnlocked));
 
         const className = `flex items-center justify-between gap-3 rounded-lg px-3 py-3 text-sm transition duration-150 hover:scale-[1.01] ${
@@ -476,11 +476,11 @@ export function AppSidebar({
           const bubbleKey = `${mobile ? "m" : "d"}-${item.to}`;
           const isBubbleOpen = openLockedBubbleKey === bubbleKey;
           const lockTitle =
-            item.to === "/professional-development"
+            item.to === "/reports" ? t("common.navReports") : item.to === "/professional-development"
               ? t("common.navProfessionalDevelopment")
               : t("common.navMembersProgress");
           const lockRequirement =
-            item.to === "/professional-development"
+            item.to === "/reports" ? (locale === "ar" ? "أكمل المهمة صفر، ثم طبّق إرشاد السيرة وارفع النسخة المحدّثة لفتح التحليل." : "Complete Task 0, apply the CV guidance and upload your revised CV to unlock analytics.") : item.to === "/professional-development"
               ? t("journey.profDevLockedTooltip")
               : t("journey.groupLockedTooltip");
 

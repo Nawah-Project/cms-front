@@ -27,6 +27,7 @@ const { default: AdminReportPreviewPage, adminReportPreviewQueryKeys } =
 const { buildAnalyticsChartRows } = await server.ssrLoadModule(
   "/src/app/features/reports/pages/analytics-model.ts",
 );
+const { AuthProvider } = await server.ssrLoadModule("/src/app/features/auth/store/authStore.tsx");
 const { I18nProvider } = await server.ssrLoadModule("/src/app/i18n/index.tsx");
 function render(client, Page = ReportsPage) {
   return renderToStaticMarkup(
@@ -36,7 +37,7 @@ function render(client, Page = ReportsPage) {
       React.createElement(
         I18nProvider,
         null,
-        React.createElement(MemoryRouter, null, React.createElement(Page)),
+        React.createElement(MemoryRouter, null, React.createElement(AuthProvider, null, React.createElement(Page))),
       ),
     ),
   );
@@ -467,4 +468,15 @@ test("onboarding uses one labelled specialization picker instead of a wall of ca
   const client=new QueryClient();const html=render(client,Form);
   assert.match(html,/id="profile-specialization"/);assert.equal((html.match(/<select/g)??[]).length,1);assert.match(html,/value="Software QA Engineer" selected=""/);
   assert.doesNotMatch(html,/grid-cols-1 sm:grid-cols-2/);assert.doesNotMatch(html,/\{size\}/);client.clear();
+});
+
+test("member analytics explain the actual CV prerequisite rather than showing a generic error", async () => {
+  const {ApiError} = await server.ssrLoadModule('/src/app/lib/api-client.ts');
+  const client = new QueryClient({defaultOptions:{queries:{retry:false,retryOnMount:false}}});
+  client.getQueryCache().build(client,{queryKey:['journey','reports']}).setState({status:'error',error:new ApiError('Locked',403,{code:'CV_FOUNDATION_REQUIRED',guidanceUnlocked:true}),fetchStatus:'idle'});
+  const html = render(client);
+  assert.match(html,/تحليل الأداء لسه مقفول/);
+  assert.match(html,/professional-development\?guidance=INSIGHT_TASK_0_CV_BASE/);
+  assert.doesNotMatch(html,/حاول تاني/);
+  client.clear();
 });

@@ -181,7 +181,7 @@ export default function ProfilePage() {
     return (
       <CvViewer
         historyId={viewHistoryCv.id}
-        title={`CV v${viewHistoryCv.version} - ${viewHistoryCv.name}`}
+        title={`CV ${Math.max(0, viewHistoryCv.version - 1)} - ${viewHistoryCv.name}`}
         onClose={() => setViewHistoryCv(null)}
       />
     );
@@ -233,7 +233,7 @@ export default function ProfilePage() {
                   {targetJobTitle || user?.targetJobTitle || "Specialization"}
                 </span>
                 <span className="rounded-lg border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-700 dark:border-purple-800 dark:bg-purple-950/50 dark:text-purple-300 shadow-2xs">
-                  {`CV v${profile?.cvVersionNumber || 1}`}
+                  {`CV ${Math.max(0, (profile?.cvVersionNumber || 1) - 1)}`}
                 </span>
               </div>
             </div>
@@ -424,7 +424,7 @@ export default function ProfilePage() {
                         <div className="min-w-0 flex-1 pe-2">
                           <div className="flex items-center gap-1.5">
                             <span className="inline-flex shrink-0 items-center rounded-full bg-neutral-200 dark:bg-neutral-700 px-2 py-0.5 text-[10px] font-bold text-neutral-800 dark:text-neutral-200">
-                              CV v{item.versionNumber}
+                              CV {Math.max(0, item.versionNumber - 1)}
                               {item.versionNumber === 1 && (
                                 <span className="ms-1 font-normal opacity-75">
                                   {isRtl ? "(التأسيسية)" : "(Baseline)"}
@@ -453,7 +453,7 @@ export default function ProfilePage() {
                     <div className="py-2.5 text-xs text-start">
                       <div className="flex items-center justify-between">
                         <span className="inline-flex shrink-0 items-center rounded-full bg-neutral-200 dark:bg-neutral-700 px-2 py-0.5 text-[10px] font-bold text-neutral-800 dark:text-neutral-200">
-                          CV v{profile.cvVersionNumber || 1} {isRtl ? "(النسخة التأسيسية)" : "(Baseline)"}
+                          CV {Math.max(0, (profile.cvVersionNumber || 1) - 1)} {isRtl ? "(النسخة التأسيسية)" : "(Baseline)"}
                         </span>
                         <span className="truncate text-neutral-700 dark:text-neutral-300 font-medium text-xs max-w-[130px]">
                           {profile.cv.originalName}

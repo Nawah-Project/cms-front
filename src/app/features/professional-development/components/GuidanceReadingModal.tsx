@@ -10,6 +10,8 @@ import { useToast } from "../../../components/ui/ToastProvider";
 import { useI18n } from "../../../i18n";
 import { useDialogFocus } from "../../../components/ui/useDialogFocus";
 import { trackUxEvent } from "../../../utils/uxAnalytics";
+import { isPdf, MAX_CV_BYTES, MAX_CV_SIZE_MB } from "../../profile/profileApi";
+import { Link } from "react-router";
 import type { FeedbackPost, FeedbackResource } from "../types";
 
 interface GuidanceReadingModalProps {
@@ -25,6 +27,7 @@ interface GuidanceReadingModalProps {
         isRead?: boolean;
         publishedAt?: string;
       };
+  cvUpdate?: { canComplete: boolean; completed: boolean; onUpload: (file: File) => Promise<void> };
   onClose: () => void;
   onMarkRead: (postId: string) => Promise<void>;
 }
@@ -50,6 +53,7 @@ export function GuidanceReadingModal({
   post,
   onClose,
   onMarkRead,
+  cvUpdate,
 }: GuidanceReadingModalProps) {
   const toast = useToast();
   const { locale } = useI18n();
@@ -57,6 +61,8 @@ export function GuidanceReadingModal({
   const text = (a: string, e: string) => (ar ? a : e);
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocus(dialogRef, true, onClose);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isRead, setIsRead] = useState(Boolean(post.isRead));
@@ -82,6 +88,7 @@ export function GuidanceReadingModal({
   };
 
   const handleCompleteReading = async () => {
+    if (cvUpdate && !cvUpdate.canComplete) { setUploadError(text("ارفع الـCV المحدّث أولًا قبل تأكيد إكمال الإرشاد.", "Upload your revised CV before completing this guide.")); return; }
     setSaving(true);
     try {
       await onMarkRead(post.id);
@@ -169,6 +176,17 @@ export function GuidanceReadingModal({
 
         {/* 2. Scrollable Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-7 py-6 space-y-6">
+          {cvUpdate && <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/30">
+            <h3 className="font-semibold">{text("طبّق الإرشاد وارفع نسختك الجديدة هنا", "Apply the guide and upload your revised CV here")}</h3>
+            <p className="mt-2 text-sm leading-6 text-text-secondary">{text("الإكمال مرتبط برفع نسخة معدّلة بعد المهمة صفر. رفع نفس الملف الحالي لا يبدأ فترة جديدة.", "Completion requires a revised file uploaded after Task 0. Re-uploading the same file does not start a new period.")}</p>
+            <label className="button-secondary mt-3 inline-flex min-h-11 cursor-pointer items-center">{uploading ? text("جارٍ رفع السيرة…", "Uploading CV…") : text("رفع الـCV المحدّث", "Upload revised CV")}<input type="file" accept="application/pdf,.pdf" disabled={uploading || saving} className="sr-only" aria-label={text("رفع الـCV المحدّث", "Upload revised CV")} onChange={async event => {
+              const file = event.target.files?.[0];event.target.value="";if(!file)return;setUploadError("");
+              if(!isPdf(file)||file.size>MAX_CV_BYTES){setUploadError(text(`ارفع ملف PDF بحد أقصى ${MAX_CV_SIZE_MB} ميغابايت.`,`Upload a PDF up to ${MAX_CV_SIZE_MB} MB.`));return;}
+              setUploading(true);try{await cvUpdate.onUpload(file);toast.success(text("اترفعت النسخة المحدّثة. تقدر تؤكد الإكمال دلوقتي.","Revised CV uploaded. You can confirm completion now."));}catch(error){setUploadError(error instanceof Error?error.message:text("تعذر رفع الملف، حاول تاني.","Upload failed; please retry."));}finally{setUploading(false);}
+            }}/></label>
+            {cvUpdate.canComplete && <p role="status" className="mt-3 text-sm font-semibold text-emerald-800 dark:text-emerald-300">{text("✓ فيه نسخة محدّثة محفوظة، جاهزة لتأكيد الإكمال.", "✓ A revised CV is saved and ready for completion.")}</p>}
+            {uploadError && <p role="alert" className="mt-3 text-sm text-rose-700 dark:text-rose-300">{uploadError}</p>}
+          </section>}
           {/* Main Content */}
           <div className="space-y-3">
             <div
@@ -352,10 +370,11 @@ export function GuidanceReadingModal({
             {text("إغلاق", "Close")}
           </button>
 
+          {cvUpdate && isRead && <Link to="/reports" onClick={onClose} className="button-primary min-h-11">{text("افتح تحليل الأداء", "Open performance analytics")}</Link>}
           <button
             type="button"
             onClick={handleCompleteReading}
-            disabled={saving}
+            disabled={saving || uploading || Boolean(cvUpdate && !cvUpdate.canComplete)}
             className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all shadow-xs ${
               isRead
                 ? "border border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
@@ -366,7 +385,7 @@ export function GuidanceReadingModal({
             <span>
               {isRead
                 ? text("تم تأكيد القراءة ✓", "Reading confirmed ✓")
-                : text("أتممت قراءة الإرشادات ✓", "Mark guidance as read ✓")}
+                : cvUpdate ? text("تم، وأكملت تحديث السيرة ✓", "Complete guide and CV update ✓") : text("أتممت قراءة الإرشادات ✓", "Mark guidance as read ✓")}
             </span>
           </button>
         </footer>

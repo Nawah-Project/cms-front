@@ -776,7 +776,7 @@ export function JobMarketCompass({
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Work Mode Switcher Segmented Control */}
-          <div className="flex items-center gap-1 rounded-xl border border-border bg-neutral-100/80 dark:bg-neutral-900/80 p-1">
+          <div data-guide="explorer-work-mode" className="flex items-center gap-1 rounded-xl border border-border bg-neutral-100/80 dark:bg-neutral-900/80 p-1">
             <span className="text-[11px] font-bold text-neutral-500 px-1.5 select-none">
               {isRtl ? "نمط العمل:" : "Work Mode:"}
             </span>
@@ -828,7 +828,7 @@ export function JobMarketCompass({
       {expanded && (
         <div className="space-y-4">
           {/* Level 1: 7 Macro-Markets Selector */}
-          <div>
+          <div data-guide="explorer-markets">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
                 {isRtl ? "1. اختر السوق الإقليمي المستهدف:" : "1. Select Macro Market:"}
@@ -889,7 +889,7 @@ export function JobMarketCompass({
           )}
 
           {/* Category Tabs with Dynamic Market Counts */}
-          <div className="flex items-center justify-between pt-1 border-t border-border/70">
+          <div data-guide="explorer-platforms" className="flex items-center justify-between pt-1 border-t border-border/70">
             <div className="flex items-center gap-1.5">
               {[
                 {
