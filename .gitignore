@@ -5,3 +5,7 @@
 # React Router
 /.react-router/
 /build/
+
+# Local and CI environment files; keep the documented template.
+.env.*
+!.env.example
