@@ -7,7 +7,7 @@ import { MemberAvatar } from "./MemberAvatar";
 import { relativeActivityTime } from "./LastUpdated";
 import { useI18n } from "../../../i18n";
 import { EmptyState } from "../../../components/EmptyState";
-import { useAppModal } from "../../../routes/layout";
+import { useAppModal } from "../../../components/AppModalContext";
 
 function parseSideTaskSummary(
   sideTask: RecentMemberProgress["sideTask"],

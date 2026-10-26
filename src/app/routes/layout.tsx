@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { AddApplicationModal } from "../features/applications/components/AddApplicationModal";
@@ -22,19 +22,9 @@ import {
 } from "../features/journey/lib/celebrationEvents";
 import { closeJourneyTasksPanel } from "../components/journeyTasksPanelEvents";
 import { MilestoneCelebrationModal } from "../components/ui/MilestoneCelebrationModal";
+import { AppContext } from "../components/AppModalContext";
+export { useAppModal } from "../components/AppModalContext";
 import { FirstApplicationGuidedTourProvider } from "../features/applications/components/FirstApplicationGuidedTour";
-
-export interface AppContextType {
-  openAddModal: (initialValues?: Partial<CreateApplicationInput>) => void;
-}
-
-const AppContext = createContext<AppContextType>({
-  openAddModal: () => {},
-});
-
-export function useAppModal() {
-  return useContext(AppContext);
-}
 
 export default function Layout() {
   const { t, locale } = useI18n();

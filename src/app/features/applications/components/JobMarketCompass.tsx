@@ -609,6 +609,7 @@ const PLATFORMS: PlatformConfig[] = [
 interface JobMarketCompassProps {
   onLaunchDraft: (draft: Partial<CreateApplicationInput>) => void;
   collapsible?: boolean;
+  guided?: boolean;
 }
 
 export type WorkMode = "ALL" | "REMOTE" | "ON_SITE";
@@ -616,6 +617,7 @@ export type WorkMode = "ALL" | "REMOTE" | "ON_SITE";
 export function JobMarketCompass({
   onLaunchDraft,
   collapsible = true,
+  guided = false,
 }: JobMarketCompassProps) {
   const { t, locale } = useI18n();
   const isRtl = locale === "ar";
@@ -728,6 +730,18 @@ export function JobMarketCompass({
   const globalCount = globalPlatforms.length;
   const regionalCount = regionalPlatformsForMarket.length;
   const allCount = allPlatformsForMarket.length;
+
+  if (guided) {
+    const linkedIn = PLATFORMS.find(platform => platform.id === "linkedin")!;
+    return <section className="space-y-4" aria-label={isRtl ? "ابحث عن أول فرصة" : "Find your first opportunity"}>
+      <p className="text-sm leading-6 text-text-secondary">{isRtl ? "افتح الوظائف المناسبة لتخصصك، اختار فرصة، وبعدها ارجع عشان تسجل طلبك." : "Browse jobs matching your specialization, choose an opportunity, then return to record your application."}</p>
+      <button type="button" data-tour-step="explorer-linkedin-card" onClick={() => handlePlatformClick(linkedIn)} className="flex min-h-24 w-full items-center gap-4 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-start hover:bg-sky-100 focus-visible:outline-2 focus-visible:outline-sky-700 dark:border-sky-800 dark:bg-sky-950/40">
+        <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0a66c2] text-xl font-bold text-white">in</span>
+        <span className="min-w-0 flex-1"><span className="block text-base font-bold">LinkedIn Jobs</span><span className="mt-1 block break-words text-sm text-text-secondary" dir="ltr">{targetJobTitle}</span></span>
+        <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
+      </button>
+    </section>;
+  }
 
   return (
     <section

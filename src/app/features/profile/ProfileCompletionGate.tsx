@@ -106,10 +106,10 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
     <main className="flex min-h-screen items-center justify-center bg-neutral-950/60 p-4 backdrop-blur-xs">
       <section
         aria-labelledby="onboarding-wizard-title"
-        className="w-full max-w-2xl rounded-2xl border border-border bg-surface p-6 shadow-2xl sm:p-8"
+        className="w-full max-w-2xl rounded-2xl border border-border bg-surface p-4 shadow-2xl sm:p-8"
       >
         {/* Stepper Header */}
-        <div className="mb-8 border-b border-border pb-6">
+        <div className="mb-5 border-b border-border pb-4 sm:mb-8 sm:pb-6">
           <div className="flex items-center justify-between">
             {steps.map((s, idx) => {
               const isPast = step > s.number;
@@ -260,7 +260,7 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
         {/* Step 2: Professional Profile Setup */}
         {step === 2 && (
           <div>
-            <div className="mb-6">
+            <div className="mb-4 sm:mb-6">
               <h1
                 id="onboarding-wizard-title"
                 className="text-2xl font-bold tracking-tight text-neutral-950"

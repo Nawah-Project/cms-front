@@ -504,6 +504,7 @@ export function AddApplicationModal({
         <div className="max-h-[75vh] overflow-y-auto -m-4 p-4 sm:-m-6 sm:p-6">
           <JobMarketCompass
             collapsible={false}
+            guided={isTourActive && step === 4}
             onLaunchDraft={(draft) => {
               setShowExplorerModal(false);
               if (isTourActive && step === 4) {

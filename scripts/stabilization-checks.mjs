@@ -447,3 +447,24 @@ test("update button respects server cooldown and cohort link preserves precise p
  const url=new URL(cohortApplicationsUrl({startAt:"2026-10-01T12:34:56Z",endAt:"2026-10-04T15:00:00Z"},"CV v2"),"http://local");
  assert.equal(url.searchParams.get("createdFrom"),"2026-10-01T12:34:56Z");assert.equal(url.searchParams.get("createdBefore"),"2026-10-04T15:00:00Z");
 });
+
+test("tour cards fit the measured mobile and keyboard viewport and remain next to edge handles", async () => {
+  const {placeTourCard}=await server.ssrLoadModule("/src/app/features/applications/components/tour-layout.ts");
+  const viewport={width:390,height:650,left:0,top:0};
+  const target={left:28,right:362,top:410,bottom:490,width:334,height:80};
+  const card=placeTourCard(target,viewport,225);
+  assert(card.top>=12&&card.top+225<=638);assert(card.top+225<=target.top);assert(card.left>=12&&card.left+card.width<=378);
+  const edge=placeTourCard({left:0,right:40,top:300,bottom:344,width:40,height:44},{width:320,height:640,left:0,top:0},260,true);
+  assert(edge.left>=40);assert(edge.left+edge.width<=308);assert.equal(edge.arrowDir,"left");
+  const keyboard=placeTourCard({left:30,right:360,top:110,bottom:150,width:330,height:40},{width:390,height:330,left:0,top:0},125);
+  assert(keyboard.top>=12&&keyboard.top+125<=318);assert(keyboard.top>=150);
+});
+
+test("onboarding uses one labelled specialization picker instead of a wall of cards", async () => {
+  const {ProfileForm}=await server.ssrLoadModule("/src/app/features/profile/ProfileForm.tsx");
+  const {ToastProvider}=await server.ssrLoadModule("/src/app/components/ui/ToastProvider.tsx");
+  function Form(){return React.createElement(ToastProvider,null,React.createElement(ProfileForm,{initial:{id:"qa",name:"QA",portfolioUrl:"https://example.com",targetJobTitle:"Software QA Engineer",cv:null,hasCv:true,profileComplete:false},onSaved:()=>{},onboarding:true}));}
+  const client=new QueryClient();const html=render(client,Form);
+  assert.match(html,/id="profile-specialization"/);assert.equal((html.match(/<select/g)??[]).length,1);assert.match(html,/value="Software QA Engineer" selected=""/);
+  assert.doesNotMatch(html,/grid-cols-1 sm:grid-cols-2/);client.clear();
+});

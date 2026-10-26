@@ -29,7 +29,7 @@ import type {
 } from "../types";
 import { useI18n } from "../../../i18n";
 import { useToast } from "../../../components/ui/ToastProvider";
-import { useAppModal } from "../../../routes/layout";
+import { useAppModal } from "../../../components/AppModalContext";
 import { profileApi } from "../../profile/profileApi";
 import { useAuth } from "../../auth/store/authStore";
 import { useTour } from "../../applications/components/FirstApplicationGuidedTour";

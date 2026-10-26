@@ -3,13 +3,15 @@ import React, {
   useContext,
   useEffect,
   useState,
+  useRef,
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../../features/auth/store/authStore";
 import { useI18n } from "../../../i18n";
-import { useToast } from "../../../components/ui/ToastProvider";
+import { JourneyContinueCoachmark } from "./JourneyContinueCoachmark";
+import { placeTourCard, readTourViewport, type TourViewport } from "./tour-layout";
 import { profileApi } from "../../../features/profile/profileApi";
 import { trackUxEvent } from "../../../utils/uxAnalytics";
 
@@ -103,89 +105,6 @@ const STEP_CONTENTS: Record<TourStep, StepContent> = {
 
 type ArrowDir = "left" | "right" | "up" | "down";
 
-interface SmartPlacement {
-  top: number;
-  left: number;
-  arrowDir: ArrowDir;
-  arrowOffset: number;
-}
-
-function getTourCardPlacement(
-  targetRect: DOMRect,
-  isRtl: boolean,
-  step: TourStep,
-): SmartPlacement {
-  const cardWidth = 280;
-  const cardHeight = step === 5 || step === 6 ? 165 : 125;
-  const screenW = typeof window !== "undefined" ? window.innerWidth : 1200;
-  const screenH = typeof window !== "undefined" ? window.innerHeight : 800;
-
-  const targetCenterX = targetRect.left + targetRect.width / 2;
-  const targetCenterY = targetRect.top + targetRect.height / 2;
-
-  // STEP 1: Target is handle button on the edge
-  if (step === 1) {
-    // In RTL, drawer is docked on the left (targetRect.left < 200)
-    // Card placed directly to the right of handle, arrow points left
-    if (targetRect.left < screenW / 2) {
-      const top = Math.max(
-        16,
-        Math.min(screenH - cardHeight - 16, targetCenterY - cardHeight / 2),
-      );
-      const left = Math.min(screenW - cardWidth - 16, targetRect.right + 14);
-      const arrowOffset = Math.max(
-        18,
-        Math.min(cardHeight - 18, targetCenterY - top),
-      );
-      return { top, left, arrowDir: "left", arrowOffset };
-    } else {
-      // In LTR, drawer is docked on the right
-      const top = Math.max(
-        16,
-        Math.min(screenH - cardHeight - 16, targetCenterY - cardHeight / 2),
-      );
-      const left = Math.max(16, targetRect.left - cardWidth - 14);
-      const arrowOffset = Math.max(
-        18,
-        Math.min(cardHeight - 18, targetCenterY - top),
-      );
-      return { top, left, arrowDir: "right", arrowOffset };
-    }
-  }
-
-  // STEP 7: Submit button at bottom of modal - Card placed ABOVE submit button
-  if (step === 7) {
-    const top = Math.max(16, targetRect.top - cardHeight - 14);
-    let left = targetCenterX - cardWidth / 2;
-    left = Math.max(16, Math.min(screenW - cardWidth - 16, left));
-    const arrowOffset = Math.max(
-      20,
-      Math.min(cardWidth - 20, targetCenterX - left),
-    );
-    return { top, left, arrowDir: "down", arrowOffset };
-  }
-
-  // STEPS 2, 3, 4, 5, 6: Prefer BELOW target, arrow points UP
-  let top = targetRect.bottom + 14;
-  let arrowDir: ArrowDir = "up";
-
-  if (top + cardHeight > screenH - 16) {
-    // If not enough space below, place ABOVE target, arrow points DOWN
-    top = Math.max(16, targetRect.top - cardHeight - 14);
-    arrowDir = "down";
-  }
-
-  let left = targetCenterX - cardWidth / 2;
-  left = Math.max(16, Math.min(screenW - cardWidth - 16, left));
-
-  const arrowOffset = Math.max(
-    20,
-    Math.min(cardWidth - 20, targetCenterX - left),
-  );
-
-  return { top, left, arrowDir, arrowOffset };
-}
-
 function TourArrow({ dir, offset }: { dir: ArrowDir; offset: number }) {
   if (dir === "left") {
     return (
@@ -269,7 +188,6 @@ export function FirstApplicationGuidedTourProvider({
   const { user } = useAuth();
   const { locale } = useI18n();
   const isRtl = locale === "ar";
-  const { showToast } = useToast();
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
@@ -282,6 +200,10 @@ export function FirstApplicationGuidedTourProvider({
     : null;
 
   const [isTourActive, setIsTourActive] = useState(false);
+  const [completionOwner, setCompletionOwner] = useState<string | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [cardHeight, setCardHeight] = useState(180);
+  const [viewport, setViewport] = useState<TourViewport | null>(null);
   const [step, setStep] = useState<TourStep>(1);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [targetBorderRadius, setTargetBorderRadius] = useState<string>("12px");
@@ -299,7 +221,7 @@ export function FirstApplicationGuidedTourProvider({
       return;
     }
     if (!user || !storageKey) return;
-    if (profile && !profile.profileComplete) {
+    if (!profile?.profileComplete) {
       setIsTourActive(false);
       return;
     }
@@ -326,12 +248,7 @@ export function FirstApplicationGuidedTourProvider({
     }
     trackUxEvent("tour_completed");
     setIsTourActive(false);
-    showToast({
-      message: isRtl
-        ? "🎉 رائع جداً! تم تسجيل أول طلب تقديم لك في رحلة نواة بنجاح!"
-        : "🎉 Fantastic! Your first job application has been logged successfully!",
-      variant: "success",
-    });
+    if (user?.id) setCompletionOwner(user.id);
   };
 
   const nextStep = () => {
@@ -350,6 +267,7 @@ export function FirstApplicationGuidedTourProvider({
     }
 
     let animationFrameId: number;
+    let alignedTarget: Element | null = null;
 
     const track = () => {
       const selector = STEP_SELECTORS[step];
@@ -358,8 +276,9 @@ export function FirstApplicationGuidedTourProvider({
         : null;
 
       if (el) {
-        if (step === 2) {
-          el.scrollIntoView({ block: "nearest", inline: "nearest" });
+        if (step !== 1 && alignedTarget !== el && el.getBoundingClientRect().height > 0) {
+          el.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
+          alignedTarget = el;
         }
 
         const rect = el.getBoundingClientRect();
@@ -515,6 +434,19 @@ export function FirstApplicationGuidedTourProvider({
       window.removeEventListener("nawah_app_created", handleAppCreated);
   }, [isTourActive, storageKey]);
 
+  useEffect(() => {
+    if (!isTourActive) return;
+    const update = () => setViewport(readTourViewport());
+    update();
+    window.visualViewport?.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+    const node = cardRef.current;
+    const observer = node ? new ResizeObserver(() => setCardHeight(node.getBoundingClientRect().height)) : null;
+    if (node) observer?.observe(node);
+    return () => { observer?.disconnect(); window.visualViewport?.removeEventListener("resize", update); window.visualViewport?.removeEventListener("scroll", update); window.removeEventListener("resize", update); };
+  }, [isTourActive, step]);
+
   const isStep5Valid = companyValue.trim().length >= 2;
   const isStep6Valid =
     urlValue.trim().length >= 8 && /^https?:\/\//i.test(urlValue.trim());
@@ -533,17 +465,8 @@ export function FirstApplicationGuidedTourProvider({
     }
   }
 
-  const placement = activeRect
-    ? getTourCardPlacement(activeRect, isRtl, step)
-    : {
-        top: 120,
-        left: Math.max(
-          16,
-          typeof window !== "undefined" ? (window.innerWidth - 280) / 2 : 16,
-        ),
-        arrowDir: "up" as ArrowDir,
-        arrowOffset: 40,
-      };
+  const visibleViewport = viewport ?? {width: typeof window !== "undefined" ? window.innerWidth : 1200, height: typeof window !== "undefined" ? window.innerHeight : 800, top: 0, left: 0};
+  const placement = placeTourCard(activeRect ?? {top:100,bottom:100,left:visibleViewport.width/2,right:visibleViewport.width/2,width:0,height:0}, visibleViewport, cardHeight, step === 1);
 
   const pad = 2;
 
@@ -664,13 +587,18 @@ export function FirstApplicationGuidedTourProvider({
 
             {/* Interactive Guidance Card (z-[9999]) - Pure Pointer Coachmark */}
             <div
+              ref={cardRef}
+              data-guided-tour-card
               style={{
                 position: "fixed",
+                width: placement.width,
+                maxHeight: visibleViewport.height - 24,
+                overflowY: "auto",
                 top: placement.top,
                 left: placement.left,
                 zIndex: 9999,
               }}
-              className="relative w-[280px] max-w-[280px] rounded-2xl border border-white/15 bg-neutral-900/95 px-4 py-3.5 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-200 pointer-events-auto"
+              className="relative rounded-2xl border border-white/15 bg-neutral-900/95 px-4 py-3.5 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-200 pointer-events-auto"
             >
               {/* Attached Pointer Arrow */}
               <TourArrow dir={placement.arrowDir} offset={placement.arrowOffset} />
@@ -703,9 +631,9 @@ export function FirstApplicationGuidedTourProvider({
               </h3>
 
               {/* Description */}
-              <p className="mt-1 text-[11px] leading-relaxed text-neutral-300">
+              {!((step === 5 || step === 6) && visibleViewport.height < 450) && <p className="mt-1 text-[11px] leading-relaxed text-neutral-300">
                 {isRtl ? currentContent.bodyAr : currentContent.bodyEn}
-              </p>
+              </p>}
 
               {/* Steps 5 & 6 only: Sleek inline Next button */}
               {step === 5 && (
@@ -767,6 +695,7 @@ export function FirstApplicationGuidedTourProvider({
           </div>,
           document.body,
         )}
+      {enabled && completionOwner === user?.id && !isTourActive && <JourneyContinueCoachmark onDismiss={() => setCompletionOwner(null)} />}
     </TourContext.Provider>
   );
 }
