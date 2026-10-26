@@ -211,8 +211,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const adminApi = {
-  reportPreviewDemo: () =>
-    request<AdminReportPreviewResponse>("/admin/journey/reports/demo"),
+  reportPreviewDemo: (scenario: "EMPTY" | "ONE" | "EARLY" | "WEEK1_COMPLETE" | "WEEK3_COMPLETE" | "POPULATED" | "COMPLETED" = "COMPLETED") =>
+    request<AdminReportPreviewResponse>(`/admin/journey/reports/demo?scenario=${scenario}`),
   reportPreviewUser: (userId: string) =>
     request<AdminReportPreviewResponse>(
       `/admin/journey/reports/${encodeURIComponent(userId)}`,

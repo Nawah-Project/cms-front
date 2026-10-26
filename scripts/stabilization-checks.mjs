@@ -24,6 +24,9 @@ const { default: AdminReportPreviewPage, adminReportPreviewQueryKeys } =
   await server.ssrLoadModule(
     "/src/app/features/admin/AdminReportPreviewPage.tsx",
   );
+const { buildAnalyticsChartRows } = await server.ssrLoadModule(
+  "/src/app/features/reports/pages/analytics-model.ts",
+);
 const { I18nProvider } = await server.ssrLoadModule("/src/app/i18n/index.tsx");
 function render(client, Page = ReportsPage) {
   return renderToStaticMarkup(
@@ -115,20 +118,92 @@ test("report error renders an alert and a retry action instead of loading foreve
   assert.match(html, /حاول تاني/);
   client.clear();
 });
-test("empty comprehensive analytics provide calm baselines without fabricated performance", () => {
+
+test("activity chart transforms fill real UTC bins and cumulative mode sums actual values only", () => {
+  const period = buildAnalyticsChartRows(
+    [
+      { date: "2026-10-01", logged: 2, positiveEvents: 1 },
+      { date: "2026-10-03", logged: 1, positiveEvents: 0 },
+    ],
+    [{ date: "2026-10-02", title: "CV v2" }],
+    "period",
+  );
+  assert.equal(period.bucket, "day");
+  assert.deepEqual(period.rows.map((row) => [row.date, row.applications, row.progressionEvents]), [
+    ["2026-10-01", 2, 1],
+    ["2026-10-02", 0, 0],
+    ["2026-10-03", 1, 0],
+  ]);
+  assert.deepEqual(period.rows[1].markerTitles, ["CV v2"]);
+
+  const cumulative = buildAnalyticsChartRows(
+    [
+      { date: "2026-10-01", logged: 2, positiveEvents: 1 },
+      { date: "2026-10-03", logged: 1, positiveEvents: 2 },
+    ],
+    [],
+    "cumulative",
+  );
+  assert.deepEqual(cumulative.rows.map((row) => [row.applications, row.progressionEvents]), [
+    [2, 1],
+    [2, 1],
+    [3, 3],
+  ]);
+});
+
+test("long activity histories use weekly or monthly bins without changing event totals", () => {
+  const weekly = buildAnalyticsChartRows(
+    [
+      { date: "2026-01-01", logged: 2, positiveEvents: 1 },
+      { date: "2026-05-01", logged: 3, positiveEvents: 2 },
+    ],
+    [],
+    "period",
+  );
+  assert.equal(weekly.bucket, "week");
+  assert.equal(weekly.rows.reduce((sum, row) => sum + row.applications, 0), 5);
+  assert.equal(weekly.rows.reduce((sum, row) => sum + row.progressionEvents, 0), 3);
+  const monthly = buildAnalyticsChartRows(
+    [
+      { date: "2023-01-01", logged: 2, positiveEvents: 0 },
+      { date: "2026-01-01", logged: 3, positiveEvents: 1 },
+    ],
+    [],
+    "period",
+  );
+  assert.equal(monthly.bucket, "month");
+  assert.equal(monthly.rows.reduce((sum, row) => sum + row.applications, 0), 5);
+});
+
+test("one application uses a compact first-record presentation instead of a wide chart", () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, retryOnMount: false } } });
+  const oneApplication = {
+    ...report,
+    overall: { ...metrics, logged: 1, positiveRate: null },
+    weeks: report.weeks.map((week) => ({ ...week, logged: week.week === 0 ? 1 : 0 })),
+    daily: [{ date: "2026-10-03", logged: 1, positiveEvents: 0 }],
+  };
+  client.setQueryData(["journey", "reports"], oneApplication);
+  const html = render(client);
+  assert.match(html, /First application recorded|أول طلب اتسجل/);
+  assert.doesNotMatch(html, /role="img"/);
+  assert.doesNotMatch(html, /h-\[320px\]/);
+  client.clear();
+});
+test("empty analytics show a compact real baseline without an empty chart or fabricated performance", () => {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, retryOnMount: false } },
   });
   client.setQueryData(["journey", "reports"], report);
   const html = render(client);
-  assert.match(html, /Performance Analytics|تحليل الأداء/);
-  assert.match(html, /Progress and Market Response|التقدم واستجابة سوق العمل/);
-  assert.match(html, /Current stage distribution|توزيع المرحلة الحالية/);
+  assert.match(html, /Performance analytics|تحليلات الأداء/);
+  assert.match(html, /Activity and recruitment response|النشاط واستجابة التوظيف/);
+  assert.match(html, /Current recruitment pipeline|مسار الطلبات الحالي/);
   assert.match(
     html,
-    /No persisted change checkpoints|لا توجد نقاط تغيير محفوظة/,
+    /No saved change checkpoint|لسه مفيش نقطة تغيير محفوظة/,
   );
-  assert.match(html, /No timeline activity is recorded yet|مفيش CV أو تغييرات/);
+  assert.match(html, /No saved activity or change events|لسه مفيش أنشطة أو تغييرات محفوظة/);
   assert.doesNotMatch(
     html,
     /قرأت التقرير الكامل|I have read the complete report/,
@@ -137,7 +212,7 @@ test("empty comprehensive analytics provide calm baselines without fabricated pe
   client.clear();
 });
 
-test("early members keep comprehensive analytics while weekly and final reports remain locked", () => {
+test("early members get continuous analytics while weekly and final reports remain locked", () => {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, retryOnMount: false } },
   });
@@ -152,7 +227,7 @@ test("early members keep comprehensive analytics while weekly and final reports 
   });
 
   const html = render(client);
-  assert.match(html, /التحليلات الشاملة|Overall journey/);
+  assert.match(html, /تحليلات مستمرة|Continuous analytics/);
   assert.equal((html.match(/مقفول/g) ?? []).length, 5);
   assert.doesNotMatch(html, /قرأت التقرير الكامل|I have read the complete report/);
   client.clear();
@@ -186,12 +261,42 @@ test("week and final report previews are distinct and the final preview stays re
   const weekHtml = render(client, WeekReportPreview);
   assert.match(weekHtml, /Week 2 report|تقرير الأسبوع ٢|تقرير الأسبوع 2/);
   const finalHtml = render(client, FinalReportPreview);
-  assert.match(finalHtml, /Final report — whole journey|التقرير النهائي/);
-  assert.match(finalHtml, /Admin read-only preview|معاينة إدارية للقراءة فقط/);
+  assert.match(finalHtml, /رحلتك من أول خطوة|Your journey, from the first step/);
+  assert.match(finalHtml, /Admin preview is read-only|معاينة Admin للقراءة فقط/);
   assert.doesNotMatch(
     finalHtml,
     /I have read the complete report|قرأت التقرير الكامل/,
   );
+  client.clear();
+});
+
+test("weekly report presents saved reflection and learning as a stage report, not the analytics dashboard", () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, retryOnMount: false } } });
+  const weekly = {
+    ...report,
+    weeklyStages: [{
+      week: 2,
+      available: true,
+      focus: { titleAr: "الأسبوع الثاني — التخصيص", titleEn: "Week 2 — tailored practice", descriptionAr: "وصف المرحلة", descriptionEn: "Stage focus" },
+      milestones: [{ titleAr: "مهمة مكتملة", titleEn: "Completed quest", completed: true, review: false }],
+      complete: true,
+      reflectionRecorded: true,
+      observedFrom: "2026-10-06T00:00:00.000Z",
+      observedThrough: "2026-10-12T00:00:00.000Z",
+      nextStage: { titleAr: "المرحلة التالية", titleEn: "Next stage" },
+    }],
+    readGuidance: [{ titleAr: "دليل حقيقي مقروء", titleEn: "Persisted guidance read", weekNumber: 2 }],
+    activities: [{ id: "week-2-reflection", week: 2, type: "WEEKLY_REVIEW", summary: "Reflected on targeting", postUrl: null, postTopic: null, contactName: null, companyName: null, createdAt: "2026-10-12T12:00:00.000Z", legacyChange: false }],
+  };
+  function WeekPreview() {
+    return React.createElement(ReportPreviewProvider, { value: { data: weekly, scope: 2, onScopeChange: () => {} } }, React.createElement(ReportsPage));
+  }
+  const html = render(client, WeekPreview);
+  assert.match(html, /Week 2 — tailored practice|الأسبوع الثاني — التخصيص/);
+  assert.match(html, /Reflected on targeting/);
+  assert.match(html, /Persisted guidance read|دليل حقيقي مقروء/);
+  assert.match(html, /Compared with the previous week|مقارنة بالأسبوع السابق/);
+  assert.match(html, /hidden=""/);
   client.clear();
 });
 
@@ -253,10 +358,10 @@ test("populated analytics keep dates, actual checkpoints, stage distributions an
   const html = render(client);
   assert.match(html, /role="img"/);
   assert.match(html, /2026-10-12/);
-  assert.match(html, /Current stage distribution|توزيع المرحلة الحالية/);
-  assert.match(html, /Current final outcomes|النتائج النهائية الحالية/);
+  assert.match(html, /Current recruitment pipeline|مسار الطلبات الحالي/);
+  assert.match(html, /Current outcomes|النتائج الحالية/);
   assert.match(html, /CV v2/);
-  assert.match(html, /do not prove|مش بيثبت/);
+  assert.match(html, /does not establish causation|لا تثبت إن التغيير سبب/);
   client.clear();
 });
 
@@ -264,7 +369,7 @@ test("admin preview exposes DEMO and ACTUAL modes with all four weeks and final 
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, retryOnMount: false } },
   });
-  client.setQueryData(adminReportPreviewQueryKeys.demo, {
+  client.setQueryData(adminReportPreviewQueryKeys.demo("COMPLETED"), {
     mode: "DEMO",
     report,
   });
@@ -276,6 +381,10 @@ test("admin preview exposes DEMO and ACTUAL modes with all four weeks and final 
   assert.match(html, /Week 3|الأسبوع الثالث/);
   assert.match(html, /Week 4|الأسبوع الرابع/);
   assert.match(html, /Final report|التقرير النهائي/);
+  assert.match(html, /Synthetic scenario|حالة البيانات التجريبية/);
+  assert.match(html, /DEMO — completed Week 1|إكمال الأسبوع الأول/);
+  assert.match(html, /DEMO — Weeks 1–3 completed|إكمال الأسابيع 1–3/);
+  assert.match(html, /DEMO — 30 طلبًا/);
   assert.doesNotMatch(
     html,
     /قرأت التقرير الكامل|I have read the complete report/,
@@ -303,7 +412,7 @@ test("final Admin presentation is forced by selection and remains read-only", ()
   }
   const html = render(client, FinalReportPreview);
   assert.match(html, /التقرير النهائي|Final report/);
-  assert.match(html, /معاينة إدارية للقراءة فقط|Admin read-only preview/);
+  assert.match(html, /معاينة Admin للقراءة فقط|Admin preview is read-only/);
   assert.doesNotMatch(
     html,
     /قرأت التقرير الكامل|I have read the complete report/,

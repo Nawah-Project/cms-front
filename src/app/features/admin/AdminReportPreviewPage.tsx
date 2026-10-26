@@ -9,9 +9,10 @@ import ReportsPage, {
 
 type PreviewReportChoice = "week-1" | "week-2" | "week-3" | "week-4" | "final";
 type PreviewMode = "DEMO" | "ACTUAL";
+type DemoScenario = "EMPTY" | "ONE" | "EARLY" | "WEEK1_COMPLETE" | "WEEK3_COMPLETE" | "POPULATED" | "COMPLETED";
 
 export const adminReportPreviewQueryKeys = {
-  demo: ["admin", "journey-report-preview", "DEMO"] as const,
+  demo: (scenario: DemoScenario = "COMPLETED") => ["admin", "journey-report-preview", "DEMO", scenario] as const,
   users: (search: string) =>
     ["admin", "journey-report-preview", "users", search] as const,
   actual: (userId: string) =>
@@ -23,6 +24,7 @@ export default function AdminReportPreviewPage() {
   const isAr = locale === "ar";
   const text = (ar: string, en: string) => (isAr ? ar : en);
   const [mode, setMode] = useState<PreviewMode>("DEMO");
+  const [scenario, setScenario] = useState<DemoScenario>("COMPLETED");
   const [reportChoice, setReportChoice] = useState<PreviewReportChoice>("week-1");
   const [selectedUserId, setSelectedUserId] = useState("");
   const [search, setSearch] = useState("");
@@ -44,11 +46,11 @@ export default function AdminReportPreviewPage() {
   const reportQuery = useQuery({
     queryKey:
       mode === "DEMO"
-        ? adminReportPreviewQueryKeys.demo
+        ? adminReportPreviewQueryKeys.demo(scenario)
         : adminReportPreviewQueryKeys.actual(selectedUserId),
     queryFn: () =>
       mode === "DEMO"
-        ? adminApi.reportPreviewDemo()
+        ? adminApi.reportPreviewDemo(scenario)
         : adminApi.reportPreviewUser(selectedUserId),
     enabled: mode === "DEMO" || Boolean(selectedUserId),
     retry: false,
@@ -99,7 +101,7 @@ export default function AdminReportPreviewPage() {
           </span>
         </header>
 
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
+        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <label className="block text-sm font-medium">
             {text("التقرير", "Report")}
             <select
@@ -132,6 +134,22 @@ export default function AdminReportPreviewPage() {
             </select>
           </label>
         </div>
+
+        {mode === "DEMO" && (
+          <label className="mt-4 block max-w-xl text-sm font-medium">
+            {text("حالة البيانات التجريبية", "Synthetic scenario")}
+            <select className="field-control mt-1" value={scenario} onChange={(event) => setScenario(event.target.value as DemoScenario)}>
+              <option value="EMPTY">{text("DEMO — من غير طلبات أو CV", "DEMO — no applications or CV")}</option>
+              <option value="ONE">{text("DEMO — طلب واحد وCV v1", "DEMO — one application and CV v1")}</option>
+              <option value="EARLY">{text("DEMO — 5 طلبات ومراحل مختلطة", "DEMO — five applications, mixed stages")}</option>
+              <option value="WEEK1_COMPLETE">{text("DEMO — إكمال الأسبوع الأول", "DEMO — completed Week 1")}</option>
+              <option value="WEEK3_COMPLETE">{text("DEMO — إكمال الأسابيع 1–3", "DEMO — Weeks 1–3 completed")}</option>
+              <option value="POPULATED">{text("DEMO — 30 طلبًا وفترات تغيير", "DEMO — 30 applications and change periods")}</option>
+              <option value="COMPLETED">{text("DEMO — رحلة كاملة وتقرير نهائي", "DEMO — completed journey and final report")}</option>
+            </select>
+            <span className="mt-1 block text-xs font-normal text-text-secondary">{text("السيناريوهات دي ثابتة ومحسوبة في الذاكرة؛ مابتضيفش نشاط لقاعدة البيانات.", "These deterministic scenarios are calculated in memory and never add activity to a database.")}</span>
+          </label>
+        )}
 
         {mode === "ACTUAL" && (
           <div className="mt-4 grid gap-4 md:grid-cols-2">
