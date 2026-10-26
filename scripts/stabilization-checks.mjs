@@ -463,8 +463,8 @@ test("tour cards fit the measured mobile and keyboard viewport and remain next t
 test("onboarding uses one labelled specialization picker instead of a wall of cards", async () => {
   const {ProfileForm}=await server.ssrLoadModule("/src/app/features/profile/ProfileForm.tsx");
   const {ToastProvider}=await server.ssrLoadModule("/src/app/components/ui/ToastProvider.tsx");
-  function Form(){return React.createElement(ToastProvider,null,React.createElement(ProfileForm,{initial:{id:"qa",name:"QA",portfolioUrl:"https://example.com",targetJobTitle:"Software QA Engineer",cv:null,hasCv:true,profileComplete:false},onSaved:()=>{},onboarding:true}));}
+  function Form(){return React.createElement(ToastProvider,null,React.createElement(ProfileForm,{initial:{id:"qa",name:"QA",portfolioUrl:"https://example.com",targetJobTitle:"Software QA Engineer",cv:null,hasCv:false,profileComplete:false},onSaved:()=>{},onboarding:true}));}
   const client=new QueryClient();const html=render(client,Form);
   assert.match(html,/id="profile-specialization"/);assert.equal((html.match(/<select/g)??[]).length,1);assert.match(html,/value="Software QA Engineer" selected=""/);
-  assert.doesNotMatch(html,/grid-cols-1 sm:grid-cols-2/);client.clear();
+  assert.doesNotMatch(html,/grid-cols-1 sm:grid-cols-2/);assert.doesNotMatch(html,/\{size\}/);client.clear();
 });

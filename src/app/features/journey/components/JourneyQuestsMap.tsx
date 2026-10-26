@@ -112,6 +112,7 @@ function ProgressBar({
           {label}
         </span>
         <span
+          dir="ltr"
           className={`tabular-nums font-semibold ${
             isDone
               ? "text-success-strong"
@@ -951,7 +952,7 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
                 ? t("journey.weekZeroProgressTitle")
                 : t("journey.weekProgressTitle", { week: selectedWeek })}
             </span>
-            <span className="tabular-nums">
+            <span dir="ltr" className="tabular-nums">
               {completedInWeek} / {weekNodes.length} ({weekProgressPct}%)
             </span>
           </div>

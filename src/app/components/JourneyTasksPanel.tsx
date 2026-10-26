@@ -186,10 +186,10 @@ export function JourneyTasksPanel() {
         id="journey-tasks-panel"
         style={{
           width: panelWidth,
-          height: "min(50rem, calc(100dvh - 2rem))",
+          height: "min(50rem, calc(100dvh - var(--journey-panel-gap, 6rem)))",
           transform: open ? "translateX(0)" : `translateX(${hiddenOffset})`,
         }}
-        className="fixed end-5 top-1/2 -translate-y-1/2 transition-transform duration-300 ease-out pointer-events-none z-[60]"
+        className="fixed end-5 top-[calc(50%+2rem)] [--journey-panel-gap:6rem] lg:top-1/2 lg:[--journey-panel-gap:2rem] -translate-y-1/2 transition-transform duration-300 ease-out pointer-events-none z-[60]"
       >
         {/* Inner Panel Drawer */}
         <div

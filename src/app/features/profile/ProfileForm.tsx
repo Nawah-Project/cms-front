@@ -203,7 +203,7 @@ export function ProfileForm({
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-text-primary">{file?.name ?? initial.cv?.originalName ?? t("profile.uploadCv")}</p>
                 <p className="mt-1 text-xs text-text-muted">
-                  {file ? `${formatSize(file.size, locale)} MB · ${t(({ idle: "profile.uploadIdle", selected: "profile.uploadSelected", uploading: "profile.uploadInProgress", uploaded: "profile.uploadComplete", error: "profile.uploadFailed" })[uploadState])}` : initial.hasCv ? t("profile.currentCv") : t("profile.pdfLimit")}
+                  {file ? `${formatSize(file.size, locale)} MB · ${t(({ idle: "profile.uploadIdle", selected: "profile.uploadSelected", uploading: "profile.uploadInProgress", uploaded: "profile.uploadComplete", error: "profile.uploadFailed" })[uploadState])}` : initial.hasCv ? t("profile.currentCv") : t("profile.pdfLimit", { size: MAX_CV_SIZE_MB })}
                 </p>
               </div>
             </div>
