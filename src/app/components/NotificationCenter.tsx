@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router";
 import { useI18n } from "../i18n";
 import { BellIcon, CheckIcon, ClockIcon, SparklesIcon } from "./Icons";
@@ -29,7 +30,13 @@ export function NotificationCenter({
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [unreadFeedback, setUnreadFeedback] = useState<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [popoverPosition, setPopoverPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const pendingReadIds = useRef(new Set<string>());
   const timerMap = useRef(new Map<string, NodeJS.Timeout>());
 
@@ -57,9 +64,10 @@ export function NotificationCenter({
   // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
       if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
+        !containerRef.current?.contains(target) &&
+        !dropdownRef.current?.contains(target)
       ) {
         setOpen(false);
       }
@@ -145,6 +153,67 @@ export function NotificationCenter({
       ? 1
       : 0);
 
+  // Render the menu outside the sidebar/header stacking and overflow contexts.
+  useEffect(() => {
+    if (!open) {
+      setPopoverPosition(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      const trigger = triggerRef.current;
+      const dropdown = dropdownRef.current;
+      if (!trigger || !dropdown) return;
+
+      const triggerRect = trigger.getBoundingClientRect();
+      const viewportPadding = 12;
+      const gap = 8;
+      const dropdownRect = dropdown.getBoundingClientRect();
+      const dropdownHeight = Math.min(
+        dropdownRect.height,
+        window.innerHeight - viewportPadding * 2,
+      );
+      const spaceBelow =
+        window.innerHeight - triggerRect.bottom - gap - viewportPadding;
+      const spaceAbove = triggerRect.top - gap - viewportPadding;
+      const placeBelow =
+        spaceBelow >= dropdownHeight || spaceBelow >= spaceAbove;
+      const top = placeBelow
+        ? Math.min(
+            triggerRect.bottom + gap,
+            window.innerHeight - viewportPadding - dropdownHeight,
+          )
+        : Math.max(
+            viewportPadding,
+            triggerRect.top - gap - dropdownHeight,
+          );
+      const width = Math.min(
+        window.innerWidth < 640 ? 320 : 384,
+        window.innerWidth - viewportPadding * 2,
+      );
+      const left = Math.min(
+        Math.max(viewportPadding, triggerRect.right - width),
+        window.innerWidth - viewportPadding - width,
+      );
+
+      setPopoverPosition({ top, left });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [
+    open,
+    persistentItems.length,
+    companionAlertsCount,
+    notificationsLoading,
+    readError,
+  ]);
+
   const handleNotificationClick = (item: AppNotification) => {
     if (!item.isRead && !pendingReadIds.current.has(item.id)) {
       pendingReadIds.current.add(item.id);
@@ -193,8 +262,9 @@ export function NotificationCenter({
   };
 
   return (
-    <div className="relative inline-block" ref={containerRef} onKeyDown={e=>{if(e.key==='Escape'){setOpen(false);containerRef.current?.querySelector('button')?.focus();}}}>
+    <div className="relative inline-block" ref={containerRef} onKeyDown={e=>{if(e.key==='Escape'){setOpen(false);triggerRef.current?.focus();}}}>
       <button
+        ref={triggerRef}
         type="button"
         aria-label={t("dashboard.notificationsTitle")}
         title={t("dashboard.notificationsTitle")}
@@ -214,8 +284,16 @@ export function NotificationCenter({
         )}
       </button>
 
-      {open && (
-        <div className="absolute start-0 max-lg:start-auto max-lg:end-0 top-full mt-2 w-80 sm:w-96 rounded-2xl border border-border bg-surface p-4 shadow-xl z-[70] text-text-primary">
+      {open && typeof document !== "undefined" && createPortal(
+        <div
+          ref={dropdownRef}
+          className="fixed z-[90] flex max-h-[calc(100dvh-1.5rem)] w-80 max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-2xl border border-border bg-surface p-4 text-text-primary shadow-xl sm:w-96"
+          style={{
+            top: popoverPosition?.top ?? 12,
+            left: popoverPosition?.left ?? 12,
+            visibility: popoverPosition ? "visible" : "hidden",
+          }}
+        >
           <div className="flex items-center justify-between border-b border-border pb-3">
             <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
               <BellIcon className="h-4 w-4 text-info-strong" />
@@ -243,7 +321,7 @@ export function NotificationCenter({
 
           <div
             ref={scrollContainerRef}
-            className="max-h-80 overflow-y-auto py-2 divide-y divide-border/60"
+            className="min-h-0 max-h-[min(20rem,calc(100dvh-12rem))] flex-1 overflow-y-auto py-2 divide-y divide-border/60"
           >
             {(readError || notificationsError) && <div role="alert" className="p-3 text-xs"><p>{locale==='ar'?'تعذر تحديث الإشعارات؛ القراءة لسه مش مؤكدة.':'Notifications could not update; reading is not confirmed.'}</p><button className="button-secondary mt-2" onClick={()=>{setReadError(false);void retryNotifications();}}>{t('common.retry')}</button></div>}
             {notificationsLoading && <p role="status">{t('common.loading')}</p>}
@@ -402,7 +480,8 @@ export function NotificationCenter({
           </div>
 
           <p className="mt-2 border-t border-border pt-3 text-xs text-text-muted">{locale === 'ar' ? 'إرسال البريد حسب إعدادات المنصة؛ التحكم الفردي في التذكيرات مش متاح حاليًا.' : 'Email follows platform settings; individual reminder preferences are not available yet.'}</p>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
