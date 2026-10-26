@@ -116,8 +116,8 @@ function TourArrow({ dir, offset }: { dir: ArrowDir; offset: number }) {
         <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
           <path
             d="M0 8L10 0V16L0 8Z"
-            fill="#171717"
-            stroke="rgba(255,255,255,0.2)"
+            fill="#ffffff"
+            stroke="#a9bcb0"
             strokeWidth="1"
           />
         </svg>
@@ -134,8 +134,8 @@ function TourArrow({ dir, offset }: { dir: ArrowDir; offset: number }) {
         <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
           <path
             d="M10 8L0 16V0L10 8Z"
-            fill="#171717"
-            stroke="rgba(255,255,255,0.2)"
+            fill="#ffffff"
+            stroke="#a9bcb0"
             strokeWidth="1"
           />
         </svg>
@@ -152,8 +152,8 @@ function TourArrow({ dir, offset }: { dir: ArrowDir; offset: number }) {
         <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
           <path
             d="M8 0L16 10H0L8 0Z"
-            fill="#171717"
-            stroke="rgba(255,255,255,0.2)"
+            fill="#ffffff"
+            stroke="#a9bcb0"
             strokeWidth="1"
           />
         </svg>
@@ -170,8 +170,8 @@ function TourArrow({ dir, offset }: { dir: ArrowDir; offset: number }) {
       <svg width="16" height="10" viewBox="0 0 16 10" fill="none">
         <path
           d="M8 10L0 0H16L8 10Z"
-          fill="#171717"
-          stroke="rgba(255,255,255,0.2)"
+          fill="#ffffff"
+          stroke="#a9bcb0"
           strokeWidth="1"
         />
       </svg>
@@ -484,7 +484,7 @@ export function FirstApplicationGuidedTourProvider({
       }}
     >
       {children}
-      {preparing && typeof document!=="undefined" && createPortal(<div data-tour-pending className="fixed inset-0 z-[9989] bg-neutral-950/75"/>, document.body)}
+      {preparing && typeof document!=="undefined" && createPortal(<div data-tour-pending className="tour-scrim fixed inset-0 z-[9989]"/>, document.body)}
 
       {isTourActive &&
         typeof document !== "undefined" &&
@@ -503,7 +503,7 @@ export function FirstApplicationGuidedTourProvider({
                     height: Math.max(0, activeRect.top - pad),
                     zIndex: 9990,
                   }}
-                  className="bg-transparent pointer-events-auto"
+                  className="tour-scrim pointer-events-auto"
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -519,7 +519,7 @@ export function FirstApplicationGuidedTourProvider({
                     bottom: 0,
                     zIndex: 9990,
                   }}
-                  className="bg-transparent pointer-events-auto"
+                  className="tour-scrim pointer-events-auto"
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -535,7 +535,7 @@ export function FirstApplicationGuidedTourProvider({
                     height: activeRect.height + pad * 2,
                     zIndex: 9990,
                   }}
-                  className="bg-transparent pointer-events-auto"
+                  className="tour-scrim pointer-events-auto"
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -551,7 +551,7 @@ export function FirstApplicationGuidedTourProvider({
                     height: activeRect.height + pad * 2,
                     zIndex: 9990,
                   }}
-                  className="bg-transparent pointer-events-auto"
+                  className="tour-scrim pointer-events-auto"
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -560,7 +560,7 @@ export function FirstApplicationGuidedTourProvider({
               </>
             ) : (
               <div
-                className="fixed inset-0 bg-neutral-950/72 backdrop-blur-[2px] z-[9990] pointer-events-auto"
+                className="tour-scrim fixed inset-0 z-[9990] pointer-events-auto"
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
@@ -582,7 +582,7 @@ export function FirstApplicationGuidedTourProvider({
                     : "14px",
                   border: "1.5px solid rgba(255, 255, 255, 0.85)",
                   boxShadow:
-                    "0 0 0 9999px rgba(9, 9, 11, 0.72), 0 0 12px rgba(16, 185, 129, 0.18)",
+                    "0 0 0 3px rgba(255,255,255,.7), 0 0 12px rgba(18,94,78,.18)",
                   zIndex: 9991,
                 }}
                 className="ring-2 ring-emerald-400/35 pointer-events-none"
@@ -602,14 +602,14 @@ export function FirstApplicationGuidedTourProvider({
                 left: placement.left,
                 zIndex: 9999,
               }}
-              className="relative rounded-2xl border border-white/15 bg-neutral-900/95 px-4 py-3.5 text-white shadow-2xl backdrop-blur-md  duration-200 pointer-events-auto"
+              className="relative rounded-2xl border border-border-strong bg-surface px-4 py-3.5 text-text-primary shadow-2xl  duration-200 pointer-events-auto"
             >
               {/* Attached Pointer Arrow */}
               <TourArrow dir={placement.arrowDir} offset={placement.arrowOffset} />
 
               {/* Mini Top Bar (No divider line) */}
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-emerald-400">
+                <span className="text-[11px] font-semibold text-info-strong">
                   {isRtl ? `الخطوة ${step} من 7` : `Step ${step} of 7`}
                 </span>
 
@@ -630,22 +630,22 @@ export function FirstApplicationGuidedTourProvider({
               </div>
 
               {/* Title */}
-              <h3 className="mt-1.5 text-xs sm:text-[13px] font-bold text-white leading-snug">
+              <h3 className="mt-1.5 text-xs sm:text-[13px] font-bold text-text-primary leading-snug">
                 {isRtl ? currentContent.titleAr : currentContent.titleEn}
               </h3>
 
               {/* Description */}
-              {!((step === 5 || step === 6) && visibleViewport.height < 450) && <p className="mt-1 text-[11px] leading-relaxed text-neutral-300">
+              {!((step === 5 || step === 6) && visibleViewport.height < 450) && <p className="mt-1 text-[11px] leading-relaxed text-text-secondary">
                 {isRtl ? currentContent.bodyAr : currentContent.bodyEn}
               </p>}
 
               {/* Steps 5 & 6 only: Sleek inline Next button */}
               {step === 5 && (
-                <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
+                <div className="mt-3 pt-2.5 border-t border-border flex items-center justify-between gap-2">
                   <span
                     className={`text-[10px] truncate transition-colors ${
                       isStep5Valid
-                        ? "text-[#34d399] font-bold"
+                        ? "text-info-strong font-bold"
                         : "text-neutral-400"
                     }`}
                   >
@@ -659,8 +659,8 @@ export function FirstApplicationGuidedTourProvider({
                     onClick={nextStep}
                     className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition-all duration-150 shrink-0 ${
                       isStep5Valid
-                        ? "bg-[#34d399] hover:bg-[#10b981] text-neutral-950 shadow-md shadow-[#34d399]/35 ring-1 ring-[#6ee7b7]/60 cursor-pointer active:scale-95"
-                        : "bg-emerald-500/15 text-emerald-300/40 border border-emerald-500/20 cursor-not-allowed"
+                        ? "bg-accent hover:bg-neutral-900 text-white shadow-sm cursor-pointer active:scale-95"
+                        : "bg-neutral-100 text-neutral-500 border border-border cursor-not-allowed"
                     }`}
                   >
                     <span>{isRtl ? "التالي ←" : "Next →"}</span>
@@ -669,11 +669,11 @@ export function FirstApplicationGuidedTourProvider({
               )}
 
               {step === 6 && (
-                <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
+                <div className="mt-3 pt-2.5 border-t border-border flex items-center justify-between gap-2">
                   <span
                     className={`text-[10px] truncate transition-colors ${
                       isStep6Valid
-                        ? "text-[#34d399] font-bold"
+                        ? "text-info-strong font-bold"
                         : "text-neutral-400"
                     }`}
                   >
@@ -687,8 +687,8 @@ export function FirstApplicationGuidedTourProvider({
                     onClick={nextStep}
                     className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition-all duration-150 shrink-0 ${
                       isStep6Valid
-                        ? "bg-[#34d399] hover:bg-[#10b981] text-neutral-950 shadow-md shadow-[#34d399]/35 ring-1 ring-[#6ee7b7]/60 cursor-pointer active:scale-95"
-                        : "bg-emerald-500/15 text-emerald-300/40 border border-emerald-500/20 cursor-not-allowed"
+                        ? "bg-accent hover:bg-neutral-900 text-white shadow-sm cursor-pointer active:scale-95"
+                        : "bg-neutral-100 text-neutral-500 border border-border cursor-not-allowed"
                     }`}
                   >
                     <span>{isRtl ? "التالي ←" : "Next →"}</span>

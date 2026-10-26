@@ -312,16 +312,22 @@ export function AppSidebar({
     new Date(),
   );
 
-  const localeToggle = (
+  useEffect(() => {
+    const reveal = () => { if (window.matchMedia("(max-width: 1023px)").matches) setMobileOpen(true); };
+    window.addEventListener("nawah:analytics-unlocked", reveal);
+    return () => window.removeEventListener("nawah:analytics-unlocked", reveal);
+  }, []);
+
+  const localeToggle = (iconOnly = false) => (
     <button
       type="button"
       aria-label={t("common.changeLanguage")}
       title={t("common.changeLanguage")}
       onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
-      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-neutral-700 px-2.5 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-info-strong cursor-pointer"
+      className={`inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-info-strong cursor-pointer ${iconOnly ? "w-9" : "px-2.5"}`}
     >
       <GlobeIcon className="h-4 w-4" />
-      <span>{locale === "ar" ? "ع" : "EN"}</span>
+      {!iconOnly && <span>{locale === "ar" ? "ع" : "EN"}</span>}
     </button>
   );
 
@@ -481,7 +487,7 @@ export function AppSidebar({
               ? t("common.navProfessionalDevelopment")
               : t("common.navMembersProgress");
           const lockRequirement =
-            item.to === "/reports" ? (journeyData?.cvFoundation?.unlocked ? (locale === "ar" ? "أكمل إرشاد السيرة: ارفع النسخة المحدّثة من داخله وأكّد الإكمال لفتح التحليل." : "Upload your revised CV inside its guide and confirm completion to unlock analytics.") : (locale === "ar" ? "أكمل المهمة صفر أولًا. خطوتك الحالية موجودة في درج المهام." : "Complete Task 0 first. Your current step is in the tasks drawer.")) : item.to === "/professional-development"
+            item.to === "/reports" ? (journeyData?.cvFoundation?.unlocked ? (locale === "ar" ? "أكمل إرشاد السيرة: ارفع النسخة المحدّثة من داخله؛ بعدها يكتمل الإرشاد ويفتح التحليل تلقائيًا." : "Upload your revised CV inside its guide to automatically complete it and unlock analytics.") : (locale === "ar" ? "أكمل المهمة صفر أولًا. خطوتك الحالية موجودة في درج المهام." : "Complete Task 0 first. Your current step is in the tasks drawer.")) : item.to === "/professional-development"
               ? t("journey.profDevLockedTooltip")
               : t("journey.groupLockedTooltip");
 
@@ -525,6 +531,7 @@ export function AppSidebar({
             onClick={() => mobile && setMobileOpen(false)}
             aria-current={active ? "page" : undefined}
             aria-label={t(item.labelKey)}
+            data-tour-step={item.to === "/reports" ? "analytics-unlocked-nav" : undefined}
             title={collapsed && !mobile ? t(item.labelKey) : undefined}
             className={className}
           >
@@ -607,7 +614,7 @@ export function AppSidebar({
           </div>
           <div className={`mt-3 flex items-center gap-1.5 ${collapsed ? "flex-col" : "justify-end"}`}>
             {!isReportPreviewRoute && <NotificationCenter variant="dark" />}
-            {localeToggle}
+            {localeToggle(collapsed)}
           </div>
         </div>
 
@@ -651,7 +658,7 @@ export function AppSidebar({
                 </time>
               </span>
             </Link>
-            {localeToggle}
+            {localeToggle()}
           </div>
           <div className="flex items-center gap-2">
             {!isReportPreviewRoute && <NotificationCenter variant="light" />}

@@ -746,7 +746,10 @@ export default function ApplicationsPage() {
       {isCompassModalOpen && (
         <Modal
           isOpen={true}
-          onClose={() => { markFeatureTourSeen(user?.id, "explorer-filters-week1-v1"); setIsCompassModalOpen(false); }}
+          onClose={() => {
+            if (user?.id && localStorage.getItem(`nawah_v2_guided_tour_done_${user.id}`) === "true") markFeatureTourSeen(user.id, "explorer-filters-week1-v1");
+            setIsCompassModalOpen(false);
+          }}
           title={locale === "ar" ? "مستكشف الوظائف" : "Job Explorer"}
           size="2xl"
         >

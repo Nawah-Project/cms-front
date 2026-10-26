@@ -78,7 +78,7 @@ export function Modal({
     >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-neutral-950/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-150"
+        className="fixed inset-0 bg-neutral-950/25 backdrop-blur-sm transition-opacity animate-in fade-in duration-150"
         onClick={() => {
           if (!disableClose) onClose();
         }}

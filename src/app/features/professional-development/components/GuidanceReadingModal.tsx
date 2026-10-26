@@ -11,7 +11,6 @@ import { useI18n } from "../../../i18n";
 import { useDialogFocus } from "../../../components/ui/useDialogFocus";
 import { trackUxEvent } from "../../../utils/uxAnalytics";
 import { isPdf, MAX_CV_BYTES, MAX_CV_SIZE_MB } from "../../profile/profileApi";
-import { Link } from "react-router";
 import type { FeedbackPost, FeedbackResource } from "../types";
 
 interface GuidanceReadingModalProps {
@@ -61,7 +60,7 @@ export function GuidanceReadingModal({
   const text = (a: string, e: string) => (ar ? a : e);
   const dialogRef = useRef<HTMLDivElement>(null);
   const mustComplete = Boolean(cvUpdate && !cvUpdate.completed && !post.isRead);
-  const attemptClose = () => { if(mustComplete) { setUploadError(text("حدّث سيرتك وأكّد إكمال الإرشاد للمتابعة.","Upload your revised CV and confirm completion to continue.")); document.getElementById("guidance-cv-upload")?.scrollIntoView({block:"center"}); } else onClose(); };
+  const attemptClose = () => { if(mustComplete) { setUploadError(text("ارفع سيرتك المحدّثة هنا؛ الإرشاد هيكتمل تلقائيًا بعد حفظها.","Upload your revised CV here. This guide completes automatically once it is saved.")); document.getElementById("guidance-cv-upload")?.scrollIntoView({block:"center"}); } else onClose(); };
   useDialogFocus(dialogRef, true, attemptClose);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -131,7 +130,7 @@ export function GuidanceReadingModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="guidance-modal-title"
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-950/65 backdrop-blur-xs p-3.5 sm:p-5"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-950/25 backdrop-blur-sm p-3.5 sm:p-5"
     >
       <div className="relative flex flex-col w-full max-w-2xl max-h-[90dvh] rounded-2xl border border-border bg-surface shadow-2xl overflow-hidden ">
         {/* 1. Sticky Header */}
@@ -347,15 +346,15 @@ export function GuidanceReadingModal({
               </p>
             </div>
           )}
-          {cvUpdate && <section id="guidance-cv-upload" className="rounded-xl border border-emerald-600 bg-emerald-100 p-4 dark:border-emerald-800 dark:bg-emerald-950/30">
+          {cvUpdate && !isRead && <section id="guidance-cv-upload" className="rounded-xl border border-border-strong bg-surface p-4">
             <h3 className="font-semibold">{text("طبّق الإرشاد وارفع نسختك الجديدة هنا", "Apply the guide and upload your revised CV here")}</h3>
-            <p className="mt-2 text-sm leading-6 text-emerald-950">{text("الإكمال مرتبط برفع نسخة معدّلة بعد المهمة صفر. رفع نفس الملف الحالي لا يبدأ فترة جديدة.", "Completion requires a revised file uploaded after Task 0. Re-uploading the same file does not start a new period.")}</p>
+            <p className="mt-2 text-sm leading-6 text-text-secondary">{text("ارفع النسخة المعدّلة بعد تطبيق الإرشاد. بعد حفظها، هيتم تأكيد الإكمال تلقائيًا ويفتح تحليل الأداء. رفع نفس الملف الحالي لا يبدأ فترة جديدة.", "Upload your revised CV after applying the guide. Once saved, completion is confirmed automatically and analytics opens. Re-uploading the current file does not start a new period.")}</p>
             <label className="button-secondary mt-3 inline-flex min-h-11 cursor-pointer items-center">{uploading ? text("جارٍ رفع السيرة…", "Uploading CV…") : text("رفع الـCV المحدّث", "Upload revised CV")}<input type="file" accept="application/pdf,.pdf" disabled={uploading || saving} className="sr-only" aria-label={text("رفع الـCV المحدّث", "Upload revised CV")} onChange={async event => {
               const file = event.target.files?.[0];event.target.value="";if(!file)return;setUploadError("");
               if(!isPdf(file)||file.size>MAX_CV_BYTES){setUploadError(text(`ارفع ملف PDF بحد أقصى ${MAX_CV_SIZE_MB} ميغابايت.`,`Upload a PDF up to ${MAX_CV_SIZE_MB} MB.`));return;}
               setUploading(true);try{await cvUpdate.onUpload(file);}catch(error){setUploadError(error instanceof Error?error.message:text("تعذر رفع الملف، حاول تاني.","Upload failed; please retry."));}finally{setUploading(false);}
             }}/></label>
-            {cvUpdate.canComplete && <p role="status" className="mt-3 text-sm font-semibold text-emerald-800 dark:text-emerald-300">{text("✓ فيه نسخة محدّثة محفوظة، جاهزة لتأكيد الإكمال.", "✓ A revised CV is saved and ready for completion.")}</p>}
+            {cvUpdate.canComplete && <p role="status" className="mt-3 text-sm font-semibold text-info-strong">{text("نسختك المحدّثة محفوظة. لو تعذر تأكيد الإكمال، تقدر تعيد المحاولة من الزر تحت من غير رفعها تاني.", "Your revised CV is saved. If completion failed, retry below without uploading it again.")}</p>}
             {uploadError && <p role="alert" className="mt-3 text-sm text-rose-700 dark:text-rose-300">{uploadError}</p>}
           </section>}
         </div>
@@ -371,11 +370,10 @@ export function GuidanceReadingModal({
             {text("إغلاق", "Close")}
           </button>
 
-          {cvUpdate && isRead && <Link to="/reports" onClick={attemptClose} className="button-primary min-h-11">{text("افتح تحليل الأداء", "Open performance analytics")}</Link>}
-          <button
+          {(!cvUpdate || (!isRead && cvUpdate.canComplete)) && <button
             type="button"
             onClick={handleCompleteReading}
-            disabled={saving || uploading || Boolean(cvUpdate && !cvUpdate.canComplete)}
+            disabled={isRead || saving || uploading || Boolean(cvUpdate && !cvUpdate.canComplete)}
             className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all shadow-xs ${
               isRead
                 ? "border border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
@@ -386,9 +384,9 @@ export function GuidanceReadingModal({
             <span>
               {isRead
                 ? text("تم تأكيد القراءة ✓", "Reading confirmed ✓")
-                : cvUpdate ? text("تم، وأكملت تحديث السيرة ✓", "Complete guide and CV update ✓") : text("أتممت قراءة الإرشادات ✓", "Mark guidance as read ✓")}
+                : cvUpdate ? text("تأكيد الإكمال والمتابعة", "Confirm completion and continue") : text("أتممت قراءة الإرشادات ✓", "Mark guidance as read ✓")}
             </span>
-          </button>
+          </button>}
         </footer>
       </div>
     </div>

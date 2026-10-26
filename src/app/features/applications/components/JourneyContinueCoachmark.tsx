@@ -101,7 +101,7 @@ export function JourneyContinueCoachmark({
   return createPortal(
     <div className="fixed inset-0 z-[10020]" data-journey-continue-overlay>
       <div
-        className="absolute inset-0 bg-neutral-950/65"
+        className="tour-scrim absolute inset-0"
         onClick={onDismiss}
         aria-hidden="true"
       />
@@ -119,7 +119,7 @@ export function JourneyContinueCoachmark({
           height: target.height + 8,
         }}
       >
-        <span aria-hidden="true" className="text-sm font-bold text-white">
+        <span aria-hidden="true" className="text-sm font-bold text-text-primary">
           {ar ? "المهام" : "Tasks"}
         </span>
       </button>
@@ -131,7 +131,7 @@ export function JourneyContinueCoachmark({
         aria-labelledby={titleId}
         aria-describedby={bodyId}
         data-journey-continue
-        className="fixed rounded-2xl border border-white/15 bg-neutral-900 p-4 text-white shadow-2xl"
+        className="fixed rounded-2xl border border-border-strong bg-surface p-4 text-text-primary shadow-2xl"
         style={{
           top: placement.top,
           left: placement.left,
@@ -145,7 +145,7 @@ export function JourneyContinueCoachmark({
             overflowY: "auto",
           }}
         >
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-300">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-info-soft px-2.5 py-1 text-xs font-semibold text-info-strong">
             <Check className="h-3.5 w-3.5" aria-hidden="true" />
             {ar ? "الخطوات الأولى اكتملت" : "First steps complete"}
           </span>
@@ -154,7 +154,7 @@ export function JourneyContinueCoachmark({
               ? "أول طلب اتسجّل. كمّل رحلتك من هنا."
               : "Your first application is saved. Continue from here."}
           </h2>
-          <p id={bodyId} className="mt-2 text-sm leading-6 text-neutral-300">
+          <p id={bodyId} className="mt-2 text-sm leading-6 text-text-secondary">
             {ar
               ? "درج المهام على جنب الشاشة فيه مهمتك الحالية وتقدّمك. افتحه وقت ما تكون جاهز، أو اضغط حسنًا وكمل استكشاف المنصة."
               : "The tasks drawer on the edge of your screen holds your current quest and progress. Open it when ready, or choose Got it and keep exploring."}
@@ -170,7 +170,7 @@ export function JourneyContinueCoachmark({
             </button>
             <button
               type="button"
-              className="min-h-11 rounded-xl border border-white/25 px-4 text-sm font-semibold hover:bg-white/10"
+              className="min-h-11 rounded-xl border border-border-strong px-4 text-sm font-semibold hover:bg-surface-hover"
               onClick={onDismiss}
             >
               {ar ? "حسنًا" : "Got it"}
@@ -179,7 +179,7 @@ export function JourneyContinueCoachmark({
         </div>
         <span
           aria-hidden="true"
-          className="absolute h-3 w-3 rotate-45 border-white/15 bg-neutral-900"
+          className="absolute h-3 w-3 rotate-45 border-border-strong bg-surface"
           style={
             placement.arrowDir === "left"
               ? {

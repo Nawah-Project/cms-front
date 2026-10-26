@@ -17,7 +17,8 @@ function hasSeen(userId: string | undefined, feature: string) {
   try {
     return (
       !userId ||
-      localStorage.getItem(featureTourKey(userId, feature)) === "true"
+      localStorage.getItem(featureTourKey(userId, feature)) === "true" ||
+      (feature === "explorer-intro-week1-v1" && localStorage.getItem(featureTourKey(userId, "explorer-filters-week1-v1")) === "true")
     );
   } catch {
     return true;
@@ -43,7 +44,7 @@ export function FeatureTourPending({ feature }: { feature: string }) {
     ? createPortal(
         <div
           data-tour-pending
-          className="fixed inset-0 z-[10029] bg-neutral-950/75"
+          className="tour-scrim fixed inset-0 z-[10029]"
           aria-hidden="true"
         />,
         document.body,
@@ -218,12 +219,12 @@ export function FeatureTour({
     return () => document.removeEventListener("click", click, true);
   }, [active, index, steps]);
   if (!active || typeof document === "undefined") return null;
-  if (paused) return createPortal(<div data-tour-pending className="fixed inset-0 z-[99] bg-neutral-950/75" aria-hidden="true" />,document.body);
+  if (paused) return createPortal(<div data-tour-pending className="tour-scrim fixed inset-0 z-[99]" aria-hidden="true" />,document.body);
   if (!rect || !viewport || !steps[index])
     return createPortal(
       <div
         data-tour-pending
-        className="fixed inset-0 z-[10030] bg-neutral-950/75"
+        className="tour-scrim fixed inset-0 z-[10030]"
         aria-hidden="true"
       />,
       document.body,
@@ -256,19 +257,19 @@ export function FeatureTour({
       data-feature-tour-overlay={feature}
     >
       <div
-        className="pointer-events-auto fixed"
+        className="tour-scrim pointer-events-auto fixed"
         style={{ top: 0, left: 0, right: 0, height: top }}
       />
       <div
-        className="pointer-events-auto fixed"
+        className="tour-scrim pointer-events-auto fixed"
         style={{ top: bottom, left: 0, right: 0, bottom: 0 }}
       />
       <div
-        className="pointer-events-auto fixed"
+        className="tour-scrim pointer-events-auto fixed"
         style={{ top, left: 0, width: left, height: focus.height }}
       />
       <div
-        className="pointer-events-auto fixed"
+        className="tour-scrim pointer-events-auto fixed"
         style={{ top, left: right, right: 0, height: focus.height }}
       />
       <div
@@ -279,7 +280,6 @@ export function FeatureTour({
           left,
           width: focus.width,
           height: focus.height,
-          boxShadow: "0 0 0 9999px rgba(9,9,11,.75)",
         }}
         aria-hidden="true"
       />
@@ -291,7 +291,7 @@ export function FeatureTour({
         aria-labelledby={title}
         aria-describedby={body}
         data-feature-tour={feature}
-        className="pointer-events-auto fixed min-w-0 overflow-hidden rounded-2xl border border-white/20 bg-neutral-900 p-4 text-white shadow-2xl"
+        className="pointer-events-auto fixed min-w-0 overflow-hidden rounded-2xl border border-border-strong bg-surface p-4 text-text-primary shadow-2xl"
         style={{
           top: placement.top,
           left: placement.left,
@@ -307,7 +307,7 @@ export function FeatureTour({
             overflowWrap: "anywhere",
           }}
         >
-          <p className="text-xs font-semibold text-emerald-300">
+          <p className="text-xs font-semibold text-info-strong">
             {ar
               ? `دليل سريع · ${index + 1} من ${steps.length}`
               : `Quick guide · ${index + 1} of ${steps.length}`}
@@ -315,20 +315,20 @@ export function FeatureTour({
           <h2 id={title} className="mt-2 text-base font-bold">
             {ar ? step.titleAr : step.titleEn}
           </h2>
-          <p id={body} className="mt-2 text-sm leading-6 text-neutral-200">
+          <p id={body} className="mt-2 text-sm leading-6 text-text-secondary">
             {ar ? step.bodyAr : step.bodyEn}
           </p>
           <div className="mt-4 flex items-center justify-between gap-2">
             <button
               type="button"
-              className="min-h-10 rounded-lg px-2 text-xs text-neutral-300 underline"
+              className="min-h-10 rounded-lg px-2 text-xs text-text-secondary underline"
               onClick={() => finish(true)}
             >
               {ar ? "تخطّي" : "Skip"}
             </button>
             <button
               type="button"
-              className="min-h-11 rounded-xl bg-emerald-400 px-4 text-sm font-bold text-neutral-950"
+              className="button-primary min-h-11 rounded-xl px-4 text-sm font-bold"
               onClick={next}
             >
               {step.activateTarget

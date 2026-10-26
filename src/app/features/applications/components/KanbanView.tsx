@@ -265,7 +265,7 @@ export function KanbanView({
                 onDragOver={(e) => handleDragOver(e, col.stage)}
                 onDragLeave={(e) => handleDragLeave(e, col.stage)}
                 onDrop={(e) => handleDrop(e, col.stage)}
-                className={`${mobileStage===col.stage?"flex":"hidden"} md:flex h-fit md:max-h-[calc(100dvh-13rem)] flex-col rounded-2xl border border-neutral-200/90 bg-neutral-100/80 dark:border-neutral-800 dark:bg-neutral-900/80 p-2.5 shadow-2xs transition-all duration-200 ${
+                className={`${mobileStage===col.stage?"flex":"hidden"} md:flex h-fit md:max-h-[calc(100dvh-13rem)] flex-col rounded-2xl border border-neutral-200/90 bg-surface dark:border-neutral-800 dark:bg-neutral-900/80 p-2.5 shadow-2xs transition-all duration-200 ${
                   isColumnTarget
                     ? "ring-2 ring-neutral-400 dark:ring-neutral-500 shadow-sm"
                     : ""
@@ -300,7 +300,7 @@ export function KanbanView({
                       className={`py-5 px-3 rounded-xl border border-dashed text-center transition-all ${
                         isColumnTarget
                           ? "border-neutral-500 bg-neutral-100 text-neutral-700 dark:border-neutral-500 dark:bg-neutral-800 dark:text-neutral-200"
-                          : "border-neutral-300/80 bg-neutral-50/60 text-neutral-400 dark:border-neutral-700/80 dark:bg-neutral-950/40"
+                          : "border-border bg-surface text-text-muted dark:border-neutral-700/80 dark:bg-neutral-950/40"
                       }`}
                     >
                       <p className="text-[11px] font-medium">

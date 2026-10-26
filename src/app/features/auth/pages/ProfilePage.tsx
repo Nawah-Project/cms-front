@@ -200,9 +200,9 @@ export default function ProfilePage() {
     .join("");
 
   return (
-    <div className="space-y-7 animate-in fade-in duration-150 max-w-5xl">
+    <div className="w-full min-w-0 space-y-7 animate-in fade-in duration-150">
       {/* 1. Profile Identity Banner */}
-      <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-surface to-neutral-50/80 dark:from-neutral-900 dark:to-neutral-950 p-6 sm:p-8 shadow-xs">
+      <section className="relative overflow-hidden rounded-3xl border border-border bg-surface p-6 sm:p-8 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
             <div className="h-16 w-16 shrink-0 rounded-2xl bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 font-bold text-xl flex items-center justify-center shadow-md">

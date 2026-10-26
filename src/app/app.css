@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import "./fonts.css";
 @import "tailwindcss";
 
 /* Let rem-based typography and controls grow slightly on wide desktop screens. */
@@ -19,13 +19,13 @@ html {
   --color-surface-raised: #ffffff;
   --color-text-primary: #183b37;
   --color-text-secondary: #526762;
-  --color-text-muted: #74847c;
+  --color-text-muted: #65756d;
   --color-text-inverse: #ffffff;
   --color-border: #dbe3da;
   --color-border-subtle: #eaf0e6;
   --color-border-strong: #a9bcb0;
   --color-accent: #125e4e;
-  --color-surface-hover: #f0f4eb;
+  --color-surface-hover: #f4f6f4;
   --color-border-hover: #c4c5ca;
   --color-success-soft: #dceede;
   --color-success-hover: #d1e7d4;
@@ -49,11 +49,11 @@ html {
 
   /* Existing utility classes resolve to the shared neutral surfaces. */
   --color-white: #ffffff;
-  --color-neutral-50: #f8faf5;
-  --color-neutral-100: #eff3eb;
-  --color-neutral-200: #e0e8dc;
+  --color-neutral-50: #fafbfa;
+  --color-neutral-100: #f1f4f2;
+  --color-neutral-200: #e1e7e3;
   --color-neutral-300: #c7d4c7;
-  --color-neutral-400: #96a99b;
+  --color-neutral-400: #7d9285;
   --color-neutral-500: #6c8175;
   --color-neutral-600: #50695d;
   --color-neutral-700: #38564a;
@@ -493,3 +493,10 @@ h1, h2, h3 { text-wrap: balance; }
 }
 
 input[type="checkbox"], input[type="radio"] { accent-color: var(--color-accent); }
+
+/* A light veil preserves the page luminance; blur separates the next action. */
+.tour-scrim { background:rgba(38,60,52,.18); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
+[data-tour-focus] { box-shadow:0 0 0 3px #ffffffb3,0 0 0 5px #28735d80; }
+.entry-form-card { box-shadow:0 20px 70px -34px #183b3738; }
+.onboarding-world { background:radial-gradient(ellipse at 15% 15%,#e6ebdf,transparent 62%),#f4f4ed; }
+.onboarding-shell { border-color:var(--color-border); box-shadow:0 24px 80px -35px #183b3738; }

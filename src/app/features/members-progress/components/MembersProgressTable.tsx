@@ -87,7 +87,7 @@ export function MembersProgressTable({
             <col className="w-[16%]" />
           </colgroup>
           <thead>
-            <tr className="data-table-head border-b border-neutral-300 bg-neutral-100 text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-300">
+            <tr className="data-table-head border-b border-border bg-surface text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-300">
               {columns.map((column, index) => (
                 <th
                   key={column}
