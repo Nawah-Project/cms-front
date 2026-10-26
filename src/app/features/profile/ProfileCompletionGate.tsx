@@ -1,3 +1,4 @@
+import { JourneyScenery } from "../../components/JourneyScenery";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../auth/store/authStore";
@@ -18,7 +19,7 @@ import {
 export function ProfileCompletionGate({ children }: { children: React.ReactNode }) {
   const { authenticated, user, setUser } = useAuth();
   const { t } = useI18n();
-  const { variant } = useUxExperiment();
+  const { variant, introVideoUrl } = useUxExperiment();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfessionalProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -103,11 +104,13 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
   ];
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-950/60 p-4 backdrop-blur-xs">
+    <main className="onboarding-world">
       <section
         aria-labelledby="onboarding-wizard-title"
-        className="w-full max-w-2xl rounded-2xl border border-border bg-surface p-4 shadow-2xl sm:p-8"
+        className="onboarding-shell"
       >
+        <div className="onboarding-content">
+        <div className="onboarding-kicker"><span/>{t("common.brand")}</div>
         {/* Stepper Header */}
         <div className="mb-5 border-b border-border pb-4 sm:mb-8 sm:pb-6">
           <div className="flex items-center justify-between">
@@ -192,14 +195,12 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
               className="flex cursor-pointer items-center gap-4 rounded-xl border border-border bg-neutral-50 p-4 transition hover:bg-neutral-100"
             >
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-info-soft text-info-strong">
-                <PlayCircleIcon className="h-7 w-7" />
+                {introVideoUrl?<PlayCircleIcon className="h-7 w-7" />:<SparklesIcon className="h-6 w-6" />}
               </div>
               <div className="min-w-0">
                 <h3 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
-                  <span>{t("auth.watchIntroTitle")}</span>
-                  <span className="rounded-full bg-info-soft px-2 py-0.5 text-xs text-info-strong">
-                    90s
-                  </span>
+                  <span>{introVideoUrl?t("auth.watchIntroTitle"):t("profile.onboardingStep1Title")}</span>
+                  {introVideoUrl && <span className="rounded-full bg-info-soft px-2 py-0.5 text-xs text-info-strong">90s</span>}
                 </h3>
                 <p className="mt-0.5 line-clamp-1 text-xs text-neutral-500">
                   {t("auth.watchIntroSubtitle")}
@@ -284,6 +285,9 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
             />
           </div>
         )}
+
+        </div>
+        <JourneyScenery variant="onboarding" step={step} />
 
         {/* Intro Video Modal */}
         <Modal

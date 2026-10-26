@@ -35,6 +35,7 @@ export function EditApplicationModal({
   const { t, locale } = useI18n();
   const { user } = useAuth();
   const { data: journeyData } = useJourneyState({ enabled: Boolean(user) });
+  const canShare=Boolean(journeyData?.features.groups);
   const showTailoredOption =
     canAddTailoredApplication(journeyData, user) ||
     Boolean(application?.isTailored);
@@ -139,7 +140,7 @@ export function EditApplicationModal({
               ? undefined
               : outcome,
         isTailored: showTailoredOption ? isTailored : application.isTailored,
-        sharedWithGroup,
+        sharedWithGroup:canShare && sharedWithGroup,
         hasAssignment,
       });
       onClose();
@@ -338,7 +339,7 @@ export function EditApplicationModal({
             </span>
           </label>
 
-          <label className="flex cursor-pointer items-start gap-3">
+          {canShare && <label className="flex cursor-pointer items-start gap-3">
             <input
               type="checkbox"
               checked={sharedWithGroup}
@@ -348,7 +349,7 @@ export function EditApplicationModal({
             <span className="text-xs font-semibold leading-5 text-text-primary">
               {t("applications.sharedWithGroupLabel")}
             </span>
-          </label>
+          </label>}
         </div>
 
         <div className="pt-2 border-t border-border">

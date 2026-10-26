@@ -122,11 +122,11 @@ export default function Layout() {
                 )}
 
                 <div
-                  className={`min-h-screen w-full transition-[padding] duration-200 ${
+                  className={`min-h-screen w-full min-w-0 transition-none lg:transition-[padding] duration-200 ${
                     isSidebarCollapsed ? "lg:ps-20" : "lg:ps-64"
                   }`}
                 >
-                  <main className="w-full px-5 py-7 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 lg:py-10">
+                  <main className="min-w-0 w-full px-5 py-7 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 lg:py-10">
                     <Outlet context={{ openAddModal }} />
                   </main>
                 </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import {
   APPLICATION_METHODS,
   formatApplicationMethod,
@@ -51,6 +51,7 @@ export function AddApplicationModal({
   });
   const showTailoredOption = canAddTailoredApplication(journeyData, user);
 
+  const canShare = Boolean(journeyData?.features.groups);
   const [companyName, setCompanyName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [applicationDate, setApplicationDate] = useState(getTodayDateString());
@@ -60,6 +61,8 @@ export function AddApplicationModal({
   const [jobUrl, setJobUrl] = useState("");
   const [isTailored, setIsTailored] = useState(false);
   const [sharedWithGroup, setSharedWithGroup] = useState(false);
+  const sharingTouched = React.useRef(false);
+  useLayoutEffect(()=>{if(isOpen && !sharingTouched.current)setSharedWithGroup(canShare);if(!isOpen)sharingTouched.current=false;},[isOpen,canShare]);
 
   const [errors, setErrors] = useState<{
     companyName?: string;
@@ -92,11 +95,12 @@ export function AddApplicationModal({
   const prevIsOpenRef = React.useRef(false);
   const prevInitialValuesRef = React.useRef(initialValues);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const isOpening = isOpen && !prevIsOpenRef.current;
     const isNewInitialValues = isOpen && initialValues !== prevInitialValuesRef.current;
 
     if (isOpening || isNewInitialValues) {
+      setSharedWithGroup(canShare);
       if (initialValues) {
         if (initialValues.companyName !== undefined) {
           setCompanyName(initialValues.companyName);
@@ -119,7 +123,8 @@ export function AddApplicationModal({
           setIsTailored(Boolean(initialValues.isTailored));
         }
         if (initialValues.sharedWithGroup !== undefined) {
-          setSharedWithGroup(Boolean(initialValues.sharedWithGroup));
+          sharingTouched.current=true;
+          setSharedWithGroup(canShare && Boolean(initialValues.sharedWithGroup));
         }
       } else if (user?.targetJobTitle) {
         setJobTitle(user.targetJobTitle);
@@ -187,7 +192,7 @@ export function AddApplicationModal({
     setApplicationMethod("COMPANY_WEBSITE");
     setJobUrl("");
     setIsTailored(false);
-    setSharedWithGroup(false);
+    setSharedWithGroup(canShare);
     setCompanyPasteHint(false);
     setErrors({});
   };
@@ -214,7 +219,7 @@ export function AddApplicationModal({
         applicationMethod,
         jobUrl: sanitizeJobUrl(jobUrl),
         isTailored: showTailoredOption ? isTailored : false,
-        sharedWithGroup,
+        sharedWithGroup: canShare && sharedWithGroup,
       });
       window.dispatchEvent(new CustomEvent("nawah_app_created"));
       resetForm();
@@ -483,11 +488,11 @@ export function AddApplicationModal({
             </label>
           )}
 
-          <label className="flex cursor-pointer items-start gap-3">
+          {canShare && <label className="flex cursor-pointer items-start gap-3">
             <input
               type="checkbox"
               checked={sharedWithGroup}
-              onChange={(e) => setSharedWithGroup(e.target.checked)}
+              onChange={(e) => {sharingTouched.current=true;setSharedWithGroup(e.target.checked);}}
               className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-500"
             />
             <span className="text-xs leading-5 text-text-primary">
@@ -498,7 +503,7 @@ export function AddApplicationModal({
                 {t("applications.sharedWithGroupHint")}
               </span>
             </span>
-          </label>
+          </label>}
         </div>
       </form>
     </Modal>

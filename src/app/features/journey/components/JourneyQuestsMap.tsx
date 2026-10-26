@@ -47,7 +47,7 @@ function getNodeAvailableAt(
     .reduce((days, candidate) => days + candidate.durationDays, 0);
   const weeksAfterCurrent = Math.max(
     0,
-    node.weekNumber - journeyData.state.currentWeek,
+    node.weekNumber - Math.max(1,journeyData.state.currentWeek),
   );
   return new Date(
     new Date(journeyData.state.weekStartedAt).getTime() +
@@ -809,7 +809,7 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
     popoverTimerRef.current = window.setTimeout(() => {
       setLockedPopoverWeek(null);
       setLockedBtnRect(null);
-    }, 2200);
+    }, 6500);
   };
 
   const handleDismissLockedPopover = () => {
@@ -820,9 +820,16 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
     setLockedBtnRect(null);
   };
 
-  const getLockedWeekPopoverText = (weekNum: number) => locale === "ar"
-    ? `يفتح الأسبوع ${weekNum} بعد إتمام أنشطة ومراجعة الأسبوع السابق. توقيت الإتاحة يتبع تقدمك الفعلي.`
-    : `Week ${weekNum} unlocks after completing the preceding week and its review. Availability follows your actual progress.`;
+  const getLockedWeekPopoverText = (weekNum: number) => {
+    const firstStart = journeyData.state.week1StartedAt;
+    if (currentWeek === 0 || !firstStart) return locale === "ar"
+      ? (weekNum===1 ? "يفتح الأسبوع الأول بعد إتمام المهمة صفر. من لحظة إكمالها يبدأ توقيت الأسبوع ومواعيد مهامه." : "أكمل المهمة صفر أولًا لتبدأ رحلة الأسابيع. يفصل بين بداية كل أسبوع والتالي 7 أيام، مع إكمال المهام والمراجعة.")
+      : (weekNum===1 ? "Complete Task 0 to start Week 1 and its task schedule." : "Complete Task 0 to start the calendar. Each next week needs seven days plus the preceding tasks and review.");
+    const days = Math.max(0,weekNum-currentWeek)*7;
+    const opens = new Date(new Date(journeyData.state.weekStartedAt).getTime()+days*86400000);
+    const date = new Intl.DateTimeFormat(locale,{day:"numeric",month:"long",year:"numeric",hour:"numeric",minute:"2-digit"}).format(opens);
+    return locale === "ar" ? `أقرب موعد لفتح الأسبوع ${weekNum}: ${date}. يلزم أيضًا إتمام مهام ومراجعة الأسبوع السابق. لو تأخر إكماله، تتأخر بداية الأسبوع التالي.` : `Earliest start for Week ${weekNum}: ${date}. Complete the preceding tasks and review too; a late completion delays the next week.`;
+  };
 
   const getFutureWeekMessage = (weekNum: number) => weekNum > currentWeek ? getLockedWeekPopoverText(weekNum) : null;
 

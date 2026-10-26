@@ -1,3 +1,4 @@
+import { JourneyScenery } from "../../../components/JourneyScenery";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { useMe } from "../hooks/useMe";
@@ -35,10 +36,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   if (loading || authenticated) {
     return (
       <main
-        className="flex min-h-screen items-center justify-center bg-app text-sm text-neutral-500"
+        className="entry-loading"
         role="status"
       >
-        {t("auth.sessionLoading")}
+        <img src="/images/nawah-professional-v2.webp" alt="" aria-hidden="true"/><div><img src="/nawah-logo.svg" alt=""/><p>{t("auth.sessionLoading")}</p></div>
       </main>
     );
   }
@@ -113,19 +114,11 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     (error && !isEmailError && !isPasswordError ? error : "");
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-2 bg-app">
+    <main className="entry-layout">
       {/* Side 1: Form Card */}
-      <div className="flex flex-col justify-center items-center px-6 py-12 lg:px-12">
+      <div className="entry-form-panel">
         <div className="w-full max-w-md">
-          {/* Mobile Value Banner */}
-          <div className="lg:hidden mb-6 rounded-2xl bg-neutral-900 p-5 text-white shadow-sm">
-            <span className="inline-block rounded-full bg-info-soft/20 text-info-soft px-3 py-1 text-xs font-semibold mb-2">
-              {t("auth.heroBadge")}
-            </span>
-            <h2 className="text-base font-semibold leading-snug">{t("auth.heroTitle")}</h2>
-          </div>
-
-          <div className="rounded-2xl border border-border-strong bg-surface p-7 sm:p-9 shadow-sm">
+          <div className="entry-form-card">
             <div className="flex items-center justify-between gap-3">
               <Link
                 to="/"
@@ -265,73 +258,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         </div>
       </div>
 
-      {/* Side 2: Value Proposition & Video Preview Panel */}
-      <div className="hidden lg:flex flex-col justify-between bg-neutral-900 text-white p-12 xl:p-16 relative overflow-hidden">
-        {/* Background glow decoration */}
-        <div className="absolute -top-32 -end-32 w-96 h-96 rounded-full bg-info-strong/20 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 -start-32 w-96 h-96 rounded-full bg-warning-strong/10 blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 mx-auto w-full max-w-lg">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1 text-xs font-medium text-info-soft backdrop-blur-sm">
-            <SparklesIcon className="w-3.5 h-3.5" />
-            <span>{t("auth.heroBadge")}</span>
-          </div>
-          <h2 className="mt-6 text-3xl xl:text-4xl font-bold leading-tight tracking-tight">
-            {t("auth.heroTitle")}
-          </h2>
-          <p className="mt-4 text-base leading-relaxed text-neutral-300 max-w-xl">
-            {t("auth.heroDescription")}
-          </p>
-
-          {/* Onboarding Video Card */}
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => setVideoModalOpen(true)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") setVideoModalOpen(true);
-            }}
-            className="mt-8 bg-white/10 border border-white/15 rounded-2xl p-5 flex items-center gap-4 hover:bg-white/15 transition cursor-pointer backdrop-blur-md group"
-          >
-            <div className="w-12 h-12 rounded-xl bg-info-soft/20 text-info-soft flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <PlayCircleIcon className="w-8 h-8" />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                <span>{t("auth.watchIntroTitle")}</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-info-soft/20 text-info-soft">
-                  90s
-                </span>
-              </h3>
-              <p className="text-xs text-neutral-300 mt-0.5 line-clamp-1">
-                {t("auth.watchIntroSubtitle")}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Feature Pills */}
-        <div className="relative z-10 mx-auto w-full max-w-lg space-y-3 pt-12">
-          <div className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3">
-            <div className="w-2 h-2 rounded-full bg-info-soft shrink-0" />
-            <span className="text-sm font-medium text-neutral-200">
-              {t("auth.featureTrackTitle")}
-            </span>
-          </div>
-          <div className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3">
-            <div className="w-2 h-2 rounded-full bg-warning-soft shrink-0" />
-            <span className="text-sm font-medium text-neutral-200">
-              {t("auth.featureMentorTitle")}
-            </span>
-          </div>
-          <div className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3">
-            <div className="w-2 h-2 rounded-full bg-success-soft shrink-0" />
-            <span className="text-sm font-medium text-neutral-200">
-              {t("auth.featureGroupTitle")}
-            </span>
-          </div>
-        </div>
-      </div>
+      <JourneyScenery onExplore={() => setVideoModalOpen(true)} />
 
       {/* Intro Video / Walkthrough Modal */}
       <Modal

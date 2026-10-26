@@ -56,10 +56,10 @@ export function MilestoneCelebrationModal({
         </div>
       }
     >
-      <div className="text-center py-2">
+      <div className="milestone-reveal text-center py-2">
         {/* Celebration Trophy Badge */}
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-amber-100 text-amber-700 shadow-inner dark:bg-amber-950/60 dark:text-amber-300">
-          <Trophy className="h-8 w-8 animate-bounce" />
+        <div className="milestone-emblem mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full text-white">
+          <Trophy className="h-8 w-8" />
         </div>
 
         {/* Title */}
@@ -77,7 +77,7 @@ export function MilestoneCelebrationModal({
           <div className="mt-5 rounded-2xl border border-amber-200/80 bg-amber-50/50 p-4 text-start dark:border-amber-800/60 dark:bg-amber-950/20">
             <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5 mb-2.5">
               <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              <span>الميزات والمحتويات التي تم فتحها:</span>
+              <span>{locale==="ar"?"خطوتك الجديدة اتفتحت":"Your next step is open"}</span>
             </h4>
             <ul className="space-y-2">
               {unlockedItems.map((item, idx) => (
