@@ -29,6 +29,14 @@ function getSectionMeta(pathname: string, locale: string) {
         : "Assign & review tasks, provide direct member feedback, and manage checklists",
     };
   }
+  if (pathname.startsWith("/admin/report-preview")) {
+    return {
+      title: isAr ? "معاينة تقارير الرحلة" : "Journey Report Preview",
+      description: isAr
+        ? "افحص تقارير الأسابيع والتقرير النهائي ببيانات تجريبية أو تقارير أعضاء للقراءة فقط"
+        : "Inspect weekly and final reports with synthetic data or read-only member reports",
+    };
+  }
   if (pathname.startsWith("/admin/journey")) {
     return {
       title: isAr ? "هندسة الرحلة والحبكة" : "Journey & Plot Engine",

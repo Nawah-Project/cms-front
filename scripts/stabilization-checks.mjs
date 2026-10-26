@@ -17,8 +17,17 @@ const { clearPrivateAccountCache } = await server.ssrLoadModule(
 const { default: ReportsPage } = await server.ssrLoadModule(
   "/src/app/features/reports/pages/ReportsPage.tsx",
 );
+const { ReportPreviewProvider } = await server.ssrLoadModule(
+  "/src/app/features/reports/pages/ReportsPage.tsx",
+);
+const {
+  default: AdminReportPreviewPage,
+  adminReportPreviewQueryKeys,
+} = await server.ssrLoadModule(
+  "/src/app/features/admin/AdminReportPreviewPage.tsx",
+);
 const { I18nProvider } = await server.ssrLoadModule("/src/app/i18n/index.tsx");
-function render(client) {
+function render(client, Page = ReportsPage) {
   return renderToStaticMarkup(
     React.createElement(
       QueryClientProvider,
@@ -29,7 +38,7 @@ function render(client) {
         React.createElement(
           MemoryRouter,
           null,
-          React.createElement(ReportsPage),
+          React.createElement(Page),
         ),
       ),
     ),
@@ -118,6 +127,51 @@ test("empty whole-journey final report provides explicit acknowledgement without
   assert.match(html, /مفيش نسخ|نسخ السيرة/);
   assert.match(html, /لسه مفيش بيانات/);
   assert.ok(!html.includes("IMPROVED"));
+  client.clear();
+});
+
+test("admin preview exposes DEMO and ACTUAL modes with all four weeks and final report choices", () => {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, retryOnMount: false } },
+  });
+  client.setQueryData(adminReportPreviewQueryKeys.demo, {
+    mode: "DEMO",
+    report,
+  });
+  const html = render(client, AdminReportPreviewPage);
+  assert.match(html, /DEMO/);
+  assert.match(html, /ACTUAL/);
+  assert.match(html, /Week 1|الأسبوع الأول/);
+  assert.match(html, /Week 2|الأسبوع الثاني/);
+  assert.match(html, /Week 3|الأسبوع الثالث/);
+  assert.match(html, /Week 4|الأسبوع الرابع/);
+  assert.match(html, /Final report|التقرير النهائي/);
+  assert.doesNotMatch(html, /قرأت التقرير الكامل|I have read the complete report/);
+  client.clear();
+});
+
+test("final Admin presentation is forced by selection and remains read-only", () => {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, retryOnMount: false } },
+  });
+  function FinalReportPreview() {
+    return React.createElement(
+      ReportPreviewProvider,
+      {
+        value: {
+          data: report,
+          scope: null,
+          onScopeChange: () => {},
+          forceFinalPreview: true,
+        },
+      },
+      React.createElement(ReportsPage),
+    );
+  }
+  const html = render(client, FinalReportPreview);
+  assert.match(html, /التقرير النهائي|Final report/);
+  assert.match(html, /معاينة إدارية للقراءة فقط|Admin read-only preview/);
+  assert.doesNotMatch(html, /قرأت التقرير الكامل|I have read the complete report/);
   client.clear();
 });
 

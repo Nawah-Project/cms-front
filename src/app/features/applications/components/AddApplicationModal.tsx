@@ -22,6 +22,7 @@ interface AddApplicationModalProps {
   onClose: () => void;
   onSubmit: (data: CreateApplicationInput) => Promise<Application | void>;
   initialValues?: Partial<CreateApplicationInput> | null;
+  journeyQueryEnabled?: boolean;
 }
 
 export function AddApplicationModal({
@@ -29,11 +30,14 @@ export function AddApplicationModal({
   onClose,
   onSubmit,
   initialValues,
+  journeyQueryEnabled = true,
 }: AddApplicationModalProps) {
   const { t, locale } = useI18n();
   const { user } = useAuth();
   const { isTourActive, step, setStep } = useTour();
-  const { data: journeyData } = useJourneyState({ enabled: Boolean(user) });
+  const { data: journeyData } = useJourneyState({
+    enabled: Boolean(user) && journeyQueryEnabled,
+  });
   const showTailoredOption = canAddTailoredApplication(journeyData, user);
 
   const [companyName, setCompanyName] = useState("");

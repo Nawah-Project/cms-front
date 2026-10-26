@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, Plus, TrendingUp, FileText } from "lucide-react";
@@ -10,7 +10,7 @@ import { journeyApi } from "../../journey/api/journeyApi";
 export function meta() {
   return [{ title: "Reports | Nawah" }];
 }
-interface Metrics {
+export interface Metrics {
   logged: number;
   tailored: number;
   positive: number;
@@ -26,7 +26,7 @@ interface Metrics {
   outreach: number;
   reviews: number;
 }
-interface Report {
+export interface Report {
   asOf: string;
   overall: Metrics;
   weeks: (Metrics & { week: number })[];
@@ -58,16 +58,45 @@ interface Report {
   completed: boolean;
 }
 
+interface ReportPreviewContextValue {
+  data: Report;
+  scope: number | null;
+  onScopeChange: (scope: number | null) => void;
+  forceFinalPreview?: boolean;
+}
+
+const ReportPreviewContext = createContext<ReportPreviewContextValue | null>(null);
+
+export function ReportPreviewProvider({
+  value,
+  children,
+}: {
+  value: ReportPreviewContextValue;
+  children: ReactNode;
+}) {
+  return (
+    <ReportPreviewContext.Provider value={value}>
+      {children}
+    </ReportPreviewContext.Provider>
+  );
+}
+
 export default function ReportsPage() {
   const { locale, number } = useI18n();
   const ar = locale === "ar";
   const text = (a: string, e: string) => (ar ? a : e);
   const client = useQueryClient();
+  const preview = useContext(ReportPreviewContext);
   const query = useQuery({
     queryKey: ["journey", "reports"],
     queryFn: () => apiClient.get<Report>("/journey/reports"),
+    enabled: !preview,
   });
-  const [scope, setScope] = useState<number | null>(null);
+  const [memberScope, setMemberScope] = useState<number | null>(null);
+  const scope = preview ? preview.scope : memberScope;
+  const setScope = preview?.onScopeChange ?? setMemberScope;
+  const readOnly = Boolean(preview);
+  const data = preview?.data ?? query.data;
   const [changeOpen, setChangeOpen] = useState(false),
     [note, setNote] = useState("");
   const [pending, setPending] = useState(false),
@@ -75,13 +104,12 @@ export default function ReportsPage() {
   const [detail, setDetail] = useState<"activities" | "cvs" | null>(null);
   const [series, setSeries] = useState<"logged" | "positiveEvents">("logged");
   const [cumulative, setCumulative] = useState(false);
-  const data = query.data;
   async function refresh() {
     await client.invalidateQueries({ queryKey: ["journey"] });
   }
   async function saveChange(e: React.FormEvent) {
     e.preventDefault();
-    if (!data || !note.trim()) return;
+    if (readOnly || !data || !note.trim()) return;
     setPending(true);
     setSaveError("");
     try {
@@ -106,6 +134,7 @@ export default function ReportsPage() {
     }
   }
   async function complete() {
+    if (readOnly) return;
     setPending(true);
     setSaveError("");
     try {
@@ -122,13 +151,13 @@ export default function ReportsPage() {
       setPending(false);
     }
   }
-  if (query.isPending)
+  if (!preview && query.isPending)
     return (
       <div role="status" className="p-8">
         {text("بنحمّل التقرير…", "Loading report…")}
       </div>
     );
-  if (query.isError || !data)
+  if (!preview && (query.isError || !data))
     return (
       <div
         role="alert"
@@ -143,6 +172,7 @@ export default function ReportsPage() {
         </button>
       </div>
     );
+  if (!data) return null;
   const m =
     scope === null ? data.overall : data.weeks.find((w) => w.week === scope)!;
   const previous =
@@ -190,7 +220,7 @@ export default function ReportsPage() {
             {new Date(data.asOf).toLocaleString(locale)}
           </p>
         </div>
-        {data.currentWeek >= 3 && (
+        {!readOnly && data.currentWeek >= 3 && (
           <button
             className="button-primary"
             onClick={() => {
@@ -203,7 +233,7 @@ export default function ReportsPage() {
           </button>
         )}
       </header>
-      <nav
+      {!preview && <nav
         aria-label={text("نطاق التقرير", "Report scope")}
         className="flex flex-wrap gap-2"
       >
@@ -221,7 +251,7 @@ export default function ReportsPage() {
                 : text(`الأسبوع ${w}`, `Week ${w}`)}
           </button>
         ))}
-      </nav>
+      </nav>}
       <section className="rounded-2xl border border-border bg-surface p-5 space-y-2">
         <h2 className="font-bold">
           <Activity className="inline h-4 w-4" />{" "}
@@ -390,7 +420,7 @@ export default function ReportsPage() {
             "A CV update does not establish which applications used it or that it caused outcome changes.",
           )}
         </p>
-        <Link
+        {!readOnly && <Link
           className="text-emerald-700 underline"
           to={data.completed ? "/applications" : "/applications"}
         >
@@ -400,7 +430,7 @@ export default function ReportsPage() {
                 "Continue tracking applications and outcomes",
               )
             : text("ارجع للمهمة الحالية", "Return to your current quest")}
-        </Link>
+        </Link>}
       </section>
       <section className="rounded-2xl border border-border bg-surface p-5 space-y-3">
         <h2 className="font-bold">
@@ -447,7 +477,9 @@ export default function ReportsPage() {
           </ul>
         </details>
       </section>
-      {(data.finalAvailable || data.completed) && (
+      {((preview
+        ? Boolean(preview.forceFinalPreview && scope === null)
+        : data.finalAvailable || data.completed)) && (
         <section className="rounded-2xl border border-border bg-surface border-emerald-500 p-5 space-y-3">
           <h2 className="font-bold">
             {text(
@@ -464,7 +496,14 @@ export default function ReportsPage() {
           <button className="button-secondary" onClick={() => setScope(null)}>
             {text("اعرض ملخص الرحلة بالكامل", "Show whole journey summary")}
           </button>
-          {data.completed ? (
+          {readOnly ? (
+            <p role="status">
+              {text(
+                "معاينة إدارية للقراءة فقط؛ مش هتغيّر إكمال الرحلة أو تقدمها.",
+                "Admin read-only preview; journey completion and progress will not change.",
+              )}
+            </p>
+          ) : data.completed ? (
             <p role="status">
               {text(
                 "إكمال الرحلة محفوظ. تقدر تكمل التقديم ومتابعة نتائجك.",

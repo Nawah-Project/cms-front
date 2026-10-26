@@ -10,6 +10,7 @@ import type {
 } from "../../professional-development/types";
 import type { Stage } from "../../../types";
 import { apiClient } from "../../../lib/api-client";
+import type { Report } from "../../reports/pages/ReportsPage";
 
 export type ActivityStatus = "ACTIVE" | "WARNING" | "CRITICAL" | "NEVER_ACTIVE";
 export type ExperimentVariant = "A" | "B" | "C";
@@ -175,6 +176,11 @@ export type AdminUserDetail = {
   }>;
 };
 
+export type AdminReportPreviewResponse = {
+  mode: "DEMO" | "ACTUAL";
+  report: Report;
+};
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     const method = (init?.method || "GET") as
@@ -205,6 +211,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const adminApi = {
+  reportPreviewDemo: () =>
+    request<AdminReportPreviewResponse>("/admin/journey/reports/demo"),
+  reportPreviewUser: (userId: string) =>
+    request<AdminReportPreviewResponse>(
+      `/admin/journey/reports/${encodeURIComponent(userId)}`,
+    ),
   overview: () => request<AdminOverview>("/admin/monitoring/overview"),
   attention: (limit = 20) =>
     request<{ total: number; items: AttentionItem[] }>(

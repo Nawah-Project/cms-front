@@ -261,8 +261,10 @@ function TourArrow({ dir, offset }: { dir: ArrowDir; offset: number }) {
 
 export function FirstApplicationGuidedTourProvider({
   children,
+  enabled = true,
 }: {
   children: ReactNode;
+  enabled?: boolean;
 }) {
   const { user } = useAuth();
   const { locale } = useI18n();
@@ -272,7 +274,7 @@ export function FirstApplicationGuidedTourProvider({
   const { data: profile } = useQuery({
     queryKey: ["profile"],
     queryFn: () => profileApi.get(),
-    enabled: Boolean(user),
+    enabled: Boolean(user) && enabled,
   });
 
   const storageKey = user?.id
@@ -292,6 +294,10 @@ export function FirstApplicationGuidedTourProvider({
   // ONLY conditions: user logged in, profileComplete === true, and !localStorage.getItem(storageKey)
   // NEVER depend on applications.length or totalApplications!
   useEffect(() => {
+    if (!enabled) {
+      setIsTourActive(false);
+      return;
+    }
     if (!user || !storageKey) return;
     if (profile && !profile.profileComplete) {
       setIsTourActive(false);
@@ -308,7 +314,7 @@ export function FirstApplicationGuidedTourProvider({
     } catch {
       setIsTourActive(false);
     }
-  }, [user?.id, storageKey, profile?.profileComplete]);
+  }, [enabled, user?.id, storageKey, profile?.profileComplete]);
 
   const completeTour = () => {
     if (storageKey) {

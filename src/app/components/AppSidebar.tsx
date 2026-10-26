@@ -105,6 +105,12 @@ const ADMIN_PRIMARY_ITEMS: AdminNavItem[] = [
     icon: "admin-journey",
   },
   {
+    labelAr: "معاينة تقارير الرحلة",
+    labelEn: "Journey Report Preview",
+    to: "/admin/report-preview",
+    icon: "reports",
+  },
+  {
     labelAr: "تحليلات التجربة والسلوك",
     labelEn: "UX & Behavior Lab",
     to: "/admin/ux-lab",
@@ -278,10 +284,12 @@ export function AppSidebar({
   const { user } = useAuth();
   const { t, locale, setLocale } = useI18n();
   const logout = useLogout();
-  const {
-    data: journeyData,
-    isLoading: journeyLoading,
-  } = useJourneyState({ enabled: Boolean(user) });
+  const isReportPreviewRoute = location.pathname === "/admin/report-preview";
+  const journeyQuery = useJourneyState({
+    enabled: Boolean(user) && !isReportPreviewRoute,
+  });
+  const journeyData = isReportPreviewRoute ? undefined : journeyQuery.data;
+  const journeyLoading = isReportPreviewRoute ? false : journeyQuery.isLoading;
   const isGroupUnlocked = canAccessGroupSection(journeyData, user);
   const isProfDevUnlocked = canAccessProfessionalDevelopment(journeyData, user);
   const [openLockedBubbleKey, setOpenLockedBubbleKey] = useState<string | null>(
@@ -597,7 +605,7 @@ export function AppSidebar({
           </button>
           </div>
           <div className={`mt-3 flex items-center gap-1.5 ${collapsed ? "flex-col" : "justify-end"}`}>
-            <NotificationCenter variant="dark" />
+            {!isReportPreviewRoute && <NotificationCenter variant="dark" />}
             {localeToggle}
           </div>
         </div>
@@ -645,7 +653,7 @@ export function AppSidebar({
             {localeToggle}
           </div>
           <div className="flex items-center gap-2">
-            <NotificationCenter variant="light" />
+            {!isReportPreviewRoute && <NotificationCenter variant="light" />}
             <button
               type="button"
               aria-label={

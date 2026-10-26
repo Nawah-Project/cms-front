@@ -119,7 +119,9 @@ export default function Layout() {
     <ProtectedRoute>
       <EmailVerificationGate>
         <ProfileCompletionGate>
-          <FirstApplicationGuidedTourProvider>
+          <FirstApplicationGuidedTourProvider
+            enabled={!location.pathname.startsWith("/admin")}
+          >
             <AppContext.Provider value={{ openAddModal }}>
               <div className="min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200">
                 <AppSidebar
@@ -144,6 +146,7 @@ export default function Layout() {
 
                 <AddApplicationModal
                   isOpen={isAddModalOpen}
+                  journeyQueryEnabled={location.pathname !== "/admin/report-preview"}
                   initialValues={draftValues}
                   onClose={() => {
                     setIsAddModalOpen(false);
