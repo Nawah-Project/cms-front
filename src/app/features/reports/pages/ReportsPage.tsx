@@ -9,6 +9,7 @@ import { journeyApi } from "../../journey/api/journeyApi";
 import ActivityResponseChart from "./ActivityResponseChart";
 import PerformanceAnalytics from "./PerformanceAnalytics";
 
+
 export function meta() {
   return [{ title: "Performance Analytics | Nawah" }];
 }
@@ -34,6 +35,9 @@ export interface Metrics {
 }
 
 export interface Report {
+  manualUpdate?: { eligible: boolean; canSubmit: boolean; nextAvailableAt: string | null };
+  dailyCohorts?: { date: string; logged: number; positive: number }[];
+  analyticsAccess?: { cv: boolean; pipeline: boolean; tailoring: boolean; publishing: boolean; networking: boolean; freeChanges: boolean };
   asOf: string;
   overall: Metrics;
   weeks: (Metrics & { week: number })[];
@@ -46,6 +50,7 @@ export interface Report {
     startAt: string;
     endAt: string | null;
     metrics: Omit<Metrics, "posts" | "outreach" | "reviews">;
+    applications?: { id: string; companyName: string; jobTitle: string; createdAt: string; stage: string; outcome: string; isTailored: boolean; positive?: boolean }[];
   }[];
   cvs: { id: string; versionNumber: number; originalName: string; uploadedAt: string }[];
   tasks: { id: string; title: string; completedAt: string | null }[];
@@ -333,7 +338,7 @@ export default function ReportsPage() {
     try {
       await journeyApi.submitSideTask({ nodeCode: report.currentNodeCode, type: "USER_CHANGE", reviewSummary: note.trim(), sharedInGroup: false });
       await refresh(); setNote(""); setChangeOpen(false);
-    } catch { setSaveError(text("الحفظ فشل. الكلام لسه موجود؛ حاول تاني.", "Saving failed. Your text is preserved; please retry.")); }
+    } catch { await refresh(); setSaveError(text("الحفظ فشل. الكلام لسه موجود؛ حاول تاني.", "Saving failed. Your text is preserved; please retry.")); }
     finally { setPending(false); }
   }
   async function completeFinal() {
@@ -356,7 +361,7 @@ export default function ReportsPage() {
     <main dir={ar ? "rtl" : "ltr"} className="mx-auto w-full max-w-[1440px] space-y-5 pb-10">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">{text("نواة · رحلة البحث عن وظيفة", "NAWAH · JOB SEARCH JOURNEY")}</p><h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-[28px]">{pageTitle}</h1><p className="mt-1 text-sm text-text-secondary">{text("البيانات المحفوظة حتى", "Recorded data as of")} {formatDate(report.asOf, locale, true)}</p></div>
-        {!readOnly && !selectedWeek && !finalSelected && report.currentWeek >= 3 && <button type="button" className="button-secondary inline-flex min-h-10 items-center gap-2" onClick={() => { setSaveError(""); setChangeOpen(true); }}><Plus className="h-4 w-4" aria-hidden="true" />{text("سجّل تغيير مهني", "Record a professional change")}</button>}
+
       </header>
 
       {!preview && <nav aria-label={text("اختيار التقرير", "Report navigation")} className="flex flex-wrap gap-2 rounded-xl border border-border bg-surface p-2">
@@ -371,16 +376,17 @@ export default function ReportsPage() {
       {lockedWeek !== null && <p role="note" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"><Lock className="me-1 inline h-4 w-4" aria-hidden="true" />{lockedWeek === "final" || lockedWeek === 4 ? text("التقرير النهائي والأسبوع الرابع بيظهروا عند الوصول لمرحلة التقرير النهائي.", "Week 4 and the final report are available at the final-report journey stage.") : !report.week1StartedAt ? text("التقرير ده هيفتح بعد إكمال Task 0 وبداية الأسبوع الأول.", "This report unlocks after Task 0 is complete and Week 1 begins.") : text(`التقرير ده لسه مقفول حسب تقدم الرحلة الحالي.`, `This report is still locked at the current journey stage.`)}</p>}
 
       <div hidden={selectedWeek !== null || finalSelected}>
-        <PerformanceAnalytics report={report} metrics={report.overall} canNavigate={!readOnly} />
+        <PerformanceAnalytics report={report} metrics={report.overall} canNavigate={!readOnly} admin={readOnly} onAddUpdate={() => { setSaveError(""); setChangeOpen(true); }} />
       </div>
       {selectedWeek !== null && <WeeklyReportView report={report} week={selectedWeek} metrics={metrics} readOnly={readOnly} />}
       {finalSelected && <FinalJourneyReport report={report} readOnly={readOnly} onComplete={() => void completeFinal()} pending={pending} saveError={saveError} />}
 
-      <Modal isOpen={changeOpen} onClose={() => { if (!pending) setChangeOpen(false); }} disableClose={pending} title={text("تسجيل تغيير مهني", "Record a professional change")}>
+      <Modal isOpen={changeOpen} onClose={() => { if (!pending) setChangeOpen(false); }} disableClose={pending} title={text("إضافة تحديث", "Add an update")}>
         <form className="space-y-3 p-5" onSubmit={saveChange}>
-          <label className="block text-sm">{text("إيه اللي غيرته؟ ده سجل يدوي ومش نسخة CV جديدة.", "What changed? This is a manual log, not a new CV version.")}<textarea className="field-control mt-2 min-h-32" required maxLength={5000} value={note} onChange={(event) => setNote(event.target.value)} /></label>
+          <label className="block text-sm">{text("إيه اللي غيّرته في تجهيزاتك أو طريقة تقديمك؟ صف التغيير عشان تتابع الطلبات اللي هتتسجل بعده.", "What changed in your preparation or application approach? Describe it to follow applications recorded afterwards.")}<textarea className="field-control mt-2 min-h-32" required maxLength={5000} value={note} onChange={(event) => setNote(event.target.value)} /></label>
+          <p className="text-xs text-text-secondary">{text("تقدر تضيف تحديث مرة كل 3 أيام. رفع CV بيظل من الملف الشخصي.", "You can add an update once every 3 days. CV uploads remain in your profile.")}</p>
           {saveError && <p role="alert" className="text-sm text-rose-700">{saveError}</p>}
-          <button className="button-primary min-h-10" disabled={pending}>{pending ? text("بنحفظ…", "Saving…") : text("احفظ التغيير", "Save change")}</button>
+          <button className="button-primary min-h-10" disabled={pending}>{pending ? text("بنحفظ…", "Saving…") : text("احفظ التحديث", "Save update")}</button>
         </form>
       </Modal>
     </main>

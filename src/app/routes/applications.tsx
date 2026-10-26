@@ -60,6 +60,11 @@ export default function ApplicationsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Read filters from search params
+  const createdFrom = searchParams.get("createdFrom") || undefined;
+  const createdBefore = searchParams.get("createdBefore") || undefined;
+  const cohortLabel = searchParams.get("change") || "";
+  const cohortActive = Boolean(createdFrom || createdBefore);
+  const cohortPage = Math.max(1, Number(searchParams.get("page")) || 1);
   const currentStage = searchParams.get("stage") || "ALL";
   const currentOutcome = searchParams.get("outcome") || "ALL";
   const currentPeriod = searchParams.get("period") || "ALL";
@@ -90,6 +95,7 @@ export default function ApplicationsPage() {
     stage: stageParam,
     outcome: outcomeParam,
     search: searchParam,
+    createdFrom, createdBefore, page: cohortActive ? cohortPage : undefined, limit: cohortActive ? 100 : undefined,
   });
 
   const rawApplications = applicationsData?.items ?? [];
@@ -367,6 +373,7 @@ export default function ApplicationsPage() {
 
   const updateStageFilter = (newStage: string) => {
     const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("page");
     if (newStage === "ALL") {
       nextParams.delete("stage");
       nextParams.delete("outcome");
@@ -381,6 +388,7 @@ export default function ApplicationsPage() {
 
   const updateOutcomeFilter = (newOutcome: string) => {
     const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("page");
     if (newOutcome === "ALL") {
       nextParams.delete("outcome");
     } else {
@@ -392,6 +400,7 @@ export default function ApplicationsPage() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("page");
     if (searchQuery.trim()) {
       nextParams.set("search", searchQuery.trim());
     } else {
@@ -406,6 +415,7 @@ export default function ApplicationsPage() {
   };
 
   const isFiltering =
+    cohortActive ||
     currentStage !== "ALL" ||
     currentOutcome !== "ALL" ||
     Boolean(searchQuery.trim());
@@ -414,6 +424,11 @@ export default function ApplicationsPage() {
 
   return (
     <div className="space-y-7 animate-in fade-in duration-200">
+      {cohortActive && <section className="rounded-xl border border-emerald-800/20 bg-emerald-50 p-4 dark:bg-emerald-950/30" aria-label={locale === "ar" ? "فلتر فترة التغيير" : "Change period filter"}>
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-semibold">{locale === "ar" ? "طلبات مرتبطة بفترة تغيير" : "Applications in a change period"}{cohortLabel ? ` · ${cohortLabel}` : ""}</h2><p className="mt-1 text-sm text-text-secondary">{locale === "ar" ? "الفلتر حسب تاريخ تسجيل الطلب، من بداية التغيير لحد التغيير التالي." : "Filtered by recording time, from this checkpoint up to the next one."}</p><p className="mt-1 text-xs text-text-secondary">{createdFrom ? new Date(createdFrom).toLocaleString(locale === "ar" ? "ar-EG" : "en-US") : "—"} — {createdBefore ? new Date(createdBefore).toLocaleString(locale === "ar" ? "ar-EG" : "en-US") : (locale === "ar" ? "حتى الآن" : "Present")}</p></div><button type="button" className="button-secondary min-h-10" onClick={() => { const next = new URLSearchParams(searchParams); for (const key of ["createdFrom", "createdBefore", "change", "page"]) next.delete(key); setSearchParams(next); }}>{locale === "ar" ? "إلغاء فلتر التغيير" : "Clear change filter"}</button></div>
+        <div className="mt-3 flex items-center justify-between gap-3 text-sm"><span>{locale === "ar" ? `${applicationsData?.total ?? 0} طلبات مطابقة` : `${applicationsData?.total ?? 0} matching applications`}</span><div className="flex items-center gap-2"><button type="button" className="button-secondary min-h-10" disabled={cohortPage<=1} onClick={() => {const next=new URLSearchParams(searchParams);next.set("page",String(cohortPage-1));setSearchParams(next);}}>{locale === "ar" ? "السابق" : "Previous"}</button><span>{cohortPage}</span><button type="button" className="button-secondary min-h-10" disabled={cohortPage*100 >= (applicationsData?.total ?? 0)} onClick={() => {const next=new URLSearchParams(searchParams);next.set("page",String(cohortPage+1));setSearchParams(next);}}>{locale === "ar" ? "التالي" : "Next"}</button></div></div>
+      </section>}
+
       {/* Page Header */}
       <div className="flex flex-col gap-4 border-b border-stone-300/80 pb-7 sm:flex-row sm:items-end sm:justify-between dark:border-neutral-800">
         <div>

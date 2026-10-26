@@ -7,7 +7,7 @@ import ReportsPage, {
   ReportPreviewProvider,
 } from "../reports/pages/ReportsPage";
 
-type PreviewReportChoice = "week-1" | "week-2" | "week-3" | "week-4" | "final";
+type PreviewReportChoice = "analytics" | "week-1" | "week-2" | "week-3" | "week-4" | "final";
 type PreviewMode = "DEMO" | "ACTUAL";
 type DemoScenario = "EMPTY" | "ONE" | "EARLY" | "WEEK1_COMPLETE" | "WEEK3_COMPLETE" | "POPULATED" | "COMPLETED";
 
@@ -25,7 +25,7 @@ export default function AdminReportPreviewPage() {
   const text = (ar: string, en: string) => (isAr ? ar : en);
   const [mode, setMode] = useState<PreviewMode>("DEMO");
   const [scenario, setScenario] = useState<DemoScenario>("COMPLETED");
-  const [reportChoice, setReportChoice] = useState<PreviewReportChoice>("week-1");
+  const [reportChoice, setReportChoice] = useState<PreviewReportChoice>("analytics");
   const [selectedUserId, setSelectedUserId] = useState("");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -61,7 +61,7 @@ export default function AdminReportPreviewPage() {
     (user) => user.role === "USER",
   );
   const scope =
-    reportChoice === "final" ? null : Number(reportChoice.slice(-1));
+    (reportChoice === "final" || reportChoice === "analytics") ? null : Number(reportChoice.slice(-1));
   const hasActualActivity = Boolean(
     report &&
       (report.overall.logged ||
@@ -111,6 +111,7 @@ export default function AdminReportPreviewPage() {
                 setReportChoice(event.target.value as PreviewReportChoice)
               }
             >
+              <option value="analytics">{text("التحليلات الشاملة · كل الأقسام", "Full analytics · all sections")}</option>
               <option value="week-1">{text("الأسبوع الأول", "Week 1")}</option>
               <option value="week-2">{text("الأسبوع الثاني", "Week 2")}</option>
               <option value="week-3">{text("الأسبوع الثالث", "Week 3")}</option>
@@ -236,7 +237,7 @@ export default function AdminReportPreviewPage() {
               data: report,
               scope,
               onScopeChange: (nextScope) =>
-                setReportChoice(nextScope === null ? "final" : `week-${nextScope}` as PreviewReportChoice),
+                setReportChoice(nextScope === null ? "analytics" : `week-${nextScope}` as PreviewReportChoice),
               forceFinalPreview: reportChoice === "final",
             }}
           >

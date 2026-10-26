@@ -1,4 +1,6 @@
 export interface ApplicationListFilters {
+  createdFrom?: string;
+  createdBefore?: string;
   stage?: string;
   outcome?: string;
   search?: string;

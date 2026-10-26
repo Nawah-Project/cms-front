@@ -175,41 +175,18 @@ test("long activity histories use weekly or monthly bins without changing event 
   assert.equal(monthly.rows.reduce((sum, row) => sum + row.applications, 0), 5);
 });
 
-test("one application uses a compact first-record presentation instead of a wide chart", () => {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, retryOnMount: false } } });
-  const oneApplication = {
-    ...report,
-    overall: { ...metrics, logged: 1, positiveRate: null },
-    weeks: report.weeks.map((week) => ({ ...week, logged: week.week === 0 ? 1 : 0 })),
-    daily: [{ date: "2026-10-03", logged: 1, positiveEvents: 0 }],
-  };
-  client.setQueryData(["journey", "reports"], oneApplication);
-  const html = render(client);
-  assert.match(html, /First application recorded|أول طلب اتسجل/);
-  assert.doesNotMatch(html, /role="img"/);
-  assert.doesNotMatch(html, /h-\[320px\]/);
+test("one application has a cumulative chart with a labelled origin and no invented activity day", () => {
+  const client=new QueryClient({defaultOptions:{queries:{retry:false}}});
+  client.setQueryData(["journey","reports"],{...report,overall:{...metrics,logged:1},daily:[{date:"2026-10-03",logged:1,positiveEvents:0}]});
+  const html=render(client);
+  assert.match(html,/role="img"/);
+  assert.match(html,/2026-10-03|٣ أكتوبر/);
+  assert.match(html,/Application progress over time|منحنى التقدم واستجابة الطلبات/);
   client.clear();
 });
-test("empty analytics show a compact real baseline without an empty chart or fabricated performance", () => {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, retryOnMount: false } },
-  });
-  client.setQueryData(["journey", "reports"], report);
-  const html = render(client);
-  assert.match(html, /Performance analytics|تحليلات الأداء/);
-  assert.match(html, /Activity and recruitment response|النشاط واستجابة التوظيف/);
-  assert.match(html, /Current recruitment pipeline|مسار الطلبات الحالي/);
-  assert.match(
-    html,
-    /No saved change checkpoint|لسه مفيش نقطة تغيير محفوظة/,
-  );
-  assert.match(html, /No saved activity or change events|لسه مفيش أنشطة أو تغييرات محفوظة/);
-  assert.doesNotMatch(
-    html,
-    /قرأت التقرير الكامل|I have read the complete report/,
-  );
-  assert.ok(!html.includes("IMPROVED"));
-  client.clear();
+test("empty analytics show real emptiness and a next-change placeholder",()=>{
+  const client=new QueryClient({defaultOptions:{queries:{retry:false}}});client.setQueryData(["journey","reports"],report);
+  const html=render(client);assert.match(html,/No saved CV or change|لسه مفيش نسخة CV/);assert.doesNotMatch(html,/role="img"/);client.clear();
 });
 
 test("early members get continuous analytics while weekly and final reports remain locked", () => {
@@ -358,8 +335,7 @@ test("populated analytics keep dates, actual checkpoints, stage distributions an
   const html = render(client);
   assert.match(html, /role="img"/);
   assert.match(html, /2026-10-12/);
-  assert.match(html, /Current recruitment pipeline|مسار الطلبات الحالي/);
-  assert.match(html, /Current outcomes|النتائج الحالية/);
+  assert.match(html, /Applications with positive progression|طلبات بتقدم إيجابي موثق/);
   assert.match(html, /CV v2/);
   assert.match(html, /does not establish causation|لا تثبت إن التغيير سبب/);
   client.clear();
@@ -447,4 +423,27 @@ test("registration preserves a pending account and its failed-delivery status fo
   } finally {
     globalThis.fetch = original;
   }
+});
+
+test("early analytics never spoil publishing or outreach, while current unlocked metrics appear later",()=>{
+  const client=new QueryClient({defaultOptions:{queries:{retry:false}}});
+  client.setQueryData(["journey","reports"],{...report,currentWeek:1,currentNodeCode:"W1_M1",completedNodeCodes:["TASK_0"],finalAvailable:false});
+  const early=render(client);
+  assert.doesNotMatch(early,/منشورات|تواصل مهني|المحتوى والحضور|العلاقات المهنية|Recorded posts|Recorded outreach/);
+  assert.doesNotMatch(early,/إضافة تحديث|Add an update/);
+  assert.match(early,/التعديل القادم عند محطة مراجعة الأسبوع/);
+  client.setQueryData(["journey","reports"],{...report,currentWeek:3});const week3=render(client);
+  assert.match(week3,/إضافة تحديث|Add an update/);assert.match(week3,/منشورات موثقة|Recorded posts/);assert.doesNotMatch(week3,/تواصل مهني موثق|Recorded outreach/);client.clear();
+});
+test("admin sees all metrics without update writes",()=>{
+ const client=new QueryClient({defaultOptions:{queries:{retry:false}}});
+ function Preview(){return React.createElement(ReportPreviewProvider,{value:{data:{...report,currentWeek:0},scope:null,onScopeChange:()=>{}}},React.createElement(ReportsPage));}
+ const html=render(client,Preview);assert.match(html,/منشورات موثقة|Recorded posts/);assert.match(html,/تواصل مهني موثق|Recorded outreach/);assert.doesNotMatch(html,/إضافة تحديث|Add an update/);client.clear();
+});
+test("update button respects server cooldown and cohort link preserves precise period boundaries",async()=>{
+ const client=new QueryClient({defaultOptions:{queries:{retry:false}}});client.setQueryData(["journey","reports"],{...report,currentWeek:3,manualUpdate:{eligible:true,canSubmit:false,nextAvailableAt:"2026-10-29T00:00:00Z"}});
+ const html=render(client);assert.match(html,/<button[^>]*disabled[^>]*>.*إضافة تحديث/s);client.clear();
+ const {cohortApplicationsUrl}=await server.ssrLoadModule("/src/app/features/reports/pages/JourneyAnalytics.tsx");
+ const url=new URL(cohortApplicationsUrl({startAt:"2026-10-01T12:34:56Z",endAt:"2026-10-04T15:00:00Z"},"CV v2"),"http://local");
+ assert.equal(url.searchParams.get("createdFrom"),"2026-10-01T12:34:56Z");assert.equal(url.searchParams.get("createdBefore"),"2026-10-04T15:00:00Z");
 });
