@@ -1,15 +1,17 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Activity, Plus, TrendingUp, FileText } from "lucide-react";
+import { Activity, FileText, Lock, Plus } from "lucide-react";
 import { Modal } from "../../../components/ui/Modal";
 import { useI18n } from "../../../i18n";
 import { apiClient } from "../../../lib/api-client";
 import { journeyApi } from "../../journey/api/journeyApi";
+import PerformanceAnalytics from "./PerformanceAnalytics";
 
 export function meta() {
-  return [{ title: "Reports | Nawah" }];
+  return [{ title: "Performance Analytics | Nawah" }];
 }
+
 export interface Metrics {
   logged: number;
   tailored: number;
@@ -25,12 +27,30 @@ export interface Metrics {
   posts: number;
   outreach: number;
   reviews: number;
+  stages: Record<
+    "APPLIED" | "ASSIGNMENT" | "INTERVIEW" | "DECISION" | "CLOSED",
+    number
+  >;
+  outcomes: Record<
+    "NONE" | "ACCEPTED" | "REJECTED" | "WITHDRAWN" | "NO_RESPONSE",
+    number
+  >;
+  milestones: { assignments: number; interviews: number; decisions: number };
 }
+
 export interface Report {
   asOf: string;
   overall: Metrics;
   weeks: (Metrics & { week: number })[];
   daily: { date: string; logged: number; positiveEvents: number }[];
+  periodComparisons: {
+    id: string;
+    kind: "BEFORE_FIRST_CHECKPOINT" | "CV" | "USER_CHANGE";
+    title: string;
+    startAt: string;
+    endAt: string | null;
+    metrics: Omit<Metrics, "posts" | "outreach" | "reviews">;
+  }[];
   cvs: {
     id: string;
     versionNumber: number;
@@ -54,6 +74,7 @@ export interface Report {
   completedNodeCodes: string[];
   currentNodeCode: string;
   currentWeek: number;
+  week1StartedAt?: string | null;
   finalAvailable: boolean;
   completed: boolean;
 }
@@ -65,7 +86,9 @@ interface ReportPreviewContextValue {
   forceFinalPreview?: boolean;
 }
 
-const ReportPreviewContext = createContext<ReportPreviewContextValue | null>(null);
+const ReportPreviewContext = createContext<ReportPreviewContextValue | null>(
+  null,
+);
 
 export function ReportPreviewProvider({
   value,
@@ -81,6 +104,36 @@ export function ReportPreviewProvider({
   );
 }
 
+function weekReportUnlocked(week: number, report: Report) {
+  const completed = new Set(report.completedNodeCodes);
+  if (week === 1) {
+    return (
+      completed.has("W1_REVIEW") ||
+      report.currentNodeCode === "W1_REVIEW" ||
+      report.currentWeek > 1
+    );
+  }
+  if (week === 2) {
+    return (
+      completed.has("W2_REVIEW") ||
+      report.currentNodeCode === "W2_REVIEW" ||
+      report.currentWeek > 2
+    );
+  }
+  if (week === 3) {
+    return (
+      completed.has("W3_REVIEW") ||
+      report.currentNodeCode === "W3_REVIEW" ||
+      report.currentWeek > 3
+    );
+  }
+  return (
+    report.currentNodeCode === "FINAL_REPORT" ||
+    report.finalAvailable ||
+    report.completed
+  );
+}
+
 export default function ReportsPage() {
   const { locale, number } = useI18n();
   const ar = locale === "ar";
@@ -92,23 +145,31 @@ export default function ReportsPage() {
     queryFn: () => apiClient.get<Report>("/journey/reports"),
     enabled: !preview,
   });
-  const [memberScope, setMemberScope] = useState<number | null>(null);
-  const scope = preview ? preview.scope : memberScope;
-  const setScope = preview?.onScopeChange ?? setMemberScope;
+  const [memberScope, setMemberScope] = useState<number | null | "final">(null);
+  const scope: number | null | "final" = preview
+    ? preview.forceFinalPreview && preview.scope === null
+      ? "final"
+      : preview.scope
+    : memberScope;
+  const setScope = (next: number | null | "final") => {
+    if (preview) preview.onScopeChange(next === "final" ? null : next);
+    else setMemberScope(next);
+  };
   const readOnly = Boolean(preview);
   const data = preview?.data ?? query.data;
-  const [changeOpen, setChangeOpen] = useState(false),
-    [note, setNote] = useState("");
-  const [pending, setPending] = useState(false),
-    [saveError, setSaveError] = useState("");
+  const [changeOpen, setChangeOpen] = useState(false);
+  const [note, setNote] = useState("");
+  const [pending, setPending] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [detail, setDetail] = useState<"activities" | "cvs" | null>(null);
-  const [series, setSeries] = useState<"logged" | "positiveEvents">("logged");
-  const [cumulative, setCumulative] = useState(false);
+  const [lockedWeek, setLockedWeek] = useState<number | "final" | null>(null);
+
   async function refresh() {
     await client.invalidateQueries({ queryKey: ["journey"] });
   }
-  async function saveChange(e: React.FormEvent) {
-    e.preventDefault();
+
+  async function saveChange(event: React.FormEvent) {
+    event.preventDefault();
     if (readOnly || !data || !note.trim()) return;
     setPending(true);
     setSaveError("");
@@ -133,8 +194,9 @@ export default function ReportsPage() {
       setPending(false);
     }
   }
+
   async function complete() {
-    if (readOnly) return;
+    if (readOnly || !data || !data.finalAvailable) return;
     setPending(true);
     setSaveError("");
     try {
@@ -151,19 +213,21 @@ export default function ReportsPage() {
       setPending(false);
     }
   }
-  if (!preview && query.isPending)
+
+  if (!preview && query.isPending) {
     return (
       <div role="status" className="p-8">
-        {text("بنحمّل التقرير…", "Loading report…")}
+        {text("بنحمّل التحليلات…", "Loading analytics…")}
       </div>
     );
-  if (!preview && (query.isError || !data))
+  }
+  if (!preview && (query.isError || !data)) {
     return (
       <div
         role="alert"
         className="rounded-2xl border border-border bg-surface p-6"
       >
-        <p>{text("تعذر تحميل التقرير.", "Could not load report.")}</p>
+        <p>{text("تعذر تحميل التحليلات.", "Could not load analytics.")}</p>
         <button
           className="button-primary mt-3"
           onClick={() => void query.refetch()}
@@ -172,55 +236,86 @@ export default function ReportsPage() {
         </button>
       </div>
     );
+  }
   if (!data) return null;
+  const reportData = data;
+
+  const selectedWeek = typeof scope === "number" ? scope : null;
+  const finalReportSelected = scope === "final";
   const m =
-    scope === null ? data.overall : data.weeks.find((w) => w.week === scope)!;
+    selectedWeek === null
+      ? reportData.overall
+      : (reportData.weeks.find((week) => week.week === selectedWeek) ??
+        reportData.overall);
   const previous =
-    scope !== null && scope > 0
-      ? data.weeks.find((w) => w.week === scope - 1)
+    selectedWeek !== null && selectedWeek > 0
+      ? reportData.weeks.find((week) => week.week === selectedWeek - 1)
       : undefined;
-  let sum = 0;
-  const points = data.daily.map((d) => {
-    sum += d[series];
-    return { date: d.date, value: cumulative ? sum : d[series] };
-  });
-  const max = Math.max(1, ...points.map((d) => d.value));
-  const path = points
-    .map(
-      (d, i) =>
-        `${i ? "L" : "M"} ${points.length > 1 ? (i / (points.length - 1)) * 700 : 350} ${160 - (d.value / max) * 145}`,
-    )
-    .join(" ");
-  const activities = data.activities.filter(
-    (a) => scope === null || a.week === scope,
+  const activities = reportData.activities.filter(
+    (activity) => selectedWeek === null || activity.week === selectedWeek,
   );
-  const labels: [keyof Metrics, string, string][] = [
-    ["logged", "طلبات مسجلة", "Logged applications"],
-    ["tailored", "طلبات مخصصة", "Tailored applications"],
-    ["positive", "تقدم إيجابي موثّق", "Recorded positive progression"],
-    ["interviews", "وصلت لمقابلة", "Interview reached"],
-    ["assignments", "اختبار/تكليف", "Assignment received"],
-    ["accepted", "قبول/عرض", "Accepted / offer"],
-    ["rejected", "رفض", "Rejected"],
-    ["withdrawn", "انسحاب", "Withdrawn"],
-    ["noResponse", "أُغلقت بلا رد", "Closed: no response"],
-    ["posts", "منشورات LinkedIn", "LinkedIn posts"],
-    ["outreach", "محاولات تواصل", "Outreach contacts"],
-    ["reviews", "مراجعات أسبوعية", "Weekly reflections"],
+  const labels: [string, number][] = [
+    [text("طلبات مسجلة", "Logged applications"), m.logged],
+    [text("طلبات مخصصة", "Tailored applications"), m.tailored],
+    [text("تقدم إيجابي موثق", "Recorded positive progression"), m.positive],
+    [text("وصلت لمقابلة", "Interview reached"), m.interviews],
+    [text("اختبار أو تكليف", "Assignment received"), m.assignments],
+    [text("قبول أو عرض", "Accepted / offer"), m.accepted],
+    [text("رفض", "Rejected"), m.rejected],
+    [text("انسحاب", "Withdrawn"), m.withdrawn],
+    [text("إغلاق بلا رد", "Closed: no response"), m.noResponse],
+    [text("منشورات LinkedIn", "LinkedIn posts"), m.posts],
+    [text("محاولات تواصل", "Outreach contacts"), m.outreach],
+    [text("مراجعات أسبوعية", "Weekly reflections"), m.reviews],
   ];
+  const label = finalReportSelected
+    ? text("التقرير النهائي", "Final report")
+    : selectedWeek === null
+      ? text("الرحلة بالكامل", "Whole journey")
+      : text(`الأسبوع ${number(selectedWeek)}`, `Week ${number(selectedWeek)}`);
+
+  function lockedMessage(week: number | "final") {
+    if (week === "final" || week === 4) {
+      return text(
+        "التقرير النهائي والأسبوع الرابع بيظهروا عند الوصول لمرحلة التقرير النهائي في الرحلة.",
+        "Week 4 and the final report become available at the final-report journey stage.",
+      );
+    }
+    if (reportData.currentWeek === 0 || !reportData.week1StartedAt) {
+      return text(
+        "التقرير ده لسه مقفول. يبدأ الجدول بعد إكمال المهمة صفر وبداية الأسبوع الأول.",
+        "This report is locked. Its schedule starts after Task 0 is completed and Week 1 begins.",
+      );
+    }
+    const expected = new Date(reportData.week1StartedAt);
+    expected.setDate(expected.getDate() + (week - 1) * 7 + 6);
+    const formatted = new Intl.DateTimeFormat(ar ? "ar-EG" : "en-US", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(expected);
+    return text(
+      `تقرير الأسبوع ${number(week)} لسه مقفول. موعده المتوقع قرب نهاية الأسبوع: ${formatted}.`,
+      `Week ${number(week)} is still locked. Its expected availability is near the end of the week: ${formatted}.`,
+    );
+  }
+
   return (
-    <main className="space-y-6 pb-8">
-      <header className="flex flex-wrap justify-between gap-4">
+    <main className="space-y-6 pb-8" dir={ar ? "rtl" : "ltr"}>
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">
-            {text("تقارير رحلة نواة", "Nawah journey reports")}
+          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+            {text("نواة · تحليلات الأداء", "NAWAH · PERFORMANCE ANALYTICS")}
+          </p>
+          <h1 className="mt-1 text-2xl font-bold">
+            {text("تحليل الأداء ومسار البحث عن وظيفة", "Performance Analytics")}
           </h1>
-          <p className="text-sm text-text-secondary">
-            {text("البيانات المحفوظة لحد", "Recorded data as of")}{" "}
-            {new Date(data.asOf).toLocaleString(locale)}
+          <p className="mt-1 text-sm text-text-secondary">
+            {text("البيانات المحفوظة حتى", "Recorded data as of")}{" "}
+            {new Date(reportData.asOf).toLocaleString(locale)}
           </p>
         </div>
-        {!readOnly && data.currentWeek >= 3 && (
+        {!readOnly && reportData.currentWeek >= 3 && (
           <button
             className="button-primary"
             onClick={() => {
@@ -228,312 +323,321 @@ export default function ReportsPage() {
               setChangeOpen(true);
             }}
           >
-            <Plus className="inline h-4 w-4" />{" "}
-            {text("سجّل تغيير مهني", "Log a professional change")}
+            <Plus className="inline h-4 w-4" aria-hidden="true" />{" "}
+            {text("سجّل تغيير مهني", "Record a professional change")}
           </button>
         )}
       </header>
-      {!preview && <nav
-        aria-label={text("نطاق التقرير", "Report scope")}
-        className="flex flex-wrap gap-2"
-      >
-        {[null, 0, 1, 2, 3, 4].map((w) => (
-          <button
-            key={w ?? "all"}
-            className={scope === w ? "button-primary" : "button-secondary"}
-            aria-pressed={scope === w}
-            onClick={() => setScope(w)}
+
+      {!preview && (
+        <>
+          <nav
+            aria-label={text("اختيار نطاق التقرير", "Report selection")}
+            className="flex flex-wrap gap-2"
           >
-            {w === null
-              ? text("الرحلة بالكامل", "Whole journey")
-              : w === 0
-                ? text("التفعيل", "Activation")
-                : text(`الأسبوع ${w}`, `Week ${w}`)}
-          </button>
-        ))}
-      </nav>}
-      <section className="rounded-2xl border border-border bg-surface p-5 space-y-2">
-        <h2 className="font-bold">
-          <Activity className="inline h-4 w-4" />{" "}
-          {scope === null
-            ? text("ملخص الرحلة بالكامل", "Whole journey summary")
-            : text("مجموعة طلبات الأسبوع", "Application cohort")}
-        </h2>
-        <p className="text-sm text-text-secondary">
-          {text(
-            "الطلبات متجمّعة حسب أسبوع تسجيلها في الرحلة. النتائج هي حالتها الحالية، حتى لو الرد وصل بعد الأسبوع. المقابلات والتكليفات تشمل السجل السابق المتاح.",
-            "Applications are grouped by their recorded journey week. Outcomes reflect the current state, including late responses. Interviews and assignments include available transition history.",
-          )}
-        </p>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {labels.map(([key, a, e]) => (
-            <div key={key} className="rounded-xl border border-border p-3">
-              <p className="text-xs text-text-secondary">{text(a, e)}</p>
-              <strong className="text-xl">{number(m[key] ?? 0)}</strong>
-            </div>
-          ))}
-        </div>
-        <p>
-          {text(
-            "نسبة التقدم الإيجابي الموثق",
-            "Recorded positive progression rate",
-          )}
-          : {m.positiveRate === null ? "—" : `${number(m.positiveRate)}%`}
-        </p>
-        <p className="text-xs text-text-secondary">
-          {text(
-            "التقدم الإيجابي: دليل على تكليف أو مقابلة أو قرار أو قبول؛ الإغلاق بلا رد والانسحاب مستبعدين. الرفض لوحده مش دليل على تقدم إيجابي. الأعداد متداخلة ومش مجموعها إجمالي الطلبات.",
-            "Positive progression requires assignment, interview, decision or acceptance evidence; no-response and withdrawal are excluded. Rejection alone is insufficient. Categories overlap and do not sum to total applications.",
-          )}
-        </p>
-        {m.unknownInterviews > 0 && (
-          <p role="note">
-            {text(
-              "طلبات مفيش دليل كافي يحدد هل سبق لها مقابلة:",
-              "Applications with insufficient evidence to determine earlier interviews:",
-            )}{" "}
-            {number(m.unknownInterviews)}
-          </p>
-        )}
-        {previous && (
-          <p>
-            {text(
-              "مقارنة بالأسبوع السابق: فرق الطلبات",
-              "Compared with the previous cohort: application difference",
-            )}{" "}
-            {number(m.logged - previous.logged)}؛{" "}
-            {text("فرق التقدم الموثق", "positive progression difference")}{" "}
-            {number(m.positive - previous.positive)}.{" "}
-            {text(
-              "ده وصف للبيانات الحالية، مش مقارنة متساوية في وقت انتظار الرد.",
-              "This describes current records, without equalizing response waiting time.",
-            )}
-          </p>
-        )}
-      </section>
-      <section className="rounded-2xl border border-border bg-surface p-5 space-y-3">
-        <h2 className="font-bold">
-          <TrendingUp className="inline h-4 w-4" />{" "}
-          {text(
-            "النشاط حسب التاريخ الفعلي — الرحلة بالكامل",
-            "Activity by actual date — whole journey",
-          )}
-        </h2>
-        <div className="flex flex-wrap gap-3">
-          <label>
-            {text("المقياس", "Metric")}{" "}
-            <select
-              className="field-control"
-              value={series}
-              onChange={(e) => setSeries(e.target.value as typeof series)}
+            <button
+              type="button"
+              aria-pressed={scope === null}
+              className={scope === null ? "button-primary" : "button-secondary"}
+              onClick={() => {
+                setLockedWeek(null);
+                setScope(null);
+              }}
             >
-              <option value="logged">
-                {text("تسجيل الطلبات", "Applications logged")}
-              </option>
-              <option value="positiveEvents">
-                {text("أحداث تقدم إيجابي", "Positive progression events")}
-              </option>
-            </select>
-          </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={cumulative}
-              onChange={(e) => setCumulative(e.target.checked)}
-            />
-            {text("تراكمي", "Cumulative")}
-          </label>
-        </div>
-        {points.length ? (
-          <>
-            <svg
-              role="img"
-              aria-label={text(
-                "منحنى النشاط المسجّل",
-                "Recorded activity curve",
-              )}
-              viewBox="0 0 700 170"
-              className="w-full max-h-60 text-emerald-600"
+              {text("التحليلات الشاملة", "Overall journey")}
+            </button>
+            {[1, 2, 3, 4].map((week) => {
+              const unlocked = weekReportUnlocked(week, data);
+              return (
+                <button
+                  key={week}
+                  type="button"
+                  aria-pressed={scope === week}
+                  aria-label={
+                    unlocked
+                      ? text(
+                          `تقرير الأسبوع ${number(week)}`,
+                          `Week ${number(week)} report`,
+                        )
+                      : text(
+                          `تقرير الأسبوع ${number(week)} مقفول`,
+                          `Week ${number(week)} report locked`,
+                        )
+                  }
+                  className={
+                    scope === week ? "button-primary" : "button-secondary"
+                  }
+                  onClick={() => {
+                    if (unlocked) {
+                      setLockedWeek(null);
+                      setScope(week);
+                    } else setLockedWeek(week);
+                  }}
+                >
+                  {unlocked ? (
+                    text(`الأسبوع ${number(week)}`, `Week ${number(week)}`)
+                  ) : (
+                    <>
+                      <Lock className="inline h-3.5 w-3.5" aria-hidden="true" />{" "}
+                      {text(`الأسبوع ${number(week)}`, `Week ${number(week)}`)}
+                    </>
+                  )}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              aria-pressed={finalReportSelected}
+              aria-label={
+                reportData.finalAvailable || reportData.completed
+                  ? text("التقرير النهائي", "Final report")
+                  : text("التقرير النهائي مقفول", "Final report locked")
+              }
+              className={
+                finalReportSelected ? "button-primary" : "button-secondary"
+              }
+              onClick={() => {
+                if (reportData.finalAvailable || reportData.completed) {
+                  setLockedWeek(null);
+                  setScope("final");
+                } else setLockedWeek("final");
+              }}
             >
-              <path
-                d={path}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-              />
-              {points.length === 1 && (
-                <circle
-                  cx="350"
-                  cy={160 - (points[0].value / max) * 145}
-                  r="4"
-                  fill="currentColor"
-                />
-              )}
-            </svg>
-            <p className="text-xs">
-              {points[0].date} — {points.at(-1)?.date}
+              {reportData.finalAvailable || reportData.completed ? (
+                <FileText className="inline h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Lock className="inline h-3.5 w-3.5" aria-hidden="true" />
+              )}{" "}
+              {text("التقرير النهائي", "Final report")}
+            </button>
+          </nav>
+          {lockedWeek !== null && (
+            <p
+              role="note"
+              className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"
+            >
+              <Lock className="me-1 inline h-4 w-4" aria-hidden="true" />{" "}
+              {lockedMessage(lockedWeek)}
             </p>
-            <details>
-              <summary>{text("عرض أرقام الرسم", "View chart data")}</summary>
-              <div className="max-h-48 overflow-auto">
-                {points.map((p) => (
-                  <p key={p.date}>
-                    {p.date}: {number(p.value)}
-                  </p>
-                ))}
-              </div>
-            </details>
-          </>
-        ) : (
-          <p>{text("لسه مفيش بيانات.", "No recorded data yet.")}</p>
-        )}
-        <p className="text-xs text-text-secondary">
-          {text(
-            "أحداث الرد حسب وقت انتقال المرحلة، وممكن يتكرر للطلب أكتر من حدث. الأحداث القديمة بلا تاريخ مش بنخترع لها تواريخ. الرسم مستقل عن تبويب مجموعة الأسبوع.",
-            "Response events use stage-transition timestamps; one application can have several events. Missing historical event dates are not invented. This chart is separate from the weekly cohort tabs.",
           )}
-        </p>
-      </section>
-      <section className="rounded-2xl border border-border bg-surface p-5 space-y-2">
-        <h2 className="font-bold">
-          {text("ملاحظات مبنية على المتاح", "Evidence and next steps")}
-        </h2>
-        <p>
-          {m.logged === 0
-            ? text(
-                "ابدأ بتسجيل طلباتك علشان يظهر نشاط قابل للمراجعة.",
-                "Log your applications to start reviewing activity.",
-              )
-            : m.logged < 20
-              ? text(
-                  "العينة صغيرة. الأرقام وصف مبدئي، ومش دليل على جودة السيرة أو سبب الاستجابة.",
-                  "This is a small sample. Counts are preliminary and cannot establish CV quality or causes.",
-                )
-              : text(
-                  "دي نتائج مسجلة، مش تفسير لأسبابها. راجع ملاءمة الوظائف والتخصيص ووقت انتظار الرد قبل استنتاج نمط.",
-                  "These are recorded outcomes, not causal explanations. Review job fit, tailoring and response waiting time before drawing patterns.",
+        </>
+      )}
+
+      {selectedWeek !== null && (
+        <section className="rounded-2xl border border-border bg-surface p-5 space-y-4">
+          <header className="flex items-start gap-3">
+            <Activity
+              className="mt-0.5 h-5 w-5 text-emerald-700"
+              aria-hidden="true"
+            />
+            <div>
+              <h2 className="font-bold">
+                {text(
+                  `تقرير الأسبوع ${number(selectedWeek)}`,
+                  `Week ${number(selectedWeek)} report`,
                 )}
-        </p>
-        <p>
-          {text(
-            "تغيير السيرة ما يثبتش إنها اتستخدمت في طلب بعينه، ولا إن تغيير النتيجة سببه السيرة وحدها.",
-            "A CV update does not establish which applications used it or that it caused outcome changes.",
-          )}
-        </p>
-        {!readOnly && <Link
-          className="text-emerald-700 underline"
-          to={data.completed ? "/applications" : "/applications"}
-        >
-          {data.completed
-            ? text(
-                "كمل تسجيل طلباتك ومراجعة نتائجك",
-                "Continue tracking applications and outcomes",
-              )
-            : text("ارجع للمهمة الحالية", "Return to your current quest")}
-        </Link>}
-      </section>
-      <section className="rounded-2xl border border-border bg-surface p-5 space-y-3">
-        <h2 className="font-bold">
-          <FileText className="inline h-4 w-4" />{" "}
-          {text("السجل والمراحل المحفوظة", "Persisted history and milestones")}
-        </h2>
-        <p>
-          {text("نسخ السيرة الفعلية", "Actual CV versions")}:{" "}
-          {number(data.cvs.length)} · {text("إرشادات مقروءة", "Guidance read")}:{" "}
-          {number(data.readInsightCodes.length)} ·{" "}
-          {text("مهام مهنية مكتملة", "Professional tasks completed")}:{" "}
-          {number(data.tasks.length)}
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <button className="button-secondary" onClick={() => setDetail("cvs")}>
-            {text("سجل السيرة", "CV history")}
-          </button>
-          <button
-            className="button-secondary"
-            onClick={() => setDetail("activities")}
-          >
-            {text(
-              "المراجعات والتغييرات والنشاط",
-              "Reviews, changes and activity",
-            )}
-          </button>
-        </div>
-        <details>
-          <summary>
-            {text("الإرشادات والمهام المكتملة", "Completed guidance and tasks")}
-          </summary>
-          <ul>
-            {data.readInsightCodes.map((c) => (
-              <li key={c}>{c}</li>
+              </h2>
+              <p className="mt-1 text-sm text-text-secondary">
+                {text(
+                  "طلبات المجموعة حسب أسبوع تسجيلها؛ النتائج هي حالتها الحالية وقت اللقطة، حتى لو الرد وصل لاحقًا.",
+                  "Applications are grouped by their recorded journey week; outcomes are current as of this snapshot, including late responses.",
+                )}
+              </p>
+            </div>
+          </header>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {labels.map(([name, value]) => (
+              <div key={name} className="rounded-xl border border-border p-3">
+                <p className="text-xs text-text-secondary">{name}</p>
+                <strong className="text-xl tabular-nums">
+                  {number(value)}
+                </strong>
+              </div>
             ))}
-            {data.tasks.map((t) => (
-              <li key={t.id}>
-                {t.title} —{" "}
-                {t.completedAt
-                  ? new Date(t.completedAt).toLocaleDateString(locale)
-                  : text("تاريخ غير متاح", "Date unavailable")}
-              </li>
-            ))}
-          </ul>
-        </details>
-      </section>
-      {((preview
-        ? Boolean(preview.forceFinalPreview && scope === null)
-        : data.finalAvailable || data.completed)) && (
-        <section className="rounded-2xl border border-border bg-surface border-emerald-500 p-5 space-y-3">
-          <h2 className="font-bold">
+          </div>
+          <p className="text-sm">
             {text(
-              "التقرير النهائي — الرحلة بالكامل",
-              "Final report — whole journey",
+              "نسبة التقدم الإيجابي الموثق",
+              "Recorded positive progression rate",
             )}
-          </h2>
-          <p>
+            : {m.positiveRate === null ? "—" : `${number(m.positiveRate)}%`}
+          </p>
+          <p className="text-xs text-text-secondary">
             {text(
-              "تبويب الرحلة بالكامل يشمل التفعيل وكل الأسابيع، ومش هو تقرير الأسبوع الرابع وحده.",
-              "The whole-journey tab includes activation and all weeks; it is distinct from week four.",
+              "التقدم الإيجابي يحتاج دليلًا على تكليف أو مقابلة أو قرار أو قبول. الرفض وحده لا يُحسب إيجابيًا، والإغلاق بلا رد والانسحاب مستبعدان. الفئات التاريخية قد تتداخل ولا تجمع لإجمالي الطلبات.",
+              "Positive progression requires assignment, interview, decision or acceptance evidence. Rejection alone is not positive; no-response and withdrawal are excluded. Historical categories can overlap and do not sum to total applications.",
             )}
           </p>
-          <button className="button-secondary" onClick={() => setScope(null)}>
-            {text("اعرض ملخص الرحلة بالكامل", "Show whole journey summary")}
-          </button>
+          {m.unknownInterviews > 0 && (
+            <p
+              role="note"
+              className="text-sm text-amber-800 dark:text-amber-200"
+            >
+              {text(
+                "سجلات لا تكفي لتحديد مقابلات سابقة",
+                "Insufficient history to determine prior interviews",
+              )}
+              : {number(m.unknownInterviews)}
+            </p>
+          )}
+          {previous && (
+            <p className="text-sm">
+              {text(
+                "مقارنة بالأسبوع السابق",
+                "Compared with the previous cohort",
+              )}
+              : {number(m.logged - previous.logged)}{" "}
+              {text("فرق طلبات،", "application difference,")}{" "}
+              {number(m.positive - previous.positive)}{" "}
+              {text(
+                "فرق تقدم إيجابي. مدة انتظار الرد ليست متساوية بين المجموعتين.",
+                "positive progression difference. Response waiting time is not equal across cohorts.",
+              )}
+            </p>
+          )}
+          {readOnly && (
+            <p role="status" className="text-xs text-text-secondary">
+              {text(
+                "معاينة إدارية للقراءة فقط.",
+                "Admin preview is read-only.",
+              )}
+            </p>
+          )}
+        </section>
+      )}
+
+      {finalReportSelected && (
+        <section className="rounded-2xl border border-emerald-500 bg-surface p-5 space-y-4">
+          <header>
+            <h2 className="text-lg font-bold">
+              {text(
+                "التقرير النهائي — الرحلة بالكامل",
+                "Final report — whole journey",
+              )}
+            </h2>
+            <p className="mt-1 text-sm text-text-secondary">
+              {text(
+                "التقرير النهائي يلخص التفعيل والأسابيع الأربعة كلها؛ هو تقرير مستقل عن الأسبوع الرابع.",
+                "The final report summarizes activation and all four weeks; it is distinct from Week 4.",
+              )}
+            </p>
+          </header>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              [
+                text("إجمالي الطلبات", "Total applications"),
+                reportData.overall.logged,
+              ],
+              [
+                text("تقدم إيجابي موثق", "Recorded positive progression"),
+                reportData.overall.positive,
+              ],
+              [text("قبول", "Accepted"), reportData.overall.accepted],
+              [
+                text("مراجعات أسبوعية", "Weekly reflections"),
+                reportData.overall.reviews,
+              ],
+            ].map(([name, value]) => (
+              <div
+                key={String(name)}
+                className="rounded-xl border border-border p-3"
+              >
+                <p className="text-xs text-text-secondary">{name}</p>
+                <strong className="text-xl tabular-nums">
+                  {number(Number(value))}
+                </strong>
+              </div>
+            ))}
+          </div>
+          <p className="text-sm text-text-secondary">
+            {text(
+              "الملخص وصفي للبيانات المتاحة؛ لا يحدد سبب النتيجة. انتقالات المراحل وتواريخ الطلبات محفوظة كلٌ على حدة.",
+              "This is a descriptive summary of available records; it does not establish why an outcome occurred. Application and transition dates remain distinct.",
+            )}
+          </p>
           {readOnly ? (
             <p role="status">
               {text(
-                "معاينة إدارية للقراءة فقط؛ مش هتغيّر إكمال الرحلة أو تقدمها.",
+                "معاينة إدارية للقراءة فقط؛ لن تغيّر إكمال الرحلة أو تقدمها.",
                 "Admin read-only preview; journey completion and progress will not change.",
               )}
             </p>
-          ) : data.completed ? (
+          ) : reportData.completed ? (
             <p role="status">
               {text(
-                "إكمال الرحلة محفوظ. تقدر تكمل التقديم ومتابعة نتائجك.",
-                "Journey completion is saved. Continue applying and tracking outcomes.",
+                "إكمال الرحلة محفوظ. تقدر تواصل متابعة طلباتك.",
+                "Journey completion is saved. You can continue tracking applications.",
               )}
             </p>
-          ) : (
+          ) : reportData.finalAvailable ? (
             <button
-              disabled={pending || scope !== null}
+              disabled={pending}
               className="button-primary"
               onClick={() => void complete()}
             >
-              {text(
-                "قرأت التقرير الكامل — أكمل الرحلة",
-                "I have read the complete report — finish journey",
-              )}
+              {pending
+                ? text("بنحفظ…", "Saving…")
+                : text(
+                    "قرأت التقرير الكامل — أكمل الرحلة",
+                    "I have read the complete report — finish journey",
+                  )}
             </button>
-          )}
+          ) : null}
           {saveError && <p role="alert">{saveError}</p>}
         </section>
       )}
+
+      <PerformanceAnalytics
+        report={reportData}
+        metrics={m}
+        scopeLabel={label}
+        canNavigate={!readOnly}
+      />
+
+      <details className="rounded-2xl border border-border bg-surface p-4">
+        <summary className="cursor-pointer font-semibold">
+          {text("تفاصيل السجلات المحفوظة", "Persisted record details")}
+        </summary>
+        <div className="mt-3 space-y-3">
+          <p className="text-sm text-text-secondary">
+            {text("نسخ CV فعلية", "Persisted CV versions")}:{" "}
+            {number(reportData.cvs.length)} ·{" "}
+            {text("إرشادات مقروءة", "Guidance read")}:{" "}
+            {number(reportData.readInsightCodes.length)} ·{" "}
+            {text("مهام مهنية مكتملة", "Professional tasks completed")}:{" "}
+            {number(reportData.tasks.length)}
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              className="button-secondary"
+              onClick={() => setDetail("cvs")}
+            >
+              {text("سجل CV", "CV history")}
+            </button>
+            <button
+              type="button"
+              className="button-secondary"
+              onClick={() => setDetail("activities")}
+            >
+              {text(
+                "تفاصيل النشاط والمراجعات",
+                "Activity and reflection details",
+              )}
+            </button>
+          </div>
+        </div>
+      </details>
+
       <Modal
         isOpen={changeOpen}
         onClose={() => {
           if (!pending) setChangeOpen(false);
         }}
         disableClose={pending}
-        title={text("تسجيل تغيير مهني", "Log a professional change")}
+        title={text("تسجيل تغيير مهني", "Record a professional change")}
       >
-        <form className="p-5 space-y-3" onSubmit={saveChange}>
+        <form className="space-y-3 p-5" onSubmit={saveChange}>
           <label className="block">
             {text(
               "إيه اللي غيرته؟ ده سجل يدوي ومش نسخة CV جديدة.",
@@ -544,7 +648,7 @@ export default function ReportsPage() {
               required
               maxLength={5000}
               value={note}
-              onChange={(e) => setNote(e.target.value)}
+              onChange={(event) => setNote(event.target.value)}
             />
           </label>
           {saveError && <p role="alert">{saveError}</p>}
@@ -553,27 +657,28 @@ export default function ReportsPage() {
           </button>
         </form>
       </Modal>
+
       <Modal
         isOpen={detail !== null}
         onClose={() => setDetail(null)}
         title={
           detail === "cvs"
-            ? text("نسخ السيرة المحفوظة", "Persisted CV versions")
+            ? text("نسخ CV المحفوظة", "Persisted CV versions")
             : text(
                 "النشاط المحفوظ — النطاق المختار",
                 "Persisted activity — selected scope",
               )
         }
       >
-        <div className="p-5 space-y-4">
+        <div className="space-y-4 p-5">
           {detail === "cvs" ? (
-            data.cvs.length ? (
-              data.cvs.map((c) => (
-                <article key={c.id}>
-                  <strong>CV v{number(c.versionNumber)}</strong>
+            reportData.cvs.length ? (
+              reportData.cvs.map((cv) => (
+                <article key={cv.id}>
+                  <strong>CV v{number(cv.versionNumber)}</strong>
                   <p>
-                    {c.originalName} —{" "}
-                    {new Date(c.uploadedAt).toLocaleString(locale)}
+                    {cv.originalName} —{" "}
+                    {new Date(cv.uploadedAt).toLocaleString(locale)}
                   </p>
                 </article>
               ))
@@ -581,38 +686,43 @@ export default function ReportsPage() {
               <p>{text("مفيش نسخ محفوظة.", "No persisted versions.")}</p>
             )
           ) : activities.length ? (
-            activities.map((a) => (
-              <article key={a.id} className="border-b border-border pb-3">
+            activities.map((activity) => (
+              <article
+                key={activity.id}
+                className="border-b border-border pb-3"
+              >
                 <strong>
-                  {a.legacyChange
+                  {activity.legacyChange
                     ? text(
-                        "سجل تغيير قديم — مش مراجعة ولا إثبات CV",
-                        "Legacy change log — not a review or CV evidence",
+                        "سجل قديم — مش مراجعة ولا دليل CV",
+                        "Legacy record — not a reflection or CV evidence",
                       )
-                    : a.type === "WEEKLY_REVIEW"
+                    : activity.type === "WEEKLY_REVIEW"
                       ? text("مراجعة أسبوعية", "Weekly reflection")
-                      : a.type === "USER_CHANGE"
+                      : activity.type === "USER_CHANGE"
                         ? text("تغيير مهني", "Professional change")
-                        : a.type}
+                        : activity.type}
                 </strong>
                 <p className="whitespace-pre-wrap break-words">
-                  {a.summary ||
-                    a.postTopic ||
-                    [a.contactName, a.companyName].filter(Boolean).join(" — ")}
+                  {activity.summary ||
+                    activity.postTopic ||
+                    [activity.contactName, activity.companyName]
+                      .filter(Boolean)
+                      .join(" — ")}
                 </p>
-                {a.postUrl && (
+                {activity.postUrl && (
                   <a
-                    className="underline break-all"
-                    href={a.postUrl}
+                    className="break-all underline"
+                    href={activity.postUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    {a.postUrl}
+                    {activity.postUrl}
                   </a>
                 )}
                 <p className="text-xs">
-                  {text("الأسبوع", "Week")} {number(a.week)} —{" "}
-                  {new Date(a.createdAt).toLocaleString(locale)}
+                  {text("الأسبوع", "Week")} {number(activity.week)} —{" "}
+                  {new Date(activity.createdAt).toLocaleString(locale)}
                 </p>
               </article>
             ))
