@@ -108,6 +108,7 @@ export function KanbanView({
   onStageChange,
 }: KanbanViewProps) {
   const { t, locale } = useI18n();
+  const [mobileStage,setMobileStage]=useState<Stage>(()=>applications[0]?.stage??"APPLIED");
   const isRtl = locale === "ar";
   const navigate = useNavigate();
   const updateMutation = useUpdateApplication();
@@ -239,8 +240,11 @@ export function KanbanView({
 
   return (
     <div className="w-full select-none">
-      <div className="overflow-x-auto pb-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3.5 min-w-[900px] xl:min-w-0 items-start">
+      <nav aria-label={locale==="ar"?"مراحل طلباتك":"Application stages"} className="mb-3 grid grid-cols-5 gap-1 rounded-xl border border-border bg-surface p-1 md:hidden">
+        {COLUMNS.map(c=><button key={c.stage} type="button" aria-pressed={mobileStage===c.stage} onClick={()=>setMobileStage(c.stage)} className={`flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] ${mobileStage===c.stage?'bg-neutral-900 font-bold text-white dark:bg-white dark:text-neutral-900':'text-text-secondary'}`}><span className="text-base font-bold tabular-nums">{applications.filter(a=>a.stage===c.stage).length}</span><span className="max-w-full truncate">{t(`applications.${c.label}`)}</span></button>)}
+      </nav>
+      <div className="min-w-0 pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-3.5 min-w-0 items-start">
           {COLUMNS.map((col) => {
             const label = t(`applications.${col.label}`);
             const colApps = applications.filter(
@@ -255,7 +259,7 @@ export function KanbanView({
                 onDragOver={(e) => handleDragOver(e, col.stage)}
                 onDragLeave={(e) => handleDragLeave(e, col.stage)}
                 onDrop={(e) => handleDrop(e, col.stage)}
-                className={`h-fit max-h-[calc(100dvh-13rem)] flex flex-col rounded-2xl border border-neutral-200/90 bg-neutral-100/80 dark:border-neutral-800 dark:bg-neutral-900/80 p-2.5 shadow-2xs transition-all duration-200 ${
+                className={`${mobileStage===col.stage?"flex":"hidden"} md:flex h-fit md:max-h-[calc(100dvh-13rem)] flex-col rounded-2xl border border-neutral-200/90 bg-neutral-100/80 dark:border-neutral-800 dark:bg-neutral-900/80 p-2.5 shadow-2xs transition-all duration-200 ${
                   isColumnTarget
                     ? "ring-2 ring-neutral-400 dark:ring-neutral-500 shadow-sm"
                     : ""
@@ -284,7 +288,7 @@ export function KanbanView({
                 </div>
 
                 {/* Cards Container & Drop Zone */}
-                <div className="space-y-2 flex flex-col overflow-y-auto">
+                <div className="space-y-2 flex flex-col md:overflow-y-auto">
                   {colApps.length === 0 ? (
                     <div
                       className={`py-5 px-3 rounded-xl border border-dashed text-center transition-all ${
@@ -314,13 +318,13 @@ export function KanbanView({
                                 toggleCardExpanded(app.id);
                               }
                             }}
-                            className={`p-2.5 rounded-xl border shadow-xs transition-all duration-150 group cursor-grab active:cursor-grabbing hover:shadow-sm ${getApplicationCardColor(app)}`}
+                            className={`p-3.5 md:p-2.5 rounded-xl border shadow-xs transition-all duration-150 group cursor-grab active:cursor-grabbing hover:shadow-sm ${getApplicationCardColor(app)}`}
                           >
                             {/* Line 1: Grip + Company Name + CV Version + Edit Pencil + Chevron */}
                             <div className="flex items-center justify-between gap-1.5">
                               <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                <GripVerticalIcon className="w-3.5 h-3.5 text-neutral-300 dark:text-neutral-600 group-hover:text-neutral-500 dark:group-hover:text-neutral-400 transition-colors shrink-0" />
-                                <span className="font-bold text-xs text-neutral-900 dark:text-neutral-100 truncate">
+                                <GripVerticalIcon className="hidden md:block w-3.5 h-3.5 text-neutral-300 dark:text-neutral-600 group-hover:text-neutral-500 dark:group-hover:text-neutral-400 transition-colors shrink-0" />
+                                <span className="font-bold text-sm md:text-xs text-neutral-900 dark:text-neutral-100 truncate">
                                   {app.companyName}
                                 </span>
                                 {appCvVersionMap && (

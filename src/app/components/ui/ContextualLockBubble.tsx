@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Lock, X, ListChecks } from "lucide-react";
 import { useI18n } from "../../i18n";
 
@@ -24,13 +25,16 @@ export function ContextualLockBubble({
   className = "",
 }: ContextualLockBubbleProps) {
   const { t } = useI18n();
+  const anchorRef = useRef<HTMLSpanElement>(null);
+  const [position,setPosition]=useState({top:0,left:0});
+  useLayoutEffect(()=>{if(!isOpen)return;const place=()=>{const r=anchorRef.current?.parentElement?.getBoundingClientRect();if(!r)return;const width=Math.min(320,innerWidth-24),height=bubbleRef.current?.offsetHeight??180;const rtl=document.documentElement.dir==="rtl";setPosition({left:Math.max(12,Math.min(rtl?r.left-width-10:r.right+10,innerWidth-width-12)),top:Math.max(12,Math.min(placement==="bottom"?r.bottom+8:placement==="top"?r.top-height-8:r.top,innerHeight-height-12))});};place();window.addEventListener("resize",place);window.addEventListener("scroll",place,true);return()=>{window.removeEventListener("resize",place);window.removeEventListener("scroll",place,true);};},[isOpen,placement]);
   const bubbleRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
 
     function handleClickOutside(event: MouseEvent) {
-      if (bubbleRef.current && !bubbleRef.current.contains(event.target as Node)) {
+      if (bubbleRef.current && !bubbleRef.current.contains(event.target as Node) && !anchorRef.current?.parentElement?.contains(event.target as Node)) {
         onClose();
       }
     }
@@ -49,31 +53,16 @@ export function ContextualLockBubble({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
 
-  // Placement styling for RTL / LTR
-  let placementClasses = "";
-  let arrowClasses = "";
 
-  if (placement === "inline-end") {
-    // In RTL, inline-end is to the left of the element
-    placementClasses = "start-full top-1/2 -translate-y-1/2 ms-2.5";
-    arrowClasses = "end-full top-1/2 -translate-y-1/2 border-y-transparent border-s-transparent border-e-surface";
-  } else if (placement === "bottom") {
-    placementClasses = "top-full start-1/2 -translate-x-1/2 rtl:translate-x-1/2 mt-2";
-    arrowClasses = "bottom-full start-1/2 -translate-x-1/2 rtl:translate-x-1/2 border-x-transparent border-t-transparent border-b-surface";
-  } else {
-    placementClasses = "bottom-full start-1/2 -translate-x-1/2 rtl:translate-x-1/2 mb-2";
-    arrowClasses = "top-full start-1/2 -translate-x-1/2 rtl:translate-x-1/2 border-x-transparent border-b-transparent border-t-surface";
-  }
-
-  return (
+  return <> <span ref={anchorRef} hidden />{isOpen && createPortal(
     <div
       ref={bubbleRef}
       role="dialog"
       aria-modal="false"
       aria-label={title || t("journey.lockedBadge")}
-      className={`absolute z-[100] w-72 sm:w-80 rounded-2xl border border-amber-300/80 bg-surface p-4 shadow-xl text-start transition-all animate-in fade-in zoom-in-95 dark:border-amber-700/80 dark:bg-neutral-900 ${placementClasses} ${className}`}
+      style={{...position,width:"min(320px, calc(100vw - 24px))"}}
+      className={`fixed z-[12030] rounded-2xl border border-amber-300/80 bg-surface p-4 shadow-xl text-start transition-all animate-in fade-in zoom-in-95 dark:border-amber-700/80 dark:bg-neutral-900 ${className}`}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
@@ -116,7 +105,6 @@ export function ContextualLockBubble({
           </button>
         </div>
       )}
-    </div>
-  );
+    </div>, document.body)} </>;
 }
 

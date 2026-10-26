@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useAuth } from "../../auth/store/authStore";
 import { useMembersProgress } from "../hooks/useMembersProgress";
 import { useRecentMemberProgress } from "../hooks/useRecentMemberProgress";
@@ -11,7 +11,7 @@ import { useI18n } from "../../../i18n";
 import { useJourneyState } from "../../journey/api/journeyApi";
 import { canAccessGroupSection } from "../../journey/lib/journey-policies";
 import { LockedStateView } from "../../../components/ui/LockedStateView";
-import { FeatureTour } from "../../../components/FeatureTour";
+import { FeatureTour, FeatureTourPending } from "../../../components/FeatureTour";
 import { GROUP_TOUR } from "../../journey/lib/week-one-tours";
 import { openJourneyTasksPanel } from "../../../components/journeyTasksPanelEvents";
 
@@ -26,7 +26,7 @@ export default function MembersProgressPage() {
 
   if (journeyLoading) {
     return (
-      <div className="flex min-h-56 items-center justify-center" role="status">
+      <div className="flex min-h-56 items-center justify-center" role="status"><FeatureTourPending feature="groups-week1-v1" />
         <SpinnerIcon className="h-6 w-6 animate-spin text-neutral-400" />
       </div>
     );
@@ -74,7 +74,8 @@ function MembersProgressContent() {
   const activity = useRecentMemberProgress(50);
 
   return (
-    <section className="space-y-8 animate-in fade-in duration-200">
+    <section className="space-y-5 sm:space-y-8">
+      {loading && <FeatureTourPending feature="groups-week1-v1" />}
       <header className="border-b border-border pb-7">
         <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-4xl">
           {t("members.title")}
@@ -85,7 +86,7 @@ function MembersProgressContent() {
       </header>
 
       <FeatureTour feature="groups-week1-v1" enabled={!loading && !error && members.length > 0} steps={GROUP_TOUR} finishAr="افتح إرشاد السيرة" finishEn="Open CV guide" onFinish={(skipped,fromTarget) => {if(!skipped && !fromTarget) navigate('/professional-development?guidance=INSIGHT_TASK_0_CV_BASE');}} />
-      <Link data-guide="group-cv-guidance" to="/professional-development?guidance=INSIGHT_TASK_0_CV_BASE" className="block rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">{t("common.navProfessionalDevelopment")} · {user?.role === "ADMIN" ? "CV" : "إرشاد تحسين السيرة: مهاراتك، الحل، والأثر"} ↗</Link>
+
       <section data-guide="group-activity" aria-labelledby="recent-activity-heading" className="space-y-3">
         <header className="flex items-end justify-between border-b border-border pb-3">
           <div>

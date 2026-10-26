@@ -178,7 +178,7 @@ export function ChangeLab({
             </select>
           </label>
         )}
-        <div className="mx-auto grid max-w-3xl gap-5 sm:grid-cols-2">
+        <div className="mx-auto grid max-w-3xl grid-cols-2 gap-3 sm:gap-5">
           {[previous, selected]
             .filter((p): p is NonNullable<typeof selected> => Boolean(p))
             .map((p) => (
@@ -209,13 +209,13 @@ export function ChangeLab({
                     setOpenedId(p.id);
                     setPage(0);
                   }}
-                  className="mt-5 flex min-h-44 w-full flex-col justify-end overflow-hidden rounded-xl border border-border bg-surface p-2 text-center transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
+                  className="mt-5 flex min-h-32 sm:min-h-44 w-full flex-col justify-end overflow-hidden rounded-xl border border-border bg-surface p-2 text-center transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
                 >
-                  <strong className="text-3xl font-bold tabular-nums">
+                  <strong className="text-2xl sm:text-3xl font-bold tabular-nums">
                     {number(p.metrics.logged)}
                   </strong>
                   <span
-                    className="mt-3 flex h-32 w-full items-end overflow-hidden rounded-lg bg-neutral-50 dark:bg-neutral-900/50"
+                    className="mt-3 flex h-20 sm:h-32 w-full items-end overflow-hidden rounded-lg bg-neutral-50 dark:bg-neutral-900/50"
                     aria-hidden="true"
                   >
                     <span
@@ -246,7 +246,7 @@ export function ChangeLab({
               </article>
             ))}
           {!previous && (
-            <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border p-6 text-center">
+            <div className="flex min-h-44 sm:min-h-72 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border p-6 text-center">
               <span className="rounded-full bg-amber-50 p-3 text-amber-800 dark:bg-amber-950 dark:text-amber-200">
                 {access.freeChanges ? (
                   <Clock3 className="h-5 w-5" />

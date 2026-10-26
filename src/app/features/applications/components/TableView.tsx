@@ -42,19 +42,7 @@ export function TableView({ applications, appCvVersionMap }: TableViewProps) {
         id: appId,
         updates: { stage: nextStage },
       });
-      if (nextStage === "INTERVIEW") {
-        toast.success(
-          locale === "ar"
-            ? "🎉 خطوة عظيمة! تم الانتقال لمرحلة المقابلة — مساحة التحضير والملاحظات بالأسفل جاهزة لمساعدتك!"
-            : "🎉 Fantastic milestone! Interview stage confirmed!",
-        );
-      } else {
-        toast.success(
-          locale === "ar"
-            ? "تم تحديث مرحلة الطلب بنجاح"
-            : "Application stage updated successfully",
-        );
-      }
+
     } catch {
       toast.error(
         locale === "ar" ? "تعذر تحديث مرحلة الطلب" : "Failed to update application stage",
@@ -72,9 +60,7 @@ export function TableView({ applications, appCvVersionMap }: TableViewProps) {
 
     try {
       await deleteMutation.mutateAsync(appId);
-      toast.success(
-        locale === "ar" ? "تم حذف الطلب بنجاح" : "Application deleted successfully",
-      );
+
     } catch {
       toast.error(
         locale === "ar" ? "تعذر حذف الطلب" : "Failed to delete application",

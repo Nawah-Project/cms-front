@@ -60,7 +60,9 @@ export function GuidanceReadingModal({
   const ar = locale === "ar";
   const text = (a: string, e: string) => (ar ? a : e);
   const dialogRef = useRef<HTMLDivElement>(null);
-  useDialogFocus(dialogRef, true, onClose);
+  const mustComplete = Boolean(cvUpdate && !cvUpdate.completed && !post.isRead);
+  const attemptClose = () => { if(mustComplete) { setUploadError(text("حدّث سيرتك وأكّد إكمال الإرشاد للمتابعة.","Upload your revised CV and confirm completion to continue.")); document.getElementById("guidance-cv-upload")?.scrollIntoView({block:"center"}); } else onClose(); };
+  useDialogFocus(dialogRef, true, attemptClose);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [copied, setCopied] = useState(false);
@@ -73,9 +75,7 @@ export function GuidanceReadingModal({
       await navigator.clipboard.writeText(post.promptTemplate);
       trackUxEvent("prompt_copied");
       setCopied(true);
-      toast.success(
-        text("تم نسخ موجه الذكاء الاصطناعي بنجاح", "AI prompt copied"),
-      );
+
       setTimeout(() => setCopied(false), 2500);
     } catch {
       toast.error(
@@ -93,9 +93,7 @@ export function GuidanceReadingModal({
     try {
       await onMarkRead(post.id);
       setIsRead(true);
-      toast.success(
-        text("تم حفظ قراءة الإرشادات بنجاح / Reading saved", "Reading saved"),
-      );
+
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -135,7 +133,7 @@ export function GuidanceReadingModal({
       aria-labelledby="guidance-modal-title"
       className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-950/65 backdrop-blur-xs p-3.5 sm:p-5"
     >
-      <div className="relative flex flex-col w-full max-w-2xl max-h-[90dvh] rounded-2xl border border-border bg-surface shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative flex flex-col w-full max-w-2xl max-h-[90dvh] rounded-2xl border border-border bg-surface shadow-2xl overflow-hidden ">
         {/* 1. Sticky Header */}
         <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-surface/95 px-5 py-4 backdrop-blur-md">
           <div className="min-w-0 flex-1">
@@ -166,9 +164,10 @@ export function GuidanceReadingModal({
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={attemptClose}
+            aria-disabled={mustComplete}
             aria-label={text("إغلاق", "Close")}
-            className="rounded-lg p-2 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 transition-colors"
+            className="rounded-lg p-2 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 transition-colors"
           >
             <CloseIcon className="h-5 w-5" />
           </button>
@@ -176,21 +175,11 @@ export function GuidanceReadingModal({
 
         {/* 2. Scrollable Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-7 py-6 space-y-6">
-          {cvUpdate && <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/30">
-            <h3 className="font-semibold">{text("طبّق الإرشاد وارفع نسختك الجديدة هنا", "Apply the guide and upload your revised CV here")}</h3>
-            <p className="mt-2 text-sm leading-6 text-text-secondary">{text("الإكمال مرتبط برفع نسخة معدّلة بعد المهمة صفر. رفع نفس الملف الحالي لا يبدأ فترة جديدة.", "Completion requires a revised file uploaded after Task 0. Re-uploading the same file does not start a new period.")}</p>
-            <label className="button-secondary mt-3 inline-flex min-h-11 cursor-pointer items-center">{uploading ? text("جارٍ رفع السيرة…", "Uploading CV…") : text("رفع الـCV المحدّث", "Upload revised CV")}<input type="file" accept="application/pdf,.pdf" disabled={uploading || saving} className="sr-only" aria-label={text("رفع الـCV المحدّث", "Upload revised CV")} onChange={async event => {
-              const file = event.target.files?.[0];event.target.value="";if(!file)return;setUploadError("");
-              if(!isPdf(file)||file.size>MAX_CV_BYTES){setUploadError(text(`ارفع ملف PDF بحد أقصى ${MAX_CV_SIZE_MB} ميغابايت.`,`Upload a PDF up to ${MAX_CV_SIZE_MB} MB.`));return;}
-              setUploading(true);try{await cvUpdate.onUpload(file);toast.success(text("اترفعت النسخة المحدّثة. تقدر تؤكد الإكمال دلوقتي.","Revised CV uploaded. You can confirm completion now."));}catch(error){setUploadError(error instanceof Error?error.message:text("تعذر رفع الملف، حاول تاني.","Upload failed; please retry."));}finally{setUploading(false);}
-            }}/></label>
-            {cvUpdate.canComplete && <p role="status" className="mt-3 text-sm font-semibold text-emerald-800 dark:text-emerald-300">{text("✓ فيه نسخة محدّثة محفوظة، جاهزة لتأكيد الإكمال.", "✓ A revised CV is saved and ready for completion.")}</p>}
-            {uploadError && <p role="alert" className="mt-3 text-sm text-rose-700 dark:text-rose-300">{uploadError}</p>}
-          </section>}
+
           {/* Main Content */}
           <div className="space-y-3">
             <div
-              className="text-sm sm:text-[15px] leading-7 text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap break-words"
+              className="text-sm sm:text-[15px] leading-7 text-neutral-800 dark:text-neutral-200 break-words [&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:font-bold [&_h3]:text-neutral-950 [&_p]:my-3 [&_li]:my-2 [&_ul]:list-disc [&_ul]:ps-5"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
           </div>
@@ -198,7 +187,7 @@ export function GuidanceReadingModal({
           {/* Video Resources Section */}
           {videoResources.length > 0 && (
             <div className="space-y-3 pt-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-700 flex items-center gap-1.5">
                 <PlayCircleIcon className="h-4 w-4 text-rose-500" />
                 <span>
                   {text(
@@ -242,7 +231,7 @@ export function GuidanceReadingModal({
                         </div>
                       ) : (
                         <div className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3">
-                          <PlayCircleIcon className="h-8 w-8 text-neutral-500" />
+                          <PlayCircleIcon className="h-8 w-8 text-neutral-700" />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
                               {video.title}
@@ -269,7 +258,7 @@ export function GuidanceReadingModal({
           {/* Other Resources Section */}
           {otherResources.length > 0 && (
             <div className="space-y-2.5 pt-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-700">
                 {text("المصادر والمراجع المقترحة", "Suggested resources")}
               </h3>
               <div className="grid gap-2 sm:grid-cols-2">
@@ -290,13 +279,13 @@ export function GuidanceReadingModal({
                               ? text("مستند", "Document")
                               : text("مقال", "Article")}
                         </span>
-                        <ExternalLinkIcon className="h-3.5 w-3.5 text-neutral-400 group-hover:text-neutral-700 dark:group-hover:text-neutral-200" />
+                        <ExternalLinkIcon className="h-3.5 w-3.5 text-neutral-600 group-hover:text-neutral-700 dark:group-hover:text-neutral-200" />
                       </div>
                       <p className="mt-1.5 text-xs font-bold text-neutral-900 dark:text-neutral-100 group-hover:text-info-strong line-clamp-1">
                         {res.title}
                       </p>
                       {res.description && (
-                        <p className="mt-1 text-[11px] text-neutral-500 line-clamp-2 leading-relaxed">
+                        <p className="mt-1 text-[11px] text-neutral-700 line-clamp-2 leading-relaxed">
                           {res.description}
                         </p>
                       )}
@@ -350,7 +339,7 @@ export function GuidanceReadingModal({
                   {post.promptTemplate}
                 </pre>
               </div>
-              <p className="text-[11px] text-neutral-400">
+              <p className="text-[11px] text-neutral-600">
                 {text(
                   "انسخ البرومبت واستخدمه مع بياناتك في أداة AI تختارها، وراجع النتيجة قبل استخدامها.",
                   "Copy the prompt into your preferred AI tool, add your context, and review the result before using it.",
@@ -358,19 +347,31 @@ export function GuidanceReadingModal({
               </p>
             </div>
           )}
+          {cvUpdate && <section id="guidance-cv-upload" className="rounded-xl border border-emerald-600 bg-emerald-100 p-4 dark:border-emerald-800 dark:bg-emerald-950/30">
+            <h3 className="font-semibold">{text("طبّق الإرشاد وارفع نسختك الجديدة هنا", "Apply the guide and upload your revised CV here")}</h3>
+            <p className="mt-2 text-sm leading-6 text-emerald-950">{text("الإكمال مرتبط برفع نسخة معدّلة بعد المهمة صفر. رفع نفس الملف الحالي لا يبدأ فترة جديدة.", "Completion requires a revised file uploaded after Task 0. Re-uploading the same file does not start a new period.")}</p>
+            <label className="button-secondary mt-3 inline-flex min-h-11 cursor-pointer items-center">{uploading ? text("جارٍ رفع السيرة…", "Uploading CV…") : text("رفع الـCV المحدّث", "Upload revised CV")}<input type="file" accept="application/pdf,.pdf" disabled={uploading || saving} className="sr-only" aria-label={text("رفع الـCV المحدّث", "Upload revised CV")} onChange={async event => {
+              const file = event.target.files?.[0];event.target.value="";if(!file)return;setUploadError("");
+              if(!isPdf(file)||file.size>MAX_CV_BYTES){setUploadError(text(`ارفع ملف PDF بحد أقصى ${MAX_CV_SIZE_MB} ميغابايت.`,`Upload a PDF up to ${MAX_CV_SIZE_MB} MB.`));return;}
+              setUploading(true);try{await cvUpdate.onUpload(file);}catch(error){setUploadError(error instanceof Error?error.message:text("تعذر رفع الملف، حاول تاني.","Upload failed; please retry."));}finally{setUploading(false);}
+            }}/></label>
+            {cvUpdate.canComplete && <p role="status" className="mt-3 text-sm font-semibold text-emerald-800 dark:text-emerald-300">{text("✓ فيه نسخة محدّثة محفوظة، جاهزة لتأكيد الإكمال.", "✓ A revised CV is saved and ready for completion.")}</p>}
+            {uploadError && <p role="alert" className="mt-3 text-sm text-rose-700 dark:text-rose-300">{uploadError}</p>}
+          </section>}
         </div>
 
         {/* 3. Sticky Footer */}
         <footer className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface/95 px-5 py-3.5 backdrop-blur-md">
           <button
             type="button"
-            onClick={onClose}
-            className="button-ghost px-4 py-2 text-xs text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
+            onClick={attemptClose}
+            disabled={mustComplete}
+            className="button-ghost px-4 py-2 text-xs text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-200"
           >
             {text("إغلاق", "Close")}
           </button>
 
-          {cvUpdate && isRead && <Link to="/reports" onClick={onClose} className="button-primary min-h-11">{text("افتح تحليل الأداء", "Open performance analytics")}</Link>}
+          {cvUpdate && isRead && <Link to="/reports" onClick={attemptClose} className="button-primary min-h-11">{text("افتح تحليل الأداء", "Open performance analytics")}</Link>}
           <button
             type="button"
             onClick={handleCompleteReading}

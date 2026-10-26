@@ -380,3 +380,6 @@ textarea {
   outline: 2px solid #737780;
   outline-offset: 2px;
 }
+
+/* Keep the journey handle from covering the focused content during a feature guide. */
+body:has([data-feature-tour-overlay]) [data-tour-step="journey-drawer-handle"] { visibility: hidden; }

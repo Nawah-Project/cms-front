@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { profileApi, type CvHistoryItem } from "../features/profile/profileApi";
 import { FeatureTour, markFeatureTourSeen } from "../components/FeatureTour";
 import { CV_FILTER_TOUR, EXPLORER_TOUR } from "../features/journey/lib/week-one-tours";
+import { AnchoredSelect } from "../components/ui/AnchoredSelect";
 import { Modal } from "../components/ui/Modal";
 import { EmptyState } from "../components/EmptyState";
 import {
@@ -304,13 +305,7 @@ export default function ApplicationsPage() {
           outcome: nextOutcome,
         },
       });
-      if (newStage === "INTERVIEW") {
-        toast.success(
-          locale === "ar"
-            ? "🎉 خطوة عظيمة! تم الانتقال لمرحلة المقابلة — مساحة التحضير والملاحظات جاهزة لمساعدتك!"
-            : "🎉 Fantastic milestone! Interview stage confirmed!",
-        );
-      } else if (newStage === "CLOSED" && nextOutcome === "ACCEPTED") {
+      if (newStage === "CLOSED" && nextOutcome === "ACCEPTED") {
         const app = rawApplications.find((a) => a.id === appId);
         dispatchMilestoneCelebration({
           title:
@@ -337,8 +332,6 @@ export default function ApplicationsPage() {
               : "View Performance Analytics",
           ctaRoute: "/reports",
         });
-      } else {
-        toast.success(t("applications.applicationUpdated"));
       }
       trackUxEvent("application_stage_updated", { appId, stage: newStage });
 
@@ -438,7 +431,7 @@ export default function ApplicationsPage() {
       {/* Page Header */}
       <div className="flex flex-col gap-4 border-b border-stone-300/80 pb-7 sm:flex-row sm:items-end sm:justify-between dark:border-neutral-800">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-100 sm:text-4xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-100 sm:text-4xl">
             {t("applications.title")}
           </h1>
           <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
@@ -509,22 +502,7 @@ export default function ApplicationsPage() {
             {/* Preparation Period Dropdown - Hidden in Week 0 or when only 1 CV version exists */}
             {journeyData?.features.analytics && maxCvVersion > 1 && (
               <div className="flex items-center gap-1.5">
-                <select
-                  data-guide="cv-filter"
-                  aria-label={locale === "ar" ? "فلتر نسخة السيرة والتغيير" : "CV and change filter"}
-                  value={currentPeriod}
-                  onChange={(e) => updatePeriodFilter(e.target.value)}
-                  className="field-control text-xs py-1.5 px-2.5 rounded-xl bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 font-medium"
-                >
-                  <option value="ALL">
-                    {locale === "ar" ? "كل النسخ والتغييرات" : "All Periods"}
-                  </option>
-                  {Array.from({ length: Math.max(1, maxCvVersion) }, (_, i) => i + 1).map((v) => (
-                    <option key={v} value={`v${v}`}>
-                      {locale === "ar" ? `CV ${v-1}${v===maxCvVersion?" — الحالية":v===1?" — البداية":""}` : `CV ${v-1}${v===maxCvVersion?" — current":v===1?" — initial":""}`}
-                    </option>
-                  ))}
-                </select>
+                <AnchoredSelect guide="cv-filter" label={locale === "ar" ? "فلتر نسخة السيرة والتغيير" : "CV and change filter"} value={currentPeriod} onChange={updatePeriodFilter} options={[{value:"ALL",label:locale==="ar"?"كل النسخ والتغييرات":"All versions"},...Array.from({length:maxCvVersion},(_,i)=>({value:`v${i+1}`,label:`CV ${i}${i+1===maxCvVersion?(locale==="ar"?" — الحالية":" — current"):i===0?(locale==="ar"?" — البداية":" — initial"):""}`}))]} />
               </div>
             )}
           </div>
@@ -547,7 +525,7 @@ export default function ApplicationsPage() {
             </form>
 
             {/* View Switcher */}
-            <div className="inline-flex w-fit shrink-0 items-center gap-1 rounded-xl border border-neutral-300 bg-white p-1 shadow-2xs dark:border-neutral-700 dark:bg-neutral-900">
+            <div className="hidden md:inline-flex w-fit shrink-0 items-center gap-1 rounded-xl border border-neutral-300 bg-white p-1 shadow-2xs dark:border-neutral-700 dark:bg-neutral-900">
               <button
                 type="button"
                 onClick={() => handleViewModeChange("kanban")}
@@ -746,10 +724,10 @@ export default function ApplicationsPage() {
           </div>
 
           {viewMode === "table" && canUseTableView ? (
-            <TableView
+            <><div className="md:hidden"><KanbanView applications={applications} onStageChange={handleKanbanStageChange} appCvVersionMap={appCvVersionMap} /></div><div className="hidden md:block"><TableView
               applications={applications}
               appCvVersionMap={appCvVersionMap}
-            />
+            /></div></>
           ) : (
             <KanbanView
               applications={applications}

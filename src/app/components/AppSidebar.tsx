@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import {
   ChevronDown,
   Eye,
@@ -281,6 +281,7 @@ export function AppSidebar({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { t, locale, setLocale } = useI18n();
   const logout = useLogout();
@@ -480,7 +481,7 @@ export function AppSidebar({
               ? t("common.navProfessionalDevelopment")
               : t("common.navMembersProgress");
           const lockRequirement =
-            item.to === "/reports" ? (locale === "ar" ? "أكمل المهمة صفر، ثم طبّق إرشاد السيرة وارفع النسخة المحدّثة لفتح التحليل." : "Complete Task 0, apply the CV guidance and upload your revised CV to unlock analytics.") : item.to === "/professional-development"
+            item.to === "/reports" ? (journeyData?.cvFoundation?.unlocked ? (locale === "ar" ? "أكمل إرشاد السيرة: ارفع النسخة المحدّثة من داخله وأكّد الإكمال لفتح التحليل." : "Upload your revised CV inside its guide and confirm completion to unlock analytics.") : (locale === "ar" ? "أكمل المهمة صفر أولًا. خطوتك الحالية موجودة في درج المهام." : "Complete Task 0 first. Your current step is in the tasks drawer.")) : item.to === "/professional-development"
               ? t("journey.profDevLockedTooltip")
               : t("journey.groupLockedTooltip");
 
@@ -505,11 +506,11 @@ export function AppSidebar({
                 onClose={() => setOpenLockedBubbleKey(null)}
                 title={lockTitle}
                 requirement={lockRequirement}
-                ctaLabel={t("journey.panelTitle")}
+                ctaLabel={item.to==="/reports" && journeyData?.cvFoundation?.unlocked ? (locale==="ar"?"افتح إرشاد السيرة":"Open CV guide") : t("journey.panelTitle")}
                 onCtaClick={() => {
                   if (mobile) setMobileOpen(false);
                   setOpenLockedBubbleKey(null);
-                  openJourneyTasksPanel();
+                  if(item.to==="/reports" && journeyData?.cvFoundation?.unlocked) navigate("/professional-development?guidance=INSIGHT_TASK_0_CV_BASE"); else openJourneyTasksPanel();
                 }}
                 placement={mobile ? "bottom" : "inline-end"}
               />

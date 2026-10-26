@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router";
+import { useBlocker, useSearchParams } from "react-router";
 import { Lock, Sparkles, Unlock } from "lucide-react";
 import { useAuth } from "../../auth/store/authStore";
 import { PageHeading } from "../../../components/ui/PageHeading";
@@ -50,6 +50,9 @@ export default function GuidancePage() {
   const [selectedItem, setSelectedItem] = useState<UnifiedGuidanceItem | null>(
     null,
   );
+  const mustCompleteCv = Boolean(selectedItem?.code === "INSIGHT_TASK_0_CV_BASE" && user?.role!=="ADMIN" && !journeyData?.cvFoundation?.completed);
+  const blocker = useBlocker(mustCompleteCv);
+  useEffect(()=>{if(blocker.state==="blocked")blocker.reset();},[blocker]);
   const loadGuidanceFromApi = useCallback(async () => {
     setDbLoading(true);
     setDbError(false);
@@ -385,7 +388,7 @@ export default function GuidancePage() {
       {selectedItem && (
         <GuidanceReadingModal
           post={selectedItem}
-          onClose={() => setSelectedItem(null)}
+          onClose={() => {if(!mustCompleteCv)setSelectedItem(null);}}
           onMarkRead={handleMarkRead}
           cvUpdate={selectedItem.code === "INSIGHT_TASK_0_CV_BASE" && user?.role !== "ADMIN" ? {
             canComplete: Boolean(journeyData?.cvFoundation?.canComplete),

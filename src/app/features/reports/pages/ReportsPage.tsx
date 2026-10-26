@@ -1,3 +1,4 @@
+import { FeatureTourPending } from "../../../components/FeatureTour";
 import { createContext, useContext, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -352,7 +353,7 @@ export default function ReportsPage() {
 
   const reportErrorDetails = query.error && typeof query.error === "object" && "details" in query.error ? query.error.details as {code?:string;guidanceUnlocked?:boolean} : undefined;
   if (!preview && reportErrorDetails?.code === "CV_FOUNDATION_REQUIRED") return <section className="rounded-2xl border border-border bg-surface p-6"><h1 className="text-xl font-bold">{text("تحليل الأداء لسه مقفول", "Performance analytics is locked")}</h1><p className="mt-3 text-sm leading-6 text-text-secondary">{reportErrorDetails.guidanceUnlocked ? text("طبّق إرشاد تحسين السيرة وارفع نسخة محدّثة من داخله، ثم أكّد الإكمال عشان تفتح التحليل.", "Apply the CV guidance, upload a revised file inside it, then confirm completion to unlock analytics.") : text("أكمل أول 5 طلبات في المهمة صفر. بعدها هتظهر لك الخطوة اللي تفتح التحليل.", "Complete the first five applications in Task 0 to reveal the next analytics prerequisite.")}</p><Link className="button-primary mt-4 inline-flex min-h-11 items-center" to={reportErrorDetails.guidanceUnlocked?"/professional-development?guidance=INSIGHT_TASK_0_CV_BASE":"/applications"}>{reportErrorDetails.guidanceUnlocked?text("افتح إرشاد السيرة", "Open CV guidance"):text("كمّل مهمتك الحالية", "Continue your current quest")}</Link></section>;
-  if (!preview && query.isPending) return <div role="status" className="rounded-xl bg-surface p-6">{text("بنحمّل تقاريرك…", "Loading your reports…")}</div>;
+  if (!preview && query.isPending) return <div role="status" className="rounded-xl bg-surface p-6"><FeatureTourPending feature="analytics-week1-v1" />{text("بنحمّل تقاريرك…", "Loading your reports…")}</div>;
   if (!preview && (query.isError || !report)) return <div role="alert" className="rounded-2xl border border-border bg-surface p-6"><p>{text("تعذر تحميل التقارير.", "Could not load your reports.")}</p><button className="button-primary mt-3 min-h-10" onClick={() => void query.refetch()}>{text("حاول تاني", "Retry")}</button></div>;
   if (!report) return null;
   const selectedWeek = typeof scope === "number" ? scope : null;

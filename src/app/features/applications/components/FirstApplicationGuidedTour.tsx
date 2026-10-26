@@ -2,6 +2,7 @@ import React, {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
   useState,
   useRef,
   type ReactNode,
@@ -215,7 +216,7 @@ export function FirstApplicationGuidedTourProvider({
   // Determine if tour should start:
   // ONLY conditions: user logged in, profileComplete === true, and !localStorage.getItem(storageKey)
   // NEVER depend on applications.length or totalApplications!
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!enabled) {
       setIsTourActive(false);
       return;
@@ -238,6 +239,8 @@ export function FirstApplicationGuidedTourProvider({
     }
   }, [enabled, user?.id, storageKey, profile?.profileComplete]);
 
+  let preparing = false;
+  try { preparing = Boolean(enabled && user && profile === undefined && storageKey && localStorage.getItem(storageKey)!=="true"); } catch { /* No storage: skip automatic setup. */ }
   const completeTour = () => {
     if (storageKey) {
       try {
@@ -260,7 +263,7 @@ export function FirstApplicationGuidedTourProvider({
   };
 
   // Continuous requestAnimationFrame tracking loop
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isTourActive) {
       setTargetRect(null);
       return;
@@ -309,7 +312,7 @@ export function FirstApplicationGuidedTourProvider({
       animationFrameId = requestAnimationFrame(track);
     };
 
-    animationFrameId = requestAnimationFrame(track);
+    track();
     return () => cancelAnimationFrame(animationFrameId);
   }, [isTourActive, step]);
 
@@ -481,11 +484,12 @@ export function FirstApplicationGuidedTourProvider({
       }}
     >
       {children}
+      {preparing && typeof document!=="undefined" && createPortal(<div data-tour-pending className="fixed inset-0 z-[9989] bg-neutral-950/75"/>, document.body)}
 
       {isTourActive &&
         typeof document !== "undefined" &&
         createPortal(
-          <div className="fixed inset-0 w-screen h-dvh z-[9990] pointer-events-none select-none overflow-hidden">
+          <div className="fixed inset-0 w-full h-dvh z-[9990] pointer-events-none select-none overflow-hidden">
             {/* 4 Physical Backdrop Divs: Invisible hitboxes blocking clicks EXCEPT inside activeRect (z-[9990]) */}
             {activeRect ? (
               <>
@@ -581,7 +585,7 @@ export function FirstApplicationGuidedTourProvider({
                     "0 0 0 9999px rgba(9, 9, 11, 0.72), 0 0 12px rgba(16, 185, 129, 0.18)",
                   zIndex: 9991,
                 }}
-                className="ring-2 ring-emerald-400/35 pointer-events-none transition-all duration-150"
+                className="ring-2 ring-emerald-400/35 pointer-events-none"
               />
             )}
 
@@ -593,12 +597,12 @@ export function FirstApplicationGuidedTourProvider({
                 position: "fixed",
                 width: placement.width,
                 maxHeight: visibleViewport.height - 24,
-                overflowY: "auto",
+                overflowY: "auto", overflowX: "hidden", overflowWrap: "anywhere",
                 top: placement.top,
                 left: placement.left,
                 zIndex: 9999,
               }}
-              className="relative rounded-2xl border border-white/15 bg-neutral-900/95 px-4 py-3.5 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-200 pointer-events-auto"
+              className="relative rounded-2xl border border-white/15 bg-neutral-900/95 px-4 py-3.5 text-white shadow-2xl backdrop-blur-md  duration-200 pointer-events-auto"
             >
               {/* Attached Pointer Arrow */}
               <TourArrow dir={placement.arrowDir} offset={placement.arrowOffset} />

@@ -284,6 +284,7 @@ export function MemberProgressRow(props: MemberRowState) {
           </td>
         </tr>
         <tr
+          data-guide={isCurrentUser ? "group-own-detail" : undefined}
           className={
             expanded ? "bg-neutral-50/70 member-detail-enter" : "hidden"
           }
@@ -332,23 +333,12 @@ export function MemberProgressRow(props: MemberRowState) {
           onOpenProfile={onOpenProfile}
           controlsId={`member-details-${member.memberId}-mobile`}
         />
-        <LastUpdated value={member.lastUpdatedAt} />
+
       </div>
-      <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-        {STAGES.map((stage) => (
-          <div key={stage} className="min-w-0">
-            <p className="mb-1 inline-flex items-center gap-1.5 text-[11px] font-medium text-neutral-500">
-              <ProgressStageIcon stage={stage} />
-              {t(`applications.${stage === "applied" ? "submitted" : stage}`)}
-            </p>
-            <ProgressCount
-              stage={stage}
-              count={member.counts[stage] ?? 0}
-              highlightSuccess={member.hasAcceptedApplication}
-            />
-          </div>
-        ))}
+      <div className="mt-3 grid grid-cols-5 gap-1 rounded-xl bg-neutral-50 p-2 dark:bg-neutral-800/60">
+        {STAGES.map(stage=><div key={stage} className="flex min-w-0 flex-col items-center gap-1 text-center"><p className="flex min-h-8 items-center text-[10px] leading-4 text-neutral-600 dark:text-neutral-300">{t(`applications.${stage === "applied" ? "submitted" : stage}`)}</p><span className={`text-lg font-bold tabular-nums ${member.counts[stage]?"text-neutral-900 dark:text-white":"text-neutral-500"}`}>{member.counts[stage]??0}</span></div>)}
       </div>
+      <div className="mt-2 text-[10px] text-neutral-500"><LastUpdated value={member.lastUpdatedAt} /></div>
       <div
         id={`member-details-${member.memberId}-mobile`}
         hidden={!expanded}

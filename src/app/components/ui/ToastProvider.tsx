@@ -3,10 +3,13 @@ import React, {
   useCallback,
   useContext,
   useMemo,
+  useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { AlertCircle, Check, Info, AlertTriangle, X } from "lucide-react";
 
 export type ToastVariant = "success" | "error" | "info" | "warning";
@@ -20,6 +23,7 @@ export interface ToastOptions {
 interface ToastItem extends ToastOptions {
   id: string;
   count: number;
+  anchor?: {top:number;bottom:number;left:number;right:number};
 }
 
 export interface ToastContextValue {
@@ -37,12 +41,17 @@ export interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 const DEFAULT_TOAST_DURATION = 4000;
-const MAX_CONCURRENT_TOASTS = 3;
+const MAX_CONCURRENT_TOASTS = 1;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const anchorRef = useRef<ToastItem["anchor"]>(undefined);
+  useEffect(()=>{const capture=(event:Event)=>{const el=(event.target as HTMLElement)?.closest<HTMLElement>('button,a,input,select,textarea,[role="button"]');if(el){const r=el.getBoundingClientRect();anchorRef.current={top:r.top,bottom:r.bottom,left:r.left,right:r.right};}};document.addEventListener('pointerdown',capture,true);document.addEventListener('focusin',capture,true);return()=>{document.removeEventListener('pointerdown',capture,true);document.removeEventListener('focusin',capture,true);};},[]);
   const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
+  useLayoutEffect(()=>{
+    const place=()=>{for(const toast of toasts){const node=document.getElementById(`feedback-${toast.id}`);if(!node)continue;const r=node.getBoundingClientRect(),a=toast.anchor;const left=(a?(a.left+a.right)/2:innerWidth/2)-r.width/2;const top=a?(a.bottom+10+r.height>innerHeight-12?a.top-r.height-10:a.bottom+10):80;node.style.left=`${Math.max(12,Math.min(left,innerWidth-r.width-12))}px`;node.style.top=`${Math.max(12,Math.min(top,innerHeight-r.height-12))}px`;}};place();window.addEventListener('resize',place);return()=>window.removeEventListener('resize',place);
+  },[toasts]);
   const removeToast = useCallback((id: string) => {
     const existingTimer = timersRef.current.get(id);
     if (existingTimer) {
@@ -94,7 +103,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             ? prev.slice(prev.length - MAX_CONCURRENT_TOASTS + 1)
             : prev;
 
-        return [...trimmed, { id, message, variant, duration, count: 1 }];
+        return [...trimmed, { id, message, variant, duration, count: 1, anchor: anchorRef.current }];
       });
     },
     [removeToast],
@@ -139,24 +148,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <style>{`
-        @keyframes toastProgressAnim {
-          from { width: 100%; }
-          to { width: 0%; }
-        }
-      `}</style>
-      <div
-        aria-live="polite"
-        aria-atomic="true"
-        className="fixed bottom-8 start-5 lg:start-[17.5rem] z-[120] flex max-w-sm w-full flex-col gap-2.5 pointer-events-none px-4 sm:px-0"
-      >
+      {toasts.length>0 && typeof document!=="undefined" && createPortal(<div aria-live="polite" aria-atomic="true" className="pointer-events-none fixed inset-0 z-[12050]">
         {toasts.map((toast) => {
           let iconContainer = (
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-50 text-sky-600 dark:bg-sky-950/60 dark:text-sky-300">
               <Info className="h-4 w-4" />
             </div>
           );
-          let progressBarClass = "bg-sky-500";
+
 
           if (toast.variant === "success") {
             iconContainer = (
@@ -164,21 +163,21 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 <Check className="h-4 w-4" />
               </div>
             );
-            progressBarClass = "bg-emerald-500";
+
           } else if (toast.variant === "error") {
             iconContainer = (
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-300">
                 <AlertCircle className="h-4 w-4" />
               </div>
             );
-            progressBarClass = "bg-rose-500";
+
           } else if (toast.variant === "warning") {
             iconContainer = (
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-300">
                 <AlertTriangle className="h-4 w-4" />
               </div>
             );
-            progressBarClass = "bg-amber-500";
+
           }
 
           const durationMs = toast.duration || DEFAULT_TOAST_DURATION;
@@ -186,8 +185,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           return (
             <div
               key={toast.id}
-              role="status"
-              className="pointer-events-auto relative overflow-hidden flex items-start gap-3 rounded-2xl border border-border backdrop-blur-md bg-white/95 dark:bg-neutral-900/95 p-4 shadow-xl transition-all duration-200 animate-in fade-in slide-in-from-bottom-2"
+              role={toast.variant==="error"?"alert":"status"}
+              id={`feedback-${toast.id}`}
+              style={{position:"fixed",width:"min(320px, calc(100vw - 24px))",maxHeight:"min(180px, calc(100dvh - 24px))",overflowY:"auto",left:12,top:80}}
+              data-context-feedback
+              className="pointer-events-auto relative overflow-hidden flex items-start gap-3 rounded-xl border border-border backdrop-blur-md bg-white dark:bg-neutral-900/95 p-3 shadow-xl"
             >
               {iconContainer}
               <div className="flex-1 text-xs font-semibold text-neutral-900 dark:text-neutral-100 leading-relaxed pt-0.5 flex items-center justify-between gap-2">
@@ -207,19 +209,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 <X className="h-3.5 w-3.5" />
               </button>
 
-              {/* Thin auto-dismiss progress bar */}
-              <div className="absolute inset-x-0 bottom-0 h-0.5 bg-neutral-200/50 dark:bg-neutral-800/50 overflow-hidden">
-                <div
-                  className={`h-full opacity-60 ${progressBarClass}`}
-                  style={{
-                    animation: `toastProgressAnim ${durationMs}ms linear forwards`,
-                  }}
-                />
-              </div>
+
             </div>
           );
         })}
-      </div>
+      </div>,document.body)}
     </ToastContext.Provider>
   );
 }

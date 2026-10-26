@@ -84,10 +84,7 @@ export default function Layout() {
       journeyQueryKeys.state(),
     );
     const created = await createAppMutation.mutateAsync(data);
-    showToast({
-      message: t("applications.applicationCreated"),
-      variant: "success",
-    });
+
     trackUxEvent("application_created", { company: created.companyName });
 
     try {

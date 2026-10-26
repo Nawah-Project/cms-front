@@ -1,3 +1,4 @@
+import { AnchoredSelect } from "../../../components/ui/AnchoredSelect";
 import { useEffect, useId, useMemo, useState } from "react";
 import {
   Activity,
@@ -159,32 +160,16 @@ function ProgressChart({ report, admin }: { report: Report; admin: boolean }) {
         </span>
       </header>
       <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[16rem_minmax(0,1fr)]">
-        <div className="min-w-0">
-          <label className="block rounded-xl border border-border p-4 text-xs text-text-secondary">
+        <div className="grid min-w-0 grid-cols-2 gap-2 lg:block">
+          <label className="col-span-2 block rounded-xl border border-border p-3 text-xs text-text-secondary sm:p-4">
             {t("النطاق المعروض", "Displayed period")}
-            <select
-              className="field-control mt-2 text-sm"
-              aria-label={t("نطاق المنحنى", "Chart period")}
-              value={period?.id ?? "ALL"}
-              onChange={(e) => setScope(e.target.value)}
-            >
-              <option value="ALL">{t("كل الرحلة", "Whole journey")}</option>
-              {periods.map((p, i) => (
-                <option key={p.id} value={p.id}>
-                  {p.kind === "CV"
-                    ? p.title
-                    : p.kind === "BEFORE_FIRST_CHECKPOINT"
-                      ? t("قبل أول تعديل", "Before first change")
-                      : t(`تحديث ${number(i + 1)}`, `Update ${number(i + 1)}`)}
-                </option>
-              ))}
-            </select>
+            <AnchoredSelect className="mt-2 w-full" label={t("نطاق المنحنى","Chart period")} value={period?.id??"ALL"} onChange={setScope} options={[{value:"ALL",label:t("كل الرحلة","Whole journey")},...periods.map((p,i)=>({value:p.id,label:p.kind==="CV"?p.title:p.kind==="BEFORE_FIRST_CHECKPOINT"?t("قبل أول تعديل","Before first change"):t(`تحديث ${number(i+1)}`,`Update ${number(i+1)}`)}))]} />
           </label>
-          <div className="mt-3 rounded-xl border border-border p-4">
+          <div className="rounded-xl border border-border p-3 sm:p-4 lg:mt-3">
             <p className="text-xs text-text-secondary">
               {t("طلبات مسجلة", "Applications recorded")}
             </p>
-            <p className="mt-2 text-3xl font-bold tabular-nums">
+            <p className="mt-1 text-2xl font-bold tabular-nums sm:mt-2 sm:text-3xl">
               {number(total.logged)}
             </p>
             <p className="mt-1 text-xs text-text-secondary">
@@ -192,14 +177,14 @@ function ProgressChart({ report, admin }: { report: Report; admin: boolean }) {
               · {number(total.stages.CLOSED)} {t("مغلق", "closed")}
             </p>
           </div>
-          <div className="mt-3 rounded-xl border border-border p-4">
+          <div className="rounded-xl border border-border p-3 sm:p-4 lg:mt-3">
             <p className="text-xs text-text-secondary">
               {t(
                 "طلبات بتقدم إيجابي موثق",
                 "Applications with positive progression",
               )}
             </p>
-            <p className="mt-2 text-3xl font-bold tabular-nums text-sky-800 dark:text-sky-300">
+            <p className="mt-1 text-2xl font-bold tabular-nums sm:mt-2 sm:text-3xl text-sky-800 dark:text-sky-300">
               {number(total.positive)}
             </p>
             <p className="mt-1 text-xs text-text-secondary">
@@ -219,7 +204,7 @@ function ProgressChart({ report, admin }: { report: Report; admin: boolean }) {
                   "النمو التراكمي للطلبات والتقدم الحالي. جدول البيانات متاح أسفل الرسم.",
                   "Cumulative applications and current progression. A data table follows.",
                 )}
-                className="h-[260px] sm:h-[340px]"
+                className="h-[220px] sm:h-[340px]"
               >
                 {mounted && (
                   <ResponsiveContainer width="100%" height="100%" minWidth={0}>
@@ -484,25 +469,25 @@ export default function PerformanceAnalytics({
           </p>
         </div>
         <div
-          className={`grid gap-3 sm:grid-cols-2 ${cards.length === 3 ? "xl:grid-cols-3" : cards.length === 4 ? "xl:grid-cols-4" : "xl:grid-cols-5"}`}
+          className={`grid grid-cols-3 gap-2 sm:gap-3 sm:grid-cols-2 ${cards.length === 3 ? "xl:grid-cols-3" : cards.length === 4 ? "xl:grid-cols-4" : "xl:grid-cols-5"}`}
         >
           {cards.map((c) => (
             <article
               key={c.label}
-              className="rounded-xl border border-border bg-surface p-4"
+              className="min-w-0 rounded-xl border border-border bg-surface p-2.5 sm:p-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm text-text-secondary">{c.label}</p>
-                  <p className="mt-2 text-3xl font-bold tabular-nums">
+                  <p className="min-h-8 text-[11px] leading-4 text-neutral-700 sm:min-h-0 sm:text-sm dark:text-neutral-200">{c.label}</p>
+                  <p className="mt-1 text-2xl font-bold tabular-nums sm:mt-2 sm:text-3xl">
                     {number(c.value)}
                   </p>
                 </div>
-                <span className="rounded-lg bg-emerald-50 p-2 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
+                <span className="hidden sm:block rounded-lg bg-emerald-50 p-2 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
                   <c.icon className="h-4 w-4" aria-hidden="true" />
                 </span>
               </div>
-              <p className="mt-3 text-xs leading-5 text-text-secondary">
+              <p className="mt-2 line-clamp-2 text-[10px] leading-4 text-text-secondary sm:mt-3 sm:text-xs sm:leading-5">
                 {c.detail}
               </p>
             </article>

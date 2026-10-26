@@ -287,7 +287,7 @@ export function NotificationCenter({
       {open && typeof document !== "undefined" && createPortal(
         <div
           ref={dropdownRef}
-          className="fixed z-[90] flex max-h-[calc(100dvh-1.5rem)] w-80 max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-2xl border border-border bg-surface p-4 text-text-primary shadow-xl sm:w-96"
+          className="fixed z-[12020] flex max-h-[calc(100dvh-1.5rem)] w-80 max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-2xl border border-border bg-surface p-4 text-text-primary shadow-xl sm:w-96"
           style={{
             top: popoverPosition?.top ?? 12,
             left: popoverPosition?.left ?? 12,
