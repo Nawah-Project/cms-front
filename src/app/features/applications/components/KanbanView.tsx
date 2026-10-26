@@ -18,6 +18,8 @@ import { useUpdateApplication } from "../api/applicationsApi";
 interface KanbanViewProps {
   applications: Application[];
   appCvVersionMap?: Record<string, number>;
+  mobileStage?: Stage;
+  onMobileStageChange?: (stage:Stage)=>void;
   onStageChange?: (
     appId: string,
     newStage: Stage,
@@ -106,9 +108,13 @@ export function KanbanView({
   applications,
   appCvVersionMap,
   onStageChange,
+  mobileStage: selectedMobileStage,
+  onMobileStageChange,
 }: KanbanViewProps) {
   const { t, locale } = useI18n();
-  const [mobileStage,setMobileStage]=useState<Stage>(()=>applications[0]?.stage??"APPLIED");
+  const [localMobileStage,setLocalMobileStage]=useState<Stage>(()=>applications[0]?.stage??"APPLIED");
+  const mobileStage=selectedMobileStage??localMobileStage;
+  const setMobileStage=onMobileStageChange??setLocalMobileStage;
   const isRtl = locale === "ar";
   const navigate = useNavigate();
   const updateMutation = useUpdateApplication();
@@ -241,7 +247,7 @@ export function KanbanView({
   return (
     <div className="w-full select-none">
       <nav aria-label={locale==="ar"?"مراحل طلباتك":"Application stages"} className="mb-3 grid grid-cols-5 gap-1 rounded-xl border border-border bg-surface p-1 md:hidden">
-        {COLUMNS.map(c=><button key={c.stage} type="button" aria-pressed={mobileStage===c.stage} onClick={()=>setMobileStage(c.stage)} className={`flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] ${mobileStage===c.stage?'bg-neutral-900 font-bold text-white dark:bg-white dark:text-neutral-900':'text-text-secondary'}`}><span className="text-base font-bold tabular-nums">{applications.filter(a=>a.stage===c.stage).length}</span><span className="max-w-full truncate">{t(`applications.${c.label}`)}</span></button>)}
+        {COLUMNS.map(c=><button key={c.stage} type="button" aria-pressed={mobileStage===c.stage} onClick={()=>setMobileStage(c.stage)} className={`flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] ${mobileStage===c.stage?'bg-neutral-900 font-bold text-white dark:bg-white dark:text-neutral-900':'text-text-secondary'}`}><span className="text-base font-bold tabular-nums">{applications.filter(a=>a.stage===c.stage).length}</span><span className="max-w-full truncate" title={t(`applications.${c.label}`)}>{locale==="ar"?({APPLIED:"تم التقديم",ASSIGNMENT:"تكليف",INTERVIEW:"مقابلة",DECISION:"القرار",CLOSED:"مغلق"}[c.stage]):t(`applications.${c.label}`)}</span></button>)}
       </nav>
       <div className="min-w-0 pb-4">
         <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-3.5 min-w-0 items-start">

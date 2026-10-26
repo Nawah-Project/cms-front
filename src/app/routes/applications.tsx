@@ -69,6 +69,8 @@ export default function ApplicationsPage() {
   const cohortActive = Boolean(createdFrom || createdBefore || /^v[1-9]\d*$/.test(searchParams.get("period") || ""));
   const cohortPage = Math.max(1, Number(searchParams.get("page")) || 1);
   const currentStage = searchParams.get("stage") || "ALL";
+  const [mobileStage,setMobileStage]=useState<Stage>(()=>["APPLIED","ASSIGNMENT","INTERVIEW","DECISION","CLOSED"].includes(currentStage)?currentStage as Stage:"APPLIED");
+  useEffect(()=>{if(["APPLIED","ASSIGNMENT","INTERVIEW","DECISION","CLOSED"].includes(currentStage))setMobileStage(currentStage as Stage);},[currentStage]);
   const currentOutcome = searchParams.get("outcome") || "ALL";
   const currentPeriod = searchParams.get("period") || "ALL";
   const [searchQuery, setSearchQuery] = useState(
@@ -383,6 +385,7 @@ export default function ApplicationsPage() {
     setSearchParams(nextParams);
   };
 
+  const handleMobileStageChange=(stage:Stage)=>{setMobileStage(stage);if(currentStage!=="ALL"||currentOutcome!=="ALL")updateStageFilter("ALL");};
   const updateOutcomeFilter = (newOutcome: string) => {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete("page");
@@ -420,7 +423,7 @@ export default function ApplicationsPage() {
   const isRefreshing = isFetching && !isLoading;
 
   return (
-    <div className="space-y-7 animate-in fade-in duration-200">
+    <div className="space-y-5 sm:space-y-7">
       {cohortActive && <section className="rounded-xl border border-emerald-800/20 bg-emerald-50 p-4 dark:bg-emerald-950/30" aria-label={locale === "ar" ? "فلتر فترة التغيير" : "Change period filter"}>
         <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-semibold">{locale === "ar" ? "طلبات مرتبطة بفترة تغيير" : "Applications in a change period"}{cohortLabel ? ` · ${cohortLabel}` : ""}</h2><p className="mt-1 text-sm text-text-secondary">{locale === "ar" ? "الفلتر حسب تاريخ تسجيل الطلب، من بداية التغيير لحد التغيير التالي." : "Filtered by recording time, from this checkpoint up to the next one."}</p>{(createdFrom || createdBefore) && <p className="mt-1 text-xs text-text-secondary">{createdFrom ? new Date(createdFrom).toLocaleString(locale === "ar" ? "ar-EG" : "en-US") : "—"} — {createdBefore ? new Date(createdBefore).toLocaleString(locale === "ar" ? "ar-EG" : "en-US") : (locale === "ar" ? "حتى الآن" : "Present")}</p>}</div><button type="button" className="button-secondary min-h-10" onClick={() => { const next = new URLSearchParams(searchParams); for (const key of ["createdFrom", "createdBefore", "change", "page", "period"]) next.delete(key); setSearchParams(next); }}>{locale === "ar" ? "إلغاء فلتر التغيير" : "Clear change filter"}</button></div>
         <div className="mt-3 flex items-center justify-between gap-3 text-sm"><span>{locale === "ar" ? `${applicationsData?.total ?? 0} طلبات مطابقة` : `${applicationsData?.total ?? 0} matching applications`}</span><div className="flex items-center gap-2"><button type="button" className="button-secondary min-h-10" disabled={cohortPage<=1} onClick={() => {const next=new URLSearchParams(searchParams);next.set("page",String(cohortPage-1));setSearchParams(next);}}>{locale === "ar" ? "السابق" : "Previous"}</button><span>{cohortPage}</span><button type="button" className="button-secondary min-h-10" disabled={cohortPage*100 >= (applicationsData?.total ?? 0)} onClick={() => {const next=new URLSearchParams(searchParams);next.set("page",String(cohortPage+1));setSearchParams(next);}}>{locale === "ar" ? "التالي" : "Next"}</button></div></div>
@@ -429,7 +432,7 @@ export default function ApplicationsPage() {
       <FeatureTour feature="cv-filter-week1-v1" enabled={Boolean(journeyData?.features.analytics && maxCvVersion > 1)} steps={CV_FILTER_TOUR} />
       <FeatureTour feature="explorer-filters-week1-v1" enabled={isCompassModalOpen && Boolean(user?.id && typeof window !== "undefined" && localStorage.getItem(`nawah_v2_guided_tour_done_${user.id}`) === "true")} steps={EXPLORER_TOUR} />
       {/* Page Header */}
-      <div className="flex flex-col gap-4 border-b border-stone-300/80 pb-7 sm:flex-row sm:items-end sm:justify-between dark:border-neutral-800">
+      <div className="flex flex-col gap-4 border-b border-stone-300/80 pb-4 sm:pb-7 sm:flex-row sm:items-end sm:justify-between dark:border-neutral-800">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-100 sm:text-4xl">
             {t("applications.title")}
@@ -584,7 +587,7 @@ export default function ApplicationsPage() {
         </div>
 
         {/* Tier 2: Dedicated Stage Filter Bar */}
-        <div className="flex flex-wrap items-center gap-2 pt-2.5 border-t border-neutral-200/70 dark:border-neutral-800/70">
+        <div className="hidden md:flex flex-wrap items-center gap-2 pt-2.5 border-t border-neutral-200/70 dark:border-neutral-800/70">
           <div className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 dark:text-neutral-400 me-1">
             <Filter className="w-3.5 h-3.5 text-neutral-400" />
             <span>{locale === "ar" ? "المرحلة:" : "Stage:"}</span>
@@ -724,12 +727,13 @@ export default function ApplicationsPage() {
           </div>
 
           {viewMode === "table" && canUseTableView ? (
-            <><div className="md:hidden"><KanbanView applications={applications} onStageChange={handleKanbanStageChange} appCvVersionMap={appCvVersionMap} /></div><div className="hidden md:block"><TableView
+            <><div className="md:hidden"><KanbanView mobileStage={mobileStage} onMobileStageChange={handleMobileStageChange} applications={applications} onStageChange={handleKanbanStageChange} appCvVersionMap={appCvVersionMap} /></div><div className="hidden md:block"><TableView
               applications={applications}
               appCvVersionMap={appCvVersionMap}
             /></div></>
           ) : (
             <KanbanView
+              mobileStage={mobileStage} onMobileStageChange={handleMobileStageChange}
               applications={applications}
               onStageChange={handleKanbanStageChange}
               appCvVersionMap={appCvVersionMap}
