@@ -11,6 +11,7 @@ import {
 } from "./journeyTasksPanelEvents";
 import { CELEBRATE_MILESTONE_EVENT } from "../features/journey/lib/celebrationEvents";
 import { useTour } from "../features/applications/components/FirstApplicationGuidedTour";
+import { isGuideFinished, useExperienceProgress } from "../features/experience/ExperienceProgress";
 
 export function JourneyTasksPanel() {
   const { t, locale } = useI18n();
@@ -19,26 +20,16 @@ export function JourneyTasksPanel() {
   const { data: journeyData } = useJourneyState();
   const [open, setOpen] = useState(false);
   const [hasUnseenUpdate, setHasUnseenUpdate] = useState(false);
-  const { isTourActive, step, setStep } = useTour();
-  const [coachmarkSeen, setCoachmarkSeen] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem("nawah_journey_coachmark_seen") === "true";
-    } catch {
-      return false;
-    }
-  });
+  const { isTourActive, isTourBlocking, step, setStep } = useTour();
+  const experience = useExperienceProgress();
+  const coachmarkSeen = !experience.ready || isTourBlocking || Boolean(experience.leaseOwner) || isGuideFinished(experience.progress["journey-coachmark-v1"]);
 
   if (location.pathname.startsWith("/admin")) {
     return null;
   }
 
   const dismissCoachmark = () => {
-    try {
-      localStorage.setItem("nawah_journey_coachmark_seen", "true");
-    } catch {
-      // ignore
-    }
-    setCoachmarkSeen(true);
+    experience.record("journey-coachmark-v1", "COMPLETED");
   };
 
   const storageKey = `journey_last_seen_${user?.id ?? "default"}`;
@@ -242,13 +233,8 @@ export function JourneyTasksPanel() {
           aria-expanded={open}
           aria-label={open ? t("journey.closePanel") : t("journey.panelTitle")}
           onClick={() => {
-            setOpen((prev) => {
-              const next = !prev;
-              if (next && isTourActive && step === 1) {
-                setStep(2);
-              }
-              return next;
-            });
+            if (!open && isTourActive && step === 1) setStep(2);
+            setOpen(!open);
           }}
           style={{
             [isRtl ? "left" : "right"]: "calc(100% - 1px)",

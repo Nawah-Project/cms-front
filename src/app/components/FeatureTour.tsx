@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import { useAuth } from "../features/auth/store/authStore";
 import { useI18n } from "../i18n";
 import { useDialogFocus } from "./ui/useDialogFocus";
+import { FIRST_APPLICATION_FLOW, isGuideFinished, requestGuideProgress, useExperienceProgress, useGuideLease } from "../features/experience/ExperienceProgress";
+import { useTour } from "../features/applications/components/FirstApplicationGuidedTour";
 import {
   placeTourCard,
   readTourViewport,
@@ -21,12 +23,13 @@ function hasSeen(userId: string | undefined, feature: string) {
       (feature === "explorer-intro-week1-v1" && localStorage.getItem(featureTourKey(userId, "explorer-filters-week1-v1")) === "true")
     );
   } catch {
-    return true;
+    return !userId;
   }
 }
 export function markFeatureTourSeen(
   userId: string | undefined,
   feature: string,
+  skipped = false,
 ) {
   if (!userId) return;
   try {
@@ -35,10 +38,16 @@ export function markFeatureTourSeen(
     /* Dismissal still works for this page. */
   }
   window.dispatchEvent(new Event(SEEN_EVENT));
+  requestGuideProgress(userId, feature, skipped ? "SKIPPED" : "COMPLETED");
 }
 export function FeatureTourPending({ feature }: { feature: string }) {
   const { user } = useAuth();
+  const experience = useExperienceProgress();
+  const { isTourBlocking } = useTour();
   return user?.role !== "ADMIN" &&
+    experience.ready && !experience.error && !isTourBlocking && !experience.leaseOwner &&
+    isGuideFinished(experience.progress[FIRST_APPLICATION_FLOW]) &&
+    !isGuideFinished(experience.progress[feature]) &&
     !hasSeen(user?.id, feature) &&
     typeof document !== "undefined"
     ? createPortal(
@@ -79,6 +88,8 @@ export function FeatureTour({
 }) {
   const { user } = useAuth();
   const { locale } = useI18n();
+  const experience = useExperienceProgress();
+  const { isTourBlocking } = useTour();
   const ar = locale === "ar";
   const [seen, setSeen] = useState(() => hasSeen(user?.id, feature));
   const [index, setIndex] = useState(0),
@@ -90,10 +101,12 @@ export function FeatureTour({
     target = useRef<HTMLElement | null>(null);
   const title = useId(),
     body = useId();
-  const active = enabled && !seen && user?.role !== "ADMIN";
+  const eligible = enabled && !seen && !isGuideFinished(experience.progress[feature]) &&
+    experience.ready && !experience.error && !isTourBlocking && isGuideFinished(experience.progress[FIRST_APPLICATION_FLOW]) && user?.role !== "ADMIN";
+  const active = useGuideLease(feature, eligible);
   const finish = (skipped = false, fromTarget = false) => {
     setSeen(true);
-    markFeatureTourSeen(user?.id, feature);
+    markFeatureTourSeen(user?.id, feature, skipped);
     onFinish?.(skipped, fromTarget);
   };
   const advance = () => {
@@ -103,10 +116,16 @@ export function FeatureTour({
   useLayoutEffect(() => {
     const read = () => setSeen(hasSeen(user?.id, feature));
     read();
-    setIndex(0);
+    const saved = experience.progress[feature]?.currentStep ?? 0;
+    const safe = feature === "groups-week1-v1" && saved >= 2 && saved <= 4 ? 1 :
+      feature === "analytics-week1-v1" && saved >= 4 && saved <= 6 ? 3 : saved;
+    setIndex(Math.min(safe, Math.max(0, steps.length - 1)));
     window.addEventListener(SEEN_EVENT, read);
     return () => window.removeEventListener(SEEN_EVENT, read);
-  }, [user?.id, feature]);
+  }, [user?.id, feature, experience.ready]);
+  useEffect(() => {
+    if (active) experience.record(feature, "IN_PROGRESS", index);
+  }, [active, index, feature, experience.record]);
   useLayoutEffect(() => {
     if (!active || !steps[index]) return;
     let frame = 0,

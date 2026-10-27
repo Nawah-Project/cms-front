@@ -18,6 +18,7 @@ import { useTour } from "./FirstApplicationGuidedTour";
 import { FeatureTour, markFeatureTourSeen } from "../../../components/FeatureTour";
 import { EXPLORER_INTRO_TOUR, EXPLORER_TOUR } from "../../journey/lib/week-one-tours";
 import { sanitizeJobUrl } from "../../../utils/urlSanitizer";
+import { FIRST_APPLICATION_FLOW, isGuideFinished, useExperienceProgress } from "../../experience/ExperienceProgress";
 
 interface AddApplicationModalProps {
   isOpen: boolean;
@@ -37,15 +38,17 @@ export function AddApplicationModal({
   const { t, locale } = useI18n();
   const { user } = useAuth();
   const { isTourActive, step, setStep } = useTour();
+  const experience = useExperienceProgress();
+  const firstGuideDone = isGuideFinished(experience.progress[FIRST_APPLICATION_FLOW]);
   const [postTourEntry, setPostTourEntry] = useState(false);
   const priorEntryOpen = React.useRef(false);
   useEffect(() => {
     if (isOpen && !priorEntryOpen.current) {
-      try { setPostTourEntry(!isTourActive && Boolean(user?.id && localStorage.getItem(`nawah_v2_guided_tour_done_${user.id}`) === "true")); } catch { setPostTourEntry(false); }
+      setPostTourEntry(!isTourActive && firstGuideDone);
     }
     if (!isOpen) setPostTourEntry(false);
     priorEntryOpen.current = isOpen;
-  }, [isOpen, user?.id]);
+  }, [isOpen, user?.id, firstGuideDone]);
   const { data: journeyData } = useJourneyState({
     enabled: Boolean(user) && journeyQueryEnabled,
   });
@@ -72,24 +75,17 @@ export function AddApplicationModal({
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showExplorerModal, setShowExplorerModal] = useState(false);
+  useEffect(() => {
+    if (isOpen && isTourActive) setShowExplorerModal(step === 4);
+  }, [isOpen, isTourActive, step]);
   const [companyPasteHint, setCompanyPasteHint] = useState(false);
-  const [showHint, setShowHint] = useState(() => {
-    try {
-      return (
-        localStorage.getItem("nawah_add_modal_explorer_hint_seen") !== "true"
-      );
-    } catch {
-      return false;
-    }
-  });
+  const [hintDismissed, setHintDismissed] = useState(false);
+  const showHint = !hintDismissed && !isGuideFinished(experience.progress["explorer-intro-week1-v1"]);
+  useEffect(() => setHintDismissed(false), [user?.id]);
 
   const dismissHint = () => {
-    try {
-      localStorage.setItem("nawah_add_modal_explorer_hint_seen", "true");
-    } catch {
-      // ignore
-    }
-    setShowHint(false);
+    experience.record("explorer-intro-week1-v1", "SKIPPED");
+    setHintDismissed(true);
   };
 
   const prevIsOpenRef = React.useRef(false);
@@ -513,7 +509,7 @@ export function AddApplicationModal({
         isOpen={true}
         zIndex={110}
         onClose={() => {
-          if (!isTourActive) { setShowExplorerModal(false); if(postTourEntry) markFeatureTourSeen(user?.id,"explorer-filters-week1-v1"); }
+          if (!isTourActive) { setShowExplorerModal(false); if(postTourEntry) markFeatureTourSeen(user?.id,"explorer-filters-week1-v1",true); }
         }}
         disableClose={isTourActive}
         title={locale === "ar" ? "مستكشف الوظائف" : "Job Explorer"}

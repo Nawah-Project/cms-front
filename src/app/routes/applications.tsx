@@ -430,7 +430,7 @@ export default function ApplicationsPage() {
       </section>}
 
       <FeatureTour feature="cv-filter-week1-v1" enabled={Boolean(journeyData?.features.analytics && maxCvVersion > 1)} steps={CV_FILTER_TOUR} />
-      <FeatureTour feature="explorer-filters-week1-v1" enabled={isCompassModalOpen && Boolean(user?.id && typeof window !== "undefined" && localStorage.getItem(`nawah_v2_guided_tour_done_${user.id}`) === "true")} steps={EXPLORER_TOUR} />
+      <FeatureTour feature="explorer-filters-week1-v1" enabled={isCompassModalOpen} steps={EXPLORER_TOUR} />
       {/* Page Header */}
       <div className="flex flex-col gap-4 border-b border-stone-300/80 pb-4 sm:pb-7 sm:flex-row sm:items-end sm:justify-between dark:border-neutral-800">
         <div>
@@ -747,7 +747,7 @@ export default function ApplicationsPage() {
         <Modal
           isOpen={true}
           onClose={() => {
-            if (user?.id && localStorage.getItem(`nawah_v2_guided_tour_done_${user.id}`) === "true") markFeatureTourSeen(user.id, "explorer-filters-week1-v1");
+            markFeatureTourSeen(user?.id, "explorer-filters-week1-v1", true);
             setIsCompassModalOpen(false);
           }}
           title={locale === "ar" ? "مستكشف الوظائف" : "Job Explorer"}

@@ -25,6 +25,7 @@ import { MilestoneCelebrationModal } from "../components/ui/MilestoneCelebration
 import { AppContext } from "../components/AppModalContext";
 export { useAppModal } from "../components/AppModalContext";
 import { FirstApplicationGuidedTourProvider } from "../features/applications/components/FirstApplicationGuidedTour";
+import { ExperienceProgressProvider } from "../features/experience/ExperienceProgress";
 
 export default function Layout() {
   const { t, locale } = useI18n();
@@ -106,6 +107,7 @@ export default function Layout() {
     <ProtectedRoute>
       <EmailVerificationGate>
         <ProfileCompletionGate>
+          <ExperienceProgressProvider>
           <FirstApplicationGuidedTourProvider
             enabled={!location.pathname.startsWith("/admin")}
           >
@@ -162,6 +164,7 @@ export default function Layout() {
               </div>
             </AppContext.Provider>
           </FirstApplicationGuidedTourProvider>
+          </ExperienceProgressProvider>
         </ProfileCompletionGate>
       </EmailVerificationGate>
     </ProtectedRoute>

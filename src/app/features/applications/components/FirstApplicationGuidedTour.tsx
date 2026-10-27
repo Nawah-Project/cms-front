@@ -15,11 +15,13 @@ import { JourneyContinueCoachmark } from "./JourneyContinueCoachmark";
 import { placeTourCard, readTourViewport, type TourViewport } from "./tour-layout";
 import { profileApi } from "../../../features/profile/profileApi";
 import { trackUxEvent } from "../../../utils/uxAnalytics";
+import { FIRST_APPLICATION_FLOW, isGuideFinished, useExperienceProgress } from "../../experience/ExperienceProgress";
 
 export type TourStep = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 interface TourContextValue {
   isTourActive: boolean;
+  isTourBlocking: boolean;
   step: TourStep;
   nextStep: () => void;
   setStep: (step: TourStep) => void;
@@ -28,6 +30,7 @@ interface TourContextValue {
 
 const TourContext = createContext<TourContextValue>({
   isTourActive: false,
+  isTourBlocking: false,
   step: 1,
   nextStep: () => {},
   setStep: () => {},
@@ -189,6 +192,10 @@ export function FirstApplicationGuidedTourProvider({
   const { user } = useAuth();
   const { locale } = useI18n();
   const isRtl = locale === "ar";
+  const experience = useExperienceProgress();
+  const firstProgress = experience.progress[FIRST_APPLICATION_FLOW];
+  const startedOwner = useRef<string | null>(null);
+  const resumeForm = useRef(false);
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
@@ -213,35 +220,52 @@ export function FirstApplicationGuidedTourProvider({
   const [companyValue, setCompanyValue] = useState("");
   const [urlValue, setUrlValue] = useState("");
 
-  // Determine if tour should start:
-  // ONLY conditions: user logged in, profileComplete === true, and !localStorage.getItem(storageKey)
-  // NEVER depend on applications.length or totalApplications!
+  // The account owns this state; existing application counts never imply that
+  // somebody completed this guide. Deployments and browser changes cannot reset it.
   useLayoutEffect(() => {
     if (!enabled) {
       setIsTourActive(false);
       return;
     }
-    if (!user || !storageKey) return;
+    if (!user || !storageKey || !experience.ready) return;
     if (!profile?.profileComplete) {
       setIsTourActive(false);
       return;
     }
-    try {
-      const tourDone = localStorage.getItem(storageKey);
-      if (tourDone !== "true") {
-        setIsTourActive(true);
-        setStep(1);
-      } else {
-        setIsTourActive(false);
-      }
-    } catch {
+    if (user.role === "ADMIN" || isGuideFinished(firstProgress)) {
       setIsTourActive(false);
+      setCompletionOwner(experience.progress["journey-continue-v1"]?.status === "IN_PROGRESS" ? user.id : null);
+      return;
     }
-  }, [enabled, user?.id, storageKey, profile?.profileComplete]);
+    if (startedOwner.current === user.id) return;
+    startedOwner.current = user.id;
+    // Reopen the required controls, but never resume on an empty submit button.
+    // Unsaved form input is not sent to the server as guide telemetry.
+    const savedStep = Math.max(1, Math.min(7, firstProgress?.currentStep ?? 1));
+    const resumeStep = (savedStep >= 5 ? 5 : savedStep) as TourStep;
+    setIsTourActive(true);
+    setStep(resumeStep);
+    resumeForm.current = resumeStep >= 3;
+  }, [enabled, user?.id, user?.role, storageKey, profile?.profileComplete, experience.ready, firstProgress?.status, experience.progress["journey-continue-v1"]?.status]);
+
+  useEffect(() => {
+    if (!isTourActive || !resumeForm.current) return;
+    const timer = window.setTimeout(() => { resumeForm.current = false; window.dispatchEvent(new Event("nawah_open_add_modal")); }, 80);
+    return () => window.clearTimeout(timer);
+  }, [isTourActive]);
+
+  useEffect(() => {
+    if (isTourActive) experience.record(FIRST_APPLICATION_FLOW, "IN_PROGRESS", step);
+  }, [isTourActive, step, experience.record]);
 
   let preparing = false;
-  try { preparing = Boolean(enabled && user && profile === undefined && storageKey && localStorage.getItem(storageKey)!=="true"); } catch { /* No storage: skip automatic setup. */ }
+  preparing = Boolean(enabled && user?.role !== "ADMIN" && user && !experience.error && !isGuideFinished(firstProgress) && (!experience.ready || profile === undefined));
   const completeTour = () => {
+    experience.record(FIRST_APPLICATION_FLOW, "COMPLETED", 7);
+    experience.record("explorer-intro-week1-v1", "COMPLETED", 0);
+    experience.record("explorer-filters-week1-v1", "COMPLETED", 2);
+    experience.record("journey-coachmark-v1", "COMPLETED", 0);
+    experience.record("journey-continue-v1", "IN_PROGRESS", 0);
     if (storageKey) {
       try {
         localStorage.setItem(storageKey, "true");
@@ -477,6 +501,7 @@ export function FirstApplicationGuidedTourProvider({
     <TourContext.Provider
       value={{
         isTourActive,
+        isTourBlocking: preparing || isTourActive || completionOwner === user?.id || !experience.ready,
         step,
         nextStep,
         setStep,
@@ -484,12 +509,13 @@ export function FirstApplicationGuidedTourProvider({
       }}
     >
       {children}
+      {experience.error && !experience.ready && <div role="alert" className="fixed bottom-5 inset-x-5 z-[9995] mx-auto max-w-md rounded-xl border border-border bg-white p-4 shadow-xl"><p className="text-sm text-text-primary">{isRtl ? "تعذر تحميل خطوات حسابك. أعد المحاولة لاستكمال الشرح من مكانك." : "Your account's guide progress could not be loaded. Retry to continue where you left off."}</p><button type="button" className="button-primary mt-3" onClick={experience.refresh}>{isRtl ? "إعادة المحاولة" : "Retry"}</button></div>}
       {preparing && typeof document!=="undefined" && createPortal(<div data-tour-pending className="tour-scrim fixed inset-0 z-[9989]"/>, document.body)}
 
       {isTourActive &&
         typeof document !== "undefined" &&
         createPortal(
-          <div className="fixed inset-0 w-full h-dvh z-[9990] pointer-events-none select-none overflow-hidden">
+          <div data-mandatory-tour className="fixed inset-0 w-full h-dvh z-[9990] pointer-events-none select-none overflow-hidden">
             {/* 4 Physical Backdrop Divs: Invisible hitboxes blocking clicks EXCEPT inside activeRect (z-[9990]) */}
             {activeRect ? (
               <>
@@ -699,7 +725,7 @@ export function FirstApplicationGuidedTourProvider({
           </div>,
           document.body,
         )}
-      {enabled && completionOwner === user?.id && !isTourActive && <JourneyContinueCoachmark onDismiss={() => setCompletionOwner(null)} />}
+      {enabled && completionOwner === user?.id && !isTourActive && <JourneyContinueCoachmark onDismiss={() => { experience.record("journey-continue-v1", "COMPLETED"); setCompletionOwner(null); }} />}
     </TourContext.Provider>
   );
 }
