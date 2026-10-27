@@ -13,6 +13,7 @@ import { useAuth } from "../auth/store/authStore";
 import { API_BASE_URL, fetchApi } from "../../lib/api-client";
 import { useI18n } from "../../i18n";
 export type SectionId =
+  | "home"
   | "applications"
   | "development"
   | "members-progress"
@@ -74,6 +75,8 @@ export function SectionExperienceProvider({
     // URL preview is deliberately limited to administrators and this tab. It can
     // never leak into another account through localStorage or produce research data.
     const preview = new URLSearchParams(search).get("labPreview");
+    if (user?.role === "ADMIN" && preview === "home:B")
+      return { ...q.data, excluded: true, sections: { ...q.data.sections, home: { version: "B" as const, context: "preview", updatedAt: null } } };
     if (user?.role === "ADMIN" && preview === "members-progress:B")
       return {
         ...q.data,
@@ -283,7 +286,7 @@ export function SectionExposure({
     user?.role === "ADMIN" && new URLSearchParams(search).has("labPreview");
   return (
     <>
-      {preview && !explicit && (
+      {preview && !explicit && new URLSearchParams(search).get("labPreview") !== "home:B" && (
         <aside className="mb-5 flex flex-wrap justify-between gap-3 rounded-xl border border-neutral-300 bg-white p-4 text-sm text-neutral-800">
           <span>
             {locale === "ar"

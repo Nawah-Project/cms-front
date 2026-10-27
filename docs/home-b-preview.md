@@ -1,0 +1,11 @@
+# Home B — administrator-only preview
+
+The root index keeps redirecting to `/applications` for ordinary accounts and for administrators without the exact `labPreview=home:B` query. The Home B component and CSS are lazy-loaded only for that authenticated admin preview. The link appears in the admin's researcher-preview navigation and the home release card. Nothing is written to localStorage or an account assignment to activate the preview.
+
+A section registry entry exists for `home`, with A representing today's applications entry and B representing the proposed home/map. B is preview-only: publishing, enrollment and activation are blocked server-side, while assignments stay A. The experiment form explains the restriction. The preview is excluded from telemetry, and its own rail replaces the generic preview banner.
+
+The five clearly labelled synthetic scenarios cover the start, pending CV foundation, after week two, completion, and waiting for a review. The journey skeleton and requirements come from the configured node catalog; future descriptions, requirements, guidance titles and values are removed server-side. SVGs draw connectors between ordinary HTML cards; a container query reflows the exact task/branch order vertically on narrow content areas. There is no zoom, canvas, drag surface or nested map scroller.
+
+Peer overlays are optional, with separate group/platform symbols and counts. Platform counts include the group. Combined scopes are unioned before paging. The current user and admin/test identities do not appear in the synthetic peer data. Group identities are gated by Task zero, outside identities/documents by completed W2_REVIEW. A single centered modal changes between station/profile/portfolio/PDF views. PDFs are generated synthetic examples; no production member files are queried or shared. Existing member CV permissions remain unchanged.
+
+The preview skips the admin's own onboarding/profile query, journey query and required first-application tour, and does not mount the task panel on that preview route. Other routes and ordinary accounts retain the original gates, task drawer and persisted tour keys. Object URLs are revoked when a document is closed or the scenario changes; all preview query keys include account identity and scenario.

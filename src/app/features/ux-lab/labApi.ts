@@ -6,6 +6,7 @@ export type LabRegistry = {
   titleEn: string;
   versions: ("A" | "B")[];
   metrics: string[];
+  previewOnly?: boolean;
 };
 export type LabExperiment = {
   id: string;

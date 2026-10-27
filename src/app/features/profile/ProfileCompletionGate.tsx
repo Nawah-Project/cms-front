@@ -1,7 +1,7 @@
 import { SectionExposure } from '../ux-lab/SectionExperience';
 import { JourneyScenery } from "../../components/JourneyScenery";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { useAuth } from "../auth/store/authStore";
 import { useI18n } from "../../i18n";
 import { profileApi, type ProfessionalProfile } from "./profileApi";
@@ -19,6 +19,8 @@ import {
 
 export function ProfileCompletionGate({ children }: { children: React.ReactNode }) {
   const { authenticated, user, setUser } = useAuth();
+  const location = useLocation();
+  const isHomePreview = user?.role === "ADMIN" && location.pathname === "/" && new URLSearchParams(location.search).get("labPreview") === "home:B";
   const { t } = useI18n();
   const { introVideoUrl } = useUxExperiment();
   const navigate = useNavigate();
@@ -31,7 +33,7 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
   const [videoModalOpen, setVideoModalOpen] = useState(false);
 
   useEffect(() => {
-    if (!authenticated) return;
+    if (!authenticated || isHomePreview) return;
     let active = true;
     setLoading(true);
     setFailed(false);
@@ -55,10 +57,10 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
     return () => {
       active = false;
     };
-  }, [authenticated, user?.id, attempt]);
+  }, [authenticated, user?.id, attempt, isHomePreview]);
 
 
-  if (!authenticated) return children;
+  if (!authenticated || isHomePreview) return children;
   if (loading) {
     return (
       <main

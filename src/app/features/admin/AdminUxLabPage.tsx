@@ -59,6 +59,7 @@ function labError(error: unknown, ar: boolean) {
       "أنه تجربة هذا القسم قبل نشر تصميمه.",
     "Release changed; refresh before publishing":
       "تغير التصميم المنشور. حدث البيانات ثم راجع النشر.",
+    "Home B is administrator preview only": "الرئيسية B متاحة لمعاينة الأدمن فقط؛ لا يمكن نشرها أو إسنادها للمستخدمين الآن.",
     "Design is not implemented": "التصميم المطلوب غير منفذ بعد.",
     "A meaningful title and hypothesis are required":
       "اكتب اسمًا واضحًا وفرضية قابلة للاختبار.",
@@ -632,7 +633,9 @@ export default function AdminUxLabPage() {
                         </b>
                       </div>
                       <p className="lab-muted mt-2 text-xs">
-                        {s.versions.includes("B")
+                        {s.previewOnly
+                          ? text("A: الدخول الحالي للطلبات · B: الرئيسية وخريطة الرحلة · معاينة الأدمن فقط", "A: current applications entry · B: home & journey map · admin preview only")
+                          : s.versions.includes("B")
                           ? text(
                               "A: جدول · B: بطاقات تقدم",
                               "A: table · B: progress cards",
@@ -647,7 +650,7 @@ export default function AdminUxLabPage() {
                           <button
                             className="lab-button"
                             key={v}
-                            disabled={busy || v === cfg.releases[s.id].version}
+                            disabled={busy || s.previewOnly || v === cfg.releases[s.id].version}
                             onClick={() =>
                               setPublish({ section: s.id, version: v })
                             }
@@ -661,6 +664,7 @@ export default function AdminUxLabPage() {
                             {v}
                           </button>
                         ))}
+                        {s.id === "home" && <a className="lab-text-link" href="/?labPreview=home:B" target="_blank" rel="noreferrer">{text("معاينة الرئيسية B", "Preview Home B")} ↗</a>}
                         {s.id === "members-progress" && (
                           <a
                             className="lab-text-link"
@@ -1532,7 +1536,7 @@ function ExperimentEditor({
   const { locale } = useI18n();
   const ar = locale === "ar";
   const text = (a: string, e: string) => (ar ? a : e);
-  const first = config.registry.find((s) => s.versions.includes("B"))!;
+  const first = config.registry.find((s) => s.versions.includes("B") && !s.previewOnly)!;
   const [form, setForm] = useState<CreateExperiment>({
     title: "",
     hypothesis: "",
@@ -1607,10 +1611,10 @@ function ExperimentEditor({
                 <option
                   key={s.id}
                   value={s.id}
-                  disabled={!s.versions.includes("B")}
+                  disabled={!s.versions.includes("B") || s.previewOnly}
                 >
                   {text(s.titleAr, s.titleEn)}{" "}
-                  {s.versions.includes("B")
+                  {s.previewOnly ? text("— معاينة الأدمن فقط", "— admin preview only") : s.versions.includes("B")
                     ? "A / B"
                     : text("— B غير منفذة", "— B not implemented")}
                 </option>

@@ -1,3 +1,4 @@
+import { useAuth } from "../features/auth/store/authStore";
 import { SectionExperienceProvider, SectionExposure } from '../features/ux-lab/SectionExperience';
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
@@ -41,6 +42,8 @@ export default function Layout() {
     useState<MilestoneCelebrationData | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user: previewUser } = useAuth();
+  const isHomePreview = previewUser?.role === "ADMIN" && location.pathname === "/" && new URLSearchParams(location.search).get("labPreview") === "home:B";
 
   useEffect(() => {
     if (window.localStorage.getItem("nawah.sidebar.collapsed") === "true") {
@@ -110,7 +113,7 @@ export default function Layout() {
         <ProfileCompletionGate>
           <ExperienceProgressProvider>
           <FirstApplicationGuidedTourProvider
-            enabled={!location.pathname.startsWith("/admin")}
+            enabled={!location.pathname.startsWith("/admin") && !isHomePreview}
           >
             <AppContext.Provider value={{ openAddModal }}>
               <div className="workspace-shell min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200">
@@ -120,7 +123,7 @@ export default function Layout() {
                     setIsSidebarCollapsed((collapsed) => !collapsed)
                   }
                 />
-                {!location.pathname.startsWith("/admin") && (
+                {!location.pathname.startsWith("/admin") && !isHomePreview && (
                   <JourneyTasksPanel />
                 )}
 
