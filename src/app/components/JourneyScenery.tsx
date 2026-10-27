@@ -1,3 +1,4 @@
+import { ProfessionalImage } from "./ProfessionalImage";
 import { ArrowUpLeft, ArrowUpRight, Compass, Play, Sparkles, Flag } from "lucide-react";
 import { useI18n } from "../i18n";
 import { useUxExperiment } from "../utils/uxAnalytics";
@@ -6,7 +7,7 @@ import { useUxExperiment } from "../utils/uxAnalytics";
 export function JourneyScenery({variant="entry",step=1,onExplore}:{variant?:"entry"|"onboarding";step?:number;onExplore?:()=>void}) {
   const {locale}=useI18n(); const ar=locale==="ar"; const {introVideoUrl}=useUxExperiment(); const Arrow=ar?ArrowUpLeft:ArrowUpRight;
   return <aside className={`journey-scenery journey-scenery--${variant}`} aria-label={ar?"رحلتك نحو فرصة تناسبك":"Your journey toward a suitable opportunity"}>
-    <img src="/images/nawah-professional-v2.webp" alt="" aria-hidden="true" className="journey-scenery-image" fetchPriority="high" decoding="sync" />
+    <ProfessionalImage className="journey-scenery-image" sizes={variant === "entry" ? "100vw" : "(max-width: 900px) 100vw, 1110px"} />
     <div className="journey-scenery-shade" />
     <div className="journey-scenery-copy">
       <span className="journey-eyebrow"><Sparkles size={14}/>{ar?"نواة · بداية تستاهلها":"NAWAH · A beginning worth taking"}</span>

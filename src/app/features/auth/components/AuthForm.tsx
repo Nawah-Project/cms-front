@@ -1,3 +1,4 @@
+import { ProfessionalImage } from "../../../components/ProfessionalImage";
 import { JourneyScenery } from "../../../components/JourneyScenery";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
@@ -39,7 +40,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         className="entry-loading"
         role="status"
       >
-        <img src="/images/nawah-professional-v2.webp" alt="" aria-hidden="true"/><div><img src="/nawah-logo.svg" alt=""/><p>{t("auth.sessionLoading")}</p></div>
+        <ProfessionalImage className="entry-loading-image" /><div><img src="/nawah-logo.svg" alt=""/><p>{t("auth.sessionLoading")}</p></div>
       </main>
     );
   }

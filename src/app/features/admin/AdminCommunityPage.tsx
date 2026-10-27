@@ -1,3 +1,5 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { DeleteMemberDialog } from "./components/DeleteMemberDialog";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import {
@@ -32,6 +34,7 @@ import {
   Search,
   UserCheck,
   UserMinus,
+  Trash2,
   Users,
 } from "lucide-react";
 
@@ -56,6 +59,8 @@ export default function AdminCommunityPage() {
   const isAr = locale === "ar";
   const [searchParams, setSearchParams] = useSearchParams();
   const toast = useToast();
+  const queryClient = useQueryClient();
+  const [deletingMember, setDeletingMember] = useState<string | null>(null);
 
   const tabParam =
     (searchParams.get("tab") as "members" | "groups" | "activity") || "members";
@@ -551,6 +556,21 @@ export default function AdminCommunityPage() {
                               {isAr ? "تعيين" : "Assign"}
                             </button>
                           )}
+                          {member.role === "USER" && (
+                            <button
+                              type="button"
+                              onClick={() => setDeletingMember(member.id)}
+                              className="inline-flex items-center gap-1 rounded-lg border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50"
+                              aria-label={
+                                isAr
+                                  ? `حذف حساب ${member.name} نهائيًا`
+                                  : `Permanently delete ${member.name}`
+                              }
+                            >
+                              <Trash2 size={14} />
+                              {isAr ? "حذف نهائي" : "Delete permanently"}
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -818,6 +838,33 @@ export default function AdminCommunityPage() {
             )}
           </div>
         </div>
+      )}
+
+      {deletingMember && (
+        <DeleteMemberDialog
+          userId={deletingMember}
+          onClose={() => setDeletingMember(null)}
+          onDeleted={(pendingFiles) => {
+            setDeletingMember(null);
+            setInspectorMemberId(null);
+            setSelectedMember(null);
+            setGroupMembersMap({});
+            setExpandedGroupId(null);
+            void queryClient.invalidateQueries();
+            if (page > 1 && members.length === 1) setPage((x) => x - 1);
+            else loadMembers();
+            toast.showToast({
+              message: pendingFiles
+                ? isAr
+                  ? "تم حذف الحساب. سيُستكمل حذف ملفات السيرة المتبقية تلقائيًا."
+                  : "Account deleted. Remaining CV file cleanup will retry automatically."
+                : isAr
+                  ? "تم حذف الحساب وملفاته نهائيًا."
+                  : "Account and files permanently deleted.",
+              variant: pendingFiles ? "warning" : "success",
+            });
+          }}
+        />
       )}
 
       {/* Detail dialog */}

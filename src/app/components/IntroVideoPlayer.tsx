@@ -1,3 +1,4 @@
+import { ProfessionalImage } from "./ProfessionalImage";
 import { PlayCircleIcon } from "./Icons";
 import { useI18n } from "../i18n";
 import { useUxExperiment } from "../utils/uxAnalytics";
@@ -123,7 +124,7 @@ export function IntroVideoPlayer() {
 
   return (
     <div className="journey-video-poster">
-      <img src="/images/nawah-professional-v2.webp" alt="" aria-hidden="true" />
+      <ProfessionalImage className="journey-poster-image" sizes="(max-width: 900px) 100vw, 900px" priority="low" />
       <div><span>{locale==="ar"?"دليلك للبداية":"YOUR STARTING GUIDE"}</span><h4>{locale==="ar"?"خطوة واضحة. وبعدها خطوة.":"One clear step. Then the next."}</h4><p>{locale==="ar"?"جهّز ملفك، سجّل أول طلب، وخلي كل تجربة تعلّمك حاجة للخطوة الجاية. الشرح المكتوب تحت متاح ليك دلوقتي؛ الفيديو التعريفي هينضاف قريبًا.":"Prepare your profile, track your first application, and learn from each attempt. Your written starting guide is below; an introductory video will follow."}</p></div>
     </div>
   );
