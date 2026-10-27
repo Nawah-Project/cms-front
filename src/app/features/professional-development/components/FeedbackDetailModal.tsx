@@ -14,7 +14,7 @@ import {
   FeedbackTagList,
 } from "./FeedbackPresentation";
 
-export function FeedbackDetailDrawer({
+export function FeedbackDetailModal({
   feedbackId,
   admin = false,
   onClose,
@@ -81,34 +81,33 @@ export function FeedbackDetailDrawer({
         if (event.target === dialogRef.current) onClose();
       }}
       aria-labelledby="feedback-detail-title"
-      className="fixed inset-y-0 end-0 m-0 h-dvh max-h-none w-full max-w-2xl overflow-hidden rounded-s-2xl rounded-e-none border border-border bg-surface p-0 text-start text-neutral-900 shadow-2xl backdrop:bg-neutral-950/50 dark:text-neutral-100 sm:w-[min(42rem,calc(100%-2rem))]"
+      className="fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-3xl overflow-hidden rounded-2xl border border-border bg-surface p-0 text-start text-neutral-900 shadow-2xl backdrop:bg-neutral-950/50 dark:text-neutral-100 sm:w-[calc(100%-3rem)]"
     >
-      <section className="flex h-full max-h-full flex-col overflow-hidden">
-          <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-8">
-            <div className="min-w-0">
-              <p className="text-xs text-neutral-500">
-                {t("professionalDevelopment.feedbackDetail")}
-              </p>
-              <h2
-                id="feedback-detail-title"
-                className="mt-1 text-xl font-semibold leading-7 text-neutral-950 dark:text-neutral-100"
-              >
-                {feedback?.title ??
-                  t("professionalDevelopment.feedbackInsights")}
-              </h2>
-            </div>
-            <button
-              ref={closeRef}
-              type="button"
-              onClick={onClose}
-              aria-label={t("professionalDevelopment.closeFeedback")}
-              className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-info-strong dark:hover:bg-neutral-800"
+      <section className="flex max-h-[90dvh] flex-col overflow-hidden">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-8">
+          <div className="min-w-0">
+            <p className="text-xs text-neutral-500">
+              {t("professionalDevelopment.feedbackDetail")}
+            </p>
+            <h2
+              id="feedback-detail-title"
+              className="mt-1 text-xl font-semibold leading-7 text-neutral-950 dark:text-neutral-100"
             >
-              <CloseIcon className="h-5 w-5" />
-            </button>
-          </header>
+              {feedback?.title ?? t("professionalDevelopment.feedbackInsights")}
+            </h2>
+          </div>
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            aria-label={t("professionalDevelopment.closeFeedback")}
+            className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-info-strong dark:hover:bg-neutral-800"
+          >
+            <CloseIcon className="h-5 w-5" />
+          </button>
+        </header>
 
-          <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {loading ? (
             <div
               className="space-y-4 px-5 py-8"
@@ -217,7 +216,7 @@ export function FeedbackDetailDrawer({
               )}
             </article>
           )}
-          </div>
+        </div>
       </section>
     </dialog>
   );

@@ -13,6 +13,7 @@ export interface ModalProps {
   size?: "sm" | "md" | "lg" | "xl" | "2xl";
   zIndex?: number;
   disableClose?: boolean;
+  closeJourneyPanelOnOpen?: boolean;
   children: React.ReactNode;
   footer?: React.ReactNode;
 }
@@ -33,11 +34,11 @@ export function Modal({
   size = "md",
   zIndex,
   disableClose = false,
+  closeJourneyPanelOnOpen = true,
   children,
   footer,
 }: ModalProps) {
   const { t } = useI18n();
-  const previouslyFocusedElement = useRef<HTMLElement | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocus(dialogRef, isOpen, onClose, disableClose);
   const titleId = useId();
@@ -45,18 +46,14 @@ export function Modal({
 
   useEffect(() => {
     if (isOpen) {
-      closeJourneyTasksPanel();
-      previouslyFocusedElement.current = document.activeElement as HTMLElement;
+      if (closeJourneyPanelOnOpen) closeJourneyTasksPanel();
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
       return () => {
         document.body.style.overflow = originalOverflow;
-        if (previouslyFocusedElement.current) {
-          previouslyFocusedElement.current.focus();
-        }
       };
     }
-  }, [isOpen]);
+  }, [isOpen, closeJourneyPanelOnOpen]);
 
   if (!isOpen || typeof document === "undefined") {
     return null;
@@ -94,8 +91,11 @@ export function Modal({
         <div className="flex max-h-[90vh] flex-col overflow-hidden">
           {/* Header */}
           <div className="flex items-start justify-between border-b border-border px-6 py-4">
-            <div className="space-y-0.5 pe-4">
-              <h2 id={titleId} className="text-base font-semibold text-text-primary">
+            <div className="min-w-0 space-y-0.5 pe-4 [overflow-wrap:anywhere]">
+              <h2
+                id={titleId}
+                className="text-base font-semibold text-text-primary"
+              >
                 {title}
               </h2>
               {subtitle && (

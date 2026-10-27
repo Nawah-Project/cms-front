@@ -5,6 +5,8 @@ import {
   ArrowDown,
   ArrowUpRight,
   BookOpen,
+  BookOpenCheck,
+  LockKeyhole,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -142,7 +144,7 @@ export function JourneyObservatory({
   };
   const trace = (p: Person) => {
     setUserId(p.id);
-    setSelected(p.currentCode);
+    setSelected(null);
     setWeek(p.currentWeek);
     setQueueFilter("ALL");
     setNotePage(1);
@@ -235,24 +237,19 @@ export function JourneyObservatory({
       setNoteBusy(null);
     }
   };
+  const inspectUnread = (code: string) => {
+    setUnreadCode(code);
+    setQueueFilter("UNREAD");
+    setSelected(null);
+    requestAnimationFrame(() =>
+      document
+        .getElementById("journey-research-queue")
+        ?.scrollIntoView({ block: "start" }),
+    );
+  };
   const inspector =
     node && data ? (
       <>
-        <header>
-          <div>
-            <span className="jro-eyebrow">
-              {text("فحص المحطة", "Station inspection")}
-            </span>
-            <h3>{title(node)}</h3>
-          </div>
-          <button
-            className="jro-icon"
-            aria-label={text("إغلاق فحص المحطة", "Close station inspector")}
-            onClick={() => setSelected(null)}
-          >
-            <X size={17} />
-          </button>
-        </header>
         <div className="jro-inspector-body">
           <div className="jro-inspector-stats">
             <div>
@@ -329,8 +326,7 @@ export function JourneyObservatory({
                   <button
                     className="jro-text-button"
                     onClick={() => {
-                      setQueueFilter("UNREAD");
-                      setUnreadCode(g.code);
+                      inspectUnread(g.code);
                     }}
                   >
                     {text("افحص من لم يقرأ", "Inspect unread members")}{" "}
@@ -344,7 +340,12 @@ export function JourneyObservatory({
             .filter((m) => m.currentCode === node.code)
             .map((m) => (
               <article className="jro-mini-person" key={m.id}>
-                <button onClick={() => onInspectMember(m.id)}>
+                <button
+                  onClick={() => {
+                    setSelected(null);
+                    onInspectMember(m.id);
+                  }}
+                >
                   {m.name}
                   <ArrowUpRight size={12} />
                 </button>
@@ -367,7 +368,12 @@ export function JourneyObservatory({
                   <button onClick={() => trace(m)}>
                     {text("تتبع المسار", "Trace journey")}
                   </button>
-                  <button onClick={() => onDraftFeedback(m)}>
+                  <button
+                    onClick={() => {
+                      setSelected(null);
+                      onDraftFeedback(m);
+                    }}
+                  >
                     {text("إعداد توجيه", "Draft guidance")}
                   </button>
                 </div>
@@ -383,7 +389,13 @@ export function JourneyObservatory({
           )}
         </div>
         <footer>
-          <button className="jro-primary" onClick={() => setCreateAt(node)}>
+          <button
+            className="jro-primary"
+            onClick={() => {
+              setCreateAt(node);
+              setSelected(null);
+            }}
+          >
             <MessageSquarePlus size={15} />
             {text(
               "سجّل ملاحظة مع الدليل",
@@ -680,6 +692,7 @@ export function JourneyObservatory({
             overlay={overlay}
             traceId={userId}
             inspector={inspector}
+            onCloseInspection={() => setSelected(null)}
           />
           <section className="jro-analysis-grid">
             <article className="jro-panel">
@@ -807,93 +820,156 @@ export function JourneyObservatory({
               </div>
             </article>
           </section>
-          <section className="jro-panel jro-guidance-panel">
+          <section
+            className="jro-panel jro-guidance-panel"
+            aria-labelledby="guidance-monitor-title"
+          >
             <header>
               <div>
                 <span className="jro-eyebrow">
-                  <Sparkles size={14} />
-                  {text(
-                    "من فتح الإرشاد إلى تنفيذ العمل",
-                    "From discovering guidance to action",
-                  )}
+                  <BookOpenCheck size={15} />
+                  {text("متابعة الإرشادات", "Guidance monitoring")}
                 </span>
-                <h3>
+                <h3 id="guidance-monitor-title">
                   {text(
-                    "هل التوجيه يصل إلى الباحث؟",
-                    "Does guidance reach its audience?",
+                    "من إتاحة الإرشاد إلى العمل بعد قراءته",
+                    "From access to reading, then subsequent work",
                   )}
                 </h3>
+                <p className="jro-muted">
+                  {text(
+                    "اعرف هل تحتاج مراجعة إتاحة الإرشاد، أم وضوحه، أم متابعة العمل بعد القراءة. الأرقام تخص نطاق البحث المحدد.",
+                    "See whether access, clarity or follow-up work needs investigation. Counts use the selected research scope.",
+                  )}
+                </p>
               </div>
-              <span className="jro-caption">
-                {text(
-                  "متاح → مقروء → فعل مؤرخ بعد القراءة",
-                  "Unlocked → read → dated subsequent action",
-                )}
+              <span className="jro-guidance-availability">
+                {
+                  data.guidance.filter(
+                    (g) => (week === null || g.week === week) && g.unlocked > 0,
+                  ).length
+                }{" "}
+                {text("من", "of")}{" "}
+                {
+                  data.guidance.filter((g) => week === null || g.week === week)
+                    .length
+                }
+                <small>
+                  {text("إرشادات متاحة حاليًا", "guides currently available")}
+                </small>
               </span>
             </header>
+            <div className="jro-guidance-intro">
+              <p>
+                <strong>{text("كيف تستفيد؟", "How does this help?")}</strong>{" "}
+                {text(
+                  "ابدأ بالإرشادات المتاحة. لو القراءة قليلة، افحص من لم يقرأ قبل تغيير المحتوى. ولو القراءة مرتفعة والعمل قليل، راجع العمل مع الباحث لتفهم السبب.",
+                  "Start with available guides. When reading is low, inspect unread members before rewriting content. When reading is high but work is low, review the work with a member to understand why.",
+                )}
+              </p>
+            </div>
             <div className="jro-guidance-grid">
               {data.guidance
                 .filter((g) => week === null || g.week === week)
                 .map((g) => (
-                  <article key={g.code}>
+                  <article
+                    key={g.code}
+                    data-guidance-card={g.code}
+                    className={g.unlocked ? "available" : "not-available"}
+                  >
                     <div className="jro-guidance-title">
                       <span>
-                        <Sparkles size={16} />
+                        <BookOpen size={17} />
                       </span>
                       <div>
                         <small>
                           {g.week === 0
                             ? text("بعد المهمة صفر", "After task zero")
-                            : text("أسبوع ", "Week ") + g.week}
+                            : text("الأسبوع ", "Week ") + g.week}
                         </small>
                         <h4>{text(g.titleAr, g.titleEn)}</h4>
                       </div>
                     </div>
-                    <div className="jro-guidance-funnel">
+                    <p className="jro-guidance-state">
+                      {g.unlocked ? (
+                        <BookOpenCheck size={12} />
+                      ) : (
+                        <LockKeyhole size={12} />
+                      )}
+                      {g.unlocked
+                        ? text(
+                            "الإرشاد متاح في النطاق المحدد",
+                            "Available in this scope",
+                          )
+                        : text(
+                            "لم يُتح لأحد في هذا النطاق بعد",
+                            "Not available to anyone in this scope yet",
+                          )}
+                    </p>
+                    <dl className="jro-guidance-metrics">
                       <div>
-                        <strong>{g.unlocked}</strong>
-                        <span>{text("متاح لهم", "unlocked")}</span>
+                        <dt>{text("أتيح لهم", "Have access")}</dt>
+                        <dd>{g.unlocked}</dd>
                       </div>
-                      <ChevronLeft size={14} />
                       <div>
-                        <strong>{g.read}</strong>
-                        <span>{text("قرأوا", "read")}</span>
+                        <dt>{text("قرأوا الإرشاد", "Read the guide")}</dt>
+                        <dd>{g.read}</dd>
                       </div>
-                      <ChevronLeft size={14} />
                       <div>
-                        <strong>{g.applied === null ? "—" : g.applied}</strong>
-                        <span>
+                        <dt>
                           {g.actionKind === "CV"
-                            ? text("رفعوا بعد القراءة", "uploaded after read")
+                            ? text("رفعوا سيرة بعده", "Uploaded CV later")
                             : g.actionKind === "POST"
-                              ? text("نشروا بعد القراءة", "posted after read")
+                              ? text("نشروا بعده", "Published later")
                               : g.actionKind === "OUTREACH"
-                                ? text(
-                                    "تواصلوا بعد القراءة",
-                                    "outreach after read",
-                                  )
-                                : text("تطبيق غير مقاس", "not instrumented")}
-                        </span>
+                                ? text("تواصلوا بعده", "Outreach later")
+                                : text("تطبيق الإرشاد", "Applied guidance")}
+                        </dt>
+                        <dd>
+                          {g.actionKind && g.datedReads > 0 ? g.applied : "—"}
+                        </dd>
                       </div>
+                    </dl>
+                    <div className="jro-guidance-reading">
+                      <span>
+                        {text(
+                          "نسبة القراءة من المتاح لهم",
+                          "Read among those with access",
+                        )}
+                      </span>
+                      <strong>
+                        {g.readRate === null
+                          ? text("لا توجد إتاحة بعد", "No access yet")
+                          : g.readRate + "%"}
+                      </strong>
                     </div>
-                    <div className="jro-guidance-bar">
+                    <div className="jro-guidance-bar" aria-hidden="true">
                       <i style={{ width: `${g.readRate ?? 0}%` }} />
                     </div>
+                    <p className="jro-guidance-method">
+                      {g.actionKind
+                        ? g.datedReads
+                          ? text(
+                              `الفعل اللاحق مرصود لدى ${g.applied} من ${g.datedReads} باحثين لهم قراءة مؤرخة.`,
+                              `Later work observed for ${g.applied} of ${g.datedReads} members with dated reads.`,
+                            )
+                          : text(
+                              "لا توجد قراءة مؤرخة كافية لقياس العمل اللاحق بعد.",
+                              "No dated reading evidence for measuring subsequent work yet.",
+                            )
+                        : text(
+                            "العمل بعد هذا الإرشاد غير مقاس آليًا؛ راجعه مع الباحث.",
+                            "Application is not automatically measured for this guide; review it with the member.",
+                          )}
+                    </p>
                     <footer>
-                      <span>
-                        {g.readRate === null ? "—" : g.readRate + "%"}{" "}
-                        {text("قراءة", "read")}
-                      </span>
                       <button
+                        className="jro-small"
                         disabled={!g.unreadIds.length}
-                        onClick={() => {
-                          setUnreadCode(g.code);
-                          setQueueFilter("UNREAD");
-                          setSelected(null);
-                        }}
+                        onClick={() => inspectUnread(g.code)}
                       >
-                        {text("افحص غير المقروء", "Inspect unread")} (
-                        {g.unreadIds.length})
+                        {text("عرض من لم يقرأ", "View unread members")}{" "}
+                        <b>{g.unreadIds.length}</b>
                       </button>
                     </footer>
                   </article>
@@ -901,8 +977,8 @@ export function JourneyObservatory({
             </div>
             <p className="jro-footnote">
               {text(
-                "الفعل المؤرخ بعد القراءة ارتباط زمني، وليس إثباتًا أن الإرشاد سبب التحسن. لا نستنتج تطبيق إرشاد من الضغط على زر، ولا نحول القياسات المفقودة إلى صفر. حالات الإتاحة والقراءة المحفوظة تراكمية؛ القياس المؤرخ يحتاج سجل قراءة.",
-                "A subsequent dated action is a temporal association, not proof of guidance impact. A click is not treated as application, and missing measurements are not zero. Saved unlock/read states are cumulative; a dated association requires a reading timestamp.",
+                "الإتاحة والقراءة حالات محفوظة تراكمية. الفعل اللاحق يحتاج قراءة مؤرخة؛ وهو ارتباط زمني لا يثبت أن الإرشاد سبّب التحسن. الرمز — يعني أن القياس غير متاح، وليس أن النتيجة صفر.",
+                "Access and reading are cumulative saved states. Subsequent work requires a dated read and does not prove causality. A dash means measurement is unavailable, rather than a zero result.",
               )}
             </p>
           </section>
@@ -1068,11 +1144,21 @@ export function JourneyObservatory({
                         {text("إعداد توجيه", "Draft guidance")}
                       </button>
                       <button
-                        disabled={!data.nodes.some((n) => n.code === p.currentCode)}
-                        title={!data.nodes.some((n) => n.code === p.currentCode) ? text("افحص حالة المحطة غير المعروفة أولًا", "Inspect the unknown station state first") : undefined}
+                        disabled={
+                          !data.nodes.some((n) => n.code === p.currentCode)
+                        }
+                        title={
+                          !data.nodes.some((n) => n.code === p.currentCode)
+                            ? text(
+                                "افحص حالة المحطة غير المعروفة أولًا",
+                                "Inspect the unknown station state first",
+                              )
+                            : undefined
+                        }
                         onClick={() =>
                           setCreateAt(
-                            data.nodes.find((n) => n.code === p.currentCode) ?? null,
+                            data.nodes.find((n) => n.code === p.currentCode) ??
+                              null,
                           )
                         }
                       >

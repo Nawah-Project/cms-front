@@ -10,7 +10,7 @@ import {
   type OperationsStatsResponse,
 } from "./api/adminApi";
 import { AdminActivityList } from "./components/AdminActivityList";
-import { MemberInspectorDrawer } from "./components/MemberInspectorDrawer";
+import { MemberInspectorModal } from "./components/MemberInspectorModal";
 import { FeedbackFormDialog } from "../professional-development/components/FeedbackFormDialog";
 import { useI18n } from "../../i18n";
 import {
@@ -52,8 +52,12 @@ export default function AdminOverviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const [inspectorMemberId, setInspectorMemberId] = useState<string | null>(null);
-  const [feedbackTarget, setFeedbackTarget] = useState<AdminMember | null>(null);
+  const [inspectorMemberId, setInspectorMemberId] = useState<string | null>(
+    null,
+  );
+  const [feedbackTarget, setFeedbackTarget] = useState<AdminMember | null>(
+    null,
+  );
 
   const load = () => {
     setLoading(true);
@@ -86,13 +90,7 @@ export default function AdminOverviewPage() {
 
   if (loading) return <LoadingState label={t("admin.loadingOverview")} />;
   if (error || !data)
-    return (
-      <ErrorState
-        message={t("admin.overviewError")}
-        onRetry={load}
-
-      />
-    );
+    return <ErrorState message={t("admin.overviewError")} onRetry={load} />;
 
   const { overview, groups, activity, attention, operations, uxMetrics } = data;
 
@@ -130,7 +128,9 @@ export default function AdminOverviewPage() {
           {/* Card 1: Total Users */}
           <div className="rounded-xl border border-neutral-200/80 bg-surface p-4 shadow-xs dark:border-neutral-800">
             <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400">
-              <span className="text-xs font-semibold">{t("admin.totalUsers")}</span>
+              <span className="text-xs font-semibold">
+                {t("admin.totalUsers")}
+              </span>
               <Users className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             </div>
             <p className="mt-2 text-2xl font-black tracking-tight text-neutral-950 dark:text-white tabular-nums">
@@ -146,7 +146,9 @@ export default function AdminOverviewPage() {
           {/* Card 2: Active Groups */}
           <div className="rounded-xl border border-neutral-200/80 bg-surface p-4 shadow-xs dark:border-neutral-800">
             <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400">
-              <span className="text-xs font-semibold">{t("admin.groupsCount")}</span>
+              <span className="text-xs font-semibold">
+                {t("admin.groupsCount")}
+              </span>
               <Layers className="h-4 w-4 text-info-strong" />
             </div>
             <p className="mt-2 text-2xl font-black tracking-tight text-neutral-950 dark:text-white tabular-nums">
@@ -162,7 +164,9 @@ export default function AdminOverviewPage() {
           {/* Card 3: Active Members */}
           <div className="rounded-xl border border-neutral-200/80 bg-surface p-4 shadow-xs dark:border-neutral-800">
             <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400">
-              <span className="text-xs font-semibold">{t("admin.activeUsers")}</span>
+              <span className="text-xs font-semibold">
+                {t("admin.activeUsers")}
+              </span>
               <Activity className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             </div>
             <p className="mt-2 text-2xl font-black tracking-tight text-emerald-700 dark:text-emerald-400 tabular-nums">
@@ -176,7 +180,9 @@ export default function AdminOverviewPage() {
           {/* Card 4: Applications Count */}
           <div className="rounded-xl border border-neutral-200/80 bg-surface p-4 shadow-xs dark:border-neutral-800">
             <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400">
-              <span className="text-xs font-semibold">{t("admin.applicationsCount")}</span>
+              <span className="text-xs font-semibold">
+                {t("admin.applicationsCount")}
+              </span>
               <Send className="h-4 w-4 text-info-strong" />
             </div>
             <p className="mt-2 text-2xl font-black tracking-tight text-neutral-950 dark:text-white tabular-nums">
@@ -190,7 +196,9 @@ export default function AdminOverviewPage() {
           {/* Card 5: Warning Members */}
           <div className="rounded-xl border border-neutral-200/80 bg-surface p-4 shadow-xs dark:border-neutral-800">
             <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400">
-              <span className="text-xs font-semibold">{isAr ? "بحاجة لمتابعة" : "Needs Followup"}</span>
+              <span className="text-xs font-semibold">
+                {isAr ? "بحاجة لمتابعة" : "Needs Followup"}
+              </span>
               <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             </div>
             <p className="mt-2 text-2xl font-black tracking-tight text-amber-700 dark:text-amber-400 tabular-nums">
@@ -204,7 +212,9 @@ export default function AdminOverviewPage() {
           {/* Card 6: Critical / Inactive */}
           <div className="rounded-xl border border-neutral-200/80 bg-surface p-4 shadow-xs dark:border-neutral-800">
             <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400">
-              <span className="text-xs font-semibold">{isAr ? "منقطع 7 أيام فأكثر" : "Critical Inactive"}</span>
+              <span className="text-xs font-semibold">
+                {isAr ? "منقطع 7 أيام فأكثر" : "Critical Inactive"}
+              </span>
               <Flame className="h-4 w-4 text-rose-600 dark:text-rose-400" />
             </div>
             <p className="mt-2 text-2xl font-black tracking-tight text-rose-600 dark:text-rose-400 tabular-nums">
@@ -218,7 +228,9 @@ export default function AdminOverviewPage() {
           {/* Card 7: Never Active */}
           <div className="rounded-xl border border-neutral-200/80 bg-surface p-4 shadow-xs dark:border-neutral-800">
             <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400">
-              <span className="text-xs font-semibold">{isAr ? "لم يبدأ النشاط" : "Never Active"}</span>
+              <span className="text-xs font-semibold">
+                {isAr ? "لم يبدأ النشاط" : "Never Active"}
+              </span>
               <Users className="h-4 w-4 text-neutral-400" />
             </div>
             <p className="mt-2 text-2xl font-black tracking-tight text-neutral-700 dark:text-neutral-300 tabular-nums">
@@ -232,7 +244,9 @@ export default function AdminOverviewPage() {
           {/* Card 8: Available Capacity */}
           <div className="rounded-xl border border-neutral-200/80 bg-surface p-4 shadow-xs dark:border-neutral-800">
             <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400">
-              <span className="text-xs font-semibold">{isAr ? "المقاعد المتاحة" : "Available Seats"}</span>
+              <span className="text-xs font-semibold">
+                {isAr ? "المقاعد المتاحة" : "Available Seats"}
+              </span>
               <Layers className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             </div>
             <p className="mt-2 text-2xl font-black tracking-tight text-emerald-700 dark:text-emerald-400 tabular-nums">
@@ -262,7 +276,8 @@ export default function AdminOverviewPage() {
                   {isAr ? "هندسة الرحلة والحبكة" : "Journey Engine"}
                 </span>
                 <span className="text-xs text-neutral-500">
-                  {number(week0Count + week1to4Count)} {isAr ? "عضو" : "members"}
+                  {number(week0Count + week1to4Count)}{" "}
+                  {isAr ? "عضو" : "members"}
                 </span>
               </div>
               <p className="mt-3 text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed">
@@ -275,7 +290,9 @@ export default function AdminOverviewPage() {
               to="/admin/journey"
               className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-neutral-900 dark:text-neutral-100 hover:underline"
             >
-              <span>{isAr ? "إدارة الرحلة والحبكة ←" : "Open Journey Engine →"}</span>
+              <span>
+                {isAr ? "إدارة الرحلة والحبكة ←" : "Open Journey Engine →"}
+              </span>
             </Link>
           </div>
 
@@ -288,7 +305,9 @@ export default function AdminOverviewPage() {
                   {isAr ? "مختبر التجربة والسلوك" : "UX & Behavior Lab"}
                 </span>
                 <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs font-mono font-bold text-neutral-900 border border-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:border-neutral-700">
-                  {isAr ? `النسخة: ${activeVariant}` : `Variant ${activeVariant}`}
+                  {isAr
+                    ? `النسخة: ${activeVariant}`
+                    : `Variant ${activeVariant}`}
                 </span>
               </div>
               <p className="mt-3 text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed">
@@ -328,7 +347,11 @@ export default function AdminOverviewPage() {
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
                   <div
                     className={`h-full rounded-full transition-all ${
-                      emailPercent > 85 ? "bg-rose-500" : emailPercent > 60 ? "bg-amber-500" : "bg-neutral-900 dark:bg-white"
+                      emailPercent > 85
+                        ? "bg-rose-500"
+                        : emailPercent > 60
+                          ? "bg-amber-500"
+                          : "bg-neutral-900 dark:bg-white"
                     }`}
                     style={{ width: `${emailPercent}%` }}
                   />
@@ -339,7 +362,9 @@ export default function AdminOverviewPage() {
               to="/admin/operations"
               className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-300 hover:underline"
             >
-              <span>{isAr ? "مراقبة العمليات والحدود ←" : "Monitor Operations →"}</span>
+              <span>
+                {isAr ? "مراقبة العمليات والحدود ←" : "Monitor Operations →"}
+              </span>
             </Link>
           </div>
         </div>
@@ -355,7 +380,9 @@ export default function AdminOverviewPage() {
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               <h3 className="text-base font-bold text-neutral-950 dark:text-neutral-100">
-                {isAr ? "أعضاء يحتاجون تدخلك الآن" : "Priority Intervention Queue"}
+                {isAr
+                  ? "أعضاء يحتاجون تدخلك الآن"
+                  : "Priority Intervention Queue"}
               </h3>
             </div>
             <p className="mt-0.5 text-xs text-neutral-500">
@@ -429,7 +456,9 @@ export default function AdminOverviewPage() {
       <section className="space-y-3">
         <div className="flex items-end justify-between border-b border-neutral-200/80 pb-3 dark:border-neutral-800">
           <div>
-            <p className="text-xs text-neutral-500">{t("admin.recentChanges")}</p>
+            <p className="text-xs text-neutral-500">
+              {t("admin.recentChanges")}
+            </p>
             <h3 className="mt-1 text-base font-bold text-neutral-950 dark:text-neutral-100">
               {t("admin.recentActivity")}
             </h3>
@@ -446,8 +475,8 @@ export default function AdminOverviewPage() {
         </div>
       </section>
 
-      {/* Member 360° Inspector Slide-over Drawer */}
-      <MemberInspectorDrawer
+      {/* Member 360° profile dialog */}
+      <MemberInspectorModal
         memberId={inspectorMemberId}
         onClose={() => setInspectorMemberId(null)}
         onMemberUpdated={load}

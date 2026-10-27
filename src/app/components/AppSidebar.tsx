@@ -267,7 +267,9 @@ function isPathActive(pathname: string, to: string, end?: boolean) {
     return pathname === to;
   }
   if (to === "/applications") {
-    return pathname === "/applications" || pathname.startsWith("/applications/");
+    return (
+      pathname === "/applications" || pathname.startsWith("/applications/")
+    );
   }
   return pathname === to || pathname.startsWith(`${to}/`);
 }
@@ -280,12 +282,14 @@ export function AppSidebar({
   onToggleCollapsed: () => void;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [guidanceHint, setGuidanceHint] = useState<{mobile:boolean} | null>(null);
+  const [guidanceHint, setGuidanceHint] = useState<{ mobile: boolean } | null>(
+    null,
+  );
   useEffect(() => {
     const show = () => {
       const mobile = window.matchMedia("(max-width: 1023px)").matches;
       if (mobile) setMobileOpen(true);
-      setGuidanceHint({mobile});
+      setGuidanceHint({ mobile });
     };
     window.addEventListener("nawah:guidance-available", show);
     return () => window.removeEventListener("nawah:guidance-available", show);
@@ -323,7 +327,9 @@ export function AppSidebar({
   );
 
   useEffect(() => {
-    const reveal = () => { if (window.matchMedia("(max-width: 1023px)").matches) setMobileOpen(true); };
+    const reveal = () => {
+      if (window.matchMedia("(max-width: 1023px)").matches) setMobileOpen(true);
+    };
     window.addEventListener("nawah:analytics-unlocked", reveal);
     return () => window.removeEventListener("nawah:analytics-unlocked", reveal);
   }, []);
@@ -343,7 +349,9 @@ export function AppSidebar({
 
   const renderAdminPrimaryNav = (mobile = false) => (
     <div className="space-y-1">
-      <div className={`px-3 pb-1 pt-1 ${collapsed && !mobile ? "sr-only" : ""}`}>
+      <div
+        className={`px-3 pb-1 pt-1 ${collapsed && !mobile ? "sr-only" : ""}`}
+      >
         <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
           {locale === "ar" ? "مركز قيادة المنصة" : "Admin Command Center"}
         </p>
@@ -367,10 +375,18 @@ export function AppSidebar({
             onClick={() => mobile && setMobileOpen(false)}
             aria-current={active ? "page" : undefined}
             aria-label={locale === "ar" ? item.labelAr : item.labelEn}
-            title={collapsed && !mobile ? (locale === "ar" ? item.labelAr : item.labelEn) : undefined}
+            title={
+              collapsed && !mobile
+                ? locale === "ar"
+                  ? item.labelAr
+                  : item.labelEn
+                : undefined
+            }
             className={className}
           >
-            <span className={`flex min-w-0 items-center gap-2.5 ${collapsed && !mobile ? "justify-center" : ""}`}>
+            <span
+              className={`flex min-w-0 items-center gap-2.5 ${collapsed && !mobile ? "justify-center" : ""}`}
+            >
               <NavIcon name={item.icon} />
               <span className={collapsed && !mobile ? "sr-only" : "truncate"}>
                 {locale === "ar" ? item.labelAr : item.labelEn}
@@ -393,12 +409,24 @@ export function AppSidebar({
       <button
         type="button"
         onClick={() => setUserViewOpen((prev) => !prev)}
-        aria-label={locale === "ar" ? "منظور الباحث (معاينة)" : "Researcher View (Preview)"}
-        title={collapsed && !mobile ? (locale === "ar" ? "منظور الباحث (معاينة)" : "Researcher View (Preview)") : undefined}
+        aria-label={
+          locale === "ar"
+            ? "منظور الباحث (معاينة)"
+            : "Researcher View (Preview)"
+        }
+        title={
+          collapsed && !mobile
+            ? locale === "ar"
+              ? "منظور الباحث (معاينة)"
+              : "Researcher View (Preview)"
+            : undefined
+        }
         className={`flex w-full items-center justify-between px-3 py-2 text-xs font-semibold text-neutral-400 hover:text-neutral-200 transition-colors rounded-lg hover:bg-neutral-800/50 cursor-pointer ${collapsed && !mobile ? "justify-center px-2" : ""}`}
         aria-expanded={userViewOpen}
       >
-        <span className={`flex items-center gap-2 ${collapsed && !mobile ? "justify-center" : ""}`}>
+        <span
+          className={`flex items-center gap-2 ${collapsed && !mobile ? "justify-center" : ""}`}
+        >
           <Eye className="h-4 w-4 text-neutral-400" />
           <span className={collapsed && !mobile ? "sr-only" : ""}>
             {locale === "ar"
@@ -406,11 +434,13 @@ export function AppSidebar({
               : "Researcher View (Preview)"}
           </span>
         </span>
-        {!collapsed || mobile ? <ChevronDown
-          className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${
-            userViewOpen ? "rotate-180" : ""
-          }`}
-        /> : null}
+        {!collapsed || mobile ? (
+          <ChevronDown
+            className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${
+              userViewOpen ? "rotate-180" : ""
+            }`}
+          />
+        ) : null}
       </button>
 
       {userViewOpen && (
@@ -437,9 +467,15 @@ export function AppSidebar({
                 title={collapsed && !mobile ? t(item.labelKey) : undefined}
                 className={className}
               >
-                <span className={`flex min-w-0 items-center gap-2.5 ${collapsed && !mobile ? "justify-center" : ""}`}>
+                <span
+                  className={`flex min-w-0 items-center gap-2.5 ${collapsed && !mobile ? "justify-center" : ""}`}
+                >
                   <NavIcon name={item.icon} />
-                  <span className={collapsed && !mobile ? "sr-only" : "truncate"}>{t(item.labelKey)}</span>
+                  <span
+                    className={collapsed && !mobile ? "sr-only" : "truncate"}
+                  >
+                    {t(item.labelKey)}
+                  </span>
                 </span>
               </Link>
             );
@@ -455,7 +491,8 @@ export function AppSidebar({
         const active = isPathActive(location.pathname, item.to, item.end);
         const isLocked =
           !journeyLoading &&
-          ((item.to === "/reports" && !journeyData?.features.analytics) || (item.to === "/members-progress" && !isGroupUnlocked) ||
+          ((item.to === "/reports" && !journeyData?.features.analytics) ||
+            (item.to === "/members-progress" && !isGroupUnlocked) ||
             (item.to === "/professional-development" && !isProfDevUnlocked));
 
         const className = `flex items-center justify-between gap-3 rounded-lg px-3 py-3 text-sm transition duration-150 hover:scale-[1.01] ${
@@ -474,9 +511,13 @@ export function AppSidebar({
 
         const content = (
           <>
-            <span className={`flex min-w-0 items-center gap-3 ${collapsed && !mobile ? "justify-center" : ""}`}>
+            <span
+              className={`flex min-w-0 items-center gap-3 ${collapsed && !mobile ? "justify-center" : ""}`}
+            >
               <NavIcon name={item.icon} />
-              <span className={collapsed && !mobile ? "sr-only" : "truncate"}>{t(item.labelKey)}</span>
+              <span className={collapsed && !mobile ? "sr-only" : "truncate"}>
+                {t(item.labelKey)}
+              </span>
             </span>
             {isLocked && !(collapsed && !mobile) && (
               <span
@@ -493,13 +534,23 @@ export function AppSidebar({
           const bubbleKey = `${mobile ? "m" : "d"}-${item.to}`;
           const isBubbleOpen = openLockedBubbleKey === bubbleKey;
           const lockTitle =
-            item.to === "/reports" ? t("common.navReports") : item.to === "/professional-development"
-              ? t("common.navProfessionalDevelopment")
-              : t("common.navMembersProgress");
+            item.to === "/reports"
+              ? t("common.navReports")
+              : item.to === "/professional-development"
+                ? t("common.navProfessionalDevelopment")
+                : t("common.navMembersProgress");
           const lockRequirement =
-            item.to === "/reports" ? (journeyData?.cvFoundation?.unlocked ? (locale === "ar" ? "أكمل إرشاد السيرة: ارفع النسخة المحدّثة من داخله؛ بعدها يكتمل الإرشاد ويفتح التحليل تلقائيًا." : "Upload your revised CV inside its guide to automatically complete it and unlock analytics.") : (locale === "ar" ? "أكمل المهمة صفر أولًا. خطوتك الحالية موجودة في درج المهام." : "Complete Task 0 first. Your current step is in the tasks drawer.")) : item.to === "/professional-development"
-              ? t("journey.profDevLockedTooltip")
-              : t("journey.groupLockedTooltip");
+            item.to === "/reports"
+              ? journeyData?.cvFoundation?.unlocked
+                ? locale === "ar"
+                  ? "أكمل إرشاد السيرة: ارفع النسخة المحدّثة من داخله؛ بعدها يكتمل الإرشاد ويفتح التحليل تلقائيًا."
+                  : "Upload your revised CV inside its guide to automatically complete it and unlock analytics."
+                : locale === "ar"
+                  ? "أكمل المهمة صفر أولًا. خطوتك الحالية موجودة في نافذة المهام."
+                  : "Complete Task 0 first. Your current step is in the tasks window."
+              : item.to === "/professional-development"
+                ? t("journey.profDevLockedTooltip")
+                : t("journey.groupLockedTooltip");
 
           return (
             <div key={item.to} className="relative">
@@ -522,11 +573,24 @@ export function AppSidebar({
                 onClose={() => setOpenLockedBubbleKey(null)}
                 title={lockTitle}
                 requirement={lockRequirement}
-                ctaLabel={item.to==="/reports" && journeyData?.cvFoundation?.unlocked ? (locale==="ar"?"افتح إرشاد السيرة":"Open CV guide") : t("journey.panelTitle")}
+                ctaLabel={
+                  item.to === "/reports" && journeyData?.cvFoundation?.unlocked
+                    ? locale === "ar"
+                      ? "افتح إرشاد السيرة"
+                      : "Open CV guide"
+                    : t("journey.panelTitle")
+                }
                 onCtaClick={() => {
                   if (mobile) setMobileOpen(false);
                   setOpenLockedBubbleKey(null);
-                  if(item.to==="/reports" && journeyData?.cvFoundation?.unlocked) navigate("/professional-development?guidance=INSIGHT_TASK_0_CV_BASE"); else openJourneyTasksPanel();
+                  if (
+                    item.to === "/reports" &&
+                    journeyData?.cvFoundation?.unlocked
+                  )
+                    navigate(
+                      "/professional-development?guidance=INSIGHT_TASK_0_CV_BASE",
+                    );
+                  else openJourneyTasksPanel();
                 }}
                 placement={mobile ? "bottom" : "inline-end"}
               />
@@ -536,27 +600,47 @@ export function AppSidebar({
 
         return (
           <div key={item.to} className="relative">
-          <Link
-            to={item.to}
-            onClick={() => {setGuidanceHint(null); if(mobile)setMobileOpen(false);}}
-            aria-current={active ? "page" : undefined}
-            aria-label={t(item.labelKey)}
-            data-tour-step={item.to === "/reports" ? "analytics-unlocked-nav" : undefined}
-            title={collapsed && !mobile ? t(item.labelKey) : undefined}
-            className={className}
-          >
-            {content}
-          </Link>
-          {item.to === "/professional-development" && <ContextualLockBubble
-            kind="guidance"
-            isOpen={Boolean(guidanceHint && guidanceHint.mobile === mobile)}
-            onClose={() => setGuidanceHint(null)}
-            title={locale === "ar" ? "إرشاد جديد متاح ليك" : "New guidance is available"}
-            requirement={locale === "ar" ? "خطوتك الجاية هنا: راجع إرشاد تحسين السيرة وطبّقه على نسختك الجديدة. تقدر تفتحه دلوقتي أو ترجع له من التطوير المهني." : "Your next step is the CV guide. Apply it to your revised CV now, or return from Professional Development when ready."}
-            ctaLabel={locale === "ar" ? "افتح الإرشاد" : "Open the guide"}
-            onCtaClick={() => {if(mobile)setMobileOpen(false);navigate('/professional-development?guidance=INSIGHT_TASK_0_CV_BASE');}}
-            placement={mobile ? "bottom" : "inline-end"}
-          />}
+            <Link
+              to={item.to}
+              onClick={() => {
+                setGuidanceHint(null);
+                if (mobile) setMobileOpen(false);
+              }}
+              aria-current={active ? "page" : undefined}
+              aria-label={t(item.labelKey)}
+              data-tour-step={
+                item.to === "/reports" ? "analytics-unlocked-nav" : undefined
+              }
+              title={collapsed && !mobile ? t(item.labelKey) : undefined}
+              className={className}
+            >
+              {content}
+            </Link>
+            {item.to === "/professional-development" && (
+              <ContextualLockBubble
+                kind="guidance"
+                isOpen={Boolean(guidanceHint && guidanceHint.mobile === mobile)}
+                onClose={() => setGuidanceHint(null)}
+                title={
+                  locale === "ar"
+                    ? "إرشاد جديد متاح ليك"
+                    : "New guidance is available"
+                }
+                requirement={
+                  locale === "ar"
+                    ? "خطوتك الجاية هنا: راجع إرشاد تحسين السيرة وطبّقه على نسختك الجديدة. تقدر تفتحه دلوقتي أو ترجع له من التطوير المهني."
+                    : "Your next step is the CV guide. Apply it to your revised CV now, or return from Professional Development when ready."
+                }
+                ctaLabel={locale === "ar" ? "افتح الإرشاد" : "Open the guide"}
+                onCtaClick={() => {
+                  if (mobile) setMobileOpen(false);
+                  navigate(
+                    "/professional-development?guidance=INSIGHT_TASK_0_CV_BASE",
+                  );
+                }}
+                placement={mobile ? "bottom" : "inline-end"}
+              />
+            )}
           </div>
         );
       })}
@@ -592,54 +676,85 @@ export function AppSidebar({
           d="M10 17l5-5-5-5m5 5H3.5m8-8.5h5A3.5 3.5 0 0 1 20 7v10a3.5 3.5 0 0 1-3.5 3.5h-5"
         />
       </svg>
-      <span className={collapsed && !mobile ? "sr-only" : ""}>{t("common.signOut")}</span>
+      <span className={collapsed && !mobile ? "sr-only" : ""}>
+        {t("common.signOut")}
+      </span>
     </button>
   );
 
   return (
     <>
-      <aside className={`workspace-sidebar fixed inset-y-0 start-0 z-[65] hidden flex-col border-e border-neutral-800 bg-neutral-900 py-7 transition-[width,padding] duration-200 lg:flex overflow-y-auto ${collapsed ? "w-20 px-2.5" : "w-64 px-5"}`}>
+      <aside
+        className={`workspace-sidebar fixed inset-y-0 start-0 z-[65] hidden flex-col border-e border-neutral-800 bg-neutral-900 py-7 transition-[width,padding] duration-200 lg:flex overflow-y-auto ${collapsed ? "w-20 px-2.5" : "w-64 px-5"}`}
+      >
         <div className={`mb-6 ${collapsed ? "" : "px-1"}`}>
-          <div className={`flex ${collapsed ? "flex-col items-center gap-3" : "items-start justify-between gap-2"}`}>
-          <Link
-            to={isAdmin ? "/admin" : "/"}
-            title={collapsed ? t("common.brand") : undefined}
-            className={`flex min-w-0 items-start gap-3 text-sm font-semibold tracking-tight text-white ${collapsed ? "justify-center" : ""}`}
+          <div
+            className={`flex ${collapsed ? "flex-col items-center gap-3" : "items-start justify-between gap-2"}`}
           >
-            <img
-              src="/nawah-logo.svg"
-              alt=""
-              className="h-9 w-9 shrink-0 rounded-md object-contain"
-            />
-            <span className={collapsed ? "sr-only" : "min-w-0 flex-1 pt-0.5"}>
-              <span className="block whitespace-nowrap leading-tight">
-                {t("common.brand")}
+            <Link
+              to={isAdmin ? "/admin" : "/"}
+              title={collapsed ? t("common.brand") : undefined}
+              className={`flex min-w-0 items-start gap-3 text-sm font-semibold tracking-tight text-white ${collapsed ? "justify-center" : ""}`}
+            >
+              <img
+                src="/nawah-logo.svg"
+                alt=""
+                className="h-9 w-9 shrink-0 rounded-md object-contain"
+              />
+              <span className={collapsed ? "sr-only" : "min-w-0 flex-1 pt-0.5"}>
+                <span className="block whitespace-nowrap leading-tight">
+                  {t("common.brand")}
+                </span>
+                <time
+                  className="mt-1 block text-xs font-normal tracking-normal text-neutral-400"
+                  dateTime={new Date().toISOString()}
+                >
+                  {today}
+                </time>
               </span>
-              <time
-                className="mt-1 block text-xs font-normal tracking-normal text-neutral-400"
-                dateTime={new Date().toISOString()}
-              >
-                {today}
-              </time>
-            </span>
-          </Link>
-          <button
-            type="button"
-            onClick={onToggleCollapsed}
-            aria-label={collapsed ? (locale === "ar" ? "توسيع القائمة الجانبية" : "Expand sidebar") : (locale === "ar" ? "تصغير القائمة الجانبية" : "Collapse sidebar")}
-            title={collapsed ? (locale === "ar" ? "توسيع القائمة الجانبية" : "Expand sidebar") : (locale === "ar" ? "تصغير القائمة الجانبية" : "Collapse sidebar")}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-neutral-700 text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-white focus-visible:outline-2 focus-visible:outline-info-strong"
-          >
-            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </button>
+            </Link>
+            <button
+              type="button"
+              onClick={onToggleCollapsed}
+              aria-label={
+                collapsed
+                  ? locale === "ar"
+                    ? "توسيع القائمة الجانبية"
+                    : "Expand sidebar"
+                  : locale === "ar"
+                    ? "تصغير القائمة الجانبية"
+                    : "Collapse sidebar"
+              }
+              title={
+                collapsed
+                  ? locale === "ar"
+                    ? "توسيع القائمة الجانبية"
+                    : "Expand sidebar"
+                  : locale === "ar"
+                    ? "تصغير القائمة الجانبية"
+                    : "Collapse sidebar"
+              }
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-neutral-700 text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-white focus-visible:outline-2 focus-visible:outline-info-strong"
+            >
+              {collapsed ? (
+                <PanelLeftOpen className="h-4 w-4" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" />
+              )}
+            </button>
           </div>
-          <div className={`mt-3 flex items-center gap-1.5 ${collapsed ? "flex-col" : "justify-end"}`}>
+          <div
+            className={`mt-3 flex items-center gap-1.5 ${collapsed ? "flex-col" : "justify-end"}`}
+          >
             {!isReportPreviewRoute && <NotificationCenter variant="dark" />}
             {localeToggle(collapsed)}
           </div>
         </div>
 
-        <nav aria-label={t("common.primaryNavigation")} className="flex-1 space-y-1">
+        <nav
+          aria-label={t("common.primaryNavigation")}
+          className="flex-1 space-y-1"
+        >
           {isAdmin ? (
             <>
               {renderAdminPrimaryNav(false)}
@@ -686,9 +801,7 @@ export function AppSidebar({
             <button
               type="button"
               aria-label={
-                mobileOpen
-                  ? t("common.closeMenu")
-                  : t("common.openMenu")
+                mobileOpen ? t("common.closeMenu") : t("common.openMenu")
               }
               onClick={() => setMobileOpen((o) => !o)}
               className="rounded-lg p-2 text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"
@@ -721,7 +834,10 @@ export function AppSidebar({
 
         {mobileOpen && (
           <div className="mt-4 border-t border-border pt-4 dark:border-neutral-800 max-h-[calc(100vh-80px)] overflow-y-auto pb-6">
-            <nav aria-label={t("common.mobileNavigation")} className="space-y-1">
+            <nav
+              aria-label={t("common.mobileNavigation")}
+              className="space-y-1"
+            >
               {isAdmin ? (
                 <>
                   {renderAdminPrimaryNav(true)}

@@ -12,10 +12,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../../features/auth/store/authStore";
 import { useI18n } from "../../../i18n";
 import { JourneyContinueCoachmark } from "./JourneyContinueCoachmark";
-import { placeTourCard, readTourViewport, type TourViewport } from "./tour-layout";
+import {
+  placeTourCard,
+  readTourViewport,
+  type TourViewport,
+} from "./tour-layout";
 import { profileApi } from "../../../features/profile/profileApi";
 import { trackUxEvent } from "../../../utils/uxAnalytics";
-import { FIRST_APPLICATION_FLOW, isGuideFinished, useExperienceProgress } from "../../experience/ExperienceProgress";
+import {
+  FIRST_APPLICATION_FLOW,
+  isGuideFinished,
+  useExperienceProgress,
+} from "../../experience/ExperienceProgress";
 
 export type TourStep = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
@@ -62,20 +70,24 @@ const STEP_CONTENTS: Record<TourStep, StepContent> = {
   1: {
     titleAr: "الخطوة 1 من 7: افتح خريطة مهامك 🎯",
     titleEn: "Step 1 of 7: Open your Quest Map 🎯",
-    bodyAr: "اضغط على زر المهام الجانبي لترى المهمة التمهيدية المطلوبة منك الآن.",
-    bodyEn: "Click the side quest handle to view your active onboarding mission.",
+    bodyAr:
+      "اضغط على زر المهام الجانبي لترى المهمة التمهيدية المطلوبة منك الآن.",
+    bodyEn: "Click the quest button to view your active onboarding mission.",
   },
   2: {
     titleAr: "الخطوة 2 من 7: ابدأ أول طلب تقديم 🚀",
     titleEn: "Step 2 of 7: Start Your First Application 🚀",
-    bodyAr: "اضغط على زر (+ إضافة طلب تقديم) داخل بطاقة المهمة لتجهيز أول طلب وظيفة.",
-    bodyEn: "Click (+ Add Application) in the mission card to set up your first application.",
+    bodyAr:
+      "اضغط على زر (+ إضافة طلب تقديم) داخل بطاقة المهمة لتجهيز أول طلب وظيفة.",
+    bodyEn:
+      "Click (+ Add Application) in the mission card to set up your first application.",
   },
   3: {
     titleAr: "الخطوة 3 من 7: افتح مستكشف الوظائف 🧭",
     titleEn: "Step 3 of 7: Open Job Explorer 🧭",
     bodyAr: "اضغط هنا للوصول السريع إلى الوظائف المفتوحة والمفلترة بتخصصك.",
-    bodyEn: "Click here to discover open jobs pre-filtered by your specialization.",
+    bodyEn:
+      "Click here to discover open jobs pre-filtered by your specialization.",
   },
   4: {
     titleAr: "الخطوة 4 من 7: ابحث في LinkedIn Jobs 💼",
@@ -89,7 +101,8 @@ const STEP_CONTENTS: Record<TourStep, StepContent> = {
     titleAr: "الخطوة 5 من 7: سجل اسم الشركة 🏢",
     titleEn: "Step 5 of 7: Record Company Name 🏢",
     bodyAr: "اكتب اسم الشركة التي وجدت الفرصة لديها (واضغط التالي للمتابعة).",
-    bodyEn: "Enter the company name where you found the job (click Next to continue).",
+    bodyEn:
+      "Enter the company name where you found the job (click Next to continue).",
   },
   6: {
     titleAr: "الخطوة 6 من 7: الصق رابط الوظيفة 🔗",
@@ -203,9 +216,7 @@ export function FirstApplicationGuidedTourProvider({
     enabled: Boolean(user) && enabled,
   });
 
-  const storageKey = user?.id
-    ? `nawah_v2_guided_tour_done_${user.id}`
-    : null;
+  const storageKey = user?.id ? `nawah_v2_guided_tour_done_${user.id}` : null;
 
   const [isTourActive, setIsTourActive] = useState(false);
   const [completionOwner, setCompletionOwner] = useState<string | null>(null);
@@ -234,7 +245,11 @@ export function FirstApplicationGuidedTourProvider({
     }
     if (user.role === "ADMIN" || isGuideFinished(firstProgress)) {
       setIsTourActive(false);
-      setCompletionOwner(experience.progress["journey-continue-v1"]?.status === "IN_PROGRESS" ? user.id : null);
+      setCompletionOwner(
+        experience.progress["journey-continue-v1"]?.status === "IN_PROGRESS"
+          ? user.id
+          : null,
+      );
       return;
     }
     if (startedOwner.current === user.id) return;
@@ -246,20 +261,40 @@ export function FirstApplicationGuidedTourProvider({
     setIsTourActive(true);
     setStep(resumeStep);
     resumeForm.current = resumeStep >= 3;
-  }, [enabled, user?.id, user?.role, storageKey, profile?.profileComplete, experience.ready, firstProgress?.status, experience.progress["journey-continue-v1"]?.status]);
+  }, [
+    enabled,
+    user?.id,
+    user?.role,
+    storageKey,
+    profile?.profileComplete,
+    experience.ready,
+    firstProgress?.status,
+    experience.progress["journey-continue-v1"]?.status,
+  ]);
 
   useEffect(() => {
     if (!isTourActive || !resumeForm.current) return;
-    const timer = window.setTimeout(() => { resumeForm.current = false; window.dispatchEvent(new Event("nawah_open_add_modal")); }, 80);
+    const timer = window.setTimeout(() => {
+      resumeForm.current = false;
+      window.dispatchEvent(new Event("nawah_open_add_modal"));
+    }, 80);
     return () => window.clearTimeout(timer);
   }, [isTourActive]);
 
   useEffect(() => {
-    if (isTourActive) experience.record(FIRST_APPLICATION_FLOW, "IN_PROGRESS", step);
+    if (isTourActive)
+      experience.record(FIRST_APPLICATION_FLOW, "IN_PROGRESS", step);
   }, [isTourActive, step, experience.record]);
 
   let preparing = false;
-  preparing = Boolean(enabled && user?.role !== "ADMIN" && user && !experience.error && !isGuideFinished(firstProgress) && (!experience.ready || profile === undefined));
+  preparing = Boolean(
+    enabled &&
+    user?.role !== "ADMIN" &&
+    user &&
+    !experience.error &&
+    !isGuideFinished(firstProgress) &&
+    (!experience.ready || profile === undefined),
+  );
   const completeTour = () => {
     experience.record(FIRST_APPLICATION_FLOW, "COMPLETED", 7);
     experience.record("explorer-intro-week1-v1", "COMPLETED", 0);
@@ -303,8 +338,16 @@ export function FirstApplicationGuidedTourProvider({
         : null;
 
       if (el) {
-        if (step !== 1 && alignedTarget !== el && el.getBoundingClientRect().height > 0) {
-          el.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
+        if (
+          step !== 1 &&
+          alignedTarget !== el &&
+          el.getBoundingClientRect().height > 0
+        ) {
+          el.scrollIntoView({
+            block: "center",
+            inline: "nearest",
+            behavior: "instant",
+          });
           alignedTarget = el;
         }
 
@@ -469,9 +512,18 @@ export function FirstApplicationGuidedTourProvider({
     window.visualViewport?.addEventListener("scroll", update);
     window.addEventListener("resize", update);
     const node = cardRef.current;
-    const observer = node ? new ResizeObserver(() => setCardHeight(node.getBoundingClientRect().height)) : null;
+    const observer = node
+      ? new ResizeObserver(() =>
+          setCardHeight(node.getBoundingClientRect().height),
+        )
+      : null;
     if (node) observer?.observe(node);
-    return () => { observer?.disconnect(); window.visualViewport?.removeEventListener("resize", update); window.visualViewport?.removeEventListener("scroll", update); window.removeEventListener("resize", update); };
+    return () => {
+      observer?.disconnect();
+      window.visualViewport?.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
   }, [isTourActive, step]);
 
   const isStep5Valid = companyValue.trim().length >= 2;
@@ -492,8 +544,25 @@ export function FirstApplicationGuidedTourProvider({
     }
   }
 
-  const visibleViewport = viewport ?? {width: typeof window !== "undefined" ? window.innerWidth : 1200, height: typeof window !== "undefined" ? window.innerHeight : 800, top: 0, left: 0};
-  const placement = placeTourCard(activeRect ?? {top:100,bottom:100,left:visibleViewport.width/2,right:visibleViewport.width/2,width:0,height:0}, visibleViewport, cardHeight, step === 1);
+  const visibleViewport = viewport ?? {
+    width: typeof window !== "undefined" ? window.innerWidth : 1200,
+    height: typeof window !== "undefined" ? window.innerHeight : 800,
+    top: 0,
+    left: 0,
+  };
+  const placement = placeTourCard(
+    activeRect ?? {
+      top: 100,
+      bottom: 100,
+      left: visibleViewport.width / 2,
+      right: visibleViewport.width / 2,
+      width: 0,
+      height: 0,
+    },
+    visibleViewport,
+    cardHeight,
+    step === 1,
+  );
 
   const pad = 2;
 
@@ -501,7 +570,11 @@ export function FirstApplicationGuidedTourProvider({
     <TourContext.Provider
       value={{
         isTourActive,
-        isTourBlocking: preparing || isTourActive || completionOwner === user?.id || !experience.ready,
+        isTourBlocking:
+          preparing ||
+          isTourActive ||
+          completionOwner === user?.id ||
+          !experience.ready,
         step,
         nextStep,
         setStep,
@@ -509,13 +582,42 @@ export function FirstApplicationGuidedTourProvider({
       }}
     >
       {children}
-      {experience.error && !experience.ready && <div role="alert" className="fixed bottom-5 inset-x-5 z-[9995] mx-auto max-w-md rounded-xl border border-border bg-white p-4 shadow-xl"><p className="text-sm text-text-primary">{isRtl ? "تعذر تحميل خطوات حسابك. أعد المحاولة لاستكمال الشرح من مكانك." : "Your account's guide progress could not be loaded. Retry to continue where you left off."}</p><button type="button" className="button-primary mt-3" onClick={experience.refresh}>{isRtl ? "إعادة المحاولة" : "Retry"}</button></div>}
-      {preparing && typeof document!=="undefined" && createPortal(<div data-tour-pending className="tour-scrim fixed inset-0 z-[9989]"/>, document.body)}
+      {experience.error && !experience.ready && (
+        <div
+          role="alert"
+          className="fixed bottom-5 inset-x-5 z-[9995] mx-auto max-w-md rounded-xl border border-border bg-white p-4 shadow-xl"
+        >
+          <p className="text-sm text-text-primary">
+            {isRtl
+              ? "تعذر تحميل خطوات حسابك. أعد المحاولة لاستكمال الشرح من مكانك."
+              : "Your account's guide progress could not be loaded. Retry to continue where you left off."}
+          </p>
+          <button
+            type="button"
+            className="button-primary mt-3"
+            onClick={experience.refresh}
+          >
+            {isRtl ? "إعادة المحاولة" : "Retry"}
+          </button>
+        </div>
+      )}
+      {preparing &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            data-tour-pending
+            className="tour-scrim fixed inset-0 z-[9989]"
+          />,
+          document.body,
+        )}
 
       {isTourActive &&
         typeof document !== "undefined" &&
         createPortal(
-          <div data-mandatory-tour className="fixed inset-0 w-full h-dvh z-[9990] pointer-events-none select-none overflow-hidden">
+          <div
+            data-mandatory-tour
+            className="fixed inset-0 w-full h-dvh z-[9990] pointer-events-none select-none overflow-hidden"
+          >
             {/* 4 Physical Backdrop Divs: Invisible hitboxes blocking clicks EXCEPT inside activeRect (z-[9990]) */}
             {activeRect ? (
               <>
@@ -623,7 +725,9 @@ export function FirstApplicationGuidedTourProvider({
                 position: "fixed",
                 width: placement.width,
                 maxHeight: visibleViewport.height - 24,
-                overflowY: "auto", overflowX: "hidden", overflowWrap: "anywhere",
+                overflowY: "auto",
+                overflowX: "hidden",
+                overflowWrap: "anywhere",
                 top: placement.top,
                 left: placement.left,
                 zIndex: 9999,
@@ -631,7 +735,10 @@ export function FirstApplicationGuidedTourProvider({
               className="relative rounded-2xl border border-border-strong bg-surface px-4 py-3.5 text-text-primary shadow-2xl  duration-200 pointer-events-auto"
             >
               {/* Attached Pointer Arrow */}
-              <TourArrow dir={placement.arrowDir} offset={placement.arrowOffset} />
+              <TourArrow
+                dir={placement.arrowDir}
+                offset={placement.arrowOffset}
+              />
 
               {/* Mini Top Bar (No divider line) */}
               <div className="flex items-center justify-between">
@@ -661,9 +768,14 @@ export function FirstApplicationGuidedTourProvider({
               </h3>
 
               {/* Description */}
-              {!((step === 5 || step === 6) && visibleViewport.height < 450) && <p className="mt-1 text-[11px] leading-relaxed text-text-secondary">
-                {isRtl ? currentContent.bodyAr : currentContent.bodyEn}
-              </p>}
+              {!(
+                (step === 5 || step === 6) &&
+                visibleViewport.height < 450
+              ) && (
+                <p className="mt-1 text-[11px] leading-relaxed text-text-secondary">
+                  {isRtl ? currentContent.bodyAr : currentContent.bodyEn}
+                </p>
+              )}
 
               {/* Steps 5 & 6 only: Sleek inline Next button */}
               {step === 5 && (
@@ -676,8 +788,12 @@ export function FirstApplicationGuidedTourProvider({
                     }`}
                   >
                     {isStep5Valid
-                      ? (isRtl ? "✓ جاهز للمتابعة" : "✓ Ready")
-                      : (isRtl ? "اكتب اسم الشركة..." : "Type company name...")}
+                      ? isRtl
+                        ? "✓ جاهز للمتابعة"
+                        : "✓ Ready"
+                      : isRtl
+                        ? "اكتب اسم الشركة..."
+                        : "Type company name..."}
                   </span>
                   <button
                     type="button"
@@ -704,8 +820,12 @@ export function FirstApplicationGuidedTourProvider({
                     }`}
                   >
                     {isStep6Valid
-                      ? (isRtl ? "✓ رابط صحيح" : "✓ Valid link")
-                      : (isRtl ? "الصق الرابط (http://)..." : "Paste job URL...")}
+                      ? isRtl
+                        ? "✓ رابط صحيح"
+                        : "✓ Valid link"
+                      : isRtl
+                        ? "الصق الرابط (http://)..."
+                        : "Paste job URL..."}
                   </span>
                   <button
                     type="button"
@@ -725,7 +845,14 @@ export function FirstApplicationGuidedTourProvider({
           </div>,
           document.body,
         )}
-      {enabled && completionOwner === user?.id && !isTourActive && <JourneyContinueCoachmark onDismiss={() => { experience.record("journey-continue-v1", "COMPLETED"); setCompletionOwner(null); }} />}
+      {enabled && completionOwner === user?.id && !isTourActive && (
+        <JourneyContinueCoachmark
+          onDismiss={() => {
+            experience.record("journey-continue-v1", "COMPLETED");
+            setCompletionOwner(null);
+          }}
+        />
+      )}
     </TourContext.Provider>
   );
 }

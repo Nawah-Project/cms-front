@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useState, type DragEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type DragEvent,
+} from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router";
 import { PageHeading } from "../../../components/ui/PageHeading";
 import { useI18n } from "../../../i18n";
@@ -14,7 +20,7 @@ import type {
   TaskStatus,
   UpdateTaskInput,
 } from "../types";
-import { TaskDetailDrawer } from "../components/TaskDetailDrawer";
+import { TaskDetailModal } from "../components/TaskDetailModal";
 import { TaskCard, TaskSection } from "../components/TaskPresentation";
 import { ProfessionalDevelopmentNav } from "../components/ProfessionalDevelopmentNav";
 import { TaskFormDialog } from "../components/TaskFormDialog";
@@ -34,11 +40,16 @@ export default function TasksPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { data: journeyData, isLoading: journeyLoading, isError: journeyError, refetch: retryJourney } = useJourneyState({
+  const {
+    data: journeyData,
+    isLoading: journeyLoading,
+    isError: journeyError,
+    refetch: retryJourney,
+  } = useJourneyState({
     enabled: Boolean(user),
   });
-  const isUnlocked = user?.role === "ADMIN" || Boolean(journeyData?.features?.professionalTasks);
-
+  const isUnlocked =
+    user?.role === "ADMIN" || Boolean(journeyData?.features?.professionalTasks);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedTaskId = searchParams.get("task");
@@ -49,7 +60,9 @@ export default function TasksPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [taskFormOpen, setTaskFormOpen] = useState(false);
-  const [movingTaskIds, setMovingTaskIds] = useState<Set<string>>(() => new Set());
+  const [movingTaskIds, setMovingTaskIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<TaskStatus | null>(null);
   const [moveError, setMoveError] = useState(false);
@@ -91,7 +104,8 @@ export default function TasksPage() {
       const nextWeek = new Date(today);
       nextWeek.setDate(nextWeek.getDate() + 7);
       return tasks.filter((task) => {
-        if (!task.dueDate || task.overdue || task.status === "DONE") return false;
+        if (!task.dueDate || task.overdue || task.status === "DONE")
+          return false;
         const dueDate = new Date(task.dueDate);
         dueDate.setHours(0, 0, 0, 0);
         return dueDate >= today && dueDate <= nextWeek;
@@ -100,12 +114,14 @@ export default function TasksPage() {
     return tasks;
   }, [activeFilter, tasks]);
   const filterLabel = activeFilter
-    ? ({
-        active: "activeTasks",
-        "in-progress": "inProgressCount",
-        upcoming: "dueSoonCount",
-        overdue: "overdueCount",
-      } as Record<string, string>)[activeFilter]
+    ? (
+        {
+          active: "activeTasks",
+          "in-progress": "inProgressCount",
+          upcoming: "dueSoonCount",
+          overdue: "overdueCount",
+        } as Record<string, string>
+      )[activeFilter]
     : undefined;
 
   const byStatus = useMemo(
@@ -173,9 +189,21 @@ export default function TasksPage() {
     if (taskId) void moveTask(taskId, status);
   };
 
-  if (journeyError) return <div role="alert" className="rounded-2xl border border-border p-5"><p>{t("common.unexpectedError")}</p><button className="button-primary mt-3" onClick={()=>void retryJourney()}>{t("common.retry")}</button></div>;
+  if (journeyError)
+    return (
+      <div role="alert" className="rounded-2xl border border-border p-5">
+        <p>{t("common.unexpectedError")}</p>
+        <button
+          className="button-primary mt-3"
+          onClick={() => void retryJourney()}
+        >
+          {t("common.retry")}
+        </button>
+      </div>
+    );
 
-  if (!journeyLoading && journeyData && !isUnlocked) return <Navigate to="/professional-development" replace />;
+  if (!journeyLoading && journeyData && !isUnlocked)
+    return <Navigate to="/professional-development" replace />;
 
   if (journeyLoading) {
     return (
@@ -244,7 +272,8 @@ export default function TasksPage() {
             تم تفعيل أداة إدارة المهام الشخصية!
           </p>
           <p className="mt-0.5 text-xs text-emerald-800 dark:text-emerald-300 leading-relaxed">
-            يمكنك الآن تطبيق إرشادات إدارة الوقت وتنظيم مهامك اليومية هنا ومتابعة مراحل إنجازها.
+            يمكنك الآن تطبيق إرشادات إدارة الوقت وتنظيم مهامك اليومية هنا
+            ومتابعة مراحل إنجازها.
           </p>
         </div>
       </div>
@@ -281,7 +310,10 @@ export default function TasksPage() {
       )}
 
       {moveError && (
-        <p role="alert" className="rounded-lg border border-danger-border bg-danger-soft px-3 py-2 text-sm text-danger-strong">
+        <p
+          role="alert"
+          className="rounded-lg border border-danger-border bg-danger-soft px-3 py-2 text-sm text-danger-strong"
+        >
           {t("professionalDevelopment.saveError")}
         </p>
       )}
@@ -415,7 +447,7 @@ export default function TasksPage() {
           )}
         </>
       )}
-      <TaskDetailDrawer
+      <TaskDetailModal
         taskId={selectedTaskId}
         onClose={() => selectTask(null)}
         onChanged={load}

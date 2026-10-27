@@ -3,6 +3,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
+  BookOpen,
   ArrowUpLeft,
   BarChart3,
   Check,
@@ -31,8 +32,9 @@ import {
 } from "../ux-lab/labApi";
 import type { SectionId } from "../ux-lab/SectionExperience";
 import { JourneyTopologyCanvas } from "./components/JourneyTopologyCanvas";
-import { MemberInspectorDrawer } from "./components/MemberInspectorDrawer";
+import { MemberInspectorModal } from "./components/MemberInspectorModal";
 import { FeedbackFormDialog } from "../professional-development/components/FeedbackFormDialog";
+import { UxResearchGuide } from "./journey-observatory/UxResearchGuide";
 import "./ux-lab.css";
 
 function labError(error: unknown, ar: boolean) {
@@ -115,6 +117,7 @@ export default function AdminUxLabPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("MAP");
+  const [guideOpen, setGuideOpen] = useState(false);
   const [days, setDays] = useState(30);
   const [groupId, setGroup] = useState("");
   const [experimentId, setExperiment] = useState("");
@@ -227,7 +230,11 @@ export default function AdminUxLabPage() {
     URL.revokeObjectURL(url);
   };
   return (
-    <div className={`ux-lab space-y-6 ${tab === "MAP" ? "journey-map-page" : ""}`} dir={ar ? "rtl" : "ltr"}>
+    <div
+      className={`ux-lab space-y-6 ${tab === "MAP" ? "journey-map-page" : ""}`}
+      dir={ar ? "rtl" : "ltr"}
+    >
+      {guideOpen && <UxResearchGuide onClose={() => setGuideOpen(false)} />}
       <header className="lab-heading">
         <div>
           <p className="lab-eyebrow">
@@ -246,7 +253,11 @@ export default function AdminUxLabPage() {
             )}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button className="lab-button" onClick={() => setGuideOpen(true)}>
+            <BookOpen size={16} />
+            {text("دليل الاستخدام", "User guide")}
+          </button>
           <span className="lab-badge">
             <span className="h-2 w-2 rounded-full bg-[#155546]" />
             {text("المرجع الحالي", "Current baseline")} A
@@ -333,7 +344,7 @@ export default function AdminUxLabPage() {
         </div>
       ) : (
         <>
-          {(
+          {
             <section
               className="lab-card flex flex-wrap items-end justify-between gap-4 !p-4"
               aria-label={text("نطاق القياس", "Measurement scope")}
@@ -415,7 +426,7 @@ export default function AdminUxLabPage() {
                 UTC
               </p>
             </section>
-          )}
+          }
           {tab === "ACTIVATION" && (
             <>
               <div className="grid gap-4 sm:grid-cols-3">
@@ -1280,7 +1291,7 @@ export default function AdminUxLabPage() {
           </footer>
         </>
       )}
-      <MemberInspectorDrawer
+      <MemberInspectorModal
         memberId={inspect}
         onClose={() => setInspect(null)}
         onMemberUpdated={refresh}
@@ -1381,7 +1392,7 @@ function guideTitle(key: string, ar: boolean) {
     "groups-week1-v1": ["تقدم المجموعة", "Group progress"],
     "analytics-week1-v1": ["تحليل الأداء", "Performance analytics"],
     "analytics-unlocked-v1": ["فتح تحليل الأداء", "Analytics unlock"],
-    "journey-coachmark-v1": ["درج المهام", "Task drawer"],
+    "journey-coachmark-v1": ["نافذة المهام", "Task window"],
     "journey-continue-v1": ["متابعة الرحلة", "Continue journey"],
   };
   return labels[key]?.[ar ? 0 : 1] ?? key;

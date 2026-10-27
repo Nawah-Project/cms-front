@@ -9,7 +9,7 @@ import {
 } from "./api/adminApi";
 import { AdminMemberDetail } from "./components/AdminMemberDetail";
 import { AdminActivityList } from "./components/AdminActivityList";
-import { MemberInspectorDrawer } from "./components/MemberInspectorDrawer";
+import { MemberInspectorModal } from "./components/MemberInspectorModal";
 import { useI18n } from "../../i18n";
 import {
   ActivityBadge,
@@ -57,11 +57,15 @@ export default function AdminCommunityPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const toast = useToast();
 
-  const tabParam = (searchParams.get("tab") as "members" | "groups" | "activity") || "members";
-  const [activeTab, setActiveTab] = useState<"members" | "groups" | "activity">(tabParam);
+  const tabParam =
+    (searchParams.get("tab") as "members" | "groups" | "activity") || "members";
+  const [activeTab, setActiveTab] = useState<"members" | "groups" | "activity">(
+    tabParam,
+  );
 
   useEffect(() => {
-    const tParam = searchParams.get("tab") as "members" | "groups" | "activity" | null;
+    const tParam = searchParams.get("tab") as
+      "members" | "groups" | "activity" | null;
     if (tParam && ["members", "groups", "activity"].includes(tParam)) {
       setActiveTab(tParam);
     }
@@ -84,24 +88,38 @@ export default function AdminCommunityPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [membersLoading, setMembersLoading] = useState(true);
   const [membersError, setMembersError] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<"ALL" | ActivityStatus>("ALL");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | ActivityStatus>(
+    "ALL",
+  );
   const [weekFilter, setWeekFilter] = useState<string>("ALL");
   const [groupFilter, setGroupFilter] = useState<string>("ALL");
   const [searchInput, setSearchInput] = useState("");
-  const [inspectorMemberId, setInspectorMemberId] = useState<string | null>(null);
+  const [inspectorMemberId, setInspectorMemberId] = useState<string | null>(
+    null,
+  );
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const [selectedMember, setSelectedMember] = useState<AdminMember | null>(null);
-  const [removingMember, setRemovingMember] = useState<AdminMember | null>(null);
-  const [assigningMember, setAssigningMember] = useState<AdminMember | null>(null);
+  const [selectedMember, setSelectedMember] = useState<AdminMember | null>(
+    null,
+  );
+  const [removingMember, setRemovingMember] = useState<AdminMember | null>(
+    null,
+  );
+  const [assigningMember, setAssigningMember] = useState<AdminMember | null>(
+    null,
+  );
   const [targetGroupId, setTargetGroupId] = useState("");
   const [removeLoading, setRemoveLoading] = useState(false);
   const [assignLoading, setAssignLoading] = useState(false);
 
   // --- Groups Tab State ---
   const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null);
-  const [groupMembersMap, setGroupMembersMap] = useState<Record<string, AdminMember[]>>({});
-  const [loadingGroupIds, setLoadingGroupIds] = useState<Record<string, boolean>>({});
+  const [groupMembersMap, setGroupMembersMap] = useState<
+    Record<string, AdminMember[]>
+  >({});
+  const [loadingGroupIds, setLoadingGroupIds] = useState<
+    Record<string, boolean>
+  >({});
   const [createGroupModalOpen, setCreateGroupModalOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [creatingGroup, setCreatingGroup] = useState(false);
@@ -192,7 +210,9 @@ export default function AdminCommunityPage() {
         const res = await adminApi.users({ groupId, limit: 50 });
         setGroupMembersMap((prev) => ({ ...prev, [groupId]: res.items }));
       } catch {
-        toast.error(isAr ? "تعذر تحميل أعضاء المجموعة" : "Failed to load group members");
+        toast.error(
+          isAr ? "تعذر تحميل أعضاء المجموعة" : "Failed to load group members",
+        );
       } finally {
         setLoadingGroupIds((prev) => ({ ...prev, [groupId]: false }));
       }
@@ -204,7 +224,10 @@ export default function AdminCommunityPage() {
     if (!removingMember || !removingMember.group?.id) return;
     setRemoveLoading(true);
     try {
-      await adminApi.removeFromGroup(removingMember.group.id, removingMember.id);
+      await adminApi.removeFromGroup(
+        removingMember.group.id,
+        removingMember.id,
+      );
       toast.success(
         t("admin.removedSuccess", {
           name: removingMember.name,
@@ -236,7 +259,9 @@ export default function AdminCommunityPage() {
       setTargetGroupId("");
       loadMembers();
     } catch {
-      toast.error(isAr ? "تعذر تعيين العضو للمجموعة" : "Failed to assign member");
+      toast.error(
+        isAr ? "تعذر تعيين العضو للمجموعة" : "Failed to assign member",
+      );
     } finally {
       setAssignLoading(false);
     }
@@ -248,7 +273,9 @@ export default function AdminCommunityPage() {
     setCreatingGroup(true);
     try {
       await adminApi.createGroup(newGroupName.trim());
-      toast.success(isAr ? "تم إنشاء المجموعة بنجاح" : "Group created successfully");
+      toast.success(
+        isAr ? "تم إنشاء المجموعة بنجاح" : "Group created successfully",
+      );
       setNewGroupName("");
       setCreateGroupModalOpen(false);
       loadMembers();
@@ -322,7 +349,11 @@ export default function AdminCommunityPage() {
                   type="text"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder={isAr ? "بحث بالاسم، البريد، أو التخصص..." : "Search by name, email, specialization..."}
+                  placeholder={
+                    isAr
+                      ? "بحث بالاسم، البريد، أو التخصص..."
+                      : "Search by name, email, specialization..."
+                  }
                   className="field-control w-full ps-9 text-xs"
                 />
               </div>
@@ -336,7 +367,9 @@ export default function AdminCommunityPage() {
                 }}
                 className="field-control text-xs"
               >
-                <option value="ALL">{isAr ? "كل الحالات" : "All Statuses"}</option>
+                <option value="ALL">
+                  {isAr ? "كل الحالات" : "All Statuses"}
+                </option>
                 {statuses.map((s) => (
                   <option key={s} value={s}>
                     {t(`admin.activityFilter.${s}`)}
@@ -369,7 +402,9 @@ export default function AdminCommunityPage() {
                 }}
                 className="field-control text-xs"
               >
-                <option value="ALL">{isAr ? "كل المجموعات" : "All Groups"}</option>
+                <option value="ALL">
+                  {isAr ? "كل المجموعات" : "All Groups"}
+                </option>
                 <option value="UNASSIGNED">
                   {isAr ? "الأعضاء غير المسندين (شاغر)" : "Unassigned Members"}
                 </option>
@@ -394,18 +429,31 @@ export default function AdminCommunityPage() {
               <table className="w-full text-start text-xs sm:text-sm">
                 <thead className="border-b border-border bg-neutral-50/90 text-neutral-600 dark:bg-neutral-900/50 dark:text-neutral-400 font-medium">
                   <tr>
-                    <th className="px-4 py-3 text-start">{t("admin.member")}</th>
-                    <th className="px-3 py-3 text-start">{isAr ? "المحطة الحالية" : "Current Node"}</th>
+                    <th className="px-4 py-3 text-start">
+                      {t("admin.member")}
+                    </th>
+                    <th className="px-3 py-3 text-start">
+                      {isAr ? "المحطة الحالية" : "Current Node"}
+                    </th>
                     <th className="px-3 py-3 text-start">{t("admin.group")}</th>
-                    <th className="px-3 py-3 text-start">{t("admin.applications")}</th>
-                    <th className="px-3 py-3 text-start">{isAr ? "المهام" : "Tasks"}</th>
-                    <th className="px-3 py-3 text-start">{t("admin.status")}</th>
+                    <th className="px-3 py-3 text-start">
+                      {t("admin.applications")}
+                    </th>
+                    <th className="px-3 py-3 text-start">
+                      {isAr ? "المهام" : "Tasks"}
+                    </th>
+                    <th className="px-3 py-3 text-start">
+                      {t("admin.status")}
+                    </th>
                     <th className="px-4 py-3 text-end">{t("admin.actions")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-subtle">
                   {members.map((member) => (
-                    <tr key={member.id} className="hover:bg-neutral-50/80 dark:hover:bg-neutral-800/40 transition-colors">
+                    <tr
+                      key={member.id}
+                      className="hover:bg-neutral-50/80 dark:hover:bg-neutral-800/40 transition-colors"
+                    >
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">
                           <Initials name={member.name} avatar={member.avatar} />
@@ -430,7 +478,9 @@ export default function AdminCommunityPage() {
 
                       <td className="px-3 py-3.5 text-neutral-700 dark:text-neutral-300">
                         {member.group ? (
-                          <span className="font-medium">{member.group.name}</span>
+                          <span className="font-medium">
+                            {member.group.name}
+                          </span>
                         ) : (
                           <span className="text-amber-600 dark:text-amber-400 font-medium text-xs">
                             {t("common.unassigned")}
@@ -443,18 +493,23 @@ export default function AdminCommunityPage() {
                           <span className="font-bold tabular-nums text-neutral-950 dark:text-neutral-100">
                             {number(member.applicationsCount)}
                           </span>
-                          <StageCounts counts={member.currentStageCounts} compact />
+                          <StageCounts
+                            counts={member.currentStageCounts}
+                            compact
+                          />
                         </div>
                       </td>
 
                       <td className="px-3 py-3.5 text-neutral-600 dark:text-neutral-400">
                         {member.development?.overdue ? (
                           <span className="text-rose-600 dark:text-rose-400 font-semibold text-xs">
-                            {member.development.overdue} {isAr ? "متأخرة" : "overdue"}
+                            {member.development.overdue}{" "}
+                            {isAr ? "متأخرة" : "overdue"}
                           </span>
                         ) : member.development?.active ? (
                           <span className="text-emerald-700 dark:text-emerald-400 text-xs">
-                            {member.development.active} {isAr ? "نشطة" : "active"}
+                            {member.development.active}{" "}
+                            {isAr ? "نشطة" : "active"}
                           </span>
                         ) : (
                           <span className="text-neutral-400 text-xs">-</span>
@@ -507,7 +562,10 @@ export default function AdminCommunityPage() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between border-t border-border px-4 py-3">
                   <span className="text-xs text-neutral-400">
-                    {t("admin.pageOf", { page: number(page), pages: number(totalPages) })}
+                    {t("admin.pageOf", {
+                      page: number(page),
+                      pages: number(totalPages),
+                    })}
                   </span>
                   <div className="flex gap-2">
                     <button
@@ -521,7 +579,9 @@ export default function AdminCommunityPage() {
                     <button
                       type="button"
                       disabled={page >= totalPages}
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      onClick={() =>
+                        setPage((p) => Math.min(totalPages, p + 1))
+                      }
                       className="button-secondary px-3 py-1 text-xs disabled:opacity-40"
                     >
                       {t("admin.next")}
@@ -547,7 +607,9 @@ export default function AdminCommunityPage() {
               className="button-primary inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold cursor-pointer"
             >
               <Plus className="h-4 w-4" />
-              <span>{isAr ? "+ إنشاء مجموعة جديدة" : "+ Create New Cohort"}</span>
+              <span>
+                {isAr ? "+ إنشاء مجموعة جديدة" : "+ Create New Cohort"}
+              </span>
             </button>
           </div>
 
@@ -556,7 +618,12 @@ export default function AdminCommunityPage() {
               const isExpanded = expandedGroupId === group.id;
               const membersInGroup = groupMembersMap[group.id] ?? [];
               const isLoadingMembers = loadingGroupIds[group.id];
-              const capPercent = Math.min(100, Math.round((group.memberCount / Math.max(1, group.capacity)) * 100));
+              const capPercent = Math.min(
+                100,
+                Math.round(
+                  (group.memberCount / Math.max(1, group.capacity)) * 100,
+                ),
+              );
 
               return (
                 <div
@@ -575,7 +642,8 @@ export default function AdminCommunityPage() {
                         <h4 className="text-sm font-bold text-neutral-950 dark:text-neutral-100 flex items-center gap-2">
                           {group.name}
                           <span className="rounded-md bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-2 py-0.5 text-[11px] font-mono text-neutral-800 dark:text-neutral-200">
-                            {group.memberCount} / {group.capacity} ({capPercent}%)
+                            {group.memberCount} / {group.capacity} ({capPercent}
+                            %)
                           </span>
                         </h4>
                         <div className="flex items-center gap-3 mt-1">
@@ -619,9 +687,19 @@ export default function AdminCommunityPage() {
                   {isExpanded && (
                     <div className="border-t border-border bg-neutral-50/70 dark:bg-neutral-900/40 p-4 space-y-3 animate-in fade-in duration-150">
                       {isLoadingMembers ? (
-                        <LoadingState label={isAr ? "جارٍ تحميل الأعضاء..." : "Loading members..."} />
+                        <LoadingState
+                          label={
+                            isAr
+                              ? "جارٍ تحميل الأعضاء..."
+                              : "Loading members..."
+                          }
+                        />
                       ) : !membersInGroup.length ? (
-                        <EmptyState>{isAr ? "لا يوجد أعضاء في هذه المجموعة حالياً." : "No members in this group yet."}</EmptyState>
+                        <EmptyState>
+                          {isAr
+                            ? "لا يوجد أعضاء في هذه المجموعة حالياً."
+                            : "No members in this group yet."}
+                        </EmptyState>
                       ) : (
                         <div className="divide-y divide-border-subtle">
                           {membersInGroup.map((m) => (
@@ -639,7 +717,9 @@ export default function AdminCommunityPage() {
                                   >
                                     {m.name}
                                   </button>
-                                  <p className="text-[10px] text-neutral-500">{m.email}</p>
+                                  <p className="text-[10px] text-neutral-500">
+                                    {m.email}
+                                  </p>
                                 </div>
                               </div>
                               <div className="flex items-center gap-3">
@@ -674,7 +754,9 @@ export default function AdminCommunityPage() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-base font-bold text-neutral-950 dark:text-neutral-100">
-                {isAr ? "سجل نشاط المنصة المباشر" : "Platform Activity Audit Feed"}
+                {isAr
+                  ? "سجل نشاط المنصة المباشر"
+                  : "Platform Activity Audit Feed"}
               </h3>
               <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
                 {isAr
@@ -683,7 +765,8 @@ export default function AdminCommunityPage() {
               </p>
             </div>
             <span className="text-xs font-mono text-neutral-400">
-              {number(activityTotalCount)} {isAr ? "حدث مسجل" : "events recorded"}
+              {number(activityTotalCount)}{" "}
+              {isAr ? "حدث مسجل" : "events recorded"}
             </span>
           </div>
 
@@ -709,7 +792,9 @@ export default function AdminCommunityPage() {
                       <button
                         type="button"
                         disabled={activityPage <= 1}
-                        onClick={() => setActivityPage((p) => Math.max(1, p - 1))}
+                        onClick={() =>
+                          setActivityPage((p) => Math.max(1, p - 1))
+                        }
                         className="button-secondary px-3 py-1 text-xs disabled:opacity-40"
                       >
                         {t("admin.previous")}
@@ -717,7 +802,11 @@ export default function AdminCommunityPage() {
                       <button
                         type="button"
                         disabled={activityPage >= activityTotalPages}
-                        onClick={() => setActivityPage((p) => Math.min(activityTotalPages, p + 1))}
+                        onClick={() =>
+                          setActivityPage((p) =>
+                            Math.min(activityTotalPages, p + 1),
+                          )
+                        }
                         className="button-secondary px-3 py-1 text-xs disabled:opacity-40"
                       >
                         {t("admin.next")}
@@ -731,7 +820,7 @@ export default function AdminCommunityPage() {
         </div>
       )}
 
-      {/* Detail Drawer */}
+      {/* Detail dialog */}
       {selectedMember && (
         <AdminMemberDetail
           member={selectedMember}
@@ -781,12 +870,15 @@ export default function AdminCommunityPage() {
                 onChange={(e) => setTargetGroupId(e.target.value)}
                 className="field-control w-full text-xs"
               >
-                <option value="">{isAr ? "اختر مجموعة..." : "Select group..."}</option>
+                <option value="">
+                  {isAr ? "اختر مجموعة..." : "Select group..."}
+                </option>
                 {groups
                   .filter((g) => g.availableSlots > 0)
                   .map((g) => (
                     <option key={g.id} value={g.id}>
-                      {g.name} ({g.availableSlots} {isAr ? "مقعد شاغر" : "slots available"})
+                      {g.name} ({g.availableSlots}{" "}
+                      {isAr ? "مقعد شاغر" : "slots available"})
                     </option>
                   ))}
               </select>
@@ -829,7 +921,9 @@ export default function AdminCommunityPage() {
                 required
                 value={newGroupName}
                 onChange={(e) => setNewGroupName(e.target.value)}
-                placeholder={isAr ? "مثال: مجموعة الرياض 4" : "e.g. Cohort Alpha 4"}
+                placeholder={
+                  isAr ? "مثال: مجموعة الرياض 4" : "e.g. Cohort Alpha 4"
+                }
                 className="field-control w-full text-xs"
               />
             </div>
@@ -846,15 +940,21 @@ export default function AdminCommunityPage() {
                 disabled={creatingGroup || !newGroupName.trim()}
                 className="button-primary px-3 py-1.5 text-xs font-bold disabled:opacity-40"
               >
-                {creatingGroup ? (isAr ? "جارٍ الإنشاء..." : "Creating...") : (isAr ? "إنشاء المجموعة" : "Create Group")}
+                {creatingGroup
+                  ? isAr
+                    ? "جارٍ الإنشاء..."
+                    : "Creating..."
+                  : isAr
+                    ? "إنشاء المجموعة"
+                    : "Create Group"}
               </button>
             </div>
           </form>
         </Modal>
       )}
 
-      {/* Member 360° Inspector Slide-over Drawer */}
-      <MemberInspectorDrawer
+      {/* Member 360° profile dialog */}
+      <MemberInspectorModal
         memberId={inspectorMemberId}
         onClose={() => setInspectorMemberId(null)}
         onMemberUpdated={loadMembers}
@@ -862,4 +962,3 @@ export default function AdminCommunityPage() {
     </div>
   );
 }
-

@@ -21,6 +21,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
+import { Modal } from "../../../components/ui/Modal";
 import { buildBlueprint } from "./blueprint-layout";
 import { WEEK_TITLES, type JourneyMap, type Station } from "./api";
 type View = { x: number; y: number; z: number };
@@ -34,6 +35,7 @@ export function JourneyBlueprint({
   overlay,
   traceId,
   inspector,
+  onCloseInspection,
 }: {
   data: JourneyMap;
   ar: boolean;
@@ -44,6 +46,7 @@ export function JourneyBlueprint({
   overlay: "positions" | "review" | "completion";
   traceId?: string;
   inspector?: ReactNode;
+  onCloseInspection: () => void;
 }) {
   const text = (a: string, e: string) => (ar ? a : e);
   const [mode, setMode] = useState<"blueprint" | "overview">("blueprint");
@@ -102,7 +105,7 @@ export function JourneyBlueprint({
     auto.current = false;
     setView((v) => {
       const z = Math.max(v.z, 0.78),
-        inset = inspector ? Math.min(345, el.clientWidth - 50) : 0;
+        inset = 0;
       const x = ar
         ? (el.clientWidth + inset) / 2
         : (el.clientWidth - inset) / 2;
@@ -126,9 +129,9 @@ export function JourneyBlueprint({
     return () => resize.disconnect();
   }, [mode, week]);
   useEffect(() => {
-    if (selected && mode === "blueprint")
-      requestAnimationFrame(() => center(selected));
-  }, [selected, week, mode]);
+    const code = selected ?? (traceId ? traced?.currentCode : null);
+    if (code && mode === "blueprint") requestAnimationFrame(() => center(code));
+  }, [selected, week, mode, traceId]);
   useEffect(() => {
     if (mode !== "blueprint") return;
     const el = viewport.current;
@@ -377,9 +380,7 @@ export function JourneyBlueprint({
               }
               if (
                 e.button !== 0 ||
-                (e.target as Element).closest(
-                  "button,a,input,select,textarea",
-                )
+                (e.target as Element).closest("button,a,input,select,textarea")
               )
                 return;
               auto.current = false;
@@ -711,15 +712,30 @@ export function JourneyBlueprint({
                                   : text("بداية", "Start")}
                               </span>
                               <span>
-                                {n.requiredTailoredCount
-                                  ? <><FilePenLine size={10} />{n.requiredTailoredCount}</>
-                                  : ""}
-                                {n.requiredPostsCount
-                                  ? <><Megaphone size={10} />{n.requiredPostsCount}</>
-                                  : ""}
-                                {n.requiredOutreachCount
-                                  ? <><Send size={10} />{n.requiredOutreachCount}</>
-                                  : ""}
+                                {n.requiredTailoredCount ? (
+                                  <>
+                                    <FilePenLine size={10} />
+                                    {n.requiredTailoredCount}
+                                  </>
+                                ) : (
+                                  ""
+                                )}
+                                {n.requiredPostsCount ? (
+                                  <>
+                                    <Megaphone size={10} />
+                                    {n.requiredPostsCount}
+                                  </>
+                                ) : (
+                                  ""
+                                )}
+                                {n.requiredOutreachCount ? (
+                                  <>
+                                    <Send size={10} />
+                                    {n.requiredOutreachCount}
+                                  </>
+                                ) : (
+                                  ""
+                                )}
                               </span>
                             </>
                           )}
@@ -760,7 +776,12 @@ export function JourneyBlueprint({
                                 "تأسيس السيرة الذاتية · تطبيق الإرشاد",
                                 "Base CV · apply guidance",
                               )
-                            : cell.guidance ? text(cell.guidance.titleAr, cell.guidance.titleEn) : text("إرشاد مرتبط", "Linked guidance")}
+                            : cell.guidance
+                              ? text(
+                                  cell.guidance.titleAr,
+                                  cell.guidance.titleEn,
+                                )
+                              : text("إرشاد مرتبط", "Linked guidance")}
                         </span>
                         <b>
                           {cell.guidance?.read}/{cell.guidance?.unlocked}
@@ -873,12 +894,28 @@ export function JourneyBlueprint({
             </svg>
           </div>
           {inspector && (
-            <aside
-              className="jro-inspector"
-              aria-label={text("فحص المحطة", "Station inspector")}
+            <Modal
+              isOpen
+              onClose={onCloseInspection}
+              size="2xl"
+              title={text(
+                data.nodes.find((n) => n.code === selected)?.titleAr ??
+                  "فحص المحطة",
+                data.nodes.find((n) => n.code === selected)?.titleEn ??
+                  "Station inspection",
+              )}
+              subtitle={text(
+                "متطلبات المحطة، الأعضاء، والأدلة المتاحة",
+                "Station requirements, members and available evidence",
+              )}
             >
-              {inspector}
-            </aside>
+              <div
+                className="jro-shell jro-inspector-dialog"
+                dir={ar ? "rtl" : "ltr"}
+              >
+                {inspector}
+              </div>
+            </Modal>
           )}
         </div>
       )}
