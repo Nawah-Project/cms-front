@@ -1,3 +1,4 @@
+import { SectionExposure } from '../ux-lab/SectionExperience';
 import { JourneyScenery } from "../../components/JourneyScenery";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
@@ -19,15 +20,13 @@ import {
 export function ProfileCompletionGate({ children }: { children: React.ReactNode }) {
   const { authenticated, user, setUser } = useAuth();
   const { t } = useI18n();
-  const { variant, introVideoUrl } = useUxExperiment();
+  const { introVideoUrl } = useUxExperiment();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfessionalProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const [step, setStep] = useState<1 | 2>(() =>
-    variant === "A" ? 2 : 1,
-  );
+  const [step, setStep] = useState<1 | 2>(1);
   const [completed, setCompleted] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
 
@@ -58,11 +57,6 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
     };
   }, [authenticated, user?.id, attempt]);
 
-  useEffect(() => {
-    if (variant === "A" && profile && !profile.profileComplete) {
-      setStep(2);
-    }
-  }, [variant, profile]);
 
   if (!authenticated) return children;
   if (loading) {
@@ -104,7 +98,7 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
   ];
 
   return (
-    <main className="onboarding-world">
+    <SectionExposure section="onboarding"><main className="onboarding-world">
       <section
         aria-labelledby="onboarding-wizard-title"
         className="onboarding-shell"
@@ -328,7 +322,7 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
           </div>
         </Modal>
       </section>
-    </main>
+    </main></SectionExposure>
   );
 }
 

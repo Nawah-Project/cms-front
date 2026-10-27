@@ -1,3 +1,4 @@
+import { SectionExperienceProvider, SectionExposure } from '../features/ux-lab/SectionExperience';
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -86,7 +87,7 @@ export default function Layout() {
     );
     const created = await createAppMutation.mutateAsync(data);
 
-    trackUxEvent("application_created", { company: created.companyName });
+    trackUxEvent("application_created");
 
     try {
       const nextJourney = await queryClient.fetchQuery({
@@ -105,7 +106,7 @@ export default function Layout() {
 
   return (
     <ProtectedRoute>
-      <EmailVerificationGate>
+      <SectionExperienceProvider><EmailVerificationGate>
         <ProfileCompletionGate>
           <ExperienceProgressProvider>
           <FirstApplicationGuidedTourProvider
@@ -129,7 +130,7 @@ export default function Layout() {
                   }`}
                 >
                   <main className="min-w-0 w-full px-5 py-7 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 lg:py-10">
-                    <Outlet context={{ openAddModal }} />
+                    <SectionExposure><Outlet context={{ openAddModal }} /></SectionExposure>
                   </main>
                 </div>
 
@@ -166,7 +167,7 @@ export default function Layout() {
           </FirstApplicationGuidedTourProvider>
           </ExperienceProgressProvider>
         </ProfileCompletionGate>
-      </EmailVerificationGate>
+      </EmailVerificationGate></SectionExperienceProvider>
     </ProtectedRoute>
   );
 }

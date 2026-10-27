@@ -1,0 +1,595 @@
+.ux-lab {
+  color: #172323;
+  --lab-green: #155546;
+  --lab-ink: #172323;
+  --lab-gray: #53605e;
+  font-family: inherit;
+}
+.ux-lab .lab-muted {
+  color: #53605e;
+}
+.ux-lab .lab-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  color: #155546;
+}
+.ux-lab h1 {
+  font-size: clamp(1.65rem, 2.7vw, 2.35rem);
+  font-weight: 750;
+  line-height: 1.5;
+  letter-spacing: -0.025em;
+}
+.ux-lab h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.8;
+}
+.ux-lab .lab-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid #d7dcda;
+}
+.ux-lab .lab-card {
+  border: 1px solid #d4dcd8;
+  border-radius: 18px;
+  background: #fff;
+  padding: 24px;
+  box-shadow: 0 2px 3px #102b2010;
+}
+.ux-lab .lab-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 9px;
+  border: 1px solid #c5cfca;
+  border-radius: 7px;
+  color: #27443a;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.ux-lab .lab-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 7px;
+  border: 1px solid #d4dcd8;
+  border-radius: 14px;
+  background: #fff;
+  overflow: auto;
+}
+.ux-lab .lab-tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  flex: 1;
+  min-width: max-content;
+  padding: 13px 18px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #46544f;
+  transition: background 0.15s;
+}
+.ux-lab .lab-tabs button[aria-current] {
+  background: #155546;
+  color: #fff;
+}
+.ux-lab .lab-tabs button:hover:not([aria-current]) {
+  background: #f3f4f3;
+  color: #172323;
+}
+.ux-lab .lab-button,
+.ux-lab .lab-primary,
+.ux-lab .lab-icon {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  border: 1px solid #bbc8c0;
+  border-radius: 9px;
+  background: #fff;
+  padding: 8px 12px;
+  color: #233f34;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.5;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.ux-lab .lab-primary {
+  background: #155546;
+  border-color: #155546;
+  color: #fff;
+}
+.ux-lab .lab-icon {
+  width: 38px;
+  padding: 8px;
+  flex-shrink: 0;
+}
+.ux-lab .lab-button:hover,
+.ux-lab .lab-icon:hover {
+  border-color: #155546;
+  background: #f4f5f4;
+}
+.ux-lab .lab-primary:hover {
+  background: #0c4134;
+}
+.ux-lab button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.ux-lab :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid #155546;
+  outline-offset: 3px;
+}
+.ux-lab .lab-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #155546;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.ux-lab .lab-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.ux-lab .lab-inline-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.ux-lab
+  :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea
+  ) {
+  min-height: 40px;
+  border: 1px solid #bbc8c0;
+  border-radius: 8px;
+  background: #fff;
+  padding: 9px 11px;
+  color: #172323;
+  font-size: 12px;
+  font-weight: 400;
+  max-width: 100%;
+}
+.ux-lab input::placeholder,
+.ux-lab textarea::placeholder {
+  color: #6c7670;
+}
+.ux-lab :is(input[type="checkbox"], input[type="radio"], input[type="range"]) {
+  accent-color: #155546;
+}
+.ux-lab .lab-stat > strong {
+  display: block;
+  margin: 12px 0 8px;
+  font-size: 2rem;
+  font-weight: 750;
+  line-height: 1.2;
+}
+.ux-lab .lab-bar {
+  height: 9px;
+  background: #e5e9e6;
+  border-radius: 7px;
+  overflow: hidden;
+}
+.ux-lab .lab-bar > span {
+  display: block;
+  height: 100%;
+  background: #155546;
+  border-radius: 7px;
+  min-width: 0;
+}
+.ux-lab .lab-step {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid #bcc8c0;
+  border-radius: 6px;
+  color: #155546;
+  font-size: 11px;
+}
+.ux-lab .lab-person {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 0;
+  border-bottom: 1px solid #e0e5e1;
+  font-size: 13px;
+}
+.ux-lab .lab-footnote {
+  font-size: 11px;
+  line-height: 1.9;
+  color: #53605e;
+  border-top: 1px solid #dce2de;
+  margin-top: 24px;
+  padding-top: 16px;
+}
+.ux-lab .lab-release {
+  background: #fff;
+  border: 1px solid #b9c9c0;
+  border-radius: 18px;
+  padding: 25px;
+}
+.ux-lab .lab-release-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 22px;
+}
+.ux-lab .lab-release-grid > article {
+  border: 1px solid #d1d9d4;
+  border-radius: 12px;
+  padding: 17px;
+}
+.ux-lab .lab-release-grid h3 {
+  font-size: 13px;
+  font-weight: 650;
+  align-self: center;
+}
+.ux-lab .lab-version {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: #155546;
+  color: #fff;
+  font-size: 15px;
+  font-family: monospace;
+}
+.ux-lab .lab-experiment-workspace {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 25px;
+}
+.ux-lab .lab-experiment-list {
+  border-inline-end: 1px solid #d1d9d4;
+  padding-inline-end: 16px;
+  max-height: 650px;
+  overflow: auto;
+}
+.ux-lab .lab-experiment-list > button {
+  display: block;
+  text-align: start;
+  width: 100%;
+  border: 1px solid #d3dcd5;
+  border-radius: 12px;
+  background: #fff;
+  padding: 16px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.ux-lab .lab-experiment-list > button.selected {
+  border: 2px solid #155546;
+  padding: 15px;
+  box-shadow: 0 2px 5px #10372a12;
+}
+.ux-lab .lab-test-plan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 17px;
+  padding: 20px 0;
+  margin: 16px 0;
+  border-block: 1px solid #d9e0db;
+}
+.ux-lab .lab-test-plan dt {
+  color: #53605e;
+  font-size: 11px;
+}
+.ux-lab .lab-test-plan dd {
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.8;
+  margin-top: 6px;
+}
+.ux-lab .lab-arm {
+  border: 1px solid #c5d0c9;
+  border-radius: 13px;
+  padding: 20px;
+}
+.ux-lab .lab-arm header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.ux-lab .lab-arm header > strong {
+  font-size: 27px;
+  color: #163e31;
+}
+.ux-lab .lab-evidence {
+  border: 1px solid #c5d0c9;
+  border-inline-start: 4px solid #155546;
+  border-radius: 10px;
+  background: #fff;
+  padding: 17px;
+}
+.ux-lab .lab-evidence > strong {
+  font-size: 13px;
+}
+.ux-lab .lab-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 215px;
+  text-align: center;
+  color: #53605e;
+  font-size: 13px;
+  line-height: 1.9;
+  max-width: 700px;
+  margin: auto;
+  padding: 25px;
+}
+.ux-lab .lab-chart {
+  display: flex;
+  height: 230px;
+  margin-top: 30px;
+  gap: 12px;
+}
+.ux-lab .lab-chart-scale {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #53605e;
+  padding-bottom: 25px;
+  min-width: 20px;
+  text-align: end;
+}
+.ux-lab .lab-chart-bars {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  background: repeating-linear-gradient(
+    to top,
+    transparent 0,
+    transparent calc(50% - 1px),
+    #e1e6e2 calc(50% - 1px),
+    #e1e6e2 50%
+  );
+  margin-bottom: 25px;
+  gap: 3px;
+  border-bottom: 1px solid #b6c5bb;
+}
+.ux-lab .lab-chart-day {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+.ux-lab .lab-chart-columns {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  gap: 1px;
+}
+.ux-lab .lab-chart-columns > i {
+  display: block;
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  min-width: 1px;
+}
+.ux-lab .lab-chart-day > span {
+  position: absolute;
+  bottom: -23px;
+  font-size: 9px;
+  color: #53605e;
+  white-space: nowrap;
+  left: 0;
+}
+.ux-lab .lab-chart-day:last-child > span {
+  left: auto;
+  right: 0;
+}
+.ux-lab .lab-series-views {
+  background: #687970;
+}
+.ux-lab .lab-series-actions {
+  background: #155546;
+}
+.ux-lab .lab-series-errors {
+  background: #a84f35;
+}
+.ux-lab .lab-chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  font-size: 11px;
+  color: #46544f;
+  margin-top: 13px;
+}
+.ux-lab .lab-chart-legend > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ux-lab .lab-chart-legend i {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.ux-lab .lab-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.ux-lab .lab-table :is(th, td) {
+  padding: 17px 20px;
+  text-align: start;
+  border-top: 1px solid #e0e5e1;
+}
+.ux-lab .lab-table thead {
+  color: #53605e;
+  background: #fff;
+}
+.ux-lab .lab-table tbody th {
+  font-weight: 650;
+}
+.ux-lab .lab-method {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 0;
+  border-top: 1px solid #cbd5ce;
+  color: #53605e;
+  font-size: 11px;
+  line-height: 1.9;
+}
+.ux-lab .lab-method > svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.ux-lab .lab-method strong {
+  color: #273d33;
+}
+.ux-lab .lab-map-viewport {
+  height: 620px;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+  background: #fafbfa;
+  cursor: default;
+  overscroll-behavior: auto;
+}
+.ux-lab .lab-map-viewport.is-interactive {
+  overscroll-behavior: contain;
+  cursor: grab;
+  touch-action: none;
+}
+.ux-lab .lab-map-viewport.is-interactive:active {
+  cursor: grabbing;
+}
+.ux-lab .lab-map-inspector {
+  background: #fff;
+  max-height: 620px;
+  overflow: auto;
+}
+.ux-lab .lab-node {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 18px;
+  border: 1.5px solid #b9c9bf;
+  border-radius: 14px;
+  background: #fff;
+  text-align: start;
+  box-shadow: 0 3px 5px #18372a12;
+  color: #172323;
+}
+.ux-lab .lab-node:hover {
+  border-color: #155546;
+}
+.ux-lab .lab-node.selected {
+  border: 3px solid #155546;
+  padding: 16.5px;
+}
+.ux-lab .lab-node.traced {
+  outline: 3px solid #b39a43;
+  outline-offset: -7px;
+}
+.ux-lab .lab-node code {
+  font-size: 10px;
+  color: #3d5146;
+  font-weight: 650;
+}
+.ux-lab .lab-node h3 {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.8;
+  margin: 9px 0 6px;
+}
+.ux-lab .lab-node:focus-visible {
+  outline: 4px solid #155546;
+  outline-offset: -5px;
+}
+@media (max-width: 1100px) {
+  .ux-lab .lab-release-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ux-lab .lab-experiment-workspace {
+    grid-template-columns: 190px minmax(0, 1fr);
+  }
+  .ux-lab .lab-heading {
+    flex-direction: column;
+  }
+  .ux-lab .lab-map-inspector {
+    max-height: 500px;
+  }
+}
+@media (max-width: 700px) {
+  .ux-lab .lab-card,
+  .ux-lab .lab-release {
+    padding: 18px;
+  }
+  .ux-lab .lab-release-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ux-lab .lab-experiment-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ux-lab .lab-experiment-list {
+    display: flex;
+    gap: 12px;
+    max-height: none;
+    overflow: auto;
+    border-inline-end: 0;
+    padding-inline-end: 0;
+    padding-bottom: 10px;
+  }
+  .ux-lab .lab-experiment-list > button {
+    min-width: 190px;
+    margin: 0;
+  }
+  .ux-lab .lab-inline-label {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .ux-lab .lab-inline-label select {
+    max-width: 75%;
+  }
+  .ux-lab .lab-tabs button {
+    padding: 10px;
+    font-size: 11px;
+  }
+  .ux-lab .lab-test-plan {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ux-lab .lab-map-viewport {
+    height: 470px;
+  }
+  .ux-lab .lab-chart-bars {
+    gap: 1px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ux-lab * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

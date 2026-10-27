@@ -1,3 +1,4 @@
+import { trackSectionAction } from '../../ux-lab/lab-events';
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import {
   APPLICATION_METHODS,
@@ -262,7 +263,7 @@ export function AddApplicationModal({
         </>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onInvalidCapture={()=>trackSectionAction("validation_failed")} onSubmit={handleSubmit} className="space-y-4">
         {/* Job Explorer Shortcut in Form Header */}
         <div className="flex items-center justify-between pb-3 border-b border-border/80 overflow-visible relative z-20">
           <span className="text-xs text-neutral-500 font-medium">

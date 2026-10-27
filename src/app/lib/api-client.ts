@@ -1,3 +1,4 @@
+import { trackSectionAction } from '../features/ux-lab/lab-events';
 import { notifyAuthSessionExpired } from "../utils/authSession";
 
 export const API_BASE_URL = (
@@ -131,6 +132,10 @@ export async function fetchApi<T, TBody = unknown>(
   }
 
   if (!response.ok) {
+    if (!path.startsWith('/ux-lab') && !path.startsWith('/auth')) {
+      if(response.status===400||response.status===422)trackSectionAction('validation_failed');
+      else if(response.status>=500)trackSectionAction('request_failed');
+    }
     let errorMessage = `Request failed with status ${response.status}`;
     let details: unknown;
     try {

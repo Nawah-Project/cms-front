@@ -1,3 +1,4 @@
+import { trackSectionAction } from '../ux-lab/lab-events';
 import { useEffect, useState } from "react";
 import { useI18n } from "../../i18n";
 import { MemberAvatar } from "../members-progress/components/MemberAvatar";
@@ -22,6 +23,7 @@ export function ProfessionalProfileActions({ portfolioUrl, hasCv, userId }: { po
 
 export function MemberProfessionalCard({ member, onClose }: { member: MemberProgress; onClose: () => void }) {
   const { t } = useI18n();
+  useEffect(() => { trackSectionAction('member_profile_loaded'); }, [member.memberId]);
   const close = () => { window.dispatchEvent(new Event("nawah:member-profile-closed")); onClose(); };
   useEffect(() => {
     window.addEventListener("nawah:group-tour-ended", close);

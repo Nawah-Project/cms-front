@@ -1,3 +1,4 @@
+import { trackSectionAction } from '../ux-lab/lab-events';
 import { useRef, useState, type FormEvent } from "react";
 import { useI18n } from "../../i18n";
 import { DocumentPdfIcon, SparklesIcon } from "../../components/Icons";
@@ -108,7 +109,7 @@ export function ProfileForm({
         setUploadState("uploaded");
       }
       if (!next.profileComplete) throw new Error("Profile is incomplete");
-      if (!onboarding) toast.success(t("profile.savedSuccess"));
+      if (!onboarding) { trackSectionAction("profile_saved"); toast.success(t("profile.savedSuccess")); }
       onSaved(next);
     } catch {
       setUploadState(file ? "error" : uploadState);

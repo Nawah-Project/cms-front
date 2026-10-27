@@ -1,3 +1,4 @@
+import { trackSectionAction } from '../../ux-lab/lab-events';
 import { useCallback, useState } from "react";
 import { membersProgressApi } from "../api/membersProgressApi";
 import type {
@@ -14,10 +15,12 @@ export function MembersProgressTable({
   members,
   currentUserId,
   activities,
+  designVersion = "A",
 }: {
   members: MemberProgress[];
   currentUserId?: string;
   activities: RecentMemberProgress[];
+  designVersion?: "A" | "B";
 }) {
   const { t } = useI18n();
   const stageColumns: { stage: ProgressStage; label: string }[] = [
@@ -43,6 +46,7 @@ export function MembersProgressTable({
     setErrorMemberId(null);
     try {
       const detail = await membersProgressApi.getMemberDetail(memberId);
+      trackSectionAction('member_detail_loaded');
       setDetails((current) => ({ ...current, [memberId]: detail }));
     } catch {
       setErrorMemberId(memberId);
@@ -58,6 +62,7 @@ export function MembersProgressTable({
     }
     setExpandedMemberId(memberId);
     if (!details[memberId]) void loadMember(memberId);
+    else trackSectionAction('member_detail_loaded');
   };
 
   const retryMember = (memberId: string) => {
@@ -72,7 +77,7 @@ export function MembersProgressTable({
           onClose={() => setProfileMember(null)}
         />
       )}
-      <div className="hidden overflow-hidden rounded-xl border border-neutral-300 bg-white shadow-sm md:block dark:border-neutral-800 dark:bg-neutral-900">
+      <div className={`${designVersion === "B" ? "hidden" : "hidden md:block"} overflow-hidden rounded-xl border border-neutral-300 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900`}>
         <table className="data-table w-full table-fixed">
           <caption className="sr-only">
             {t("members.tableCaption")}
@@ -137,7 +142,7 @@ export function MembersProgressTable({
           </tbody>
         </table>
       </div>
-      <div className="space-y-3 md:hidden">
+      <div data-section-design={designVersion} className={designVersion === "B" ? "grid grid-cols-1 gap-4 xl:grid-cols-2 items-start" : "space-y-3 md:hidden"}>
         {members.map((member) => (
           <MemberProgressRow
             variant="mobile"

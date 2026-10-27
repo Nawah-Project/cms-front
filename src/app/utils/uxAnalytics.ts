@@ -1,3 +1,4 @@
+import { trackSectionAction } from '../features/ux-lab/lab-events';
 import { useState, useEffect, useCallback } from "react";
 
 export type ExperimentVariant = "A" | "B" | "C";
@@ -101,8 +102,8 @@ export function setAdminPreviewVariant(value: ExperimentVariant | null): void {
 
 export function getActiveVariant(): ExperimentVariant {
   if (typeof window === "undefined") return "B";
-  const preview = getAdminPreviewVariant();
-  if (preview) return preview;
+  // Legacy preview flags cannot affect ordinary accounts. Section previews are
+  // now role-checked and scoped to a URL by SectionExperienceProvider.
   try {
     const saved = localStorage.getItem(ASSIGNED_VARIANT_KEY);
     return isValidVariant(saved) ? saved : "B";
@@ -119,6 +120,7 @@ export function trackUxEvent(
 
   const variant = getActiveVariant();
   const normalizedName = normalizeEventName(eventName);
+  if (normalizedName) trackSectionAction(normalizedName);
   const localRecord: UxEventRecord = {
     name: normalizedName ?? eventName,
     variant,

@@ -1,3 +1,4 @@
+import { trackSectionAction } from '../../ux-lab/lab-events';
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { ArrowUpRight, Clock3, Lock, Plus } from "lucide-react";
@@ -206,6 +207,7 @@ export function ChangeLab({
                     `View ${number(p.metrics.logged)} applications for ${title(p)}`,
                   )}
                   onClick={() => {
+                    trackSectionAction('linked_applications_opened');
                     setOpenedId(p.id);
                     setPage(0);
                   }}
