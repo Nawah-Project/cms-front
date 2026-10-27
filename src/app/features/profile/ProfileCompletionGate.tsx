@@ -1,4 +1,4 @@
-import { SectionExposure } from '../ux-lab/SectionExperience';
+import { SectionExposure } from "../ux-lab/SectionExperience";
 import { JourneyScenery } from "../../components/JourneyScenery";
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
@@ -17,10 +17,17 @@ import {
   ArrowLeftIcon,
 } from "../../components/Icons";
 
-export function ProfileCompletionGate({ children }: { children: React.ReactNode }) {
+export function ProfileCompletionGate({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { authenticated, user, setUser } = useAuth();
   const location = useLocation();
-  const isHomePreview = user?.role === "ADMIN" && location.pathname === "/" && new URLSearchParams(location.search).get("labPreview") === "home:B";
+  const isHomePreview =
+    user?.role === "ADMIN" &&
+    location.pathname === "/" &&
+    new URLSearchParams(location.search).get("labPreview") === "home:B";
   const { t } = useI18n();
   const { introVideoUrl } = useUxExperiment();
   const navigate = useNavigate();
@@ -58,7 +65,6 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
       active = false;
     };
   }, [authenticated, user?.id, attempt, isHomePreview]);
-
 
   if (!authenticated || isHomePreview) return children;
   if (loading) {
@@ -100,231 +106,257 @@ export function ProfileCompletionGate({ children }: { children: React.ReactNode 
   ];
 
   return (
-    <SectionExposure section="onboarding"><main className="onboarding-world">
-      <section
-        aria-labelledby="onboarding-wizard-title"
-        className="onboarding-shell"
-      >
-        <div className="onboarding-content">
-        <div className="onboarding-kicker"><span/>{t("common.brand")}</div>
-        {/* Stepper Header */}
-        <div className="mb-5 border-b border-border pb-4 sm:mb-8 sm:pb-6">
-          <div className="flex items-center justify-between">
-            {steps.map((s, idx) => {
-              const isPast = step > s.number;
-              const isCurrent = step === s.number;
-              return (
-                <div
-                  key={s.number}
-                  className={`flex items-center ${idx < steps.length - 1 ? "flex-1" : ""}`}
-                >
-                  <div className="flex flex-col items-center sm:flex-row sm:gap-2.5">
-                    <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
-                        isPast
-                          ? "bg-success-strong text-white"
-                          : isCurrent
-                            ? "bg-info-strong text-white ring-4 ring-info-soft"
-                            : "bg-neutral-100 text-neutral-500"
-                      }`}
-                    >
-                      {isPast ? <CheckIcon className="h-4 w-4" /> : s.number}
-                    </div>
-                    <span
-                      className={`mt-1 sm:mt-0 text-xs font-medium text-center sm:text-start ${
-                        isCurrent
-                          ? "text-neutral-950 font-semibold"
-                          : isPast
-                            ? "text-neutral-700"
-                            : "text-neutral-400"
-                      }`}
-                    >
-                      {s.title}
-                    </span>
-                  </div>
-                  {idx < steps.length - 1 && (
-                    <div
-                      className={`mx-3 hidden sm:block h-0.5 flex-1 transition-colors ${
-                        step > s.number ? "bg-success-strong" : "bg-neutral-200"
-                      }`}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Step 1: Platform Overview & Weekly Expectations */}
-        {step === 1 && (
-          <div className="space-y-6">
-            <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-info-soft px-3 py-1 text-xs font-semibold text-info-strong">
-                <SparklesIcon className="h-3.5 w-3.5" />
-                <span>{t("auth.heroBadge")}</span>
-              </span>
-              <h1
-                id="onboarding-wizard-title"
-                className="mt-3 text-2xl font-bold tracking-tight text-neutral-950"
-              >
-                {t("profile.onboardingWelcomeTitle")}, {user?.name || ""}
-              </h1>
-              <p className="mt-1 text-sm text-neutral-600">
-                {t("profile.onboardingWelcomeSubtitle")}
-              </p>
-            </div>
-
-            {/* Video preview card */}
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => {
-                setVideoModalOpen(true);
-                trackUxEvent("onboarding_video_watched");
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  setVideoModalOpen(true);
-                  trackUxEvent("onboarding_video_watched");
-                }
-              }}
-              className="flex cursor-pointer items-center gap-4 rounded-xl border border-border bg-neutral-50 p-4 transition hover:bg-neutral-100"
-            >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-info-soft text-info-strong">
-                {introVideoUrl?<PlayCircleIcon className="h-7 w-7" />:<SparklesIcon className="h-6 w-6" />}
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
-                  <span>{introVideoUrl?t("auth.watchIntroTitle"):t("profile.onboardingStep1Title")}</span>
-                  {introVideoUrl && <span className="rounded-full bg-info-soft px-2 py-0.5 text-xs text-info-strong">90s</span>}
-                </h3>
-                <p className="mt-0.5 line-clamp-1 text-xs text-neutral-500">
-                  {t("auth.watchIntroSubtitle")}
-                </p>
-              </div>
-            </div>
-
-            {/* 3 Weekly Expectations Cards */}
-            <div className="space-y-3">
-              <div className="rounded-xl border border-border bg-surface p-4 shadow-xs">
-                <h4 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-info-soft text-xs text-info-strong">
-                    1
-                  </span>
-                  <span>{t("profile.expectation1Title")}</span>
-                </h4>
-                <p className="mt-1 text-xs text-neutral-600 leading-relaxed ps-7">
-                  {t("profile.expectation1Desc")}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border bg-surface p-4 shadow-xs">
-                <h4 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-warning-soft text-xs text-warning-strong">
-                    2
-                  </span>
-                  <span>{t("profile.expectation2Title")}</span>
-                </h4>
-                <p className="mt-1 text-xs text-neutral-600 leading-relaxed ps-7">
-                  {t("profile.expectation2Desc")}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border bg-surface p-4 shadow-xs">
-                <h4 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success-soft text-xs text-success-strong">
-                    3
-                  </span>
-                  <span>{t("profile.expectation3Title")}</span>
-                </h4>
-                <p className="mt-1 text-xs text-neutral-600 leading-relaxed ps-7">
-                  {t("profile.expectation3Desc")}
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setStep(2)}
-              className="button-primary w-full py-3 text-sm inline-flex items-center justify-center gap-2"
-            >
-              <span>{t("profile.nextToProfileSetup")}</span>
-              <ArrowLeftIcon className="w-4 h-4 rotate-180 rtl:rotate-0" />
-            </button>
-          </div>
-        )}
-
-        {/* Step 2: Professional Profile Setup */}
-        {step === 2 && (
-          <div>
-            <div className="mb-4 sm:mb-6">
-              <h1
-                id="onboarding-wizard-title"
-                className="text-2xl font-bold tracking-tight text-neutral-950"
-              >
-                {t("profile.completeTitle")}
-              </h1>
-              <p className="mt-1 text-sm text-neutral-600">
-                {t("profile.completeDescription")}
-              </p>
-            </div>
-            <ProfileForm
-              initial={profile}
-              onboarding
-              onSaved={(saved) => {
-                setProfile(saved);
-                if (user) setUser({ ...user, name: saved.name, targetJobTitle: saved.targetJobTitle });
-                trackUxEvent("onboarding_completed");
-                setCompleted(true);
-                navigate("/applications", { replace: true });
-              }}
-            />
-          </div>
-        )}
-
-        </div>
-        <JourneyScenery variant="onboarding" step={step} />
-
-        {/* Intro Video Modal */}
-        <Modal
-          isOpen={videoModalOpen}
-          onClose={() => setVideoModalOpen(false)}
-          title={t("auth.watchIntroTitle")}
-          subtitle={t("auth.watchIntroSubtitle")}
-          size="lg"
+    <SectionExposure section="onboarding">
+      <main className="onboarding-world">
+        <section
+          aria-labelledby="onboarding-wizard-title"
+          className="onboarding-shell"
         >
-          <div className="space-y-4">
-            <IntroVideoPlayer />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              <div className="rounded-xl border border-border p-3 bg-neutral-50/60">
-                <p className="text-xs font-semibold text-text-primary">
-                  1. {t("profile.expectation1Title")}
-                </p>
-                <p className="text-[11px] text-text-secondary mt-1">
-                  {t("profile.expectation1Desc")}
-                </p>
-              </div>
-              <div className="rounded-xl border border-border p-3 bg-neutral-50/60">
-                <p className="text-xs font-semibold text-text-primary">
-                  2. {t("profile.expectation2Title")}
-                </p>
-                <p className="text-[11px] text-text-secondary mt-1">
-                  {t("profile.expectation2Desc")}
-                </p>
-              </div>
-              <div className="rounded-xl border border-border p-3 bg-neutral-50/60">
-                <p className="text-xs font-semibold text-text-primary">
-                  3. {t("profile.expectation3Title")}
-                </p>
-                <p className="text-[11px] text-text-secondary mt-1">
-                  {t("profile.expectation3Desc")}
-                </p>
+          <div className="onboarding-content">
+            <div className="onboarding-kicker">
+              <span />
+              {t("common.brand")}
+            </div>
+            {/* Stepper Header */}
+            <div className="mb-5 border-b border-border pb-4 sm:mb-8 sm:pb-6">
+              <div className="flex items-center justify-between">
+                {steps.map((s, idx) => {
+                  const isPast = step > s.number;
+                  const isCurrent = step === s.number;
+                  return (
+                    <div
+                      key={s.number}
+                      className={`flex items-center ${idx < steps.length - 1 ? "flex-1" : ""}`}
+                    >
+                      <div className="flex flex-col items-center sm:flex-row sm:gap-2.5">
+                        <div
+                          className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+                            isPast
+                              ? "bg-success-strong text-white"
+                              : isCurrent
+                                ? "bg-info-strong text-white ring-4 ring-info-soft"
+                                : "bg-neutral-100 text-neutral-500"
+                          }`}
+                        >
+                          {isPast ? (
+                            <CheckIcon className="h-4 w-4" />
+                          ) : (
+                            s.number
+                          )}
+                        </div>
+                        <span
+                          className={`mt-1 sm:mt-0 text-xs font-medium text-center sm:text-start ${
+                            isCurrent
+                              ? "text-neutral-950 font-semibold"
+                              : isPast
+                                ? "text-neutral-700"
+                                : "text-neutral-400"
+                          }`}
+                        >
+                          {s.title}
+                        </span>
+                      </div>
+                      {idx < steps.length - 1 && (
+                        <div
+                          className={`mx-3 hidden sm:block h-0.5 flex-1 transition-colors ${
+                            step > s.number
+                              ? "bg-success-strong"
+                              : "bg-neutral-200"
+                          }`}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
+
+            {/* Step 1: Platform Overview & Weekly Expectations */}
+            {step === 1 && (
+              <div className="space-y-6">
+                <div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-info-soft px-3 py-1 text-xs font-semibold text-info-strong">
+                    <SparklesIcon className="h-3.5 w-3.5" />
+                    <span>{t("auth.heroBadge")}</span>
+                  </span>
+                  <h1
+                    id="onboarding-wizard-title"
+                    className="mt-3 text-2xl font-bold tracking-tight text-neutral-950"
+                  >
+                    {t("profile.onboardingWelcomeTitle")}, {user?.name || ""}
+                  </h1>
+                  <p className="mt-1 text-sm text-neutral-600">
+                    {t("profile.onboardingWelcomeSubtitle")}
+                  </p>
+                </div>
+
+                {/* Video preview card */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    setVideoModalOpen(true);
+                    trackUxEvent("onboarding_video_watched");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      setVideoModalOpen(true);
+                      trackUxEvent("onboarding_video_watched");
+                    }
+                  }}
+                  className="flex cursor-pointer items-center gap-4 rounded-xl border border-border bg-neutral-50 p-4 transition hover:bg-neutral-100"
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-info-soft text-info-strong">
+                    {introVideoUrl ? (
+                      <PlayCircleIcon className="h-7 w-7" />
+                    ) : (
+                      <SparklesIcon className="h-6 w-6" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
+                      <span>
+                        {introVideoUrl
+                          ? t("auth.watchIntroTitle")
+                          : t("profile.onboardingStep1Title")}
+                      </span>
+                      {introVideoUrl && (
+                        <span className="rounded-full bg-info-soft px-2 py-0.5 text-xs text-info-strong">
+                          90s
+                        </span>
+                      )}
+                    </h3>
+                    <p className="mt-0.5 line-clamp-1 text-xs text-neutral-500">
+                      {t("auth.watchIntroSubtitle")}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 3 Weekly Expectations Cards */}
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-border bg-surface p-4 shadow-xs">
+                    <h4 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-info-soft text-xs text-info-strong">
+                        1
+                      </span>
+                      <span>{t("profile.expectation1Title")}</span>
+                    </h4>
+                    <p className="mt-1 text-xs text-neutral-600 leading-relaxed ps-7">
+                      {t("profile.expectation1Desc")}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-surface p-4 shadow-xs">
+                    <h4 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-warning-soft text-xs text-warning-strong">
+                        2
+                      </span>
+                      <span>{t("profile.expectation2Title")}</span>
+                    </h4>
+                    <p className="mt-1 text-xs text-neutral-600 leading-relaxed ps-7">
+                      {t("profile.expectation2Desc")}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-surface p-4 shadow-xs">
+                    <h4 className="text-sm font-semibold text-neutral-900 flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success-soft text-xs text-success-strong">
+                        3
+                      </span>
+                      <span>{t("profile.expectation3Title")}</span>
+                    </h4>
+                    <p className="mt-1 text-xs text-neutral-600 leading-relaxed ps-7">
+                      {t("profile.expectation3Desc")}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="button-primary w-full py-3 text-sm inline-flex items-center justify-center gap-2"
+                >
+                  <span>{t("profile.nextToProfileSetup")}</span>
+                  <ArrowLeftIcon className="w-4 h-4 rotate-180 rtl:rotate-0" />
+                </button>
+              </div>
+            )}
+
+            {/* Step 2: Professional Profile Setup */}
+            {step === 2 && (
+              <div>
+                <div className="mb-4 sm:mb-6">
+                  <h1
+                    id="onboarding-wizard-title"
+                    className="text-2xl font-bold tracking-tight text-neutral-950"
+                  >
+                    {t("profile.completeTitle")}
+                  </h1>
+                  <p className="mt-1 text-sm text-neutral-600">
+                    {t("profile.completeDescription")}
+                  </p>
+                </div>
+                <ProfileForm
+                  initial={profile}
+                  onboarding
+                  onSaved={(saved) => {
+                    setProfile(saved);
+                    if (user)
+                      setUser({
+                        ...user,
+                        name: saved.name,
+                        targetJobTitle: saved.targetJobTitle,
+                      });
+                    trackUxEvent("onboarding_completed");
+                    setCompleted(true);
+                    navigate("/", { replace: true });
+                  }}
+                />
+              </div>
+            )}
           </div>
-        </Modal>
-      </section>
-    </main></SectionExposure>
+          <JourneyScenery variant="onboarding" step={step} />
+
+          {/* Intro Video Modal */}
+          <Modal
+            isOpen={videoModalOpen}
+            onClose={() => setVideoModalOpen(false)}
+            title={t("auth.watchIntroTitle")}
+            subtitle={t("auth.watchIntroSubtitle")}
+            size="lg"
+          >
+            <div className="space-y-4">
+              <IntroVideoPlayer />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                <div className="rounded-xl border border-border p-3 bg-neutral-50/60">
+                  <p className="text-xs font-semibold text-text-primary">
+                    1. {t("profile.expectation1Title")}
+                  </p>
+                  <p className="text-[11px] text-text-secondary mt-1">
+                    {t("profile.expectation1Desc")}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border p-3 bg-neutral-50/60">
+                  <p className="text-xs font-semibold text-text-primary">
+                    2. {t("profile.expectation2Title")}
+                  </p>
+                  <p className="text-[11px] text-text-secondary mt-1">
+                    {t("profile.expectation2Desc")}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border p-3 bg-neutral-50/60">
+                  <p className="text-xs font-semibold text-text-primary">
+                    3. {t("profile.expectation3Title")}
+                  </p>
+                  <p className="text-[11px] text-text-secondary mt-1">
+                    {t("profile.expectation3Desc")}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Modal>
+        </section>
+      </main>
+    </SectionExposure>
   );
 }
-

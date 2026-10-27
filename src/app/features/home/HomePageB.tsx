@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
 import {
@@ -23,11 +23,15 @@ import {
 } from "lucide-react";
 import { useI18n } from "../../i18n";
 import { useAuth } from "../auth/store/authStore";
+import { JourneyTasksPanel } from "../../components/JourneyTasksPanel";
+import { openJourneyTasksPanel } from "../../components/journeyTasksPanelEvents";
+import { trackSectionAction } from "../ux-lab/SectionExperience";
+import { useNavigate } from "react-router";
 import { Modal } from "../../components/ui/Modal";
 import { GoalIllustration } from "./GoalIllustration";
 import { JourneyTrail } from "./JourneyTrail";
 import {
-  homePreviewApi,
+  createHomeApi,
   type HomeNode,
   type Peer,
   type Scenario,
@@ -52,11 +56,13 @@ const initials = (s: string) =>
     .slice(0, 2)
     .map((x) => x[0])
     .join("");
-export default function HomePageB() {
+export default function HomePageB({ preview = true }: { preview?: boolean }) {
+  const homePreviewApi = useMemo(() => createHomeApi(preview), [preview]);
   const { locale, number } = useI18n(),
     ar = locale === "ar",
     text = (a: string, e: string) => (ar ? a : e);
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [scenario, setScenario] = useState<Scenario>("START"),
     [showGroup, setShowGroup] = useState(false),
     [showPlatform, setShowPlatform] = useState(false),
@@ -69,10 +75,10 @@ export default function HomePageB() {
   const mapSection = useRef<HTMLElement>(null);
   const board = useRef<HTMLDivElement>(null);
   const query = useQuery({
-    queryKey: ["home-preview", user?.id, scenario],
+    queryKey: [preview ? "home-preview" : "home-member", user?.id, scenario],
     queryFn: () => homePreviewApi.home(scenario),
-    enabled: user?.role === "ADMIN",
-    staleTime: 30_000,
+    enabled: preview ? user?.role === "ADMIN" : user?.role === "USER",
+    staleTime: preview ? 30_000 : 0,
   });
   const data = query.data;
   useEffect(() => {
@@ -92,7 +98,7 @@ export default function HomePageB() {
   );
   const peers = useQuery({
     queryKey: [
-      "home-preview-peers",
+      preview ? "home-preview-peers" : "home-member-peers",
       user?.id,
       scenario,
       selected?.code,
@@ -114,7 +120,7 @@ export default function HomePageB() {
   });
   const verifiedPeer = useQuery({
     queryKey: [
-      "home-preview-profile",
+      preview ? "home-preview-profile" : "home-member-profile",
       user?.id,
       scenario,
       detail && "peer" in detail ? detail.peer.id : null,
@@ -253,8 +259,12 @@ export default function HomePageB() {
       label: text("قيمة قابلة للشرح", "Value you can explain"),
     },
   ];
-  const openStation = (n: HomeNode) =>
-    setDetail({ kind: "station", code: n.code });
+  const openStation = (n: HomeNode) => {
+    if (!preview) {
+      trackSectionAction("home_station_opened");
+      openJourneyTasksPanel(n.code, n.week);
+    } else openJourneyTasksPanel(n.code, n.week);
+  };
   const mainLabel = (n: HomeNode) =>
     n.kind === "FINAL"
       ? text("التقرير النهائي", "Final report")
@@ -281,47 +291,54 @@ export default function HomePageB() {
             detail.branch.titleEn ?? "Locked content",
           )
         : detail?.kind === "cv"
-          ? text("السيرة الذاتية · نموذج تجريبي", "CV · synthetic example")
+          ? text(
+              preview
+                ? "السيرة الذاتية · نموذج تجريبي"
+                : "السيرة الذاتية الحالية",
+              preview ? "CV · synthetic example" : "Current CV",
+            )
           : detail?.kind === "portfolio"
             ? text(
-                "معرض الأعمال · نموذج تجريبي",
-                "Portfolio · synthetic example",
+                preview ? "معرض الأعمال · نموذج تجريبي" : "معرض الأعمال",
+                preview ? "Portfolio · synthetic example" : "Portfolio",
               )
             : peer
               ? peerName(peer)
               : text("الملف المهني", "Professional profile");
   return (
     <div className="home-b" dir={ar ? "rtl" : "ltr"}>
-      <header className="home-preview-bar">
-        <div>
-          <FlaskConical size={17} />
-          <strong>{text("الرئيسية B", "Home B")}</strong>
-          <span>
-            {text(
-              "معاينة الأدمن فقط · بيانات تجريبية",
-              "Admin preview only · synthetic data",
-            )}
-          </span>
-        </div>
-        <label>
-          <span>{text("جرّب مرحلة", "Preview a stage")}</span>
-          <select
-            aria-label={text("سيناريو المعاينة", "Preview scenario")}
-            value={scenario}
-            onChange={(e) => setScenario(e.target.value as Scenario)}
-          >
-            {scenarios.map(([id, a, e]) => (
-              <option key={id} value={id}>
-                {text(a, e)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Link to="/admin/ux-lab">
-          {text("معمل التجارب", "Experiment lab")}
-          <ArrowUpLeft size={14} />
-        </Link>
-      </header>
+      {preview && (
+        <header className="home-preview-bar">
+          <div>
+            <FlaskConical size={17} />
+            <strong>{text("الرئيسية B", "Home B")}</strong>
+            <span>
+              {text(
+                "معاينة الأدمن فقط · بيانات تجريبية",
+                "Admin preview only · synthetic data",
+              )}
+            </span>
+          </div>
+          <label>
+            <span>{text("جرّب مرحلة", "Preview a stage")}</span>
+            <select
+              aria-label={text("سيناريو المعاينة", "Preview scenario")}
+              value={scenario}
+              onChange={(e) => setScenario(e.target.value as Scenario)}
+            >
+              {scenarios.map(([id, a, e]) => (
+                <option key={id} value={id}>
+                  {text(a, e)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Link to="/admin/ux-lab">
+            {text("معمل التجارب", "Experiment lab")}
+            <ArrowUpLeft size={14} />
+          </Link>
+        </header>
+      )}
       <section className="home-intro" aria-labelledby="home-title">
         <div className="home-eyebrow">
           <Compass size={15} />
@@ -372,15 +389,24 @@ export default function HomePageB() {
       {query.isPending && (
         <div className="home-loading" role="status">
           <Compass size={26} />
-          {text("بنجهّز خريطة المعاينة…", "Preparing your preview map…")}
+          {text(
+            preview ? "بنجهّز خريطة المعاينة…" : "بنجهّز خريطة رحلتك…",
+            preview
+              ? "Preparing your preview map…"
+              : "Preparing your journey map…",
+          )}
         </div>
       )}
       {query.isError && (
         <div className="home-error" role="alert">
           <p>
             {text(
-              "تعذر تحميل المعاينة. تجربة المستخدمين الحالية لم تتغير.",
-              "Could not load the preview. The current member experience is unchanged.",
+              preview
+                ? "تعذر تحميل المعاينة. حاول مرة أخرى."
+                : "تعذر تحميل خريطة رحلتك. يمكنك إعادة المحاولة أو فتح الطلبات من القائمة.",
+              preview
+                ? "Could not load the preview. Try again."
+                : "Could not load your journey. Retry or open Applications from the navigation.",
             )}
           </p>
           <button onClick={() => query.refetch()}>
@@ -426,7 +452,14 @@ export default function HomePageB() {
             <div className="home-next-actions">
               <button
                 className="home-primary"
-                onClick={() => openStation(current)}
+                onClick={() => {
+                  if (!preview) trackSectionAction("home_continue_clicked");
+                  if (!preview && data.nextAction.kind === "CV")
+                    navigate(
+                      "/professional-development?guidance=INSIGHT_TASK_0_CV_BASE",
+                    );
+                  else openStation(current);
+                }}
               >
                 {data.nextAction.kind === "REPORT"
                   ? text("راجع حصاد الرحلة", "Review your journey")
@@ -490,7 +523,7 @@ export default function HomePageB() {
                 <button
                   aria-pressed={showGroup}
                   disabled={!data.viewer.groupUnlocked}
-                  onClick={() => setShowGroup((x) => !x)}
+                  onClick={() => { setShowGroup((x) => !x); if (!preview) trackSectionAction("home_scope_changed"); }}
                   className={`home-filter group ${showGroup ? "on" : ""}`}
                 >
                   <UsersRound size={15} />
@@ -499,7 +532,7 @@ export default function HomePageB() {
                 </button>
                 <button
                   aria-pressed={showPlatform}
-                  onClick={() => setShowPlatform((x) => !x)}
+                  onClick={() => { setShowPlatform((x) => !x); if (!preview) trackSectionAction("home_scope_changed"); }}
                   className={`home-filter platform ${showPlatform ? "on" : ""}`}
                 >
                   <Globe2 size={15} />
@@ -539,29 +572,34 @@ export default function HomePageB() {
                       )}
               </p>
             </div>
-            <div className="home-peer-example">
-              <div>
-                <UsersRound size={18} />
-                <span>
-                  <strong>
-                    {text(
-                      "شوف ظهور زملائك على الطريق",
-                      "See your peers along the route",
-                    )}
-                  </strong>
-                  <small>
-                    {text(
-                      "المجموعة خضراء والمنصة زرقاء. زر المثال يعرض حالة تجريبية بعد الأسبوع الثاني.",
-                      "Green marks your group; blue marks the platform. The example shows a synthetic post-week-two state.",
-                    )}
-                  </small>
-                </span>
+            {preview && (
+              <div className="home-peer-example">
+                <div>
+                  <UsersRound size={18} />
+                  <span>
+                    <strong>
+                      {text(
+                        "شوف ظهور زملائك على الطريق",
+                        "See your peers along the route",
+                      )}
+                    </strong>
+                    <small>
+                      {text(
+                        "المجموعة خضراء والمنصة زرقاء. زر المثال يعرض حالة تجريبية بعد الأسبوع الثاني.",
+                        "Green marks your group; blue marks the platform. The example shows a synthetic post-week-two state.",
+                      )}
+                    </small>
+                  </span>
+                </div>
+                <button
+                  onClick={showPeerExample}
+                  className="home-example-button"
+                >
+                  <Eye size={15} />
+                  {text("شوف مثال لتقدم الزملاء", "Show peer progress example")}
+                </button>
               </div>
-              <button onClick={showPeerExample} className="home-example-button">
-                <Eye size={15} />
-                {text("شوف مثال لتقدم الزملاء", "Show peer progress example")}
-              </button>
-            </div>
+            )}
             <div className="home-map-legend">
               <span>
                 <i className="current" />
@@ -603,8 +641,17 @@ export default function HomePageB() {
                 showPlatform={showPlatform}
                 allSpecialties={allSpecialties}
                 onStation={openStation}
+                onPeers={(node) =>
+                  setDetail({ kind: "station", code: node.code })
+                }
                 onBranch={(node, branch) =>
-                  setDetail({ kind: "branch", code: node.code, branch })
+                  !preview
+                    ? branch.kind === "GUIDANCE" && !branch.locked
+                      ? navigate(
+                          `/professional-development?guidance=${encodeURIComponent(branch.id)}`,
+                        )
+                      : openJourneyTasksPanel(node.code, node.week)
+                    : setDetail({ kind: "branch", code: node.code, branch })
                 }
               />
             </div>
@@ -646,23 +693,28 @@ export default function HomePageB() {
               )}
             </footer>
           </section>
-          <footer className="home-preview-note">
-            <Eye size={15} />
-            {text(
-              "دي معاينة B ببيانات تجريبية. المستخدمون الحاليون والجدد مستمرون على A، ولا يتم حفظ تقدم أو طلبات أو ملفات من هنا.",
-              "This is Home B with synthetic data. Existing and new members remain on A. This preview does not save progress, applications or files.",
-            )}
-          </footer>
+          {preview && (
+            <footer className="home-preview-note">
+              <Eye size={15} />
+              {text(
+                "دي معاينة B مستقلة ببيانات تجريبية؛ لا تغيّر تعيينات المستخدمين ولا تحفظ تقدمًا أو طلبات أو ملفات.",
+                "This independent Home B preview uses synthetic data. It does not change assignments or save progress, applications or files.",
+              )}
+            </footer>
+          )}
         </>
       )}
+      {preview && data && <JourneyTasksPanel preview={data} />}
       {detail && data && (
         <Modal
           isOpen
           onClose={() => setDetail(null)}
           title={modalTitle}
           subtitle={text(
-            "معاينة B · بيانات تجريبية فقط",
-            "Home B preview · synthetic data only",
+            preview ? "معاينة B · بيانات تجريبية فقط" : "رحلتك وزملاؤك",
+            preview
+              ? "Home B preview · synthetic data only"
+              : "Your journey and peers",
           )}
           size={detail.kind === "cv" ? "2xl" : "xl"}
         >
@@ -721,7 +773,7 @@ export default function HomePageB() {
                         </div>
                       ))}
                     </div>
-                    {selected.code === current?.code && (
+                    {preview && selected.code === current?.code && (
                       <div className="home-action-explainer">
                         <h3>
                           {text(
@@ -991,7 +1043,10 @@ export default function HomePageB() {
                 <h3>{peerName(peer)}</h3>
                 <p>{peer.specialization}</p>
                 <span className="home-demo-label">
-                  {text("شخصية تجريبية", "Synthetic member")}
+                  {text(
+                    preview ? "شخصية تجريبية" : "الملف المهني",
+                    preview ? "Synthetic member" : "Professional profile",
+                  )}
                 </span>
                 <div className="home-profile-actions">
                   {peer.hasPortfolio ? (
@@ -1011,8 +1066,8 @@ export default function HomePageB() {
                   ) : (
                     <p>
                       {text(
-                        "لا يوجد بورتفوليو في هذا النموذج.",
-                        "No portfolio in this example.",
+                        "لا يوجد بورتفوليو متاح.",
+                        "No portfolio available.",
                       )}
                     </p>
                   )}
@@ -1028,10 +1083,7 @@ export default function HomePageB() {
                     </button>
                   ) : (
                     <p>
-                      {text(
-                        "لا توجد سيرة في هذا النموذج.",
-                        "No CV in this example.",
-                      )}
+                      {text("لا توجد سيرة ذاتية متاحة.", "No CV available.")}
                     </p>
                   )}
                 </div>
@@ -1043,7 +1095,21 @@ export default function HomePageB() {
                 </small>
               </div>
             )}
-            {detail.kind === "portfolio" && peer && (
+            {detail.kind === "portfolio" &&
+              peer &&
+              !preview &&
+              peer.portfolioUrl && (
+                <a
+                  className="home-primary"
+                  href={peer.portfolioUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {text("افتح البورتفوليو", "Open portfolio")}{" "}
+                  <ExternalLink size={16} />
+                </a>
+              )}
+            {detail.kind === "portfolio" && peer && preview && (
               <div className="home-portfolio">
                 <span className="home-eyebrow">
                   {text(
@@ -1099,9 +1165,7 @@ export default function HomePageB() {
               <div className="home-cv">
                 {pdfError ? (
                   <div role="alert">
-                    <p>
-                      {text("تعذر فتح النموذج.", "Could not open the sample.")}
-                    </p>
+                    <p>{text("تعذر فتح الملف.", "Could not open the file.")}</p>
                     <button
                       className="home-secondary"
                       onClick={() => setPdfRetry((n) => n + 1)}
@@ -1111,20 +1175,31 @@ export default function HomePageB() {
                   </div>
                 ) : !pdfUrl ? (
                   <p role="status">
-                    {text("تجهيز ملف تجريبي…", "Preparing the sample PDF…")}
+                    {text(
+                      preview ? "تجهيز ملف تجريبي…" : "تجهيز السيرة الذاتية…",
+                      preview
+                        ? "Preparing the sample PDF…"
+                        : "Preparing the CV…",
+                    )}
                   </p>
                 ) : (
                   <>
                     <a
                       className="home-secondary"
                       href={pdfUrl}
-                      download="nawah-sample-cv.pdf"
+                      download={preview ? "nawah-sample-cv.pdf" : "cv.pdf"}
                     >
                       <FileText size={15} />
-                      {text("تنزيل النموذج التجريبي", "Download sample PDF")}
+                      {text(
+                        preview ? "تنزيل النموذج التجريبي" : "تنزيل السيرة",
+                        preview ? "Download sample PDF" : "Download CV",
+                      )}
                     </a>
                     <iframe
-                      title={text("سيرة ذاتية تجريبية", "Synthetic CV preview")}
+                      title={text(
+                        preview ? "سيرة ذاتية تجريبية" : "السيرة الذاتية",
+                        preview ? "Synthetic CV preview" : "CV",
+                      )}
                       src={pdfUrl}
                     />
                   </>

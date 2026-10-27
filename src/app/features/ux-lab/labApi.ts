@@ -15,7 +15,7 @@ export type LabExperiment = {
   section: SectionId;
   treatment: string;
   status: "DRAFT" | "RUNNING" | "PAUSED" | "COMPLETED";
-  audience: "ALL" | "GROUPS" | "USERS";
+  audience: "ALL" | "GROUPS" | "USERS" | "ENTRY";
   groupIds: string[];
   userIds: string[];
   allocation: number;
@@ -134,6 +134,11 @@ export const labApi = {
     }),
 };
 export const METRIC_LABELS: Record<string, [string, string]> = {
+  home_continue_clicked: ["متابعة الرحلة", "Continue journey"],
+  home_station_opened: ["فتح مهام المحطة", "Open station tasks"],
+  home_scope_changed: ["تغيير نطاق الزملاء", "Change peer scope"],
+  home_peer_opened: ["فتح ملف زميل", "Open peer profile"],
+  home_task_zero_completed: ["إتمام المهمة صفر", "Task zero completed"],
   application_created: ["طلب محفوظ", "Application saved"],
   application_stage_updated: ["مرحلة طلب محدثة", "Stage updated"],
   feedback_read: ["إرشاد مقروء", "Guidance read"],

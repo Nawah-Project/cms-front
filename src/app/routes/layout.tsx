@@ -1,5 +1,8 @@
 import { useAuth } from "../features/auth/store/authStore";
-import { SectionExperienceProvider, SectionExposure } from '../features/ux-lab/SectionExperience';
+import {
+  SectionExperienceProvider,
+  SectionExposure,
+} from "../features/ux-lab/SectionExperience";
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -43,7 +46,10 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user: previewUser } = useAuth();
-  const isHomePreview = previewUser?.role === "ADMIN" && location.pathname === "/" && new URLSearchParams(location.search).get("labPreview") === "home:B";
+  const isHomePreview =
+    previewUser?.role === "ADMIN" &&
+    location.pathname === "/" &&
+    new URLSearchParams(location.search).get("labPreview") === "home:B";
 
   useEffect(() => {
     if (window.localStorage.getItem("nawah.sidebar.collapsed") === "true") {
@@ -109,68 +115,76 @@ export default function Layout() {
 
   return (
     <ProtectedRoute>
-      <SectionExperienceProvider><EmailVerificationGate>
-        <ProfileCompletionGate>
-          <ExperienceProgressProvider>
-          <FirstApplicationGuidedTourProvider
-            enabled={!location.pathname.startsWith("/admin") && !isHomePreview}
-          >
-            <AppContext.Provider value={{ openAddModal }}>
-              <div className="workspace-shell min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200">
-                <AppSidebar
-                  collapsed={isSidebarCollapsed}
-                  onToggleCollapsed={() =>
-                    setIsSidebarCollapsed((collapsed) => !collapsed)
-                  }
-                />
-                {!location.pathname.startsWith("/admin") && !isHomePreview && (
-                  <JourneyTasksPanel />
-                )}
-
-                <div
-                  className={`min-h-screen w-full min-w-0 transition-none lg:transition-[padding] duration-200 ${
-                    isSidebarCollapsed ? "lg:ps-20" : "lg:ps-64"
-                  }`}
-                >
-                  <main className="min-w-0 w-full px-5 py-7 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 lg:py-10">
-                    <SectionExposure><Outlet context={{ openAddModal }} /></SectionExposure>
-                  </main>
-                </div>
-
-                <AddApplicationModal
-                  isOpen={isAddModalOpen}
-                  journeyQueryEnabled={location.pathname !== "/admin/report-preview"}
-                  initialValues={draftValues}
-                  onClose={() => {
-                    setIsAddModalOpen(false);
-                    setDraftValues(null);
-                  }}
-                  onSubmit={handleCreateApplication}
-                />
-
-                {celebrationData && (
-                  <MilestoneCelebrationModal
-                    isOpen={Boolean(celebrationData)}
-                    onClose={() => setCelebrationData(null)}
-                    title={celebrationData.title}
-                    description={celebrationData.description}
-                    unlockedItems={celebrationData.unlockedItems}
-                    ctaLabel={celebrationData.ctaLabel}
-                    onCtaClick={() => {
-                      const targetRoute = celebrationData.ctaRoute;
-                      setCelebrationData(null);
-                      if (targetRoute) {
-                        navigate(targetRoute);
+      <SectionExperienceProvider>
+        <EmailVerificationGate>
+          <ProfileCompletionGate>
+            <ExperienceProgressProvider>
+              <FirstApplicationGuidedTourProvider
+                enabled={
+                  !location.pathname.startsWith("/admin") &&
+                  !isHomePreview
+                }
+              >
+                <AppContext.Provider value={{ openAddModal }}>
+                  <div className="workspace-shell min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200">
+                    <AppSidebar
+                      collapsed={isSidebarCollapsed}
+                      onToggleCollapsed={() =>
+                        setIsSidebarCollapsed((collapsed) => !collapsed)
                       }
-                    }}
-                  />
-                )}
-              </div>
-            </AppContext.Provider>
-          </FirstApplicationGuidedTourProvider>
-          </ExperienceProgressProvider>
-        </ProfileCompletionGate>
-      </EmailVerificationGate></SectionExperienceProvider>
+                    />
+                    {!location.pathname.startsWith("/admin") &&
+                      !isHomePreview && <JourneyTasksPanel />}
+
+                    <div
+                      className={`min-h-screen w-full min-w-0 transition-none lg:transition-[padding] duration-200 ${
+                        isSidebarCollapsed ? "lg:ps-20" : "lg:ps-64"
+                      }`}
+                    >
+                      <main className="min-w-0 w-full px-5 py-7 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 lg:py-10">
+                        <SectionExposure>
+                          <Outlet context={{ openAddModal }} />
+                        </SectionExposure>
+                      </main>
+                    </div>
+
+                    <AddApplicationModal
+                      isOpen={isAddModalOpen}
+                      journeyQueryEnabled={
+                        location.pathname !== "/admin/report-preview"
+                      }
+                      initialValues={draftValues}
+                      onClose={() => {
+                        setIsAddModalOpen(false);
+                        setDraftValues(null);
+                      }}
+                      onSubmit={handleCreateApplication}
+                    />
+
+                    {celebrationData && (
+                      <MilestoneCelebrationModal
+                        isOpen={Boolean(celebrationData)}
+                        onClose={() => setCelebrationData(null)}
+                        title={celebrationData.title}
+                        description={celebrationData.description}
+                        unlockedItems={celebrationData.unlockedItems}
+                        ctaLabel={celebrationData.ctaLabel}
+                        onCtaClick={() => {
+                          const targetRoute = celebrationData.ctaRoute;
+                          setCelebrationData(null);
+                          if (targetRoute) {
+                            navigate(targetRoute);
+                          }
+                        }}
+                      />
+                    )}
+                  </div>
+                </AppContext.Provider>
+              </FirstApplicationGuidedTourProvider>
+            </ExperienceProgressProvider>
+          </ProfileCompletionGate>
+        </EmailVerificationGate>
+      </SectionExperienceProvider>
     </ProtectedRoute>
   );
 }

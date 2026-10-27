@@ -59,7 +59,8 @@ function labError(error: unknown, ar: boolean) {
       "أنه تجربة هذا القسم قبل نشر تصميمه.",
     "Release changed; refresh before publishing":
       "تغير التصميم المنشور. حدث البيانات ثم راجع النشر.",
-    "Home B is administrator preview only": "الرئيسية B متاحة لمعاينة الأدمن فقط؛ لا يمكن نشرها أو إسنادها للمستخدمين الآن.",
+    "Home B is administrator preview only":
+      "الرئيسية B متاحة لمعاينة الأدمن فقط؛ لا يمكن نشرها أو إسنادها للمستخدمين الآن.",
     "Design is not implemented": "التصميم المطلوب غير منفذ بعد.",
     "A meaningful title and hypothesis are required":
       "اكتب اسمًا واضحًا وفرضية قابلة للاختبار.",
@@ -634,23 +635,30 @@ export default function AdminUxLabPage() {
                       </div>
                       <p className="lab-muted mt-2 text-xs">
                         {s.previewOnly
-                          ? text("A: الدخول الحالي للطلبات · B: الرئيسية وخريطة الرحلة · معاينة الأدمن فقط", "A: current applications entry · B: home & journey map · admin preview only")
-                          : s.versions.includes("B")
                           ? text(
-                              "A: جدول · B: بطاقات تقدم",
-                              "A: table · B: progress cards",
+                              "A: الدخول الحالي للطلبات · B: الرئيسية وخريطة الرحلة · معاينة الأدمن فقط",
+                              "A: current applications entry · B: home & journey map · admin preview only",
                             )
-                          : text(
-                              "A جاهزة · B تحتاج تصميمًا وتنفيذًا",
-                              "A ready · B requires design and implementation",
-                            )}
+                          : s.versions.includes("B")
+                            ? text(
+                                "A: جدول · B: بطاقات تقدم",
+                                "A: table · B: progress cards",
+                              )
+                            : text(
+                                "A جاهزة · B تحتاج تصميمًا وتنفيذًا",
+                                "A ready · B requires design and implementation",
+                              )}
                       </p>
                       <div className="mt-4 flex flex-wrap items-center gap-2">
                         {s.versions.map((v) => (
                           <button
                             className="lab-button"
                             key={v}
-                            disabled={busy || s.previewOnly || v === cfg.releases[s.id].version}
+                            disabled={
+                              busy ||
+                              s.previewOnly ||
+                              v === cfg.releases[s.id].version
+                            }
                             onClick={() =>
                               setPublish({ section: s.id, version: v })
                             }
@@ -664,7 +672,16 @@ export default function AdminUxLabPage() {
                             {v}
                           </button>
                         ))}
-                        {s.id === "home" && <a className="lab-text-link" href="/?labPreview=home:B" target="_blank" rel="noreferrer">{text("معاينة الرئيسية B", "Preview Home B")} ↗</a>}
+                        {s.id === "home" && (
+                          <a
+                            className="lab-text-link"
+                            href="/?labPreview=home:B"
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {text("معاينة الرئيسية B", "Preview Home B")} ↗
+                          </a>
+                        )}
                         {s.id === "members-progress" && (
                           <a
                             className="lab-text-link"
@@ -798,27 +815,32 @@ export default function AdminUxLabPage() {
                           <div>
                             <dt>{text("الجمهور", "Audience")}</dt>
                             <dd>
-                              {selected.audience === "ALL"
+                              {selected.audience === "ENTRY"
                                 ? text(
-                                    "كل الباحثين المؤهلين",
-                                    "All eligible members",
+                                    "اختيار منظّم: أول دخول عند المهمة صفر، A ثم B؛ مجموعات منفصلة حسب النسخة والتخصص",
+                                    "Organized entry: first eligible Task-zero visit, alternating A/B; groups separated by arm and specialty",
                                   )
-                                : selected.audience === "GROUPS"
-                                  ? selected.groupIds
-                                      .map(
-                                        (id) =>
-                                          dir.groups.find((g) => g.id === id)
-                                            ?.name ??
-                                          text(
-                                            "مجموعة محذوفة",
-                                            "Deleted group",
-                                          ),
-                                      )
-                                      .join("، ")
-                                  : text(
-                                      `${selected.userIds.length} باحث محدد`,
-                                      `${selected.userIds.length} selected members`,
-                                    )}
+                                : selected.audience === "ALL"
+                                  ? text(
+                                      "كل الباحثين المؤهلين",
+                                      "All eligible members",
+                                    )
+                                  : selected.audience === "GROUPS"
+                                    ? selected.groupIds
+                                        .map(
+                                          (id) =>
+                                            dir.groups.find((g) => g.id === id)
+                                              ?.name ??
+                                            text(
+                                              "مجموعة محذوفة",
+                                              "Deleted group",
+                                            ),
+                                        )
+                                        .join("، ")
+                                    : text(
+                                        `${selected.userIds.length} باحث محدد`,
+                                        `${selected.userIds.length} selected members`,
+                                      )}
                             </dd>
                           </div>
                           <div>
@@ -848,10 +870,25 @@ export default function AdminUxLabPage() {
                             </dt>
                             <dd>
                               {number(selected.minSample)}{" "}
-                              {text("مشاهد فعلي", "exposed users")}
+                              {text(
+                                selected.audience === "ENTRY"
+                                  ? "حساب معيّن"
+                                  : "مشاهد فعلي",
+                                selected.audience === "ENTRY"
+                                  ? "assigned accounts"
+                                  : "exposed users",
+                              )}
                             </dd>
                           </div>
                         </dl>
+                        {selected.audience === "ENTRY" && (
+                          <p className="lab-notice">
+                            {text(
+                              "المقارنة هنا تقيس إتمام المهمة صفر من جميع الحسابات المعيّنة، سواء شاهدت الرئيسية أم دخلت الطلبات مباشرة. الأرقام حالة فعلية محفوظة؛ لا تعني وجود دلالة إحصائية. فلتر المجموعة يستخدم العضوية الحالية لهذا القياس.",
+                              "This comparison measures Task-zero completion among all assigned accounts, including A accounts entering Applications directly. Durable status is descriptive, not statistical significance. Group filtering uses current membership for this measure.",
+                            )}
+                          </p>
+                        )}
                         {comparison ? (
                           <>
                             <div className="grid gap-4 sm:grid-cols-2">
@@ -876,7 +913,14 @@ export default function AdminUxLabPage() {
                                   <dl className="mt-4 grid grid-cols-2 gap-4 text-xs">
                                     <div>
                                       <dt className="lab-muted">
-                                        {text("شاهدوا القسم", "Exposed")}
+                                        {text(
+                                          selected.audience === "ENTRY"
+                                            ? "تم تعيينهم عند البداية"
+                                            : "شاهدوا القسم",
+                                          selected.audience === "ENTRY"
+                                            ? "Assigned at entry"
+                                            : "Exposed",
+                                        )}
                                       </dt>
                                       <dd className="mt-1 text-lg font-bold">
                                         {number(arm.exposed)}
@@ -1536,16 +1580,19 @@ function ExperimentEditor({
   const { locale } = useI18n();
   const ar = locale === "ar";
   const text = (a: string, e: string) => (ar ? a : e);
-  const first = config.registry.find((s) => s.versions.includes("B") && !s.previewOnly)!;
+  const first = config.registry.find(
+    (s) => s.versions.includes("B") && !s.previewOnly,
+  )!;
   const [form, setForm] = useState<CreateExperiment>({
     title: "",
     hypothesis: "",
     section: first.id,
-    audience: "GROUPS",
+    audience: first.id === "home" ? "ENTRY" : "GROUPS",
     groupIds: [],
     userIds: [],
     allocation: 50,
-    primaryMetric: first.metrics[0],
+    primaryMetric:
+      first.id === "home" ? "home_task_zero_completed" : first.metrics[0],
     minSample: 30,
   });
   const [busy, setBusy] = useState(false);
@@ -1604,7 +1651,13 @@ function ExperimentEditor({
               value={form.section}
               onChange={(e) => {
                 const s = config.registry.find((s) => s.id === e.target.value)!;
-                patch({ section: s.id, primaryMetric: s.metrics[0] });
+                patch({
+                  section: s.id,
+                  primaryMetric: s.metrics[0],
+                  audience: "GROUPS",
+                  groupIds: [],
+                  userIds: [],
+                });
               }}
             >
               {config.registry.map((s) => (
@@ -1614,9 +1667,11 @@ function ExperimentEditor({
                   disabled={!s.versions.includes("B") || s.previewOnly}
                 >
                   {text(s.titleAr, s.titleEn)}{" "}
-                  {s.previewOnly ? text("— معاينة الأدمن فقط", "— admin preview only") : s.versions.includes("B")
-                    ? "A / B"
-                    : text("— B غير منفذة", "— B not implemented")}
+                  {s.previewOnly
+                    ? text("— معاينة الأدمن فقط", "— admin preview only")
+                    : s.versions.includes("B")
+                      ? "A / B"
+                      : text("— B غير منفذة", "— B not implemented")}
                 </option>
               ))}
             </select>
@@ -1641,6 +1696,7 @@ function ExperimentEditor({
           <label className="lab-field">
             {text("نتيجة النجاح الأساسية", "Primary success outcome")}
             <select
+              disabled={form.audience === "ENTRY"}
               value={form.primaryMetric}
               onChange={(e) => patch({ primaryMetric: e.target.value })}
             >
@@ -1672,6 +1728,7 @@ function ExperimentEditor({
           {text("نسبة الجمهور المعيّن للنسخة B", "Audience allocated to B")}
           <input
             type="range"
+            disabled={form.audience === "ENTRY"}
             min="10"
             max="90"
             step="5"
@@ -1683,37 +1740,70 @@ function ExperimentEditor({
             {text("· تعيين ثابت على الحساب", "· stable account assignment")}
           </span>
         </label>
+        {form.audience === "ENTRY" && (
+          <p className="lab-notice">
+            {text(
+              "يشمل الحسابات الجديدة والحسابات التي ما زالت عند المهمة صفر ولم تنضم لمجموعة. التعيين ثابت للحساب؛ لا يتبدل مع تسجيل الدخول. عند فتح المجموعة، تُفصل النسخ والتخصصات. لا تُنقل الحسابات المتقدمة تلقائيًا.",
+              "Includes new accounts and accounts still at Task zero without a group. Assignment persists across logins. Joining groups separates variants and specialties. Advanced accounts are not automatically moved.",
+            )}
+          </p>
+        )}
         <fieldset>
           <legend className="mb-3 text-sm font-semibold">
             {text("من يدخل التجربة؟", "Who enters this test?")}
           </legend>
           <div className="flex flex-wrap gap-4">
-            {(["GROUPS", "USERS", "ALL"] as const).map((a) => (
+            {(
+              [
+                "GROUPS",
+                "USERS",
+                "ALL",
+                ...(form.section === "home" ? ["ENTRY" as const] : []),
+              ] as const
+            ).map((a) => (
               <label className="flex items-center gap-2 text-sm" key={a}>
                 <input
                   type="radio"
                   name="audience"
                   checked={form.audience === a}
                   onChange={() =>
-                    patch({ audience: a, groupIds: [], userIds: [] })
+                    patch({
+                      audience: a,
+                      groupIds: [],
+                      userIds: [],
+                      ...(a === "ENTRY"
+                        ? {
+                            allocation: 50,
+                            primaryMetric: "home_task_zero_completed",
+                          }
+                        : {
+                            primaryMetric: config.registry.find(
+                              (s) => s.id === form.section,
+                            )!.metrics[0],
+                          }),
+                    })
                   }
                 />
                 {text(
-                  a === "GROUPS"
-                    ? "مجموعات محددة"
-                    : a === "USERS"
-                      ? "باحثون محددون"
-                      : "كل الباحثين المؤهلين",
-                  a === "GROUPS"
-                    ? "Selected groups"
-                    : a === "USERS"
-                      ? "Selected members"
-                      : "All eligible members",
+                  a === "ENTRY"
+                    ? "الاختيار المنظّم عند البداية (A ثم B)"
+                    : a === "GROUPS"
+                      ? "مجموعات محددة"
+                      : a === "USERS"
+                        ? "باحثون محددون"
+                        : "كل الباحثين المؤهلين",
+                  a === "ENTRY"
+                    ? "Organized entry (A then B)"
+                    : a === "GROUPS"
+                      ? "Selected groups"
+                      : a === "USERS"
+                        ? "Selected members"
+                        : "All eligible members",
                 )}
               </label>
             ))}
           </div>
-          {form.audience !== "ALL" && (
+          {["GROUPS", "USERS"].includes(form.audience) && (
             <div className="mt-4 rounded-xl border border-neutral-300 p-3">
               {form.audience === "USERS" && (
                 <input
@@ -1770,7 +1860,10 @@ function ExperimentEditor({
         )}
         <button
           className="lab-primary w-full"
-          disabled={busy || (form.audience !== "ALL" && !chosen.length)}
+          disabled={
+            busy ||
+            (["GROUPS", "USERS"].includes(form.audience) && !chosen.length)
+          }
         >
           {busy
             ? text("جارٍ الحفظ…", "Saving…")

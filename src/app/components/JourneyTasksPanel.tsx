@@ -11,18 +11,33 @@ import {
 } from "./journeyTasksPanelEvents";
 import { CELEBRATE_MILESTONE_EVENT } from "../features/journey/lib/celebrationEvents";
 import { useTour } from "../features/applications/components/FirstApplicationGuidedTour";
-import { isGuideFinished, useExperienceProgress } from "../features/experience/ExperienceProgress";
+import {
+  isGuideFinished,
+  useExperienceProgress,
+} from "../features/experience/ExperienceProgress";
 
-export function JourneyTasksPanel() {
+export function JourneyTasksPanel({
+  preview,
+}: {
+  preview?: import("../features/home/home-preview-api").HomePreview;
+}) {
   const { t, locale } = useI18n();
   const location = useLocation();
   const { user } = useAuth();
-  const { data: journeyData } = useJourneyState();
+  const journeyQuery = useJourneyState({ enabled: !preview });
+  const journeyData = preview ? undefined : journeyQuery.data;
+  const [selectedCode, setSelectedCode] = useState<string>();
+  const [previewWeek, setPreviewWeek] = useState(0);
   const [open, setOpen] = useState(false);
   const [hasUnseenUpdate, setHasUnseenUpdate] = useState(false);
   const { isTourActive, isTourBlocking, step, setStep } = useTour();
   const experience = useExperienceProgress();
-  const coachmarkSeen = !experience.ready || isTourBlocking || Boolean(experience.leaseOwner) || isGuideFinished(experience.progress["journey-coachmark-v1"]);
+  const coachmarkSeen =
+    Boolean(preview) ||
+    !experience.ready ||
+    isTourBlocking ||
+    Boolean(experience.leaseOwner) ||
+    isGuideFinished(experience.progress["journey-coachmark-v1"]);
 
   if (location.pathname.startsWith("/admin")) {
     return null;
@@ -132,7 +147,13 @@ export function JourneyTasksPanel() {
   }, [open, isTourActive, step]);
 
   useEffect(() => {
-    const openPanel = () => setOpen(true);
+    const openPanel = (event: Event) => {
+      const detail = (event as CustomEvent<{ code?: string; week?: number }>)
+        .detail;
+      setSelectedCode(detail?.code);
+      if (detail?.week !== undefined) setPreviewWeek(detail.week);
+      setOpen(true);
+    };
     window.addEventListener(OPEN_JOURNEY_TASKS_PANEL_EVENT, openPanel);
     return () =>
       window.removeEventListener(OPEN_JOURNEY_TASKS_PANEL_EVENT, openPanel);
@@ -189,7 +210,9 @@ export function JourneyTasksPanel() {
           aria-hidden={!open}
           inert={!open}
           className={`flex h-full w-full flex-col overflow-hidden rounded-[2rem] border border-border bg-surface transition-shadow duration-300 ${
-            open ? "pointer-events-auto shadow-2xl" : "pointer-events-none shadow-none"
+            open
+              ? "pointer-events-auto shadow-2xl"
+              : "pointer-events-none shadow-none"
           }`}
         >
           <header className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
@@ -221,7 +244,53 @@ export function JourneyTasksPanel() {
           </header>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-            <JourneyQuestsMap compact />
+            {preview ? (
+              <div className="space-y-4 py-4">
+                <p className="text-xs">
+                  {locale === "ar"
+                    ? "معاينة تجريبية للمهام · لا تغيّر بيانات حسابك"
+                    : "Synthetic task preview · your account is unchanged"}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {preview.weeks.map((w) => (
+                    <button
+                      key={w.week}
+                      onClick={() => setPreviewWeek(w.week)}
+                      className="rounded-lg border px-3 py-2 text-xs"
+                    >
+                      {locale === "ar" ? "أسبوع " : "Week "}
+                      {w.week}
+                    </button>
+                  ))}
+                </div>
+                {preview.weeks
+                  .find((w) => w.week === previewWeek)
+                  ?.nodes.map((n) => (
+                    <article
+                      key={n.code}
+                      className={`rounded-2xl border p-5 ${n.code === selectedCode ? "border-2 border-emerald-800" : "border-border"}`}
+                    >
+                      <h3 className="font-semibold">
+                        {n.status === "LOCKED"
+                          ? locale === "ar"
+                            ? "محطة قادمة مقفولة"
+                            : "Upcoming locked station"
+                          : locale === "ar"
+                            ? n.titleAr
+                            : n.titleEn}
+                      </h3>
+                      {n.requirements.map((r) => (
+                        <p key={r.key} className="mt-3 text-sm">
+                          {locale === "ar" ? r.titleAr : r.titleEn} ·{" "}
+                          {r.current} / {r.required}
+                        </p>
+                      ))}
+                    </article>
+                  ))}
+              </div>
+            ) : (
+              <JourneyQuestsMap compact selectedCode={selectedCode} />
+            )}
           </div>
         </div>
 
@@ -240,9 +309,7 @@ export function JourneyTasksPanel() {
             [isRtl ? "left" : "right"]: "calc(100% - 1px)",
           }}
           className={`pointer-events-auto absolute top-1/2 -translate-y-1/2 z-10 flex items-center justify-center bg-surface border-border text-neutral-800 shadow-md transition-colors duration-150 hover:bg-neutral-50 hover:text-neutral-950 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-info-strong ${
-            open
-              ? "h-11 w-8 px-1"
-              : "h-11 px-2.5"
+            open ? "h-11 w-8 px-1" : "h-11 px-2.5"
           } ${
             isRtl
               ? "rounded-r-xl rounded-l-none border-y border-r border-l-0"
@@ -264,7 +331,10 @@ export function JourneyTasksPanel() {
           )}
 
           {open ? (
-            <OpenChevron className="h-4 w-4 shrink-0 text-neutral-600 dark:text-neutral-300" aria-hidden="true" />
+            <OpenChevron
+              className="h-4 w-4 shrink-0 text-neutral-600 dark:text-neutral-300"
+              aria-hidden="true"
+            />
           ) : (
             <div
               className="flex items-center gap-1.5"
@@ -296,11 +366,19 @@ export function JourneyTasksPanel() {
             className="pointer-events-auto absolute top-1/2 -translate-y-1/2 z-20 flex cursor-pointer items-center gap-2.5 rounded-xl border border-neutral-700 bg-neutral-900/95 px-3.5 py-2 text-xs font-medium text-white shadow-xl backdrop-blur-xs transition hover:bg-neutral-900"
           >
             {isRtl ? (
-              <ChevronLeft className="h-4 w-4 shrink-0 text-amber-400 animate-pulse" aria-hidden="true" />
+              <ChevronLeft
+                className="h-4 w-4 shrink-0 text-amber-400 animate-pulse"
+                aria-hidden="true"
+              />
             ) : (
-              <ChevronRight className="h-4 w-4 shrink-0 text-amber-400 animate-pulse" aria-hidden="true" />
+              <ChevronRight
+                className="h-4 w-4 shrink-0 text-amber-400 animate-pulse"
+                aria-hidden="true"
+              />
             )}
-            <span className="whitespace-nowrap">{t("journey.startTourQuestHandlePrompt")}</span>
+            <span className="whitespace-nowrap">
+              {t("journey.startTourQuestHandlePrompt")}
+            </span>
             <button
               type="button"
               aria-label={t("common.close")}
@@ -316,7 +394,9 @@ export function JourneyTasksPanel() {
             <span
               aria-hidden="true"
               className={`absolute top-1/2 -translate-y-1/2 h-2 w-2 rotate-45 border-neutral-700 bg-neutral-900 ${
-                isRtl ? "-left-1 border-b border-l" : "-right-1 border-t border-r"
+                isRtl
+                  ? "-left-1 border-b border-l"
+                  : "-right-1 border-t border-r"
               }`}
             />
           </div>

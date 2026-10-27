@@ -11,6 +11,7 @@ export type Peer = {
   currentCode: string;
   hasCv: boolean;
   hasPortfolio: boolean;
+  portfolioUrl?: string | null;
 };
 export type Requirement = {
   key: string;
@@ -44,8 +45,8 @@ export type HomeNode = {
   counts: { group: number | null; specialty: number; all: number };
 };
 export type HomePreview = {
-  preview: true;
-  scenario: Scenario;
+  preview: boolean;
+  scenario: Scenario | null;
   generatedAt: string;
   currentCode: string;
   viewer: {
@@ -81,30 +82,33 @@ export type PeerPage = {
   lockedGroupCount: number;
   lockedOutsideCount: number;
 };
-const base = "/admin/ux-lab/v2/home-preview";
-export const homePreviewApi = {
-  home: (scenario: Scenario) =>
-    apiClient.get<HomePreview>(`${base}?scenario=${scenario}`),
-  peers: (
-    scenario: Scenario,
-    code: string,
-    scope: PeerScope,
-    page = 1,
-    includeGroup = false,
-  ) =>
-    apiClient.get<PeerPage>(
-      `${base}/stations/${encodeURIComponent(code)}/members?scenario=${scenario}&scope=${scope}&page=${page}&includeGroup=${includeGroup}`,
-    ),
-  peer: (scenario: Scenario, id: string) =>
-    apiClient.get<Peer>(
-      `${base}/members/${encodeURIComponent(id)}?scenario=${scenario}`,
-    ),
-  cv: async (scenario: Scenario, id: string) => {
-    const r = await fetch(
-      `${API_BASE_URL}${base}/members/${encodeURIComponent(id)}/cv?scenario=${scenario}`,
-      { credentials: "include", headers: { Accept: "application/pdf" } },
-    );
-    if (!r.ok) throw new Error("Preview CV unavailable");
-    return r.blob();
-  },
+export const createHomeApi = (preview: boolean) => {
+  const base = preview ? "/admin/ux-lab/v2/home-preview" : "/home";
+  return {
+    home: (scenario: Scenario) =>
+      apiClient.get<HomePreview>(`${base}?scenario=${scenario}`),
+    peers: (
+      scenario: Scenario,
+      code: string,
+      scope: PeerScope,
+      page = 1,
+      includeGroup = false,
+    ) =>
+      apiClient.get<PeerPage>(
+        `${base}/stations/${encodeURIComponent(code)}/members?scenario=${scenario}&scope=${scope}&page=${page}&includeGroup=${includeGroup}`,
+      ),
+    peer: (scenario: Scenario, id: string) =>
+      apiClient.get<Peer>(
+        `${base}/members/${encodeURIComponent(id)}?scenario=${scenario}`,
+      ),
+    cv: async (scenario: Scenario, id: string) => {
+      const r = await fetch(
+        `${API_BASE_URL}${base}/members/${encodeURIComponent(id)}/cv?scenario=${scenario}`,
+        { credentials: "include", headers: { Accept: "application/pdf" } },
+      );
+      if (!r.ok) throw new Error("Preview CV unavailable");
+      return r.blob();
+    },
+  };
 };
+export const homePreviewApi = createHomeApi(true);

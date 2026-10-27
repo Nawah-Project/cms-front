@@ -4,7 +4,7 @@ The baseline A is the complete approved experience at the 2026-10-27 cutover. It
 
 ## Rendering contract
 
-`SectionExperienceProvider` fetches `/ux-lab/assignment` once through an account-scoped React Query key. Each section has its own design version and immutable context. `useSectionDesign(section)` chooses an actual implementation. Currently group progress has A (existing table) and B (responsive cards). Both reuse `MemberProgressRow`, the same API, permission policies, professional profile, details and guide selectors. All other sections expose A only until a B implementation exists.
+`SectionExperienceProvider` fetches `/ux-lab/assignment` once through an account-scoped React Query key. Each section has its own design version and immutable context. `useSectionDesign(section)` chooses an actual implementation. Currently group progress has A (existing table) and B (responsive cards). Both reuse `MemberProgressRow`, the same API, permission policies, professional profile, details and guide selectors. Home also has A (applications entry) and B (journey home); its organized entry mode is documented in `home-b-preview.md`. Remaining sections expose A only until B is implemented.
 
 `SectionExposure` records a page exposure after its assignment is ready. Group progress explicitly waits for unlocked, successfully loaded content. It never treats a locked/loading screen as an experimental design exposure. URL preview is checked against the authenticated ADMIN role, is limited to the current URL/tab, and is excluded from research. Old browser preview flags cannot select a user design.
 

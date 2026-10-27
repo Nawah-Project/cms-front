@@ -45,17 +45,19 @@ type LabEvent = {
   duration?: number;
 };
 const routeSection = (path: string): SectionId | null =>
-  path.startsWith("/applications")
-    ? "applications"
-    : path.startsWith("/professional-development")
-      ? "development"
-      : path.startsWith("/members-progress")
-        ? null
-        : path.startsWith("/reports") || path.startsWith("/analytics")
-          ? "analytics"
-          : path === "/profile"
-            ? "profile"
-            : null;
+  path === "/"
+    ? "home"
+    : path.startsWith("/applications")
+      ? "applications"
+      : path.startsWith("/professional-development")
+        ? "development"
+        : path.startsWith("/members-progress")
+          ? null
+          : path.startsWith("/reports") || path.startsWith("/analytics")
+            ? "analytics"
+            : path === "/profile"
+              ? "profile"
+              : null;
 export function SectionExperienceProvider({
   children,
 }: {
@@ -76,7 +78,14 @@ export function SectionExperienceProvider({
     // never leak into another account through localStorage or produce research data.
     const preview = new URLSearchParams(search).get("labPreview");
     if (user?.role === "ADMIN" && preview === "home:B")
-      return { ...q.data, excluded: true, sections: { ...q.data.sections, home: { version: "B" as const, context: "preview", updatedAt: null } } };
+      return {
+        ...q.data,
+        excluded: true,
+        sections: {
+          ...q.data.sections,
+          home: { version: "B" as const, context: "preview", updatedAt: null },
+        },
+      };
     if (user?.role === "ADMIN" && preview === "members-progress:B")
       return {
         ...q.data,
@@ -286,18 +295,20 @@ export function SectionExposure({
     user?.role === "ADMIN" && new URLSearchParams(search).has("labPreview");
   return (
     <>
-      {preview && !explicit && new URLSearchParams(search).get("labPreview") !== "home:B" && (
-        <aside className="mb-5 flex flex-wrap justify-between gap-3 rounded-xl border border-neutral-300 bg-white p-4 text-sm text-neutral-800">
-          <span>
-            {locale === "ar"
-              ? "معاينة تصميم B · لا تُسجل ضمن نتائج التجارب"
-              : "Design B preview · excluded from experiment results"}
-          </span>
-          <Link className="font-semibold underline" to="/admin/ux-lab">
-            {locale === "ar" ? "العودة إلى المعمل" : "Back to lab"}
-          </Link>
-        </aside>
-      )}
+      {preview &&
+        !explicit &&
+        new URLSearchParams(search).get("labPreview") !== "home:B" && (
+          <aside className="mb-5 flex flex-wrap justify-between gap-3 rounded-xl border border-neutral-300 bg-white p-4 text-sm text-neutral-800">
+            <span>
+              {locale === "ar"
+                ? "معاينة تصميم B · لا تُسجل ضمن نتائج التجارب"
+                : "Design B preview · excluded from experiment results"}
+            </span>
+            <Link className="font-semibold underline" to="/admin/ux-lab">
+              {locale === "ar" ? "العودة إلى المعمل" : "Back to lab"}
+            </Link>
+          </aside>
+        )}
       {children}
     </>
   );

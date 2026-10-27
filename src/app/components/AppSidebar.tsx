@@ -1,3 +1,4 @@
+import { useSectionDesign } from "../features/ux-lab/SectionExperience";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import {
@@ -299,7 +300,11 @@ export function AppSidebar({
   const { user } = useAuth();
   const { t, locale, setLocale } = useI18n();
   const logout = useLogout();
-  const isReportPreviewRoute = location.pathname === "/admin/report-preview" || (user?.role === "ADMIN" && location.pathname === "/" && new URLSearchParams(location.search).get("labPreview") === "home:B");
+  const isReportPreviewRoute =
+    location.pathname === "/admin/report-preview" ||
+    (user?.role === "ADMIN" &&
+      location.pathname === "/" &&
+      new URLSearchParams(location.search).get("labPreview") === "home:B");
   const journeyQuery = useJourneyState({
     enabled: Boolean(user) && !isReportPreviewRoute,
   });
@@ -311,6 +316,7 @@ export function AppSidebar({
     null,
   );
 
+  const homeDesign = useSectionDesign("home");
   const isAdmin = user?.role === "ADMIN";
   const isInsideAdmin = location.pathname.startsWith("/admin");
   const [userViewOpen, setUserViewOpen] = useState(!isInsideAdmin);
@@ -445,8 +451,23 @@ export function AppSidebar({
 
       {userViewOpen && (
         <div className="mt-1 space-y-1 ps-2 animate-in fade-in slide-in-from-top-1 duration-150">
-          <Link to="/?labPreview=home:B" onClick={() => mobile && setMobileOpen(false)} className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs sm:text-[13px] ${new URLSearchParams(location.search).get("labPreview") === "home:B" && location.pathname === "/" ? "bg-white font-semibold text-neutral-950" : mobile ? "text-neutral-600 hover:bg-neutral-50" : "text-neutral-300 hover:bg-neutral-800 hover:text-white"}`} aria-current={location.pathname === "/" && new URLSearchParams(location.search).get("labPreview") === "home:B" ? "page" : undefined} title={locale === "ar" ? "الرئيسية — معاينة B" : "Home — Preview B"}>
-            <NavIcon name="dashboard"/><span className={collapsed && !mobile ? "sr-only" : "truncate"}>{locale === "ar" ? "الرئيسية — معاينة B" : "Home — Preview B"}</span>
+          <Link
+            to="/?labPreview=home:B"
+            onClick={() => mobile && setMobileOpen(false)}
+            className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs sm:text-[13px] ${new URLSearchParams(location.search).get("labPreview") === "home:B" && location.pathname === "/" ? "bg-white font-semibold text-neutral-950" : mobile ? "text-neutral-600 hover:bg-neutral-50" : "text-neutral-300 hover:bg-neutral-800 hover:text-white"}`}
+            aria-current={
+              location.pathname === "/" &&
+              new URLSearchParams(location.search).get("labPreview") ===
+                "home:B"
+                ? "page"
+                : undefined
+            }
+            title={locale === "ar" ? "الرئيسية — معاينة B" : "Home — Preview B"}
+          >
+            <NavIcon name="dashboard" />
+            <span className={collapsed && !mobile ? "sr-only" : "truncate"}>
+              {locale === "ar" ? "الرئيسية — معاينة B" : "Home — Preview B"}
+            </span>
           </Link>
           {USER_NAV_ITEMS.map((item) => {
             const active = isPathActive(location.pathname, item.to, item.end);
@@ -490,6 +511,17 @@ export function AppSidebar({
 
   const renderStandardUserNav = (mobile = false) => (
     <div className="space-y-1">
+      {user?.role === "USER" && homeDesign.version === "B" && (
+        <Link
+          to="/"
+          onClick={() => mobile && setMobileOpen(false)}
+          className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-inherit"
+          aria-current={location.pathname === "/" ? "page" : undefined}
+        >
+          <NavIcon name="dashboard" />
+          {locale === "ar" ? "الرئيسية" : "Home"}
+        </Link>
+      )}
       {USER_NAV_ITEMS.map((item) => {
         const active = isPathActive(location.pathname, item.to, item.end);
         const isLocked =

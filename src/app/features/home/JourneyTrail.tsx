@@ -29,6 +29,7 @@ export function JourneyTrail({
   showPlatform,
   allSpecialties,
   onStation,
+  onPeers,
   onBranch,
 }: {
   data: HomePreview;
@@ -39,6 +40,7 @@ export function JourneyTrail({
   showPlatform: boolean;
   allSpecialties: boolean;
   onStation: (node: HomeNode) => void;
+  onPeers: (node: HomeNode) => void;
   onBranch: (node: HomeNode, branch: Branch) => void;
 }) {
   const { locale, number } = useI18n(),
@@ -266,6 +268,14 @@ export function JourneyTrail({
                 </div>
               )}
             </button>
+            {(group > 0 || platform > 0) && (
+              <button
+                className="home-secondary trail-peer-open"
+                onClick={() => onPeers(n)}
+              >
+                {text("مين في المحطة دي؟", "Who is at this station?")}
+              </button>
+            )}
             {n.branches.length > 0 && (
               <div className="home-step-branches trail-branches">
                 {n.branches.map((b) => (
