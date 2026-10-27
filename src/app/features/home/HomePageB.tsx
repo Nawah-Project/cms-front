@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
 import {
+  ChevronDown,
+  ChevronUp,
   ArrowUpLeft,
   Check,
   Clock3,
   Compass,
   Eye,
   FileText,
-  Flag,
   FlaskConical,
   Globe2,
   Layers3,
@@ -18,23 +19,22 @@ import {
   Sparkles,
   UsersRound,
   ArrowRight,
-  BriefcaseBusiness,
   ExternalLink,
 } from "lucide-react";
 import { useI18n } from "../../i18n";
 import { useAuth } from "../auth/store/authStore";
 import { Modal } from "../../components/ui/Modal";
 import { GoalIllustration } from "./GoalIllustration";
-import { JourneyConnections } from "./JourneyConnections";
+import { JourneyTrail } from "./JourneyTrail";
 import {
   homePreviewApi,
   type HomeNode,
-  type HomePreview,
   type Peer,
   type Scenario,
   type Branch,
 } from "./home-preview-api";
 import "./home-preview.css";
+import "./journey-trail.css";
 const scenarios: [Scenario, string, string][] = [
   ["START", "بداية الرحلة", "Starting out"],
   ["WEEK_ONE", "الأسبوع الأول · السيرة", "Week one · CV foundation"],
@@ -62,7 +62,11 @@ export default function HomePageB() {
     [showPlatform, setShowPlatform] = useState(false),
     [allSpecialties, setAllSpecialties] = useState(false),
     [detail, setDetail] = useState<Detail | null>(null),
-    [peerPage, setPeerPage] = useState(1);
+    [peerPage, setPeerPage] = useState(1),
+    [mapExpanded, setMapExpanded] = useState(false);
+  const exampleRequested = useRef(false),
+    focusCurrentRequested = useRef(false);
+  const mapSection = useRef<HTMLElement>(null);
   const board = useRef<HTMLDivElement>(null);
   const query = useQuery({
     queryKey: ["home-preview", user?.id, scenario],
@@ -73,9 +77,11 @@ export default function HomePageB() {
   const data = query.data;
   useEffect(() => {
     setDetail(null);
-    setShowGroup(false);
-    setShowPlatform(false);
-    setAllSpecialties(false);
+    const example = exampleRequested.current;
+    setShowGroup(example);
+    setShowPlatform(example);
+    setAllSpecialties(example);
+    exampleRequested.current = false;
   }, [scenario]);
   const nodes = data?.weeks.flatMap((w) => w.nodes) ?? [],
     current = nodes.find((n) => n.code === data?.currentCode);
@@ -150,7 +156,7 @@ export default function HomePageB() {
     pdfRetry,
   ]);
   const currentRef = useRef<HTMLButtonElement>(null);
-  const goToCurrent = () => {
+  const focusCurrent = () => {
     currentRef.current?.scrollIntoView({
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ? "instant"
@@ -158,6 +164,49 @@ export default function HomePageB() {
       block: "center",
     });
     currentRef.current?.focus({ preventScroll: true });
+  };
+  useEffect(() => {
+    if (!mapExpanded || !data || !focusCurrentRequested.current) return;
+    const frame = requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        focusCurrentRequested.current = false;
+        focusCurrent();
+      }),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [mapExpanded, data]);
+  const goToCurrent = () => {
+    if (mapExpanded) focusCurrent();
+    else {
+      focusCurrentRequested.current = true;
+      setMapExpanded(true);
+    }
+  };
+  const showPeerExample = () => {
+    if (scenario === "AFTER_WEEK_TWO") {
+      setShowGroup(true);
+      setShowPlatform(true);
+      setAllSpecialties(true);
+      goToCurrent();
+    } else {
+      exampleRequested.current = true;
+      focusCurrentRequested.current = true;
+      setMapExpanded(true);
+      setScenario("AFTER_WEEK_TWO");
+    }
+  };
+  const toggleMap = () => {
+    const wasExpanded = mapExpanded;
+    setMapExpanded(!wasExpanded);
+    if (wasExpanded)
+      requestAnimationFrame(() => {
+        const toggle =
+          mapSection.current?.querySelector<HTMLButtonElement>(
+            ".home-map-toggle",
+          );
+        toggle?.scrollIntoView({ behavior: "instant", block: "end" });
+        toggle?.focus({ preventScroll: true });
+      });
   };
   const peerName = (p: Peer) => text(p.nameAr, p.nameEn);
   const goals = [
@@ -206,30 +255,6 @@ export default function HomePageB() {
   ];
   const openStation = (n: HomeNode) =>
     setDetail({ kind: "station", code: n.code });
-  const counters = (n: HomeNode) => (
-    <div
-      className="home-occupancy"
-      aria-label={text("أماكن الزملاء", "Peer positions")}
-    >
-      {showGroup && n.counts.group !== null && n.counts.group > 0 && (
-        <span className="home-group-count">
-          <UsersRound size={12} />
-          {number(n.counts.group)}
-          <span className="sr-only">{text("من مجموعتك", "in your group")}</span>
-        </span>
-      )}
-      {showPlatform &&
-        (allSpecialties ? n.counts.all : n.counts.specialty) > 0 && (
-          <span className="home-platform-count">
-            <Globe2 size={12} />
-            {number(allSpecialties ? n.counts.all : n.counts.specialty)}
-            <span className="sr-only">
-              {text("من المنصة", "on the platform")}
-            </span>
-          </span>
-        )}
-    </div>
-  );
   const mainLabel = (n: HomeNode) =>
     n.kind === "FINAL"
       ? text("التقرير النهائي", "Final report")
@@ -244,17 +269,6 @@ export default function HomePageB() {
                 ?.nodes.filter((x) => x.kind === "TASK")
                 .findIndex((x) => x.code === n.code)! + 1,
             );
-  const progress = (n: HomeNode) =>
-    n.requirements.length
-      ? Math.round(
-          (n.requirements.reduce(
-            (sum, r) => sum + Math.min(1, r.current / r.required),
-            0,
-          ) /
-            n.requirements.length) *
-            100,
-        )
-      : 0;
   const peer = detail && "peer" in detail ? verifiedPeer.data : null;
   const modalTitle =
     detail?.kind === "station"
@@ -436,10 +450,11 @@ export default function HomePageB() {
             </div>
           </section>
           <section
-            className="home-map-section"
+            className="home-map-section home-treasure-section"
+            ref={mapSection}
             aria-labelledby="home-map-title"
           >
-            <header className="home-map-heading">
+            <header className="home-map-heading home-map-masthead">
               <div>
                 <span className="home-eyebrow">
                   <Layers3 size={15} />
@@ -524,6 +539,29 @@ export default function HomePageB() {
                       )}
               </p>
             </div>
+            <div className="home-peer-example">
+              <div>
+                <UsersRound size={18} />
+                <span>
+                  <strong>
+                    {text(
+                      "شوف ظهور زملائك على الطريق",
+                      "See your peers along the route",
+                    )}
+                  </strong>
+                  <small>
+                    {text(
+                      "المجموعة خضراء والمنصة زرقاء. زر المثال يعرض حالة تجريبية بعد الأسبوع الثاني.",
+                      "Green marks your group; blue marks the platform. The example shows a synthetic post-week-two state.",
+                    )}
+                  </small>
+                </span>
+              </div>
+              <button onClick={showPeerExample} className="home-example-button">
+                <Eye size={15} />
+                {text("شوف مثال لتقدم الزملاء", "Show peer progress example")}
+              </button>
+            </div>
             <div className="home-map-legend">
               <span>
                 <i className="current" />
@@ -550,216 +588,55 @@ export default function HomePageB() {
                 </span>
               )}
             </div>
-            <div className="home-map" ref={board}>
-              <JourneyConnections root={board} data={data} rtl={ar} />
-              {data.weeks.map((w) => (
-                <section
-                  className={`home-week ${w.week === 0 ? "home-week-start" : ""}`}
-                  key={w.week}
-                  aria-label={
-                    w.week === 0
-                      ? text("البداية", "Start")
-                      : text("الأسبوع ", "Week ") + w.week
-                  }
-                >
-                  <header className="home-week-header">
-                    <span className="home-week-number">
-                      {String(w.week).padStart(2, "0")}
-                    </span>
-                    <div>
-                      <small>
-                        {w.week === 0
-                          ? text("البداية", "Start")
-                          : text("الأسبوع ", "Week ") + number(w.week)}
-                      </small>
-                      <h3>{text(w.titleAr, w.titleEn)}</h3>
-                    </div>
-                    <span className="home-week-meta">
-                      {w.week === current.week ? (
-                        <>
-                          <MapPin size={13} />
-                          {text("أسبوعك الحالي", "Your current phase")}
-                        </>
-                      ) : w.nodes.every((n) => n.status === "COMPLETED") ? (
-                        <>
-                          <Check size={13} />
-                          {text("أنجزته", "Completed")}
-                        </>
-                      ) : (
-                        <>
-                          <Flag size={13} />
-                          {text("خطوة بخطوة", "Step by step")}
-                        </>
-                      )}
-                    </span>
-                  </header>
-                  <div className="home-week-path">
-                    {w.week === 0 && (
-                      <div
-                        className="home-start-note"
-                        data-home-anchor="ONBOARDING"
-                      >
-                        <div className="home-start-compass">
-                          <Compass size={31} />
-                        </div>
-                        <span className="home-eyebrow">
-                          {text("بدايتك جاهزة", "Your start is ready")}
-                        </span>
-                        <h4>
-                          {text(
-                            "جهّزت هويتك المهنية.",
-                            "Your professional identity is ready.",
-                          )}
-                        </h4>
-                        <p>
-                          {text(
-                            "الاستقبال والملف المهني هم بداية الطريق. بعدها تسجّل أول خطواتك الفعلية.",
-                            "Your welcome and professional profile set the scene. Now start taking real steps.",
-                          )}
-                        </p>
-                        <span className="home-start-check">
-                          <Check size={13} />
-                          {text(
-                            "الاستقبال والملف المهني",
-                            "Welcome & professional profile",
-                          )}
-                        </span>
-                      </div>
+            <div
+              className={`home-map-window ${mapExpanded ? "expanded" : "collapsed"}`}
+              id="home-map-window"
+              role="region"
+              aria-label={text("مساحة خريطة الرحلة", "Journey map area")}
+            >
+              <JourneyTrail
+                data={data}
+                expanded={mapExpanded}
+                board={board}
+                currentRef={currentRef}
+                showGroup={showGroup}
+                showPlatform={showPlatform}
+                allSpecialties={allSpecialties}
+                onStation={openStation}
+                onBranch={(node, branch) =>
+                  setDetail({ kind: "branch", code: node.code, branch })
+                }
+              />
+            </div>
+            <div className="home-map-expand-bar">
+              <button
+                className="home-map-toggle"
+                aria-expanded={mapExpanded}
+                aria-controls="home-map-window"
+                onClick={toggleMap}
+              >
+                {mapExpanded ? (
+                  <ChevronUp size={17} />
+                ) : (
+                  <ChevronDown size={17} />
+                )}
+                <span>
+                  {mapExpanded
+                    ? text("اختصار عرض الخريطة", "Collapse journey map")
+                    : text("عرض الخريطة كاملة", "Show the full journey map")}
+                </span>
+              </button>
+              <small>
+                {mapExpanded
+                  ? text(
+                      "الخريطة كاملة · بدون زوم أو سحب",
+                      "Full map · no zoom or panning",
+                    )
+                  : text(
+                      "المهمة صفر وأربعة أسابيع متصلة",
+                      "Task zero and four connected weeks",
                     )}
-                    {w.nodes.map((n) => (
-                      <div className="home-step-column" key={n.code}>
-                        <button
-                          data-home-anchor={n.code}
-                          data-home-station={n.code}
-                          ref={n.code === current.code ? currentRef : undefined}
-                          onClick={() => openStation(n)}
-                          className={`home-station ${n.kind.toLowerCase()} ${n.status.toLowerCase()} ${showGroup && n.counts.group ? "has-group" : ""} ${showPlatform && (allSpecialties ? n.counts.all : n.counts.specialty) ? "has-platform" : ""}`}
-                          aria-label={
-                            n.status === "LOCKED"
-                              ? `${mainLabel(n)} · ${text("محطة قادمة", "Upcoming station")}`
-                              : `${mainLabel(n)} · ${text(n.titleAr ?? "", n.titleEn ?? "")}`
-                          }
-                        >
-                          <div className="home-station-top">
-                            <span>{mainLabel(n)}</span>
-                            {n.status === "COMPLETED" ? (
-                              <Check size={15} />
-                            ) : n.status === "LOCKED" ? (
-                              <LockKeyhole size={14} />
-                            ) : (
-                              <MapPin size={15} />
-                            )}
-                          </div>
-                          {n.status === "LOCKED" ? (
-                            <div className="home-masked" aria-hidden="true">
-                              <i />
-                              <i />
-                              <i />
-                            </div>
-                          ) : (
-                            <>
-                              <h4>{text(n.titleAr ?? "", n.titleEn ?? "")}</h4>
-                              {n.requirements[0] && (
-                                <div className="home-card-metric">
-                                  <strong>
-                                    {number(n.requirements[0].current)}
-                                  </strong>
-                                  <span>
-                                    / {number(n.requirements[0].required)}{" "}
-                                    {n.requirements[0].key === "apps"
-                                      ? text("طلب", "apps")
-                                      : text("تسليم", "submission")}
-                                  </span>
-                                </div>
-                              )}
-                              <div className="home-card-progress">
-                                <i style={{ width: `${progress(n)}%` }} />
-                              </div>
-                            </>
-                          )}
-                          <div className="home-station-footer">
-                            {n.status === "ACTIVE" ? (
-                              <span className="home-you-here">
-                                <span />
-                                {text("أنت هنا", "You are here")}
-                              </span>
-                            ) : n.status === "LOCKED" ? (
-                              <span>
-                                {text("تتكشف في وقتها", "Unfolds in its time")}
-                              </span>
-                            ) : (
-                              <span>{text("تم الإنجاز", "Completed")}</span>
-                            )}
-                            {counters(n)}
-                          </div>
-                        </button>
-                        {n.branches.length > 0 && (
-                          <div className="home-step-branches">
-                            {n.branches.map((b) => (
-                              <button
-                                key={b.id}
-                                data-home-anchor={b.id}
-                                className={`home-branch ${b.kind.toLowerCase()} ${b.locked ? "locked" : ""}`}
-                                aria-label={
-                                  b.locked
-                                    ? text(
-                                        "متطلب مرتبط مقفول",
-                                        "A linked requirement not yet open",
-                                      )
-                                    : text(b.titleAr ?? "", b.titleEn ?? "")
-                                }
-                                onClick={() =>
-                                  b.locked
-                                    ? openStation(n)
-                                    : setDetail({
-                                        kind: "branch",
-                                        code: n.code,
-                                        branch: b,
-                                      })
-                                }
-                              >
-                                {b.locked ? (
-                                  <>
-                                    <LockKeyhole size={12} />
-                                    <span
-                                      className="home-branch-mask"
-                                      aria-hidden="true"
-                                    />
-                                  </>
-                                ) : (
-                                  <>
-                                    {b.kind === "GUIDANCE" ? (
-                                      <Sparkles size={13} />
-                                    ) : b.kind === "TAILORED" ? (
-                                      <FileText size={13} />
-                                    ) : b.kind === "POSTS" ? (
-                                      <BriefcaseBusiness size={13} />
-                                    ) : (
-                                      <UsersRound size={13} />
-                                    )}
-                                    <span>
-                                      {text(b.titleAr ?? "", b.titleEn ?? "")}
-                                      {b.value ? (
-                                        <>
-                                          {" "}
-                                          · <b>{number(b.value)}</b>
-                                        </>
-                                      ) : (
-                                        ""
-                                      )}
-                                    </span>
-                                    {b.done && <Check size={12} />}
-                                  </>
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              ))}
+              </small>
             </div>
             <footer className="home-map-foot">
               <LockKeyhole size={14} />
