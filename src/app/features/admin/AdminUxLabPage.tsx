@@ -119,7 +119,10 @@ export default function AdminUxLabPage() {
   const [groupId, setGroup] = useState("");
   const [experimentId, setExperiment] = useState("");
   const [inspect, setInspect] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<AdminMember | null>(null);
+  const [feedback, setFeedback] = useState<Pick<
+    AdminMember,
+    "id" | "name"
+  > | null>(null);
   const [create, setCreate] = useState(false);
   const [busy, setBusy] = useState(false);
   const [publish, setPublish] = useState<{
@@ -127,14 +130,20 @@ export default function AdminUxLabPage() {
     version: string;
   } | null>(null);
   const [sectionDetail, setSectionDetail] = useState<SectionId | null>(null);
-  const config = useQuery({ queryKey: ["lab-config"], queryFn: labApi.config });
+  const config = useQuery({
+    queryKey: ["lab-config"],
+    queryFn: labApi.config,
+    enabled: tab !== "MAP",
+  });
   const report = useQuery({
     queryKey: ["lab-report", days, groupId, experimentId],
+    enabled: tab !== "MAP",
     queryFn: () =>
       labApi.report(days, groupId || undefined, experimentId || undefined),
   });
   const directory = useQuery({
     queryKey: ["lab-directory"],
+    enabled: tab !== "MAP",
     queryFn: async () => {
       const [members, groups, nodes, guidances] = await Promise.all([
         allMembers(),
@@ -149,10 +158,13 @@ export default function AdminUxLabPage() {
   const [videoBusy, setVideoBusy] = useState(false);
   const legacyConfig = useQuery({
     queryKey: ["lab-video-config"],
+    enabled: tab === "LAB",
     queryFn: () => fetchApi<{ introVideoUrl: string }>("/ux-analytics/config"),
   });
   const metric = (id: string) => METRIC_LABELS[id]?.[ar ? 0 : 1] ?? id;
   const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: ["journey-observatory"] });
+    void queryClient.invalidateQueries({ queryKey: ["journey-observations"] });
     void queryClient.invalidateQueries({ queryKey: ["lab-config"] });
     void queryClient.invalidateQueries({ queryKey: ["lab-report"] });
     void queryClient.invalidateQueries({ queryKey: ["lab-directory"] });
@@ -215,7 +227,7 @@ export default function AdminUxLabPage() {
     URL.revokeObjectURL(url);
   };
   return (
-    <div className="ux-lab space-y-6" dir={ar ? "rtl" : "ltr"}>
+    <div className={`ux-lab space-y-6 ${tab === "MAP" ? "journey-map-page" : ""}`} dir={ar ? "rtl" : "ltr"}>
       <header className="lab-heading">
         <div>
           <p className="lab-eyebrow">
@@ -289,7 +301,12 @@ export default function AdminUxLabPage() {
           </button>
         ))}
       </nav>
-      {error ? (
+      {tab === "MAP" ? (
+        <JourneyTopologyCanvas
+          onInspectMember={setInspect}
+          onSendFeedback={setFeedback}
+        />
+      ) : error ? (
         <div className="lab-card" role="alert">
           <h2>
             {text("تعذر تحميل بيانات المرصد", "Unable to load research data")}
@@ -316,7 +333,7 @@ export default function AdminUxLabPage() {
         </div>
       ) : (
         <>
-          {tab !== "MAP" && (
+          {(
             <section
               className="lab-card flex flex-wrap items-end justify-between gap-4 !p-4"
               aria-label={text("نطاق القياس", "Measurement scope")}
@@ -398,16 +415,6 @@ export default function AdminUxLabPage() {
                 UTC
               </p>
             </section>
-          )}
-          {tab === "MAP" && (
-            <JourneyTopologyCanvas
-              nodes={dir.nodes}
-              plotGuidances={dir.guidances}
-              members={dir.members}
-              groups={dir.groups}
-              onInspectMember={setInspect}
-              onSendFeedback={setFeedback}
-            />
           )}
           {tab === "ACTIVATION" && (
             <>
