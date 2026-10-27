@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Modal } from "./ui/Modal";
 import { useLocation } from "react-router";
 import { ChevronLeft, ChevronRight, ListChecks, X } from "lucide-react";
 import { useI18n } from "../i18n";
@@ -12,10 +11,7 @@ import {
 } from "./journeyTasksPanelEvents";
 import { CELEBRATE_MILESTONE_EVENT } from "../features/journey/lib/celebrationEvents";
 import { useTour } from "../features/applications/components/FirstApplicationGuidedTour";
-import {
-  isGuideFinished,
-  useExperienceProgress,
-} from "../features/experience/ExperienceProgress";
+import { isGuideFinished, useExperienceProgress } from "../features/experience/ExperienceProgress";
 
 export function JourneyTasksPanel() {
   const { t, locale } = useI18n();
@@ -26,11 +22,11 @@ export function JourneyTasksPanel() {
   const [hasUnseenUpdate, setHasUnseenUpdate] = useState(false);
   const { isTourActive, isTourBlocking, step, setStep } = useTour();
   const experience = useExperienceProgress();
-  const coachmarkSeen =
-    !experience.ready ||
-    isTourBlocking ||
-    Boolean(experience.leaseOwner) ||
-    isGuideFinished(experience.progress["journey-coachmark-v1"]);
+  const coachmarkSeen = !experience.ready || isTourBlocking || Boolean(experience.leaseOwner) || isGuideFinished(experience.progress["journey-coachmark-v1"]);
+
+  if (location.pathname.startsWith("/admin")) {
+    return null;
+  }
 
   const dismissCoachmark = () => {
     experience.record("journey-coachmark-v1", "COMPLETED");
@@ -98,7 +94,7 @@ export function JourneyTasksPanel() {
     }
   }, [location.pathname, location.search]);
 
-  // Close task window on external events (celebrations, modals, explicit close events)
+  // Close drawer on external events (celebrations, modals, explicit close events)
   useEffect(() => {
     const handleClose = () => {
       if (!isTourActive || step !== 2) {
@@ -114,6 +110,26 @@ export function JourneyTasksPanel() {
       window.removeEventListener("nawah_open_add_modal", handleClose);
     };
   }, [isTourActive, step]);
+
+  // Click-outside drawer auto-close (unless locked in tour step 2)
+  useEffect(() => {
+    if (!open) return;
+    const handleOutsideClick = (event: MouseEvent | TouchEvent) => {
+      if (isTourActive && step === 2) return;
+      const target = event.target as Node | null;
+      if (!target) return;
+      const panel = document.getElementById("journey-tasks-panel");
+      if (panel && !panel.contains(target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+    };
+  }, [open, isTourActive, step]);
 
   useEffect(() => {
     const openPanel = () => setOpen(true);
@@ -133,67 +149,179 @@ export function JourneyTasksPanel() {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [open, isTourActive, step]);
 
-  if (location.pathname.startsWith("/admin")) return null;
   const isRtl = locale === "ar";
-  const locked = isTourActive && step === 2;
+  // In RTL (drawer on left): closed arrow points right (>), open arrow points left (<)
+  // In LTR (drawer on right): closed arrow points left (<), open arrow points right (>)
+  const ClosedChevron = isRtl ? ChevronRight : ChevronLeft;
+  const OpenChevron = isRtl ? ChevronLeft : ChevronRight;
+
+  const panelWidth = "min(31rem, calc(100vw - 2.5rem))";
+  const hiddenOffset =
+    locale === "ar" ? "calc(-100% - 1.25rem)" : "calc(100% + 1.25rem)";
+
   return (
     <>
-      <div
+      {open && (
+        <button
+          type="button"
+          aria-label={t("common.close")}
+          onClick={() => {
+            if (!isTourActive || step !== 2) setOpen(false);
+          }}
+          className="fixed inset-0 z-50 cursor-default bg-neutral-950/30"
+        />
+      )}
+
+      {/* The sliding panel container with attached mechanical handle */}
+      <aside
         id="journey-tasks-panel"
-        className="fixed end-0 top-1/2 z-[60] -translate-y-1/2"
+        style={{
+          width: panelWidth,
+          height: "min(50rem, calc(100dvh - var(--journey-panel-gap, 6rem)))",
+          transform: open ? "translateX(0)" : `translateX(${hiddenOffset})`,
+        }}
+        className="fixed end-5 top-[calc(50%+2rem)] [--journey-panel-gap:6rem] lg:top-1/2 lg:[--journey-panel-gap:2rem] -translate-y-1/2 transition-transform duration-300 ease-out pointer-events-none z-[60]"
       >
+        {/* Inner Panel Drawer */}
+        <div
+          id="journey-tasks-drawer"
+          aria-label={t("journey.panelTitle")}
+          aria-hidden={!open}
+          inert={!open}
+          className={`flex h-full w-full flex-col overflow-hidden rounded-[2rem] border border-border bg-surface transition-shadow duration-300 ${
+            open ? "pointer-events-auto shadow-2xl" : "pointer-events-none shadow-none"
+          }`}
+        >
+          <header className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-100">
+                <ListChecks className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div>
+                <h2 className="text-base font-semibold text-neutral-950 dark:text-neutral-100">
+                  {t("journey.panelTitle")}
+                </h2>
+                <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+                  {t("journey.panelSubtitle")}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (!isTourActive) setOpen(false);
+              }}
+              aria-label={t("common.close")}
+              aria-controls="journey-tasks-drawer"
+              aria-expanded={true}
+              className="rounded-lg p-2 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-white"
+            >
+              <X className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </header>
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+            <JourneyQuestsMap compact />
+          </div>
+        </div>
+
+        {/* Unified Sliding Handle Button (100% mechanical lockstep with drawer movement) */}
         <button
           type="button"
           data-tour-step="journey-drawer-handle"
           aria-controls="journey-tasks-drawer"
           aria-expanded={open}
-          aria-label={t("journey.panelTitle")}
+          aria-label={open ? t("journey.closePanel") : t("journey.panelTitle")}
           onClick={() => {
             if (!open && isTourActive && step === 1) setStep(2);
-            setOpen(true);
+            setOpen(!open);
           }}
-          className="relative flex h-11 items-center gap-1.5 rounded-s-xl border border-border bg-surface px-3 text-text-primary shadow-md focus-visible:outline-2 focus-visible:outline-info-strong"
+          style={{
+            [isRtl ? "left" : "right"]: "calc(100% - 1px)",
+          }}
+          className={`pointer-events-auto absolute top-1/2 -translate-y-1/2 z-10 flex items-center justify-center bg-surface border-border text-neutral-800 shadow-md transition-colors duration-150 hover:bg-neutral-50 hover:text-neutral-950 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-info-strong ${
+            open
+              ? "h-11 w-8 px-1"
+              : "h-11 px-2.5"
+          } ${
+            isRtl
+              ? "rounded-r-xl rounded-l-none border-y border-r border-l-0"
+              : "rounded-l-xl rounded-r-none border-y border-l border-r-0"
+          }`}
         >
-          <ListChecks size={17} />
-          {isRtl ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          {/* Notification Red Dot (pulses when new quest unlocks or completes, dismisses on open) */}
           {hasUnseenUpdate && !open && (
-            <span className="absolute -top-1 end-0 h-2.5 w-2.5 rounded-full bg-rose-600 ring-2 ring-white" />
+            <span
+              className="absolute flex h-2.5 w-2.5 pointer-events-none"
+              style={{
+                top: "-4px",
+                [isRtl ? "right" : "left"]: "-4px",
+              }}
+            >
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-500 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-rose-600 shadow-xs ring-2 ring-white dark:ring-neutral-900" />
+            </span>
+          )}
+
+          {open ? (
+            <OpenChevron className="h-4 w-4 shrink-0 text-neutral-600 dark:text-neutral-300" aria-hidden="true" />
+          ) : (
+            <div
+              className="flex items-center gap-1.5"
+              style={{ direction: isRtl ? "ltr" : "rtl" }}
+            >
+              <ListChecks
+                className="h-4 w-4 shrink-0 text-neutral-700 dark:text-neutral-200"
+                aria-hidden="true"
+              />
+              <ClosedChevron
+                className="h-3.5 w-3.5 shrink-0 text-neutral-500 dark:text-neutral-400"
+                aria-hidden="true"
+              />
+            </div>
           )}
         </button>
+
+        {/* First-time coachmark pointer targeting the journey quest handle */}
         {!open && !coachmarkSeen && (
           <div
             role="tooltip"
-            className="absolute end-full top-1/2 me-3 flex -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-xl bg-neutral-900 p-3 text-xs text-white shadow-xl"
+            onClick={() => {
+              dismissCoachmark();
+              setOpen(true);
+            }}
+            style={{
+              [isRtl ? "left" : "right"]: "calc(100% + 46px)",
+            }}
+            className="pointer-events-auto absolute top-1/2 -translate-y-1/2 z-20 flex cursor-pointer items-center gap-2.5 rounded-xl border border-neutral-700 bg-neutral-900/95 px-3.5 py-2 text-xs font-medium text-white shadow-xl backdrop-blur-xs transition hover:bg-neutral-900"
           >
+            {isRtl ? (
+              <ChevronLeft className="h-4 w-4 shrink-0 text-amber-400 animate-pulse" aria-hidden="true" />
+            ) : (
+              <ChevronRight className="h-4 w-4 shrink-0 text-amber-400 animate-pulse" aria-hidden="true" />
+            )}
+            <span className="whitespace-nowrap">{t("journey.startTourQuestHandlePrompt")}</span>
             <button
-              onClick={() => {
+              type="button"
+              aria-label={t("common.close")}
+              onClick={(e) => {
+                e.stopPropagation();
                 dismissCoachmark();
-                setOpen(true);
               }}
+              className="ms-1 rounded-md p-0.5 text-neutral-400 hover:bg-neutral-800 hover:text-white"
             >
-              {t("journey.startTourQuestHandlePrompt")}
+              <X className="h-3 w-3" />
             </button>
-            <button aria-label={t("common.close")} onClick={dismissCoachmark}>
-              <X size={14} />
-            </button>
+            {/* Arrow tail pointing toward the handle */}
+            <span
+              aria-hidden="true"
+              className={`absolute top-1/2 -translate-y-1/2 h-2 w-2 rotate-45 border-neutral-700 bg-neutral-900 ${
+                isRtl ? "-left-1 border-b border-l" : "-right-1 border-t border-r"
+              }`}
+            />
           </div>
         )}
-      </div>
-      <Modal
-        isOpen={open}
-        onClose={() => {
-          if (!locked) setOpen(false);
-        }}
-        disableClose={locked}
-        closeJourneyPanelOnOpen={false}
-        title={t("journey.panelTitle")}
-        subtitle={t("journey.panelSubtitle")}
-        size="xl"
-      >
-        <div id="journey-tasks-drawer" aria-hidden={false}>
-          <JourneyQuestsMap compact />
-        </div>
-      </Modal>
+      </aside>
     </>
   );
 }

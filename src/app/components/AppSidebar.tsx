@@ -546,8 +546,8 @@ export function AppSidebar({
                   ? "أكمل إرشاد السيرة: ارفع النسخة المحدّثة من داخله؛ بعدها يكتمل الإرشاد ويفتح التحليل تلقائيًا."
                   : "Upload your revised CV inside its guide to automatically complete it and unlock analytics."
                 : locale === "ar"
-                  ? "أكمل المهمة صفر أولًا. خطوتك الحالية موجودة في نافذة المهام."
-                  : "Complete Task 0 first. Your current step is in the tasks window."
+                  ? "أكمل المهمة صفر أولًا. خطوتك الحالية موجودة في درج المهام."
+                  : "Complete Task 0 first. Your current step is in the tasks drawer."
               : item.to === "/professional-development"
                 ? t("journey.profDevLockedTooltip")
                 : t("journey.groupLockedTooltip");

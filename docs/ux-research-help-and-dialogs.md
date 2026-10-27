@@ -6,7 +6,7 @@ Guidance monitoring uses neutral cards, dark text and green information accents.
 
 Member inspection is one shared centered `MemberInspectorModal` across Overview, Community, Mentoring and UX Research. It preserves existing APIs, assignment controls and mentoring actions, ignores stale loads and constrains wide form controls. Feedback details use a centered native dialog. Task details retain their centered presentation and are named `TaskDetailModal`.
 
-Station inspection and the member quest panel also open in centered dialogs. The quest launcher remains at the screen edge. Its semantic tour selectors, event contract and persistent flow keys remain unchanged; mandatory step two keeps closing disabled and the next step closes the quest window before opening the application form. Opening the quest window explicitly opts out of the shared modal's normal close-quest-window event to prevent self-dismissal.
+Station inspection opens in a centered dialog. The member quest panel is an explicit exception: it retains its original sliding panel and attached launcher at the screen edge. Its semantic tour selectors, event contract and persistent flow keys remain unchanged; mandatory step two keeps closing disabled and the next step closes the quest window before opening the application form. The quest panel is independent of the shared modal.
 
 The shared Modal delegates focus restoration to `useDialogFocus` once. Duplicate restoration was removed because it could capture an already-focused dialog control during strict effect replay. Body scroll locking remains, header text can wrap, and close/backdrop/Escape behaviors are consistent. App navigation sidebars and inline table disclosures remain navigation/inline content rather than overlay detail drawers.
 

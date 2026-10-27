@@ -110,7 +110,7 @@ export function JourneyContinueCoachmark({
         onClick={open}
         aria-label={
           ar
-            ? "افتح نافذة المهام لمتابعة الرحلة"
+            ? "افتح درج المهام لمتابعة الرحلة"
             : "Open your tasks to continue"
         }
         className="fixed rounded-xl border-2 border-emerald-300 bg-white/10 ring-4 ring-emerald-300/25 focus-visible:outline-2 focus-visible:outline-white"
@@ -161,8 +161,8 @@ export function JourneyContinueCoachmark({
           </h2>
           <p id={bodyId} className="mt-2 text-sm leading-6 text-text-secondary">
             {ar
-              ? "نافذة المهام على جنب الشاشة فيه مهمتك الحالية وتقدّمك. افتحه وقت ما تكون جاهز، أو اضغط حسنًا وكمل استكشاف المنصة."
-              : "The task button on the edge of your screen opens your current quest and progress. Open it when ready, or choose Got it and keep exploring."}
+              ? "درج المهام على جنب الشاشة فيه مهمتك الحالية وتقدّمك. افتحه وقت ما تكون جاهز، أو اضغط حسنًا وكمل استكشاف المنصة."
+              : "The tasks drawer on the edge of your screen holds your current quest and progress. Open it when ready, or choose Got it and keep exploring."}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button
