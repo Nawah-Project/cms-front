@@ -155,7 +155,7 @@ export function JourneyTasksPanel() {
   const ClosedChevron = isRtl ? ChevronRight : ChevronLeft;
   const OpenChevron = isRtl ? ChevronLeft : ChevronRight;
 
-  const panelWidth = "min(31rem, calc(100vw - 2.5rem))";
+  const panelWidth = "min(496px, calc(100vw - 2.5rem))";
   const hiddenOffset =
     locale === "ar" ? "calc(-100% - 1.25rem)" : "calc(100% + 1.25rem)";
 
@@ -177,7 +177,7 @@ export function JourneyTasksPanel() {
         id="journey-tasks-panel"
         style={{
           width: panelWidth,
-          height: "min(50rem, calc(100dvh - var(--journey-panel-gap, 6rem)))",
+          height: "min(800px, calc(100dvh - var(--journey-panel-gap, 6rem)))",
           transform: open ? "translateX(0)" : `translateX(${hiddenOffset})`,
         }}
         className="fixed end-5 top-[calc(50%+2rem)] [--journey-panel-gap:6rem] lg:top-1/2 lg:[--journey-panel-gap:2rem] -translate-y-1/2 transition-transform duration-300 ease-out pointer-events-none z-[60]"

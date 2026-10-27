@@ -371,9 +371,6 @@ export default function GuidancePage() {
                       )}
                     </span>
                   </span>
-                  <span className="text-[11px] font-medium text-neutral-400">
-                    {text("ضباب الحرب المهني", "Coming next")}
-                  </span>
                 </div>
 
                 <div>

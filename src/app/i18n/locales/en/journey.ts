@@ -25,7 +25,7 @@ export default {
   currentWeekBadge: "Current Week: Week {week}",
   mapTitle: "Progressive Journey Quests Map",
   mapSubtitle:
-    "Complete the active quest requirements to lift the Fog of War on upcoming stages and unlock strategic insights.",
+    "Complete the current quest requirements to unlock the next tasks and their guidance.",
   weekZeroTab: "Week 0: Onboarding",
   weekNumberTab: "Week {week}",
   weekUnavailable:
