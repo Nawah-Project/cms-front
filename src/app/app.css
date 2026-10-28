@@ -418,11 +418,11 @@ h1, h2, h3 { text-wrap: balance; }
 .journey-values span { display:flex; align-items:center; gap:.4rem; }
 .journey-values i { height:4px; width:4px; border-radius:50%; background:#dfc174; }
 .onboarding-world { min-height:100svh; display:flex; align-items:center; justify-content:center; padding:2rem; background:radial-gradient(ellipse at 20% 10%,#39776670,transparent 55%),radial-gradient(ellipse at 90% 100%,#bba05726,transparent 50%),#103b34; }
-.onboarding-shell { display:grid; grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr); width:100%; max-width:1150px; border:1px solid #c2d1b961; background:#fff; border-radius:1.7rem; overflow:hidden; box-shadow:0 32px 96px #031f2959; }
-.onboarding-content { min-width:0; padding:2rem; }
+.onboarding-shell { display:grid; grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr); grid-template-rows:minmax(0,1fr); width:100%; height:min(740px,calc(100svh - 4rem)); max-width:1150px; border:1px solid #c2d1b961; background:#fff; border-radius:1.7rem; overflow:hidden; box-shadow:0 32px 96px #031f2959; }
+.onboarding-content { min-width:0; min-height:0; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; padding:2rem; }
 .onboarding-kicker { display:flex; align-items:center; gap:.5rem; margin-bottom:1.1rem; font-size:.72rem; font-weight:600; color:#397655; }
 .onboarding-kicker span { width:7px; height:7px; border-radius:50%; background:#bdce7a; box-shadow:0 0 0 5px #edf2df; }
-.journey-scenery--onboarding { min-height:740px; }
+.journey-scenery--onboarding { height:100%; min-height:0; }
 .journey-scenery--onboarding .journey-scenery-copy { inset-block-start:2rem; inset-inline-end:1.8rem; width:80%; }
 .journey-scenery--onboarding .journey-scenery-copy h2 { font-size:2rem; }
 .journey-scenery--onboarding .journey-scenery-copy p { font-size:.78rem; }
@@ -446,9 +446,9 @@ h1, h2, h3 { text-wrap: balance; }
  .journey-explore strong { font-size:.76rem; }
  .journey-explore small,.journey-values,.journey-destination { display:none; }
  .onboarding-world { padding:1rem; align-items:flex-start; }
- .onboarding-shell { grid-template-columns:1fr; border-radius:1.2rem; }
+ .onboarding-shell { grid-template-columns:1fr; grid-template-rows:245px minmax(0,1fr); height:min(740px,calc(100svh - 2rem)); border-radius:1.2rem; }
  .onboarding-content { padding:1.25rem; order:2; }
- .journey-scenery--onboarding { min-height:245px; order:1; }
+ .journey-scenery--onboarding { height:auto; min-height:245px; order:1; }
  .journey-scenery--onboarding .journey-scenery-copy { inset-block-start:1.25rem; inset-inline-end:1.25rem; width:70%; }
  .journey-scenery--onboarding .journey-scenery-copy h2 { font-size:1.45rem; margin:.5rem 0; }
  .journey-scenery--onboarding .journey-scenery-copy p { font-size:.72rem; line-height:1.8; max-width:17rem; }
