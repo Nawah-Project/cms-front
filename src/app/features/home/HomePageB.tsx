@@ -28,6 +28,7 @@ import { openJourneyTasksPanel } from "../../components/journeyTasksPanelEvents"
 import { trackSectionAction } from "../ux-lab/SectionExperience";
 import { useNavigate } from "react-router";
 import { Modal } from "../../components/ui/Modal";
+import { useToast } from "../../components/ui/ToastProvider";
 import { GoalIllustration } from "./GoalIllustration";
 import { JourneyTrail } from "./JourneyTrail";
 import {
@@ -37,8 +38,10 @@ import {
   type Scenario,
   type Branch,
 } from "./home-preview-api";
+import { useJourneyState } from "../journey/api/journeyApi";
 import "./home-preview.css";
 import "./journey-trail.css";
+type PeopleScope = "ME" | "GROUP" | "PLATFORM";
 const scenarios: [Scenario, string, string][] = [
   ["START", "بداية الرحلة", "Starting out"],
   ["WEEK_ONE", "الأسبوع الأول · السيرة", "Week one · CV foundation"],
@@ -63,9 +66,9 @@ export default function HomePageB({ preview = true }: { preview?: boolean }) {
     text = (a: string, e: string) => (ar ? a : e);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [scenario, setScenario] = useState<Scenario>("START"),
-    [showGroup, setShowGroup] = useState(false),
-    [showPlatform, setShowPlatform] = useState(false),
+    [scope, setScope] = useState<PeopleScope>("ME"),
     [allSpecialties, setAllSpecialties] = useState(false),
     [detail, setDetail] = useState<Detail | null>(null),
     [peerPage, setPeerPage] = useState(1),
@@ -80,12 +83,59 @@ export default function HomePageB({ preview = true }: { preview?: boolean }) {
     enabled: preview ? user?.role === "ADMIN" : user?.role === "USER",
     staleTime: preview ? 30_000 : 0,
   });
+  const journeyState = useJourneyState({
+    enabled: !preview && user?.role === "USER",
+  });
   const data = query.data;
+  const showGroup = scope === "GROUP";
+  const showPlatform = scope === "PLATFORM";
+  const hasGroup = preview
+    ? Boolean(data?.viewer.groupUnlocked)
+    : Boolean(data?.viewer.hasGroup);
+  const previousJourneyUpdate = useRef<number | null>(null);
+  const unlockToastShown = useRef(false);
+  useEffect(() => {
+    const updatedAt = journeyState.dataUpdatedAt;
+    if (!updatedAt) return;
+    if (previousJourneyUpdate.current === null) {
+      previousJourneyUpdate.current = updatedAt;
+      return;
+    }
+    if (previousJourneyUpdate.current === updatedAt) return;
+    previousJourneyUpdate.current = updatedAt;
+    if (query.data) void query.refetch();
+  }, [journeyState.dataUpdatedAt, query.data, query.refetch]);
+  useEffect(() => {
+    if (
+      preview ||
+      !user?.id ||
+      !data?.viewer.outsideUnlocked ||
+      unlockToastShown.current
+    )
+      return;
+    const key = `nawah_home_platform_unlocked_${user.id}_v1`;
+    try {
+      if (localStorage.getItem(key) === "true") {
+        unlockToastShown.current = true;
+        return;
+      }
+      localStorage.setItem(key, "true");
+    } catch {
+      // The unlocked state is still enforced by the server if storage is unavailable.
+    }
+    unlockToastShown.current = true;
+    showToast({
+      message: text(
+        "🎉 أتممت مراجعة الأسبوع الثاني. اتفتح عرض أعضاء المنصة على خريطة رحلتك.",
+        "🎉 You completed the week two review. Platform members are now available on your journey map.",
+      ),
+      variant: "success",
+    });
+  }, [preview, user?.id, data?.viewer.outsideUnlocked, showToast, text]);
   useEffect(() => {
     setDetail(null);
     const example = exampleRequested.current;
-    setShowGroup(example);
-    setShowPlatform(example);
+    setScope(example ? "PLATFORM" : "ME");
     setAllSpecialties(example);
     exampleRequested.current = false;
   }, [scenario]);
@@ -94,7 +144,7 @@ export default function HomePageB({ preview = true }: { preview?: boolean }) {
   const selected = detail ? nodes.find((n) => n.code === detail.code) : null;
   useEffect(
     () => setPeerPage(1),
-    [scenario, selected?.code, showGroup, showPlatform, allSpecialties],
+    [scenario, selected?.code, scope, allSpecialties],
   );
   const peers = useQuery({
     queryKey: [
@@ -102,20 +152,18 @@ export default function HomePageB({ preview = true }: { preview?: boolean }) {
       user?.id,
       scenario,
       selected?.code,
-      showGroup,
-      showPlatform,
+      scope,
       allSpecialties,
       peerPage,
     ],
-    enabled:
-      !!selected && detail?.kind === "station" && (showGroup || showPlatform),
+    enabled: !!selected && detail?.kind === "station" && scope !== "ME",
     queryFn: () =>
       homePreviewApi.peers(
         scenario,
         selected!.code,
-        showPlatform ? (allSpecialties ? "ALL" : "SPECIALTY") : "GROUP",
+        scope === "PLATFORM" ? (allSpecialties ? "ALL" : "SPECIALTY") : "GROUP",
         peerPage,
-        showGroup && showPlatform,
+        showPlatform,
       ),
   });
   const verifiedPeer = useQuery({
@@ -190,8 +238,7 @@ export default function HomePageB({ preview = true }: { preview?: boolean }) {
   };
   const showPeerExample = () => {
     if (scenario === "AFTER_WEEK_TWO") {
-      setShowGroup(true);
-      setShowPlatform(true);
+      setScope("PLATFORM");
       setAllSpecialties(true);
       goToCurrent();
     } else {
@@ -516,27 +563,70 @@ export default function HomePageB({ preview = true }: { preview?: boolean }) {
                 <span>
                   {text("مين ظاهر على الخريطة؟", "Who is on the map?")}
                 </span>
-                <span className="home-self-pill">
+                <button
+                  type="button"
+                  aria-pressed={scope === "ME"}
+                  onClick={() => {
+                    setScope("ME");
+                    if (!preview) trackSectionAction("home_scope_changed");
+                  }}
+                  className={`home-filter self ${scope === "ME" ? "on" : ""}`}
+                >
                   <MapPin size={13} />
                   {text("أنا", "Me")}
-                </span>
+                </button>
                 <button
+                  type="button"
                   aria-pressed={showGroup}
-                  disabled={!data.viewer.groupUnlocked}
-                  onClick={() => { setShowGroup((x) => !x); if (!preview) trackSectionAction("home_scope_changed"); }}
+                  onClick={() => {
+                    if (!data.viewer.groupUnlocked || !hasGroup) {
+                      showToast({
+                        message: !data.viewer.groupUnlocked
+                          ? text(
+                              "أكمل المهمة صفر أولًا؛ بعدها يتم تعيينك لمجموعة وتقدر تشوف تقدم أعضائها.",
+                              "Complete Task zero first. You will then be assigned to a group and can view its members.",
+                            )
+                          : text(
+                              "هيظهر تقدم أعضاء المجموعة بعد انضمامك لمجموعة.",
+                              "Group progress will appear after you join a group.",
+                            ),
+                        variant: "info",
+                      });
+                      return;
+                    }
+                    setScope("GROUP");
+                    if (!preview) trackSectionAction("home_scope_changed");
+                  }}
                   className={`home-filter group ${showGroup ? "on" : ""}`}
+                  aria-label={text("مجموعتي", "My group")}
                 >
                   <UsersRound size={15} />
                   {text("مجموعتي", "My group")}
-                  {!data.viewer.groupUnlocked && <LockKeyhole size={12} />}
+                  {(!data.viewer.groupUnlocked || !hasGroup) && (
+                    <LockKeyhole size={12} />
+                  )}
                 </button>
                 <button
+                  type="button"
                   aria-pressed={showPlatform}
-                  onClick={() => { setShowPlatform((x) => !x); if (!preview) trackSectionAction("home_scope_changed"); }}
-                  className={`home-filter platform ${showPlatform ? "on" : ""}`}
+                  disabled={!data.viewer.outsideUnlocked}
+                  title={
+                    !data.viewer.outsideUnlocked
+                      ? text(
+                          "يُفتح بعد إكمال الأسبوع الثاني ومراجعته.",
+                          "Unlocks after completing and reviewing week two.",
+                        )
+                      : undefined
+                  }
+                  onClick={() => {
+                    setScope("PLATFORM");
+                    if (!preview) trackSectionAction("home_scope_changed");
+                  }}
+                  className={`home-filter platform ${showPlatform ? "on" : ""} ${!data.viewer.outsideUnlocked ? "locked" : ""}`}
                 >
                   <Globe2 size={15} />
                   {text("أعضاء المنصة", "Platform members")}
+                  {!data.viewer.outsideUnlocked && <LockKeyhole size={12} />}
                 </button>
                 <select
                   aria-label={text(
@@ -556,20 +646,39 @@ export default function HomePageB({ preview = true }: { preview?: boolean }) {
                 </select>
               </div>
               <p>
-                {!data.viewer.groupUnlocked
+                {scope === "ME"
                   ? text(
-                      "مجموعتك تظهر بعد إكمال المهمة صفر.",
-                      "Your group opens after Task zero.",
+                      data.viewer.outsideUnlocked
+                        ? "الخريطة تعرض تقدمك أنت فقط. يمكنك اختيار مجموعتك أو أعضاء المنصة لعرض زملائك."
+                        : "الخريطة تعرض تقدمك أنت فقط. تنفتح المنصة بعد إكمال الأسبوع الثاني ومراجعته.",
+                      data.viewer.outsideUnlocked
+                        ? "The map shows only your own progress. Choose your group or platform members to see peers."
+                        : "The map shows only your own progress. Platform members unlock after completing and reviewing week two.",
                     )
-                  : showPlatform
+                  : scope === "GROUP" && !data.viewer.groupUnlocked
                     ? text(
-                        "أعداد المنصة تشمل المجموعة؛ الأسماء خارجها تفتح بعد الأسبوع الثاني.",
-                        "Platform counts include your group. Outside profiles unlock after week two.",
+                        "هتظهر مجموعتك بعد إكمال المهمة صفر والانضمام لمجموعة.",
+                        "Your group appears after you complete Task zero and join a group.",
                       )
-                    : text(
-                        "فعّل طبقة علشان تشوف أماكن الزملاء. مفيش ترتيب أو سباق.",
-                        "Switch on a layer to see your peers. No rankings or race.",
-                      )}
+                    : scope === "GROUP" && !hasGroup
+                      ? text(
+                          "هيظهر تقدم المجموعة بعد انضمامك لمجموعة.",
+                          "Group progress appears after you join a group.",
+                        )
+                      : showPlatform && !data.viewer.outsideUnlocked
+                        ? text(
+                            "أعضاء المنصة يفتحوا بعد إكمال الأسبوع الثاني ومراجعته.",
+                            "Platform members unlock after completing and reviewing week two.",
+                          )
+                        : showPlatform
+                          ? text(
+                              "عرض المنصة يشمل أعضاء مجموعتك؛ تفاصيل من خارجها تظهر بعد مراجعة الأسبوع الثاني.",
+                              "Platform view includes your group. Outside profiles appear after the week two review.",
+                            )
+                          : text(
+                              "الخريطة تعرض تقدم أعضاء مجموعتك فقط.",
+                              "The map shows progress from your group only.",
+                            )}
               </p>
             </div>
             {preview && (
@@ -613,7 +722,7 @@ export default function HomePageB({ preview = true }: { preview?: boolean }) {
                 <LockKeyhole size={13} />
                 {text("تفاصيل لسه مقفولة", "Details not yet open")}
               </span>
-              {showGroup && (
+              {scope === "GROUP" && (
                 <span className="group">
                   <UsersRound size={13} />
                   {text("من مجموعتك", "Your group")}
@@ -841,8 +950,8 @@ export default function HomePageB({ preview = true }: { preview?: boolean }) {
                   {!showGroup && !showPlatform ? (
                     <p className="home-detail-copy">
                       {text(
-                        "فعّل «مجموعتي» أو «أعضاء المنصة» من فلاتر الخريطة علشان تشوف أماكنهم.",
-                        "Enable My group or Platform members in the map filters to see them here.",
+                        "أنت فقط هو النطاق المحدد. اختر مجموعتي أو أعضاء المنصة لعرض الزملاء هنا.",
+                        "Me only is selected. Choose My group or Platform members to see peers here.",
                       )}
                     </p>
                   ) : peers.isPending ? (

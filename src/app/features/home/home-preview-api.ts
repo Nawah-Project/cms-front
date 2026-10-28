@@ -55,6 +55,7 @@ export type HomePreview = {
     specialization: string;
     groupUnlocked: boolean;
     outsideUnlocked: boolean;
+    hasGroup?: boolean;
     completedCount: number;
     totalNodes: number;
   };
