@@ -5,6 +5,7 @@ import {
   ChevronUp,
   ExternalLink,
   Globe,
+  Check,
 } from "lucide-react";
 import { useI18n } from "../../../i18n";
 import { useAuth } from "../../auth/store/authStore";
@@ -254,7 +255,7 @@ export function JobMarketCompass({
           {/* Work Mode Switcher Segmented Control */}
           <div
             data-guide="explorer-work-mode"
-            className="flex items-center gap-1 rounded-xl border border-border bg-neutral-100/80 dark:bg-neutral-900/80 p-1"
+            className="flex flex-wrap items-center gap-1 rounded-xl border border-border bg-neutral-100/80 dark:bg-neutral-900/80 p-1"
           >
             <span className="text-[11px] font-bold text-neutral-500 px-1.5 select-none">
               {isRtl ? "نمط العمل:" : "Work Mode:"}
@@ -280,12 +281,13 @@ export function JobMarketCompass({
                   aria-pressed={isSelected}
                   data-work-mode={mode.id}
                   onClick={() => setWorkMode(mode.id)}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                  className={`inline-flex items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                     isSelected
-                      ? "bg-white text-neutral-950 shadow-xs dark:bg-neutral-800 dark:text-white"
-                      : "text-neutral-600 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-white"
+                      ? "border-accent bg-accent text-white shadow-xs"
+                      : "border-transparent text-neutral-600 hover:bg-surface hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-white"
                   }`}
                 >
+                  <Check className={`h-3 w-3 shrink-0 ${isSelected ? "" : "invisible"}`} aria-hidden="true" />
                   {isRtl ? mode.labelAr : mode.labelEn}
                 </button>
               );
