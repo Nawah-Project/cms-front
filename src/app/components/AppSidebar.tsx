@@ -515,7 +515,11 @@ export function AppSidebar({
         <Link
           to="/"
           onClick={() => mobile && setMobileOpen(false)}
-          className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-inherit"
+          className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+            location.pathname === "/"
+              ? "bg-neutral-700/80 font-semibold text-white shadow-xs"
+              : "text-white hover:bg-neutral-800"
+          }`}
           aria-current={location.pathname === "/" ? "page" : undefined}
         >
           <NavIcon name="dashboard" />

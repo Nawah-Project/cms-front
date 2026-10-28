@@ -4,7 +4,7 @@ import {
   SectionExperienceProvider,
   SectionExposure,
 } from "../features/ux-lab/SectionExperience";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { AddApplicationModal } from "../features/applications/components/AddApplicationModal";
@@ -42,6 +42,7 @@ export default function Layout() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [draftValues, setDraftValues] =
     useState<Partial<CreateApplicationInput> | null>(null);
+  const openedFromMemberHome = useRef(false);
   const [celebrationData, setCelebrationData] =
     useState<MilestoneCelebrationData | null>(null);
   const navigate = useNavigate();
@@ -86,6 +87,8 @@ export default function Layout() {
   }, []);
 
   const openAddModal = (initialValues?: Partial<CreateApplicationInput>) => {
+    openedFromMemberHome.current =
+      location.pathname === "/" && previewUser?.role === "USER";
     closeJourneyTasksPanel();
     setDraftValues(initialValues ?? null);
     setIsAddModalOpen(true);
@@ -110,7 +113,9 @@ export default function Layout() {
     }
 
     window.dispatchEvent(new CustomEvent("nawah_app_created"));
-    navigate("/applications");
+    const stayOnHome = openedFromMemberHome.current;
+    openedFromMemberHome.current = false;
+    if (!stayOnHome) navigate("/applications");
     return created;
   };
 
