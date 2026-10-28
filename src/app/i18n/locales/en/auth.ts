@@ -34,7 +34,7 @@ export default {
   authFailed: "Unable to authenticate. Please try again.",
   invalidCredentials: "Email or password is incorrect.",
   accountExists:
-    "An account already exists with this email. Sign in with it; accounts are not linked automatically.",
+    "This email belongs to an account registered with a password. Enter your email and password to sign in; it is not linked to Google automatically.",
   googleCancelled:
     "Google sign-in was cancelled or could not be completed. Please try again.",
   logout: "Sign out",
