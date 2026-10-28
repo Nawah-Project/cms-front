@@ -19,6 +19,15 @@ function normalizeUser(payload: any): User {
   ) {
     throw new Error("The server returned an invalid user profile.");
   }
+  const rawAccess = user.adminAccess;
+  const permissions =
+    rawAccess?.permissions && typeof rawAccess.permissions === "object"
+      ? Object.fromEntries(
+          Object.entries(rawAccess.permissions).filter(
+            ([, value]) => value === "READ" || value === "WRITE",
+          ),
+        )
+      : {};
   return {
     id: String(user.id),
     name: user.name,
@@ -27,6 +36,15 @@ function normalizeUser(payload: any): User {
     emailVerified: user.emailVerified === true,
     verificationDelivery: user.verificationDelivery === "FAILED" ? "FAILED" : user.verificationDelivery === "SENT" ? "SENT" : undefined,
     targetJobTitle: user.targetJobTitle ?? null,
+    adminAccess:
+      user.role === "ADMIN"
+        ? {
+            isRoot: rawAccess?.isRoot === true,
+            fullAccess: rawAccess?.isRoot === true,
+            canManageAdmins: rawAccess?.isRoot === true,
+            permissions,
+          }
+        : undefined,
   };
 }
 

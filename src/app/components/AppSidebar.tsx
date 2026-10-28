@@ -20,6 +20,11 @@ import {
 } from "../features/journey/lib/journey-policies";
 import { ContextualLockBubble } from "./ui/ContextualLockBubble";
 import { openJourneyTasksPanel } from "./journeyTasksPanelEvents";
+import {
+  adminHomePath,
+  canAdminAccess,
+  type AdminSection,
+} from "../features/admin/adminAccess";
 
 type NavItem = {
   labelKey: string;
@@ -77,6 +82,7 @@ type AdminNavItem = {
   icon: NavItem["icon"];
   end?: boolean;
   hasStatusDot?: boolean;
+  section: AdminSection;
 };
 
 const ADMIN_PRIMARY_ITEMS: AdminNavItem[] = [
@@ -86,36 +92,42 @@ const ADMIN_PRIMARY_ITEMS: AdminNavItem[] = [
     to: "/admin",
     icon: "admin-overview",
     end: true,
+    section: "OVERVIEW",
   },
   {
     labelAr: "إدارة المنصة والأعضاء",
     labelEn: "Community & Members",
     to: "/admin/community",
     icon: "admin-community",
+    section: "COMMUNITY",
   },
   {
     labelAr: "التوجيه والإرشاد",
     labelEn: "Mentoring & Guidance",
     to: "/admin/mentoring",
     icon: "admin-mentoring",
+    section: "MENTORING",
   },
   {
     labelAr: "هندسة الرحلة والحبكة",
     labelEn: "Journey & Plot Engine",
     to: "/admin/journey",
     icon: "admin-journey",
+    section: "JOURNEY",
   },
   {
     labelAr: "معاينة تقارير الرحلة",
     labelEn: "Journey Report Preview",
     to: "/admin/report-preview",
     icon: "reports",
+    section: "REPORTS",
   },
   {
     labelAr: "تحليلات التجربة والسلوك",
     labelEn: "UX & Behavior Lab",
     to: "/admin/ux-lab",
     icon: "admin-ux-lab",
+    section: "UX_LAB",
   },
   {
     labelAr: "العمليات والموارد التشغيلية",
@@ -123,6 +135,7 @@ const ADMIN_PRIMARY_ITEMS: AdminNavItem[] = [
     to: "/admin/operations",
     icon: "admin-operations",
     hasStatusDot: true,
+    section: "OPERATIONS",
   },
 ];
 
@@ -362,7 +375,9 @@ export function AppSidebar({
           {locale === "ar" ? "مركز قيادة المنصة" : "Admin Command Center"}
         </p>
       </div>
-      {ADMIN_PRIMARY_ITEMS.map((item) => {
+      {ADMIN_PRIMARY_ITEMS.filter((item) =>
+        canAdminAccess(user, item.section),
+      ).map((item) => {
         const active = isPathActive(location.pathname, item.to, item.end);
         const className = `flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-xs sm:text-sm transition duration-150 hover:scale-[1.01] ${
           mobile
@@ -731,7 +746,7 @@ export function AppSidebar({
             className={`flex ${collapsed ? "flex-col items-center gap-3" : "items-start justify-between gap-2"}`}
           >
             <Link
-              to={isAdmin ? "/admin" : "/"}
+              to={isAdmin ? adminHomePath(user) : "/"}
               title={collapsed ? t("common.brand") : undefined}
               className={`flex min-w-0 items-start gap-3 text-sm font-semibold tracking-tight text-white ${collapsed ? "justify-center" : ""}`}
             >
@@ -797,7 +812,7 @@ export function AppSidebar({
           {isAdmin ? (
             <>
               {renderAdminPrimaryNav(false)}
-              {renderResearcherPreviewNav(false)}
+              {user?.adminAccess?.isRoot && renderResearcherPreviewNav(false)}
             </>
           ) : (
             renderStandardUserNav(false)
@@ -813,7 +828,7 @@ export function AppSidebar({
         <div className="flex items-center justify-between">
           <div className="flex min-w-0 items-start gap-3">
             <Link
-              to={isAdmin ? "/admin" : "/"}
+              to={isAdmin ? adminHomePath(user) : "/"}
               className="flex min-w-0 flex-1 items-start gap-2.5 text-sm font-semibold tracking-tight text-neutral-950 dark:text-white"
             >
               <img
@@ -880,7 +895,7 @@ export function AppSidebar({
               {isAdmin ? (
                 <>
                   {renderAdminPrimaryNav(true)}
-                  {renderResearcherPreviewNav(true)}
+                  {user?.adminAccess?.isRoot && renderResearcherPreviewNav(true)}
                 </>
               ) : (
                 renderStandardUserNav(true)

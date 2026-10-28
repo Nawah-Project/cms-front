@@ -36,6 +36,8 @@ import { MemberInspectorModal } from "./components/MemberInspectorModal";
 import { FeedbackFormDialog } from "../professional-development/components/FeedbackFormDialog";
 import { UxResearchGuide } from "./journey-observatory/UxResearchGuide";
 import "./ux-lab.css";
+import { useAuth } from "../auth/store/authStore";
+import { canAdminAccess } from "./adminAccess";
 
 function labError(error: unknown, ar: boolean) {
   const message = error instanceof Error ? error.message : "";
@@ -113,9 +115,11 @@ const statusLabels: Record<string, [string, string]> = {
   COMPLETED: ["منتهية", "Completed"],
 };
 export default function AdminUxLabPage() {
+  const { user } = useAuth();
   const { locale, number } = useI18n();
   const ar = locale === "ar";
   const text = (a: string, e: string) => (ar ? a : e);
+  const canWrite = canAdminAccess(user, "UX_LAB", "WRITE");
   const queryClient = useQueryClient();
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("MAP");
@@ -277,6 +281,14 @@ export default function AdminUxLabPage() {
           </button>
         </div>
       </header>
+      {!canWrite && (
+        <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-950" role="status">
+          {text(
+            "وضع القراءة فقط: تقدر تراجع الخرائط والنتائج والتجارب، لكن إنشاء الملاحظات أو تغيير التجارب والنشر غير متاح لهذا الحساب.",
+            "Read-only mode: you can inspect maps, results and experiments, but cannot create observations, change experiments or publish releases.",
+          )}
+        </div>
+      )}
       <nav
         className="lab-tabs"
         aria-label={text("تحليلات التجربة", "Experience analytics")}
@@ -317,7 +329,8 @@ export default function AdminUxLabPage() {
       {tab === "MAP" ? (
         <JourneyTopologyCanvas
           onInspectMember={setInspect}
-          onSendFeedback={setFeedback}
+          onSendFeedback={canWrite ? setFeedback : undefined}
+          readOnly={!canWrite}
         />
       ) : error ? (
         <div className="lab-card" role="alert">
@@ -655,6 +668,7 @@ export default function AdminUxLabPage() {
                             className="lab-button"
                             key={v}
                             disabled={
+                              !canWrite ||
                               busy ||
                               s.previewOnly ||
                               v === cfg.releases[s.id].version
@@ -710,13 +724,15 @@ export default function AdminUxLabPage() {
                       {text("تجارب الأقسام", "Section experiments")}
                     </h2>
                   </div>
-                  <button
-                    className="lab-primary"
-                    onClick={() => setCreate(true)}
-                  >
-                    <Plus size={17} />
-                    {text("تجربة جديدة", "New experiment")}
-                  </button>
+                  {canWrite && (
+                    <button
+                      className="lab-primary"
+                      onClick={() => setCreate(true)}
+                    >
+                      <Plus size={17} />
+                      {text("تجربة جديدة", "New experiment")}
+                    </button>
+                  )}
                 </header>
                 <div className="lab-experiment-workspace mt-6">
                   <aside className="lab-experiment-list">
@@ -761,7 +777,7 @@ export default function AdminUxLabPage() {
                               {selected.hypothesis}
                             </p>
                           </div>
-                          <div className="flex flex-wrap items-start gap-2">
+                          {canWrite && <div className="flex flex-wrap items-start gap-2">
                             {(selected.status === "DRAFT" ||
                               selected.status === "PAUSED") && (
                               <button
@@ -809,7 +825,7 @@ export default function AdminUxLabPage() {
                                 {text("إنهاء التجربة", "End test")}
                               </button>
                             )}
-                          </div>
+                          </div>}
                         </div>
                         <dl className="lab-test-plan">
                           <div>
@@ -1031,6 +1047,7 @@ export default function AdminUxLabPage() {
                   className="mt-4 flex flex-wrap gap-3"
                   onSubmit={async (e) => {
                     e.preventDefault();
+                    if (!canWrite) return;
                     setVideoBusy(true);
                     try {
                       await adminApi.updateUxConfig({
@@ -1059,15 +1076,18 @@ export default function AdminUxLabPage() {
                     )}
                     dir="ltr"
                     value={video ?? legacyConfig.data?.introVideoUrl ?? ""}
+                    disabled={!canWrite}
                     onChange={(e) => setVideo(e.target.value)}
                     placeholder="https://…"
                   />
-                  <button
-                    className="lab-primary"
-                    disabled={videoBusy || legacyConfig.isPending}
-                  >
-                    {text("حفظ الرابط", "Save URL")}
-                  </button>
+                  {canWrite && (
+                    <button
+                      className="lab-primary"
+                      disabled={videoBusy || legacyConfig.isPending}
+                    >
+                      {text("حفظ الرابط", "Save URL")}
+                    </button>
+                  )}
                 </form>
               </section>
             </>
@@ -1343,8 +1363,9 @@ export default function AdminUxLabPage() {
         memberId={inspect}
         onClose={() => setInspect(null)}
         onMemberUpdated={refresh}
+        readOnly={!canWrite}
       />
-      {feedback && (
+      {canWrite && feedback && (
         <FeedbackFormDialog
           post={null}
           onClose={() => setFeedback(null)}
@@ -1353,7 +1374,7 @@ export default function AdminUxLabPage() {
           initialTargetName={feedback.name}
         />
       )}
-      {create && cfg && dir && (
+      {canWrite && create && cfg && dir && (
         <ExperimentEditor
           config={cfg}
           members={dir.members}
@@ -1366,7 +1387,7 @@ export default function AdminUxLabPage() {
           }}
         />
       )}
-      {publish && cfg && (
+      {canWrite && publish && cfg && (
         <Modal
           isOpen
           onClose={() => setPublish(null)}

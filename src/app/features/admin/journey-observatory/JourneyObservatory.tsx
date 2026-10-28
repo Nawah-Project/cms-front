@@ -65,9 +65,11 @@ const gateCategory = (g: Gate) =>
 export function JourneyObservatory({
   onInspectMember,
   onDraftFeedback,
+  readOnly = false,
 }: {
   onInspectMember: (id: string) => void;
   onDraftFeedback: (person: { id: string; name: string }) => void;
+  readOnly?: boolean;
 }) {
   const { locale, number } = useI18n(),
     ar = locale === "ar",
@@ -228,6 +230,7 @@ export function JourneyObservatory({
     URL.revokeObjectURL(url);
   };
   const statusNote = async (note: Observation, status: string) => {
+    if (readOnly) return;
     setNoteBusy(note.id);
     try {
       await journeyResearchApi.status(note, status);
@@ -329,7 +332,7 @@ export function JourneyObservatory({
                       )}
                     </p>
                   )}
-                  <button
+                  {!readOnly && <button
                     className="jro-text-button"
                     onClick={() => {
                       inspectUnread(g.code);
@@ -337,7 +340,7 @@ export function JourneyObservatory({
                   >
                     {text("افحص من لم يقرأ", "Inspect unread members")}{" "}
                     <ChevronLeft size={13} />
-                  </button>
+                  </button>}
                 </div>
               </article>
             ))}
@@ -374,14 +377,14 @@ export function JourneyObservatory({
                   <button onClick={() => trace(m)}>
                     {text("تتبع المسار", "Trace journey")}
                   </button>
-                  <button
+                  {!readOnly && <button
                     onClick={() => {
                       setSelected(null);
                       onDraftFeedback(m);
                     }}
                   >
                     {text("إعداد توجيه", "Draft guidance")}
-                  </button>
+                  </button>}
                 </div>
               </article>
             ))}
@@ -394,7 +397,7 @@ export function JourneyObservatory({
             </p>
           )}
         </div>
-        <footer>
+        {!readOnly && <footer>
           <button
             className="jro-primary"
             onClick={() => {
@@ -408,7 +411,7 @@ export function JourneyObservatory({
               "Save an evidence-linked observation",
             )}
           </button>
-        </footer>
+        </footer>}
       </>
     ) : null;
   return (
@@ -1154,11 +1157,11 @@ export function JourneyObservatory({
                         <Focus size={13} />
                         {text("تتبع المسار", "Trace journey")}
                       </button>
-                      <button onClick={() => onDraftFeedback(p)}>
+                      {!readOnly && <button onClick={() => onDraftFeedback(p)}>
                         <BookOpen size={13} />
                         {text("إعداد توجيه", "Draft guidance")}
-                      </button>
-                      <button
+                      </button>}
+                      {!readOnly && <button
                         disabled={
                           !data.nodes.some((n) => n.code === p.currentCode)
                         }
@@ -1179,7 +1182,7 @@ export function JourneyObservatory({
                       >
                         <MessageSquarePlus size={13} />
                         {text("تدوين ملاحظة", "Record finding")}
-                      </button>
+                      </button>}
                     </footer>
                   </article>
                 ))}
@@ -1210,7 +1213,7 @@ export function JourneyObservatory({
                     {text("دفتر أبحاث الرحلة", "Journey research notebook")}
                   </h3>
                 </div>
-                <button
+                {!readOnly && <button
                   className="jro-primary"
                   onClick={() =>
                     setCreateAt(node ?? ranked[0] ?? data.nodes[0])
@@ -1218,7 +1221,7 @@ export function JourneyObservatory({
                 >
                   <MessageSquarePlus size={15} />
                   {text("ملاحظة جديدة", "New observation")}
-                </button>
+                </button>}
               </header>
               <div className="jro-notebook-filter">
                 <label>
@@ -1287,7 +1290,7 @@ export function JourneyObservatory({
                               `Status: ${n.title}`,
                             )}
                             value={n.status}
-                            disabled={noteBusy === n.id}
+                            disabled={readOnly || noteBusy === n.id}
                             onChange={(e) => void statusNote(n, e.target.value)}
                           >
                             {["OPEN", "VALIDATING", "RESOLVED"].map(
@@ -1565,7 +1568,7 @@ export function JourneyObservatory({
         const guide = data.guidance.find(g => g.code === guidanceInspection.code);
         return guide ? <GuidanceMembersModal key={`${guide.code}:${guidanceInspection.filter}`} title={text(guide.titleAr, guide.titleEn)} members={guide.members ?? []} required={guide.required} ar={ar} initialFilter={guidanceInspection.filter} onClose={() => setGuidanceInspection(null)} /> : null;
       })()}
-      {createAt && data && (
+      {!readOnly && createAt && data && (
         <ObservationEditor
           node={createAt}
           data={data}

@@ -36,7 +36,12 @@ import {
   UserMinus,
   Trash2,
   Users,
+  ShieldCheck,
 } from "lucide-react";
+import { useAuth } from "../auth/store/authStore";
+import { AdminAccessPanel } from "./components/AdminAccessPanel";
+
+type CommunityTab = "members" | "groups" | "activity" | "admins";
 
 const statuses: ActivityStatus[] = [
   "ACTIVE",
@@ -55,6 +60,7 @@ const journeyWeeks = [
 ];
 
 export default function AdminCommunityPage() {
+  const { user } = useAuth();
   const { t, tp, locale, number } = useI18n();
   const isAr = locale === "ar";
   const [searchParams, setSearchParams] = useSearchParams();
@@ -62,21 +68,28 @@ export default function AdminCommunityPage() {
   const queryClient = useQueryClient();
   const [deletingMember, setDeletingMember] = useState<string | null>(null);
 
-  const tabParam =
-    (searchParams.get("tab") as "members" | "groups" | "activity") || "members";
-  const [activeTab, setActiveTab] = useState<"members" | "groups" | "activity">(
-    tabParam,
-  );
+  const canManageAdmins = user?.adminAccess?.isRoot === true;
+  const requestedTab = searchParams.get("tab") as CommunityTab | null;
+  const tabParam: CommunityTab =
+    requestedTab === "admins" && !canManageAdmins
+      ? "members"
+      : requestedTab ?? "members";
+  const [activeTab, setActiveTab] = useState<CommunityTab>(tabParam);
 
   useEffect(() => {
-    const tParam = searchParams.get("tab") as
-      "members" | "groups" | "activity" | null;
-    if (tParam && ["members", "groups", "activity"].includes(tParam)) {
+    const tParam = searchParams.get("tab") as CommunityTab | null;
+    if (
+      tParam &&
+      ["members", "groups", "activity", "admins"].includes(tParam) &&
+      (tParam !== "admins" || canManageAdmins)
+    ) {
       setActiveTab(tParam);
+    } else if (tParam === "admins" && !canManageAdmins) {
+      setActiveTab("members");
     }
-  }, [searchParams]);
+  }, [searchParams, canManageAdmins]);
 
-  const switchTab = (newTab: "members" | "groups" | "activity") => {
+  const switchTab = (newTab: CommunityTab) => {
     setActiveTab(newTab);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -339,7 +352,24 @@ export default function AdminCommunityPage() {
           <Activity className="h-4 w-4" />
           <span>{isAr ? "سجل نشاط المنصة" : "Platform Activity Feed"}</span>
         </button>
+
+        {canManageAdmins && (
+          <button
+            type="button"
+            onClick={() => switchTab("admins")}
+            className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer ${
+              activeTab === "admins"
+                ? "border-neutral-900 text-neutral-950 font-bold dark:border-white dark:text-white"
+                : "border-transparent text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
+            }`}
+          >
+            <ShieldCheck className="h-4 w-4" />
+            <span>{isAr ? "الأدمنز والصلاحيات" : "Admins & access"}</span>
+          </button>
+        )}
       </div>
+
+      {activeTab === "admins" && canManageAdmins && <AdminAccessPanel />}
 
       {/* TAB 1: MEMBERS MANAGEMENT */}
       {activeTab === "members" && (

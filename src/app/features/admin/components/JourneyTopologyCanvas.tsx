@@ -12,16 +12,19 @@ export interface JourneyTopologyCanvasProps {
   groups?: AdminGroup[];
   highlightNodeCode?: string | null;
   onInspectMember: (id: string) => void;
-  onSendFeedback: (member: Pick<AdminMember, "id" | "name">) => void;
+  onSendFeedback?: (member: Pick<AdminMember, "id" | "name">) => void;
+  readOnly?: boolean;
 }
 export function JourneyTopologyCanvas({
   onInspectMember,
   onSendFeedback,
+  readOnly = false,
 }: JourneyTopologyCanvasProps) {
   return (
     <JourneyObservatory
       onInspectMember={onInspectMember}
-      onDraftFeedback={onSendFeedback}
+      onDraftFeedback={onSendFeedback ?? (() => undefined)}
+      readOnly={readOnly}
     />
   );
 }

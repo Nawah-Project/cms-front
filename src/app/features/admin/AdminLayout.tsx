@@ -2,6 +2,11 @@ import { useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import { useAuth } from "../auth/store/authStore";
 import { useI18n } from "../../i18n";
+import {
+  adminHomePath,
+  adminSectionForPath,
+  canAdminAccess,
+} from "./adminAccess";
 
 function getSectionMeta(pathname: string, locale: string) {
   const isAr = locale === "ar";
@@ -76,10 +81,21 @@ export default function AdminLayout() {
   const { t, locale } = useI18n();
 
   useEffect(() => {
-    if (!loading && user?.role !== "ADMIN") navigate("/", { replace: true });
-  }, [loading, user, navigate]);
+    if (loading) return;
+    if (user?.role !== "ADMIN") {
+      navigate("/", { replace: true });
+      return;
+    }
+    if (!canAdminAccess(user, adminSectionForPath(location.pathname))) {
+      navigate(adminHomePath(user), { replace: true });
+    }
+  }, [loading, user, navigate, location.pathname]);
 
-  if (loading || user?.role !== "ADMIN")
+  if (
+    loading ||
+    user?.role !== "ADMIN" ||
+    !canAdminAccess(user, adminSectionForPath(location.pathname))
+  )
     return (
       <div className="py-20 text-center text-sm text-neutral-500" role="status">
         {t("admin.checkingAccess")}

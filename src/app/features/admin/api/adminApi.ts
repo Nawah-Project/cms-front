@@ -12,6 +12,23 @@ import type {
 import type { Stage } from "../../../types";
 import { apiClient } from "../../../lib/api-client";
 import type { Report } from "../../reports/pages/ReportsPage";
+import type {
+  AdminPermissionMap,
+  AdminSection,
+} from "../adminAccess";
+
+export type AdminAccessAccount = {
+  id: string;
+  name: string;
+  email: string;
+  updatedAt: string;
+  access: {
+    isRoot: boolean;
+    fullAccess: boolean;
+    canManageAdmins: boolean;
+    permissions: AdminPermissionMap;
+  };
+};
 
 export type AccountDeletionPreview = { id: string; name: string; email: string; counts: { applications: number; assignedTasks: number; sideTaskSubmissions: number; notifications: number; experienceProgress: number; cvVersions: number } };
 
@@ -214,6 +231,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const adminApi = {
+  admins: () =>
+    request<{ sections: AdminSection[]; items: AdminAccessAccount[] }>(
+      "/admin/access/admins",
+    ),
+  updateAdminAccess: (id: string, permissions: AdminPermissionMap) =>
+    request<AdminAccessAccount>(`/admin/access/admins/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      body: JSON.stringify({ permissions }),
+    }),
   reportPreviewDemo: (scenario: "EMPTY" | "ONE" | "EARLY" | "WEEK1_COMPLETE" | "WEEK3_COMPLETE" | "POPULATED" | "COMPLETED" = "COMPLETED") =>
     request<AdminReportPreviewResponse>(`/admin/journey/reports/demo?scenario=${scenario}`),
   reportPreviewUser: (userId: string) =>

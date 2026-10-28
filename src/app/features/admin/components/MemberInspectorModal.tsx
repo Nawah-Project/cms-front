@@ -31,12 +31,14 @@ interface MemberInspectorModalProps {
   memberId: string | null;
   onClose: () => void;
   onMemberUpdated?: () => void;
+  readOnly?: boolean;
 }
 
 export function MemberInspectorModal({
   memberId,
   onClose,
   onMemberUpdated,
+  readOnly = false,
 }: MemberInspectorModalProps) {
   const { t, locale, number } = useI18n();
   const isAr = locale === "ar";
@@ -154,13 +156,13 @@ export function MemberInspectorModal({
       subtitle={detail?.user.email}
       footer={
         <div className="flex w-full flex-wrap items-center justify-between gap-3">
-          <button
+          {!readOnly && <button
             type="button"
             onClick={onClose}
             className="button-secondary text-xs px-4 py-2"
           >
             {t("common.close")}
-          </button>
+          </button>}
 
           <button
             type="button"
@@ -285,7 +287,7 @@ export function MemberInspectorModal({
             </div>
 
             {/* Quick Overrides: Group & Journey Node */}
-            <div className="rounded-2xl border border-border bg-surface p-4 space-y-4 shadow-xs">
+            {!readOnly && <div className="rounded-2xl border border-border bg-surface p-4 space-y-4 shadow-xs">
               <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
                 {isAr
                   ? "إدارة التعيين والتحكم بالرحلة"
@@ -370,7 +372,7 @@ export function MemberInspectorModal({
                   </div>
                 </div>
               </div>
-            </div>
+            </div>}
 
             {/* Journey & Tasks Progress Strip */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
