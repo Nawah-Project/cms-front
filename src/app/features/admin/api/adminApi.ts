@@ -1,3 +1,4 @@
+import type { GuidanceMember } from "../components/GuidanceMembersModal";
 import type {
   CreateTaskInput,
   ProfessionalTask,
@@ -803,6 +804,12 @@ export type PlotGuidanceItem = {
   tierLevel: string;
   unlockedCount: number;
   readsCount: number;
+  completedCount: number;
+  pendingCount: number;
+  blockingCount: number;
+  totalMembers: number;
+  required: boolean;
+  members: GuidanceMember[];
   unlockedPercent: number;
   readPercent: number;
   isCustomized: boolean;

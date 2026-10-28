@@ -65,13 +65,16 @@ export function buildBlueprint(
         kind: "GUIDANCE",
         y: laneStart + activityKinds.length * laneGap,
       });
-    const guidanceRows = Math.max(1, ...list.map(n => guidance.filter(g => g.nodeCode === n.code).length));
+    const guidanceRows = Math.max(
+      1,
+      ...list.map((n) => guidance.filter((g) => g.nodeCode === n.code).length),
+    );
     const height =
       w === 0
         ? 165
         : 180 +
           activityKinds.length * laneGap +
-          (hasGuidance ? 67 + (guidanceRows - 1) * 52 : 20);
+          (hasGuidance ? 90 + (guidanceRows - 1) * 76 : 20);
     bands.push({ week: w, y, height, labelX: rtl ? 1335 : 15, lanes });
     if (w === 0) {
       for (const [i, n] of list.entries())
@@ -96,7 +99,7 @@ export function buildBlueprint(
             x: rtl ? task.x - 390 : task.x + 195,
             y: y + 44,
             width: 350,
-            height: 62,
+            height: 78,
             kind: "GUIDANCE",
             guidance: foundation,
           });
@@ -136,9 +139,9 @@ export function buildBlueprint(
             sourceCode: n.code,
             x: xAt(i) - 3,
             y:
-              (lanes.find((l) => l.kind === "GUIDANCE")?.y ?? y + 155) + j * 52,
+              (lanes.find((l) => l.kind === "GUIDANCE")?.y ?? y + 155) + j * 76,
             width: 171,
-            height: 51,
+            height: 74,
             kind: "GUIDANCE",
             guidance: g,
           }),
@@ -154,7 +157,14 @@ export function buildBlueprint(
       const last = cards.filter((c) => c.node.weekNumber === w).at(-1),
         first = cards.find((c) => c.node.weekNumber === w + 1);
       if (last && first)
-        edges.push({ from: last.id, to: first.id, kind: "NEXT_WEEK" });
+        edges.push({
+          from:
+            w === 0 && cells.some((c) => c.id === "INSIGHT_TASK_0_CV_BASE")
+              ? "INSIGHT_TASK_0_CV_BASE"
+              : last.id,
+          to: first.id,
+          kind: "NEXT_WEEK",
+        });
     }
   }
   return { width, height: y + 20, bands, cards, cells, edges, all };

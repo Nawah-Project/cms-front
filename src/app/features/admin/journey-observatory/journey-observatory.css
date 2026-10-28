@@ -2103,3 +2103,12 @@
     height: 600px;
   }
 }
+
+/* Guidance shows its own audience and completion evidence as a stopping point. */
+.jro-shell .jro-guidance-cell { flex-wrap:wrap; }
+.jro-shell .jro-guidance-counts { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; flex-basis:100%; }
+.jro-shell .jro-guidance-counts b { display:inline-flex; gap:3px; align-items:center; }
+.jro-shell .jro-guidance-counts small { font-size:10px; }
+.jro-shell .jro-guidance-cell.foundation .jro-guidance-counts small { font-size:11px; }
+
+.jro-shell .jro-guidance-cell.occupied { border:2px solid #17624b; box-shadow:0 0 0 3px #b9d1ac; }

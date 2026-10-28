@@ -1,9 +1,10 @@
+import { journeyResearchApi, type Person } from "./journey-observatory/api";
+import { GuidanceMembersModal, type GuidanceAudienceFilter } from "./components/GuidanceMembersModal";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useI18n } from "../../i18n";
 import {
   adminApi,
-  type AdminMember,
   type JourneyNodeItem,
   type PlotGuidanceItem,
 } from "./api/adminApi";
@@ -77,7 +78,7 @@ export default function AdminJourneyEnginePage() {
   };
 
   // --- Members Data (for live node/week metrics) ---
-  const [members, setMembers] = useState<AdminMember[]>([]);
+  const [members, setMembers] = useState<Person[]>([]);
 
   // --- Tab 1: Nodes State ---
   const [nodes, setNodes] = useState<JourneyNodeItem[]>([]);
@@ -103,6 +104,7 @@ export default function AdminJourneyEnginePage() {
 
   // --- Tab 2: Plot Guidance State ---
   const [guidanceItems, setGuidanceItems] = useState<PlotGuidanceItem[]>([]);
+  const [guidanceAudience, setGuidanceAudience] = useState<{ item: PlotGuidanceItem; filter: GuidanceAudienceFilter } | null>(null);
   const [guidanceLoading, setGuidanceLoading] = useState(false);
   const [guidanceError, setGuidanceError] = useState(false);
   const [editingGuidance, setEditingGuidance] = useState<PlotGuidanceItem | null>(null);
@@ -115,19 +117,16 @@ export default function AdminJourneyEnginePage() {
   const [guidancePrompt, setGuidancePrompt] = useState("");
   const [guidanceContent, setGuidanceContent] = useState("");
 
-  // Load Members
+  // Use the same read-only, unpaginated research snapshot as the journey map.
   useEffect(() => {
-    adminApi
-      .users({ limit: 100 })
-      .then((res) => setMembers(res.items))
-      .catch(() => {});
+    journeyResearchApi.map({ days: 30, idleDays: 3 }).then(report => setMembers(report.members)).catch(() => toast.error(isAr ? "تعذر تحميل توزيع الأعضاء؛ أعد تحميل الصفحة." : "Could not load member positions; reload the page."));
   }, []);
 
   // Compute live member distribution
   const membersByNode = useMemo(() => {
-    const map: Record<string, AdminMember[]> = {};
+    const map: Record<string, Person[]> = {};
     for (const m of members) {
-      const code = m.journey?.nodeCode;
+      const code = m.guidanceCode ?? m.currentCode;
       if (code) {
         if (!map[code]) map[code] = [];
         map[code].push(m);
@@ -139,7 +138,7 @@ export default function AdminJourneyEnginePage() {
   const membersByWeek = useMemo(() => {
     const map: Record<number, number> = {};
     for (const m of members) {
-      const w = m.journey?.week ?? 0;
+      const w = m.guidanceCode === "INSIGHT_TASK_0_CV_BASE" ? 0 : m.currentWeek;
       map[w] = (map[w] || 0) + 1;
     }
     return map;
@@ -239,6 +238,7 @@ export default function AdminJourneyEnginePage() {
     setSavingGuidance(true);
     try {
       await adminApi.updatePlotGuidance(editingGuidance.code, {
+        title: guidanceTitleAr.trim(),
         titleAr: guidanceTitleAr.trim(),
         titleEn: guidanceTitleEn.trim(),
         summaryAr: guidanceSummaryAr.trim(),
@@ -655,25 +655,22 @@ export default function AdminJourneyEnginePage() {
                     </div>
                   )}
 
-                  {/* Metrics strip */}
-                  <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs border-t border-neutral-100 dark:border-neutral-800">
-                    <div className="flex items-center gap-4 text-neutral-600 dark:text-neutral-400">
-                      <span className="inline-flex items-center gap-1">
-                        <Eye className="h-3.5 w-3.5 text-neutral-400" />
-                        <span>{isAr ? "فتحه:" : "Unlocked:"}</span>
-                        <strong className="text-neutral-900 dark:text-neutral-100">{item.unlockedCount} {isAr ? "عضو" : "members"} ({item.unlockedPercent}%)</strong>
-                      </span>
-                      <span>·</span>
-                      <span className="inline-flex items-center gap-1">
-                        <BookOpen className="h-3.5 w-3.5 text-neutral-400" />
-                        <span>{isAr ? "قرأه:" : "Read:"}</span>
-                        <strong className="text-neutral-900 dark:text-neutral-100">{item.readsCount} {isAr ? "عضو" : "members"} ({item.readPercent}%)</strong>
-                      </span>
+                  <div className="border-t border-border pt-3 space-y-3" data-admin-guidance-metrics={item.code}>
+                    <p className="text-xs text-text-secondary">{item.required
+                      ? (isAr ? "محطة إلزامية: لا تُستكمل بالقراءة وحدها؛ يلزم تحديث السيرة." : "Required station: a read alone does not complete the CV update.")
+                      : (isAr ? "إرشاد معرفي: الإتمام هو قراءة مسجّلة، والتطبيق العملي يُتابَع منفصلًا." : "Informational guide: completion is a recorded read; practical application is separate.")}</p>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {([
+                        ["ALL", isAr ? "متاح لهم" : "Available to", item.unlockedCount],
+                        ["READ", isAr ? "قراءة مسجّلة" : "Read recorded", item.readsCount],
+                        ["COMPLETED", isAr ? "أكملوه" : "Completed", item.completedCount ?? 0],
+                        ["PENDING", isAr ? "بانتظار الإتمام" : "Pending", item.pendingCount ?? 0],
+                      ] as const).map(([filter, label, count]) => <button key={filter} type="button" onClick={() => setGuidanceAudience({ item, filter })} className="rounded-xl border border-border bg-surface p-3 text-start hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-accent">
+                        <span className="block text-xs text-text-secondary">{label}</span><strong className="mt-1 block text-xl text-text-primary">{number(count)}</strong><span className="text-[11px] text-info-strong">{isAr ? "عرض الأسماء" : "View names"}</span>
+                      </button>)}
                     </div>
-
-                    <span className="text-[11px] text-neutral-500">
-                      {isAr ? "كود التفعيل:" : "Trigger:"} <code className="font-mono text-neutral-700 dark:text-neutral-300">{item.code}</code>
-                    </span>
+                    {item.required && <button type="button" className="text-sm font-semibold text-info-strong underline" onClick={() => setGuidanceAudience({ item, filter: "BLOCKING" })}>{number(item.blockingCount ?? 0)} {isAr ? "متوقفون عند هذه المحطة · اعرضهم" : "blocked at this station · view members"}</button>}
+                    <p className="text-[11px] text-text-secondary">{isAr ? "من إجمالي" : "Out of"} {number(item.totalMembers ?? 0)} {isAr ? "حساب مستخدم؛ الأدمن وحساب الاختبار مستبعدان. الإتاحة لا تعني أنه فتح الإرشاد." : "member accounts; administrators and the test account are excluded. Availability does not mean the guide was opened."}</p>
                   </div>
                 </div>
               ))}
@@ -834,6 +831,8 @@ export default function AdminJourneyEnginePage() {
         </Modal>
       )}
 
+      {guidanceAudience && <GuidanceMembersModal key={`${guidanceAudience.item.code}:${guidanceAudience.filter}`} title={isAr ? guidanceAudience.item.titleAr || guidanceAudience.item.title : guidanceAudience.item.titleEn || guidanceAudience.item.title} members={guidanceAudience.item.members ?? []} required={guidanceAudience.item.required} ar={isAr} initialFilter={guidanceAudience.filter} onClose={() => setGuidanceAudience(null)} />}
+
       {/* Edit Plot Guidance Modal */}
       {editingGuidance && (
         <Modal
@@ -944,11 +943,11 @@ export default function AdminJourneyEnginePage() {
                 <div key={m.id} className="py-2.5 flex items-center justify-between">
                   <div>
                     <p className="text-xs font-bold text-neutral-950 dark:text-neutral-100">{m.name}</p>
-                    <p className="text-[11px] text-neutral-500">{m.email} · {m.group?.name || t("common.unassigned")}</p>
+                    <p className="text-[11px] text-neutral-500">{m.group?.name || t("common.unassigned")}</p>
                   </div>
                   <div className="text-end">
                     <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
-                      {m.journey?.nodeApps ?? 0} / {m.journey?.requiredApps ?? 0} {isAr ? "طلب" : "apps"}
+                      {m.counts.apps} / {nodes.find(node => node.code === m.currentCode)?.requiredAppsCount ?? 0} {isAr ? "طلب" : "apps"}
                     </span>
                   </div>
                 </div>

@@ -32,6 +32,7 @@ export function JourneyBlueprint({
   onWeek,
   selected,
   onSelect,
+  onSelectGuidance,
   overlay,
   traceId,
   inspector,
@@ -43,6 +44,7 @@ export function JourneyBlueprint({
   onWeek: (w: number | null) => void;
   selected: string | null;
   onSelect: (n: Station) => void;
+  onSelectGuidance: (code: string) => void;
   overlay: "positions" | "review" | "completion";
   traceId?: string;
   inspector?: ReactNode;
@@ -77,7 +79,8 @@ export function JourneyBlueprint({
   const traced = data.members.find((m) => m.id === traceId),
     traceCodes = new Set([
       ...(traced?.completedCodes ?? []),
-      traced?.currentCode ?? "",
+      ...(traced?.readCodes ?? []),
+      traced?.guidanceCode ?? traced?.currentCode ?? "",
     ]);
   const zoomAt = (wanted: number, ax?: number, ay?: number) => {
     const el = viewport.current;
@@ -100,7 +103,7 @@ export function JourneyBlueprint({
   };
   const center = (code: string) => {
     const el = viewport.current,
-      c = layoutRef.current.cards.find((c) => c.id === code);
+      c = [...layoutRef.current.cards, ...layoutRef.current.cells].find((c) => c.id === code);
     if (!el || !c) return;
     auto.current = false;
     setView((v) => {
@@ -129,7 +132,7 @@ export function JourneyBlueprint({
     return () => resize.disconnect();
   }, [mode, week]);
   useEffect(() => {
-    const code = selected ?? (traceId ? traced?.currentCode : null);
+    const code = selected ?? (traceId ? traced?.guidanceCode ?? traced?.currentCode : null);
     if (code && mode === "blueprint") requestAnimationFrame(() => center(code));
   }, [selected, week, mode, traceId]);
   useEffect(() => {
@@ -328,6 +331,9 @@ export function JourneyBlueprint({
                       <b>{n.requiredAppsCount || <Flag size={14} />}</b>
                     </button>
                   ))}
+                </div>
+                <div className="flex flex-wrap gap-2 py-2">
+                  {data.guidance.filter(g => g.week === w.week).map(g => <button key={g.code} type="button" className="jro-text-button" data-overview-guidance={g.code} onClick={() => onSelectGuidance(g.code)}><Sparkles size={13} /> {text(g.titleAr, g.titleEn)} · {g.required ? g.current : g.pending} {text("بانتظار الإتمام", "pending")}</button>)}
                 </div>
                 <dl>
                   <div>
@@ -570,8 +576,8 @@ export function JourneyBlueprint({
                   </g>
                 ))}
                 {layout.edges.map((edge) => {
-                  const from = layout.cards.find((c) => c.id === edge.from)!,
-                    to = layout.cards.find((c) => c.id === edge.to)!;
+                  const from = [...layout.cards, ...layout.cells].find((c) => c.id === edge.from)!,
+                    to = [...layout.cards, ...layout.cells].find((c) => c.id === edge.to)!;
                   const highlighted =
                     traceCodes.has(from.id) && traceCodes.has(to.id);
                   const start = ar ? from.x : from.x + from.width,
@@ -756,18 +762,13 @@ export function JourneyBlueprint({
                       <button
                         data-blueprint-guidance={cell.id}
                         dir={ar ? "rtl" : "ltr"}
-                        className={`jro-guidance-cell ${cell.sourceCode === "TASK_0" ? "foundation" : ""}`}
+                        className={`jro-guidance-cell ${cell.sourceCode === "TASK_0" ? "foundation" : ""} ${cell.guidance?.current ? "occupied" : ""}`}
                         title={
                           cell.guidance
                             ? text(cell.guidance.titleAr, cell.guidance.titleEn)
                             : ""
                         }
-                        onClick={() => {
-                          const n = data.nodes.find(
-                            (n) => n.code === cell.sourceCode,
-                          );
-                          if (n) onSelect(n);
-                        }}
+                        onClick={() => onSelectGuidance(cell.id)}
                       >
                         <Sparkles size={13} />
                         <span>
@@ -783,9 +784,10 @@ export function JourneyBlueprint({
                                 )
                               : text("إرشاد مرتبط", "Linked guidance")}
                         </span>
-                        <b>
-                          {cell.guidance?.read}/{cell.guidance?.unlocked}
-                        </b>
+                        <div className="jro-guidance-counts">
+                          <b><Users size={11} /> {cell.guidance?.required ? cell.guidance.current : cell.guidance?.pending ?? 0} {cell.guidance?.required ? text("هنا", "here") : text("بانتظار القراءة", "unread")}</b>
+                          <small>{cell.guidance?.completed ?? 0} {text("مكتمل", "completed")} · {cell.guidance?.unlocked ?? 0} {text("متاح لهم", "available")}</small>
+                        </div>
                       </button>
                     ) : (
                       <button
@@ -947,6 +949,7 @@ export function JourneyBlueprint({
                   {g.read}/{g.unlocked}{" "}
                   {text("قراءة / إتاحة", "read / unlocked")}
                 </b>
+                <button type="button" className="jro-text-button" onClick={() => onSelectGuidance(g.code)}>{text("عرض الأعضاء", "View members")}</button>
               </article>
             ))}
         </div>

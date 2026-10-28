@@ -1,3 +1,4 @@
+import type { GuidanceMember } from "../components/GuidanceMembersModal";
 import { fetchApi } from "../../../lib/api-client";
 export type Gate =
   | "PROFILE"
@@ -25,6 +26,7 @@ export type Person = {
   group: { id: string; name: string } | null;
   registeredAt: string;
   currentCode: string;
+  guidanceCode: string | null;
   currentWeek: number;
   completedCodes: string[];
   startedAt: string | null;
@@ -95,6 +97,11 @@ export type Guidance = {
   titleEn: string;
   unlocked: number;
   read: number;
+  completed: number;
+  pending: number;
+  current: number;
+  required: boolean;
+  members: GuidanceMember[];
   readRate: number | null;
   unreadIds: string[];
   datedReads: number;

@@ -1,3 +1,4 @@
+import { GuidanceMembersModal, type GuidanceAudienceFilter } from "../components/GuidanceMembersModal";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -85,6 +86,7 @@ export function JourneyObservatory({
     [queueFilter, setQueueFilter] = useState<QueueFilter>("ALL"),
     [query, setQuery] = useState(""),
     [unreadCode, setUnreadCode] = useState<string | null>(null),
+    [guidanceInspection, setGuidanceInspection] = useState<{ code: string; filter: GuidanceAudienceFilter } | null>(null),
     [notesNodeOnly, setNotesNodeOnly] = useState(false),
     [notePage, setNotePage] = useState(1),
     [createAt, setCreateAt] = useState<Station | null>(null),
@@ -138,6 +140,10 @@ export function JourneyObservatory({
     setSelected(n.code);
     if (week !== null && week !== n.weekNumber) setWeek(n.weekNumber);
   };
+  const inspectGuidance = (code: string, filter: GuidanceAudienceFilter = "ALL") => {
+    setSelected(null);
+    setGuidanceInspection({ code, filter });
+  };
   const refresh = () => {
     void client.invalidateQueries({ queryKey: ["journey-observatory"] });
     void client.invalidateQueries({ queryKey: ["journey-observations"] });
@@ -145,14 +151,14 @@ export function JourneyObservatory({
   const trace = (p: Person) => {
     setUserId(p.id);
     setSelected(null);
-    setWeek(p.currentWeek);
+    setWeek(p.guidanceCode ? data?.guidance.find(g => g.code === p.guidanceCode)?.week ?? p.currentWeek : p.currentWeek);
     setQueueFilter("ALL");
     setNotePage(1);
   };
   const queue = useMemo(() => {
     if (!data) return [];
     return data.members
-      .filter((m) => !selected || m.currentCode === selected)
+      .filter((m) => !selected || (!m.guidanceCode && m.currentCode === selected))
       .filter((m) =>
         queueFilter === "REVIEW"
           ? m.needsReview
@@ -337,7 +343,7 @@ export function JourneyObservatory({
             ))}
           <h4>{text("الموجودون هنا", "Members here")}</h4>
           {data.members
-            .filter((m) => m.currentCode === node.code)
+            .filter((m) => !m.guidanceCode && m.currentCode === node.code)
             .map((m) => (
               <article className="jro-mini-person" key={m.id}>
                 <button
@@ -689,6 +695,7 @@ export function JourneyObservatory({
             }}
             selected={selected}
             onSelect={select}
+            onSelectGuidance={inspectGuidance}
             overlay={overlay}
             traceId={userId}
             inspector={inspector}
@@ -733,6 +740,10 @@ export function JourneyObservatory({
                     </tr>
                   </thead>
                   <tbody>
+                    {data.guidance.filter(g => g.current > 0).map(g => <tr key={g.code}>
+                      <th><button onClick={() => inspectGuidance(g.code, "BLOCKING")}><Sparkles size={13} /> {text(g.titleAr, g.titleEn)}</button></th>
+                      <td>{g.current}</td><td>—</td><td>{text("إرشاد إلزامي", "Required guide")}</td><td>{g.completed} / {g.unlocked}</td><td>—</td>
+                    </tr>)}
                     {ranked.map((n) => (
                       <tr key={n.code}>
                         <th>
@@ -770,7 +781,7 @@ export function JourneyObservatory({
                     ))}
                   </tbody>
                 </table>
-                {!ranked.length && (
+                {!ranked.length && !data.guidance.some(g => g.current > 0) && (
                   <p className="jro-empty">
                     {text(
                       "لا توجد محطات بها باحثون الآن في هذا النطاق.",
@@ -930,6 +941,8 @@ export function JourneyObservatory({
                         </dd>
                       </div>
                     </dl>
+                    <button type="button" className="jro-text-button" onClick={() => inspectGuidance(g.code)}>{text("عرض الأعضاء وحالات الإتمام", "View members and completion states")} <Users size={13} /></button>
+                    <p className="jro-guidance-method">{g.completed ?? 0} {text("أكملوه", "completed")} · {g.pending ?? 0} {text("بانتظار الإتمام", "pending")}{g.required ? ` · ${g.current ?? 0} ${text("متوقفون هنا", "blocked here")}` : ""}</p>
                     <div className="jro-guidance-reading">
                       <span>
                         {text(
@@ -1090,7 +1103,9 @@ export function JourneyObservatory({
                     </header>
                     <p>
                       {p.group?.name ?? text("دون مجموعة", "No group")} ·{" "}
-                      {data.nodes.find((n) => n.code === p.currentCode)
+                      {p.guidanceCode
+                        ? text(data.guidance.find(g => g.code === p.guidanceCode)?.titleAr ?? p.guidanceCode, data.guidance.find(g => g.code === p.guidanceCode)?.titleEn ?? p.guidanceCode)
+                        : data.nodes.find((n) => n.code === p.currentCode)
                         ? title(
                             data.nodes.find((n) => n.code === p.currentCode)!,
                           )
@@ -1546,6 +1561,10 @@ export function JourneyObservatory({
           </footer>
         </>
       )}
+      {guidanceInspection && data && (() => {
+        const guide = data.guidance.find(g => g.code === guidanceInspection.code);
+        return guide ? <GuidanceMembersModal key={`${guide.code}:${guidanceInspection.filter}`} title={text(guide.titleAr, guide.titleEn)} members={guide.members ?? []} required={guide.required} ar={ar} initialFilter={guidanceInspection.filter} onClose={() => setGuidanceInspection(null)} /> : null;
+      })()}
       {createAt && data && (
         <ObservationEditor
           node={createAt}
