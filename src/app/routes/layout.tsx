@@ -4,7 +4,7 @@ import {
   SectionExperienceProvider,
   SectionExposure,
 } from "../features/ux-lab/SectionExperience";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { AddApplicationModal } from "../features/applications/components/AddApplicationModal";
@@ -53,6 +53,17 @@ export default function Layout() {
     location.pathname === "/" &&
     new URLSearchParams(location.search).get("labPreview") === "home:B";
 
+  const openAddModal = useCallback(
+    (initialValues?: Partial<CreateApplicationInput>) => {
+      openedFromMemberHome.current =
+        location.pathname === "/" && previewUser?.role === "USER";
+      closeJourneyTasksPanel();
+      setDraftValues(initialValues ?? null);
+      setIsAddModalOpen(true);
+    },
+    [location.pathname, previewUser?.role],
+  );
+
   useEffect(() => {
     if (window.localStorage.getItem("nawah.sidebar.collapsed") === "true") {
       setIsSidebarCollapsed(true);
@@ -84,15 +95,7 @@ export default function Layout() {
       window.removeEventListener(CELEBRATE_MILESTONE_EVENT, handler);
       window.removeEventListener("nawah_open_add_modal", openAddHandler);
     };
-  }, []);
-
-  const openAddModal = (initialValues?: Partial<CreateApplicationInput>) => {
-    openedFromMemberHome.current =
-      location.pathname === "/" && previewUser?.role === "USER";
-    closeJourneyTasksPanel();
-    setDraftValues(initialValues ?? null);
-    setIsAddModalOpen(true);
-  };
+  }, [openAddModal]);
 
   const handleCreateApplication = async (data: CreateApplicationInput) => {
     const prevJourney = queryClient.getQueryData<JourneyStateResponse>(

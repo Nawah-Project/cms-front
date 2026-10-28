@@ -109,7 +109,7 @@ export function ProfileCompletionGate({
     <SectionExposure section="onboarding">
       <main className="onboarding-world">
         <section
-          aria-labelledby="onboarding-wizard-title"
+          aria-labelledby={`onboarding-wizard-title-${step}`}
           className="onboarding-shell"
         >
           <div className="onboarding-content">
@@ -171,16 +171,20 @@ export function ProfileCompletionGate({
               </div>
             </div>
 
-            {/* Step 1: Platform Overview & Weekly Expectations */}
-            {step === 1 && (
-              <div className="space-y-6">
+            <div className="onboarding-steps">
+              {/* Both steps reserve their natural space, keeping the frame stable. */}
+              <div
+                className="onboarding-step space-y-6"
+                aria-hidden={step !== 1}
+                inert={step !== 1}
+              >
                 <div>
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-info-soft px-3 py-1 text-xs font-semibold text-info-strong">
                     <SparklesIcon className="h-3.5 w-3.5" />
                     <span>{t("auth.heroBadge")}</span>
                   </span>
                   <h1
-                    id="onboarding-wizard-title"
+                    id="onboarding-wizard-title-1"
                     className="mt-3 text-2xl font-bold tracking-tight text-neutral-950"
                   >
                     {t("profile.onboardingWelcomeTitle")}, {user?.name || ""}
@@ -280,14 +284,16 @@ export function ProfileCompletionGate({
                   <ArrowLeftIcon className="w-4 h-4 rotate-180 rtl:rotate-0" />
                 </button>
               </div>
-            )}
 
-            {/* Step 2: Professional Profile Setup */}
-            {step === 2 && (
-              <div>
+              {/* Step 2: Professional Profile Setup */}
+              <div
+                className="onboarding-step"
+                aria-hidden={step !== 2}
+                inert={step !== 2}
+              >
                 <div className="mb-4 sm:mb-6">
                   <h1
-                    id="onboarding-wizard-title"
+                    id="onboarding-wizard-title-2"
                     className="text-2xl font-bold tracking-tight text-neutral-950"
                   >
                     {t("profile.completeTitle")}
@@ -313,7 +319,7 @@ export function ProfileCompletionGate({
                   }}
                 />
               </div>
-            )}
+            </div>
           </div>
           <JourneyScenery variant="onboarding" step={step} />
 
