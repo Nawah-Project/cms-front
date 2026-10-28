@@ -212,8 +212,8 @@ export function JobMarketCompass({
         </a>
         <p className="job-explorer-mobile-help text-xs leading-6 text-text-secondary">
           {isRtl
-            ? "على Chrome: اضغط مطولًا على رابط الموقع واختر «فتح في علامة تبويب جديدة داخل المجموعة» إن ظهر الخيار، للرجوع لنواة من شريط المجموعة."
-            : "In Chrome, hold a site link and choose “Open in new tab in group” when available, then return to Nawah from the group strip."}
+            ? "لتجربة أسهل، جرّب تجمع نواة ومنصات التوظيف في مجموعة تبويبات. اضغط مطولًا على بطاقة المنصة لعرض خيارات الفتح؛ ولو متصفحك بيدعم المجموعات، تقدر تجمعهم وترجع لنواة بسرعة."
+            : "For an easier return to Nawah, try keeping Nawah and job platforms in a tab group. Hold a platform card to see opening options, then group the tabs if your browser supports it."}
         </p>
       </section>
     );
@@ -322,8 +322,8 @@ export function JobMarketCompass({
         <div className="space-y-4">
           <p className="job-explorer-mobile-help rounded-xl border border-border px-3 py-2 text-xs leading-6 text-text-secondary">
             {isRtl
-              ? "للرجوع لنواة بسرعة على Chrome: اضغط مطولًا على بطاقة الموقع واختر «فتح في علامة تبويب جديدة داخل المجموعة» إن ظهر الخيار."
-              : "To return to Nawah quickly in Chrome, hold a site card and choose “Open in new tab in group” when available."}
+              ? "لتجربة أسهل، جرّب تجمع نواة ومنصات التوظيف في مجموعة تبويبات. اضغط مطولًا على بطاقة المنصة لعرض خيارات الفتح؛ ولو متصفحك بيدعم المجموعات، تقدر تجمعهم وترجع لنواة بسرعة."
+              : "For an easier return to Nawah, try keeping Nawah and job platforms in a tab group. Hold a platform card to see opening options, then group the tabs if your browser supports it."}
           </p>
           {/* Level 1: 7 Macro-Markets Selector */}
           <div data-guide="explorer-markets">
