@@ -1,3 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
+import { fetchApi } from "../../../lib/api-client";
 import { ProfessionalImage } from "../../../components/ProfessionalImage";
 import { JourneyScenery } from "../../../components/JourneyScenery";
 import { useEffect, useState, type FormEvent } from "react";
@@ -10,10 +12,21 @@ import { useI18n } from "../../../i18n";
 import { LanguageSwitcher } from "../../../i18n/LanguageSwitcher";
 import { Modal } from "../../../components/ui/Modal";
 import { IntroVideoPlayer } from "../../../components/IntroVideoPlayer";
-import { CheckIcon, PlayCircleIcon, SparklesIcon } from "../../../components/Icons";
+import {
+  CheckIcon,
+  PlayCircleIcon,
+  SparklesIcon,
+} from "../../../components/Icons";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const registering = mode === "register";
+  const registration = useQuery({
+    queryKey: ["registration-status"],
+    queryFn: () => fetchApi<{ open: boolean }>("/auth/registration-status"),
+    enabled: registering,
+    staleTime: 15000,
+    refetchInterval: registering ? 30000 : false,
+  });
   const { t } = useI18n();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -28,7 +41,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from || "/";
   const notice = (location.state as { notice?: string } | null)?.notice;
-  const socialError = getSocialError(new URLSearchParams(location.search).get("socialError"), t);
+  const socialError = getSocialError(
+    new URLSearchParams(location.search).get("socialError"),
+    t,
+  );
 
   useEffect(() => {
     if (!loading && authenticated) navigate(from, { replace: true });
@@ -36,11 +52,12 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   if (loading || authenticated) {
     return (
-      <main
-        className="entry-loading"
-        role="status"
-      >
-        <ProfessionalImage className="entry-loading-image" /><div><img src="/nawah-logo.svg" alt=""/><p>{t("auth.sessionLoading")}</p></div>
+      <main className="entry-loading" role="status">
+        <ProfessionalImage className="entry-loading-image" />
+        <div>
+          <img src="/nawah-logo.svg" alt="" />
+          <p>{t("auth.sessionLoading")}</p>
+        </div>
       </main>
     );
   }
@@ -67,9 +84,12 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         navigate(from, { replace: true });
       }
     } catch (caught: any) {
-      const message = caught instanceof Error ? caught.message.toLowerCase() : "";
+      const message =
+        caught instanceof Error ? caught.message.toLowerCase() : "";
       const status = caught?.status;
-      if (
+      if (status === 403 && registering) {
+        setError(t("auth.registrationClosed"));
+      } else if (
         status === 409 ||
         message.includes("already exists") ||
         message.includes("already registered") ||
@@ -95,7 +115,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         status === 401
       ) {
         setError(t("auth.invalidCredentials"));
-      } else if (message.includes("failed to fetch") || message.includes("network")) {
+      } else if (
+        message.includes("failed to fetch") ||
+        message.includes("network")
+      ) {
         setError(t("common.connectionError"));
       } else {
         setError(t("auth.authFailed"));
@@ -111,6 +134,9 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     error === t("auth.invalidEmailDomainError");
   const isPasswordError = error === t("auth.passwordRequirementsError");
   const generalAlert =
+    (registering && registration.data?.open === false
+      ? t("auth.registrationClosed")
+      : "") ||
     socialError ||
     (error && !isEmailError && !isPasswordError ? error : "");
 
@@ -140,7 +166,9 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               {registering ? t("auth.registerTitle") : t("auth.loginTitle")}
             </h1>
             <p className="mt-2 text-sm leading-6 text-neutral-600">
-              {registering ? t("auth.registerSubtitle") : t("auth.loginSubtitle")}
+              {registering
+                ? t("auth.registerSubtitle")
+                : t("auth.loginSubtitle")}
             </p>
 
             {/* Notice Banner */}
@@ -192,7 +220,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                   className={`field-control ${isEmailError ? "border-danger-strong ring-1 ring-danger-strong/30" : ""}`}
                 />
                 {isEmailError && (
-                  <span role="alert" className="mt-1.5 block text-xs font-medium text-danger-strong">
+                  <span
+                    role="alert"
+                    className="mt-1.5 block text-xs font-medium text-danger-strong"
+                  >
                     {error}
                   </span>
                 )}
@@ -203,7 +234,9 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                   required
                   type="password"
                   minLength={8}
-                  autoComplete={registering ? "new-password" : "current-password"}
+                  autoComplete={
+                    registering ? "new-password" : "current-password"
+                  }
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
@@ -212,7 +245,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                   className={`field-control ${isPasswordError ? "border-danger-strong ring-1 ring-danger-strong/30" : ""}`}
                 />
                 {isPasswordError ? (
-                  <span role="alert" className="mt-1.5 block text-xs font-medium text-danger-strong">
+                  <span
+                    role="alert"
+                    className="mt-1.5 block text-xs font-medium text-danger-strong"
+                  >
                     {error}
                   </span>
                 ) : registering ? (
@@ -223,7 +259,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               </div>
 
               <button
-                disabled={submitting}
+                disabled={
+                  submitting ||
+                  (registering && registration.data?.open === false)
+                }
                 className="button-primary w-full py-2.5 mt-2"
               >
                 {submitting
@@ -242,17 +281,26 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                   <span>{t("auth.continueWith")}</span>
                   <span className="h-px flex-1 bg-border" />
                 </div>
-                <SocialSignInButtons disabled={submitting} />
+                <SocialSignInButtons
+                  disabled={
+                    submitting ||
+                    (registering && registration.data?.open === false)
+                  }
+                />
               </div>
             </form>
 
             <p className="mt-6 text-center text-sm text-neutral-600">
-              {registering ? t("auth.alreadyHaveAccount") + " " : t("auth.newToApp") + " "}
+              {registering
+                ? t("auth.alreadyHaveAccount") + " "
+                : t("auth.newToApp") + " "}
               <Link
                 className="font-medium text-neutral-900 underline-offset-4 hover:underline"
                 to={registering ? "/auth/login" : "/auth/register"}
               >
-                {registering ? t("auth.signInLink") : t("auth.createAccountLink")}
+                {registering
+                  ? t("auth.signInLink")
+                  : t("auth.createAccountLink")}
               </Link>
             </p>
           </div>
@@ -303,8 +351,13 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   );
 }
 
-function getSocialError(code: string | null, t: (key: string) => string): string {
+function getSocialError(
+  code: string | null,
+  t: (key: string) => string,
+): string {
   switch (code) {
+    case "registration_closed":
+      return t("auth.registrationClosed");
     case "account_link_required":
       return t("auth.accountExists");
     case "google_unavailable":
@@ -313,4 +366,3 @@ function getSocialError(code: string | null, t: (key: string) => string): string
       return "";
   }
 }
-

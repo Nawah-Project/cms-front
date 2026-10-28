@@ -1,3 +1,4 @@
+import { OperationsPerformanceObserver } from "../features/admin/operations/OperationsPerformanceObserver";
 import { useAuth } from "../features/auth/store/authStore";
 import {
   SectionExperienceProvider,
@@ -121,11 +122,11 @@ export default function Layout() {
             <ExperienceProgressProvider>
               <FirstApplicationGuidedTourProvider
                 enabled={
-                  !location.pathname.startsWith("/admin") &&
-                  !isHomePreview
+                  !location.pathname.startsWith("/admin") && !isHomePreview
                 }
               >
                 <AppContext.Provider value={{ openAddModal }}>
+                  <OperationsPerformanceObserver />
                   <div className="workspace-shell min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200">
                     <AppSidebar
                       collapsed={isSidebarCollapsed}
