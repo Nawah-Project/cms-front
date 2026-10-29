@@ -38,6 +38,7 @@ export type MarketingOverview = {
     campaign: string;
     source: string;
     medium: string;
+    content: string;
     visitors: number;
     sessions: number;
     signups: number;

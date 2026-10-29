@@ -14,7 +14,7 @@ import { AuthProvider } from "./features/auth/store/authStore";
 import { I18nProvider } from "./i18n";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { queryClient } from "./lib/react-query";
-import { MarketingTracker } from "./utils/marketingAnalytics";
+import { MarketingTracker } from "./utils/MarketingTracker";
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", type: "image/svg+xml", href: "/nawah-logo.svg" },

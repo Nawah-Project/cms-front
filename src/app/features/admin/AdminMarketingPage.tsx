@@ -81,8 +81,12 @@ export default function AdminMarketingPage() {
     return url.toString();
   }, [source, medium, campaign, content]);
   const copyLink = async () => {
-    await navigator.clipboard.writeText(campaignUrl);
-    toast.success(text("تم نسخ رابط الحملة", "Campaign link copied"));
+    try {
+      await navigator.clipboard.writeText(campaignUrl);
+      toast.success(text("تم نسخ رابط الحملة", "Campaign link copied"));
+    } catch {
+      toast.error(text("تعذر النسخ؛ حدد الرابط وانسخه يدويًا.", "Could not copy; select the link and copy it manually."));
+    }
   };
 
   if (query.isLoading)
@@ -107,10 +111,11 @@ export default function AdminMarketingPage() {
   const cards = [
     { label: text("الزوار المميزون", "Unique visitors"), value: n(summary.visitors), detail: text("متصفح مختلف داخل الفترة", "Distinct browsers in range"), icon: Users },
     { label: text("زوار لأول مرة", "First-time visitors"), value: n(summary.newVisitors), detail: `${n(summary.visitors ? (summary.newVisitors / summary.visitors) * 100 : 0, 1)}% ${text("من الزوار", "of visitors")}`, icon: ArrowDownLeft },
-    { label: text("زوار عائدون", "Returning visitors"), value: n(summary.returningVisitors), detail: text("زاروا قبل الفترة ورجعوا", "Seen before and returned"), icon: Repeat2 },
+    { label: text("زوار عائدون", "Returning visitors"), value: n(summary.returningVisitors), detail: text("رجعوا في جلسة ثانية أو أكثر", "Returned for another session"), icon: Repeat2 },
     { label: text("الجلسات", "Sessions"), value: n(summary.sessions), detail: `${n(summary.pagesPerSession, 2)} ${text("صفحة/جلسة", "pages/session")}`, icon: MousePointerClick },
     { label: text("التسجيلات", "Sign-ups"), value: n(summary.signups), detail: `${n(summary.signupRate, 1)}% ${text("من الزوار", "visitor conversion")}`, icon: UserCheck },
     { label: text("نشطون الآن", "Active now"), value: n(data.realtime.active5m), detail: `${n(data.realtime.active30m)} ${text("خلال 30 دقيقة", "in 30 minutes")}`, icon: Activity },
+    { label: text("مشاهدات الصفحات", "Page views"), value: n(summary.pageViews), detail: text("تشمل إعادة الزيارة والتحديث", "Includes revisits and reloads"), icon: Eye },
   ];
 
   return (
@@ -118,7 +123,7 @@ export default function AdminMarketingPage() {
       <section className="mk-hero">
         <div>
           <span className="mk-eyebrow"><Megaphone size={15} /> {text("مركز قياس النمو", "Acquisition command center")}</span>
-          <h2>{text("اعرف كل حملة جابت مين، وعملوا إيه بعدها", "See who each campaign brought—and what happened next")}</h2>
+          <h2>{text("اعرف كل حملة جابت كام زيارة، واتحوّلوا لإيه", "See the visits and conversions each campaign brought")}</h2>
           <p>{text("قراءة من أول زيارة مجهولة إلى التسجيل وإكمال الاستقبال، بدون تخزين IP أو بريد الزائر.", "Measure anonymous first touch through sign-up and onboarding, without storing visitor IP or email.")}</p>
         </div>
         <div className="mk-period" aria-label={text("الفترة", "Period")}>
@@ -131,6 +136,8 @@ export default function AdminMarketingPage() {
         </div>
       </section>
 
+      <p className="mk-measurement-help">{text("الزائر الجديد قد يرجع خلال نفس الفترة فيُحسب أيضًا ضمن العائدين؛ لذلك مجموعهما قد يتجاوز الزوار المميزين. الجلسة تنتهي بعد 30 دقيقة دون نشاط. مصدر التحويل هو رابط الحملة في جلسة التحويل، والتسجيلات تشمل الحسابات الجديدة من البريد وGoogle.", "A new visitor can return in the same period and count in both categories. Sessions expire after 30 minutes without activity. Conversion attribution uses the campaign in the converting session. Sign-ups include new email and Google accounts.")}</p>
+
       <section className="mk-kpis">
         {cards.map(({ label, value, detail, icon: Icon }) => (
           <article className="mk-kpi" key={label}>
@@ -142,7 +149,7 @@ export default function AdminMarketingPage() {
       <section className="mk-grid mk-grid-main">
         <article className="mk-panel mk-trend">
           <header><div><span>{text("حركة الوصول", "Acquisition trend")}</span><h3>{text("الجدد والعائدون والتحويل اليومي", "New, returning, and daily conversion")}</h3></div></header>
-          <div className="mk-chart" dir="ltr">
+          <div className="mk-chart" dir="ltr" role="img" aria-label={text("رسم يومي للزوار الجدد والعائدين والتسجيلات؛ الأرقام متاحة في الجدول التالي.", "Daily new visitors, returning visitors, and sign-ups; values are available in the following table.")}>
             <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <AreaChart data={data.trend} margin={{ top: 18, right: 12, left: -18, bottom: 2 }} accessibilityLayer>
                 <defs>
@@ -160,6 +167,7 @@ export default function AdminMarketingPage() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
+          <details className="mk-data-details"><summary>{text("عرض بيانات الرسم كجدول", "Show chart data as a table")}</summary><div className="mk-table-wrap"><table><thead><tr><th>{text("اليوم", "Day")}</th><th>{text("زوار", "Visitors")}</th><th>{text("جدد", "New")}</th><th>{text("عائدون", "Returning")}</th><th>{text("تسجيل", "Sign-ups")}</th></tr></thead><tbody>{data.trend.map(row => <tr key={row.date}><td>{dayLabel(row.date)}</td><td>{n(row.visitors)}</td><td>{n(row.newVisitors)}</td><td>{n(row.returningVisitors)}</td><td>{n(row.signups)}</td></tr>)}</tbody></table></div></details>
         </article>
 
         <article className="mk-panel mk-funnel">
@@ -178,9 +186,10 @@ export default function AdminMarketingPage() {
             ))}
           </div>
           <div className="mk-secondary-metrics">
-            <div><span>{text("معدل الارتداد", "Bounce rate")}</span><b>{n(summary.bounceRate, 1)}%</b></div>
-            <div><span>{text("متوسط الجلسة", "Avg. session")}</span><b>{duration(summary.averageSessionSeconds)}</b></div>
+            <div><span>{text("جلسة بصفحة واحدة دون تحويل", "Single-page sessions without conversion")}</span><b>{n(summary.bounceRate, 1)}%</b></div>
+            <div><span>{text("متوسط المدة المرصودة للجلسة", "Avg. observed session duration")}</span><b>{duration(summary.averageSessionSeconds)}</b></div>
           </div>
+          <p className="mk-measurement-help">{text("المراحل تعرض ما حدث في الفترة المختارة؛ قد يُكمل شخص الاستقبال اليوم بعد تسجيله في فترة سابقة. المدة تُقدّر من الأحداث والتفاعل المرصود، ولا تشمل وقتًا غير مرصود بعد آخر حدث.", "Stages show events in the selected period; onboarding may follow a sign-up from an earlier period. Duration is estimated from observed events and activity, excluding unobserved time after the last event.")}</p>
         </article>
       </section>
 
@@ -195,6 +204,7 @@ export default function AdminMarketingPage() {
                   <XAxis type="number" hide />
                   <YAxis type="category" dataKey="source" width={95} tick={{ fontSize: 10, fill: "#4d6256" }} axisLine={false} tickLine={false}/>
                   <Tooltip contentStyle={{ borderRadius: 12, borderColor: "#c8d8ce", fontSize: 12 }}/>
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Bar dataKey="visitors" name={text("زوار", "Visitors")} fill="#145844" radius={[0, 6, 6, 0]}/>
                   <Bar dataKey="signups" name={text("تسجيل", "Sign-ups")} fill="#c3a15a" radius={[0, 6, 6, 0]}/>
                 </BarChart>
@@ -217,14 +227,14 @@ export default function AdminMarketingPage() {
       <section className="mk-panel mk-campaigns">
         <header><span>{text("أداء الحملات", "Campaign performance")}</span><h3>{text("قارن الفيديوهات والمنشورات بنفس معيار التحويل", "Compare videos and posts on the same conversion standard")}</h3></header>
         {data.campaigns.length ? (
-          <div className="mk-table-wrap"><table><thead><tr><th>{text("الحملة", "Campaign")}</th><th>{text("المصدر / الوسيط", "Source / medium")}</th><th>{text("زوار", "Visitors")}</th><th>{text("جلسات", "Sessions")}</th><th>{text("تسجيل", "Sign-ups")}</th><th>{text("أكمل الاستقبال", "Onboarded")}</th><th>{text("التحويل", "Conversion")}</th></tr></thead><tbody>{data.campaigns.map((row) => <tr key={`${row.campaign}-${row.source}-${row.medium}`}><td><b>{row.campaign}</b></td><td>{row.source} <small>/ {row.medium}</small></td><td>{n(row.visitors)}</td><td>{n(row.sessions)}</td><td>{n(row.signups)}</td><td>{n(row.onboarded)}</td><td><span className="mk-rate">{n(row.signupRate, 1)}%</span></td></tr>)}</tbody></table></div>
+          <div className="mk-table-wrap" tabIndex={0} aria-label={text("أداء الحملات، مرر أفقيًا لعرض الأعمدة", "Campaign performance, scroll horizontally for columns")}><table><thead><tr><th>{text("الحملة", "Campaign")}</th><th>{text("الفيديو / المحتوى", "Video / content")}</th><th>{text("المصدر / الوسيط", "Source / medium")}</th><th>{text("زوار", "Visitors")}</th><th>{text("جلسات", "Sessions")}</th><th>{text("تسجيل", "Sign-ups")}</th><th>{text("أكمل الاستقبال", "Onboarded")}</th><th>{text("التحويل", "Conversion")}</th></tr></thead><tbody>{data.campaigns.map((row) => <tr key={`${row.campaign}-${row.source}-${row.medium}-${row.content}`}><td><b>{row.campaign}</b></td><td>{row.content}</td><td>{row.source} <small>/ {row.medium}</small></td><td>{n(row.visitors)}</td><td>{n(row.sessions)}</td><td>{n(row.signups)}</td><td>{n(row.onboarded)}</td><td><span className="mk-rate">{n(row.signupRate, 1)}%</span></td></tr>)}</tbody></table></div>
         ) : <Empty ar={ar} />}
       </section>
 
       <section className="mk-grid mk-grid-half">
         <article className="mk-panel">
           <header><span>{text("وقت الذروة — القاهرة", "Peak time — Cairo")}</span><h3>{text("متى تنشر أو تدفع الحملة؟", "When should you publish or boost?")}</h3></header>
-          <div className="mk-hours" dir="ltr">{data.hours.map((row) => <div key={row.hour} title={`${row.hour}:00 — ${row.sessions}`} style={{ "--heat": Math.max(0.08, row.sessions / peak) } as React.CSSProperties}><b>{String(row.hour).padStart(2, "0")}</b><span>{n(row.sessions)}</span></div>)}</div>
+          <div className="mk-hours" dir="ltr">{data.hours.map((row) => <div key={row.hour} title={`${row.hour}:00 — ${row.sessions}`} style={{ "--heat": Math.max(0.08, row.sessions / peak), color: row.sessions / peak > 0.55 ? '#fff' : '#17372b' } as React.CSSProperties}><b>{String(row.hour).padStart(2, "0")}</b><span>{n(row.sessions)}</span></div>)}</div>
         </article>
         <article className="mk-panel">
           <header><span>{text("الصفحات الأكثر مشاهدة", "Top pages")}</span><h3>{text("أين يذهب الزائر بعد الوصول؟", "Where visitors go after landing")}</h3></header>
