@@ -58,6 +58,14 @@ function getSectionMeta(pathname: string, locale: string) {
         : "Granular funnel analysis, top drop-off bottlenecks, A/B/C experimentation, and V2 feature adoption",
     };
   }
+  if (pathname.startsWith("/admin/marketing")) {
+    return {
+      title: isAr ? "المركتنج ونمو الزيارات" : "Marketing & Acquisition",
+      description: isAr
+        ? "قِس أثر الحملات ومصادر الزيارات والتحويل من أول زيارة إلى التسجيل والاستقبال"
+        : "Measure campaigns, acquisition sources, and conversion from first visit through onboarding",
+    };
+  }
   if (pathname.startsWith("/admin/operations")) {
     return {
       title: isAr ? "العمليات والموارد التشغيلية" : "Operations & Resources",

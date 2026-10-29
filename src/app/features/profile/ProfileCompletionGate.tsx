@@ -7,6 +7,7 @@ import { useI18n } from "../../i18n";
 import { profileApi, type ProfessionalProfile } from "./profileApi";
 import { ProfileForm } from "./ProfileForm";
 import { trackUxEvent, useUxExperiment } from "../../utils/uxAnalytics";
+import { trackMarketingConversion } from "../../utils/marketingAnalytics";
 import { IntroVideoPlayer } from "../../components/IntroVideoPlayer";
 import { Modal } from "../../components/ui/Modal";
 import {
@@ -314,6 +315,7 @@ export function ProfileCompletionGate({
                         targetJobTitle: saved.targetJobTitle,
                       });
                     trackUxEvent("onboarding_completed");
+                    trackMarketingConversion("ONBOARDING_COMPLETED");
                     setCompleted(true);
                     navigate("/", { replace: true });
                   }}

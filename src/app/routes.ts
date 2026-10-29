@@ -38,6 +38,7 @@ export default [
       route("journey", "features/admin/AdminJourneyEnginePage.tsx"),
       route("report-preview", "features/admin/AdminReportPreviewPage.tsx"),
       route("ux-lab", "features/admin/AdminUxLabPage.tsx"),
+      route("marketing", "features/admin/AdminMarketingPage.tsx"),
       route("operations", "features/admin/AdminOperationsPage.tsx"),
       // Backwards-compatibility redirects:
       route("members", "features/admin/redirects/AdminMembersRedirect.tsx"),

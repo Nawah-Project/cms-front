@@ -14,6 +14,7 @@ import { AuthProvider } from "./features/auth/store/authStore";
 import { I18nProvider } from "./i18n";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { queryClient } from "./lib/react-query";
+import { MarketingTracker } from "./utils/marketingAnalytics";
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", type: "image/svg+xml", href: "/nawah-logo.svg" },
@@ -45,6 +46,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
         <AuthProvider>
+          <MarketingTracker />
           <ToastProvider>
             <Outlet />
           </ToastProvider>

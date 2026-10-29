@@ -18,6 +18,7 @@ export interface User {
         | "JOURNEY"
         | "REPORTS"
         | "UX_LAB"
+        | "MARKETING"
         | "OPERATIONS",
         "READ" | "WRITE"
       >

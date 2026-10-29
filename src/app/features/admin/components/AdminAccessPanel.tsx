@@ -22,6 +22,7 @@ const labels: Record<AdminSection, [string, string]> = {
   JOURNEY: ["هندسة الرحلة والحبكة", "Journey & plot engine"],
   REPORTS: ["معاينة تقارير الرحلة", "Journey report preview"],
   UX_LAB: ["تحليلات التجربة والسلوك", "UX & behavior lab"],
+  MARKETING: ["المركتنج ونمو الزيارات", "Marketing & acquisition"],
   OPERATIONS: ["العمليات والموارد التشغيلية", "Operations & resources"],
 };
 

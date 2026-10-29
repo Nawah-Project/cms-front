@@ -42,6 +42,7 @@ type NavItem = {
     | "admin-mentoring"
     | "admin-journey"
     | "admin-ux-lab"
+    | "admin-marketing"
     | "admin-operations";
   end?: boolean;
   hasStatusDot?: boolean;
@@ -130,6 +131,13 @@ const ADMIN_PRIMARY_ITEMS: AdminNavItem[] = [
     section: "UX_LAB",
   },
   {
+    labelAr: "المركتنج ونمو الزيارات",
+    labelEn: "Marketing & Acquisition",
+    to: "/admin/marketing",
+    icon: "admin-marketing",
+    section: "MARKETING",
+  },
+  {
     labelAr: "العمليات والموارد التشغيلية",
     labelEn: "Operations & Resources",
     to: "/admin/operations",
@@ -205,6 +213,16 @@ function NavIcon({ name }: { name: NavItem["icon"] }) {
           strokeLinecap="round"
           strokeLinejoin="round"
           d="M5.25 14.25h13.5m-13.5 0a3 3 0 0 1-3-3m3 3a3 3 0 1 0 0 6h13.5a3 3 0 1 0 0-6m-16.5-3a3 3 0 0 1 3-3h13.5a3 3 0 0 1 3 3m-19.5 0a4.5 4.5 0 0 1 .9-2.7L5.75 5.1A3 3 0 0 1 8.25 3.75h7.5a3 3 0 0 1 2.5 1.35l2.1 3.45a4.5 4.5 0 0 1 .9 2.7M6.75 17.25h.008v.008H6.75v-.008Zm3.75 0h.008v.008H10.5v-.008Z"
+        />
+      </svg>
+    );
+  if (name === "admin-marketing")
+    return (
+      <svg {...common}>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M3.75 13.5 5.1 18a1.5 1.5 0 0 0 1.44 1.08h1.71l-1.5-5.58m-3 0h3l9.75 4.5V6L6.75 10.5h-3v3Zm12.75-4.125a3.375 3.375 0 0 1 0 5.25"
         />
       </svg>
     );
