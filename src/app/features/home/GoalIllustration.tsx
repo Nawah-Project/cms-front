@@ -42,7 +42,7 @@ export function GoalIllustration({
           <rect x="47" y="39" width="86" height="54" rx="6" fill="#f3f6ef" />
           <path
             d="m71 51-12 13 12 13m38-26 12 13-12 13m-12-29-12 32"
-            stroke="#235e48"
+            stroke="#174c87"
             strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -53,15 +53,15 @@ export function GoalIllustration({
             strokeWidth="2"
             strokeLinecap="round"
           />
-          <rect x="123" y="14" width="31" height="31" rx="10" fill="#184e3b" />
+          <rect x="123" y="14" width="31" height="31" rx="10" fill="#125e4e" />
           <path
             d="m132 29 5 5 9-11"
-            stroke="#e2edaa"
+            stroke="#e7b85a"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-          <circle cx="31" cy="78" r="6" fill="#d4e19e" />
+          <circle cx="31" cy="78" r="6" fill="#e7b85a" />
         </>
       ) : kind === "people" ? (
         <>
@@ -89,17 +89,17 @@ export function GoalIllustration({
             stroke="#28634c"
             strokeWidth="1.5"
           />
-          <circle cx="37" cy="60" r="17" fill="#dfe9e9" stroke="#779799" />
+          <circle cx="37" cy="60" r="17" fill="#e8eff7" stroke="#174c87" />
           <path
             d="m30 61 5 5 10-12"
-            stroke="#32666c"
+            stroke="#174c87"
             strokeWidth="2"
             strokeLinecap="round"
           />
-          <circle cx="142" cy="82" r="19" fill="#1c5945" />
+          <circle cx="142" cy="82" r="19" fill="#125e4e" />
           <path
             d="M134 80c-4-6 4-11 8-5 4-6 12-1 8 5l-8 9-8-9Z"
-            fill="#dce9ae"
+            fill="#e7b85a"
           />
           <path
             d="M36 82v15m-7-8h14m91-61 4-9 4 9 9 4-9 4-4 9-4-9-9-4Z"
@@ -127,16 +127,16 @@ export function GoalIllustration({
           />
           <path d="M49 92h82" stroke="#c9d6c7" />
           <rect x="58" y="76" width="13" height="16" rx="2" fill="#c5d7c6" />
-          <rect x="81" y="65" width="13" height="27" rx="2" fill="#86aa8c" />
-          <rect x="104" y="52" width="13" height="40" rx="2" fill="#235e48" />
+          <rect x="81" y="65" width="13" height="27" rx="2" fill="#174c87" />
+          <rect x="104" y="52" width="13" height="40" rx="2" fill="#125e4e" />
           <path
             d="m55 63 24-11 16 1 21-20m-12 0h12v12"
-            stroke="#7e9662"
+            stroke="#174c87"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-          <circle cx="146" cy="39" r="14" fill="#e3ecb2" />
+          <circle cx="146" cy="39" r="14" fill="#e7b85a" />
           <path
             d="m139 39 5 5 9-10"
             stroke="#2a6048"

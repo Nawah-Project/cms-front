@@ -769,7 +769,7 @@ export function AppSidebar({
               className={`flex min-w-0 items-start gap-3 text-sm font-semibold tracking-tight text-white ${collapsed ? "justify-center" : ""}`}
             >
               <img
-                src="/nawah-logo.svg"
+                src="/nawah-logo.svg?v=project-20261031"
                 alt=""
                 className="h-9 w-9 shrink-0 rounded-md object-contain"
               />
@@ -850,7 +850,7 @@ export function AppSidebar({
               className="flex min-w-0 flex-1 items-start gap-2.5 text-sm font-semibold tracking-tight text-neutral-950 dark:text-white"
             >
               <img
-                src="/nawah-logo.svg"
+                src="/nawah-logo.svg?v=project-20261031"
                 alt=""
                 className="h-8 w-8 shrink-0 rounded-md object-contain"
               />

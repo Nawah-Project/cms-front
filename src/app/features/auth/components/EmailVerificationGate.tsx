@@ -207,7 +207,7 @@ export function EmailVerificationGate({ children }: { children: ReactNode }) {
         <div className="flex items-center justify-between gap-3 mb-6">
           <div className="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-neutral-900">
             <img
-              src="/nawah-logo.svg"
+              src="/nawah-logo.svg?v=project-20261031"
               alt=""
               aria-hidden="true"
               className="h-9 w-9 shrink-0 rounded-md border border-neutral-200 object-cover"

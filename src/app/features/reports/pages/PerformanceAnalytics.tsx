@@ -222,12 +222,12 @@ function ProgressChart({ report, admin }: { report: Report; admin: boolean }) {
                         >
                           <stop
                             offset="0%"
-                            stopColor="#059669"
+                            stopColor="#125e4e"
                             stopOpacity={0.25}
                           />
                           <stop
                             offset="100%"
-                            stopColor="#059669"
+                            stopColor="#125e4e"
                             stopOpacity={0.015}
                           />
                         </linearGradient>
@@ -268,7 +268,7 @@ function ProgressChart({ report, admin }: { report: Report; admin: boolean }) {
                         dataKey="logged"
                         name={t("طلبات مسجلة", "Applications recorded")}
                         type="linear"
-                        stroke="#059669"
+                        stroke="#125e4e"
                         strokeWidth={3}
                         fill={`url(#${gradient})`}
                         isAnimationActive={false}
@@ -281,7 +281,7 @@ function ProgressChart({ report, admin }: { report: Report; admin: boolean }) {
                             "Applications with current progression",
                           )}
                           type="linear"
-                          stroke="#6366f1"
+                          stroke="#174c87"
                           strokeWidth={2.5}
                           strokeDasharray="5 4"
                           dot={false}
@@ -296,8 +296,8 @@ function ProgressChart({ report, admin }: { report: Report; admin: boolean }) {
                             x={m.date}
                             y={data.find((d) => d.date === m.date)?.logged ?? 0}
                             r={5}
-                            fill="#d97706"
-                            stroke="white"
+                            fill="#e7b85a"
+                            stroke="#8b641b"
                           />
                         ))}
                     </ComposedChart>
@@ -307,8 +307,8 @@ function ProgressChart({ report, admin }: { report: Report; admin: boolean }) {
               <div className="mt-2 flex flex-wrap justify-center gap-4 text-xs text-text-secondary">
                 <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full bg-emerald-700" aria-hidden="true" />{t("طلبات مسجلة", "Applications recorded")}</span>
                 {report.dailyCohorts && (
-                  <span className="text-indigo-700 dark:text-indigo-300">
-                    <i className="inline-block w-4 border-t-2 border-dashed border-indigo-600" aria-hidden="true" /> {t("تقدم إيجابي حالي", "Current positive progression")}
+                  <span className="text-[#174c87] dark:text-[#b6cbe1]">
+                    <i className="inline-block w-4 border-t-2 border-dashed border-[#174c87]" aria-hidden="true" /> {t("تقدم إيجابي حالي", "Current positive progression")}
                   </span>
                 )}
                 <span className="text-amber-700 dark:text-amber-300">

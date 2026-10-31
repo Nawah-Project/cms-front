@@ -55,7 +55,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       <main className="entry-loading" role="status">
         <ProfessionalImage className="entry-loading-image" />
         <div>
-          <img src="/nawah-logo.svg" alt="" />
+          <img src="/nawah-logo.svg?v=project-20261031" alt="" />
           <p>{t("auth.sessionLoading")}</p>
         </div>
       </main>
@@ -152,7 +152,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                 className="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-neutral-900"
               >
                 <img
-                  src="/nawah-logo.svg"
+                  src="/nawah-logo.svg?v=project-20261031"
                   alt=""
                   aria-hidden="true"
                   className="h-10 w-10 shrink-0 rounded-md border border-neutral-200 object-cover"

@@ -390,8 +390,8 @@ export default function HomePageB({ preview = true }: { preview?: boolean }) {
         <div className="home-eyebrow">
           <Compass size={15} />
           {text(
-            "نواة · رحلة مهنية باتجاه أوضح",
-            "NAWAH · A clearer professional direction",
+            "مشروع نواة · رحلة مهنية باتجاه أوضح",
+            "NAWAH PROJECT · A clearer professional direction",
           )}
         </div>
         <h1 id="home-title">
