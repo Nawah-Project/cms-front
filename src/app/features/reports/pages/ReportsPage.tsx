@@ -1,13 +1,15 @@
+import { FeatureTourPending } from "../../../components/FeatureTour";
 import { createContext, useContext, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, Check, CircleCheck, FileText, Lock, Plus } from "lucide-react";
 import { Modal } from "../../../components/ui/Modal";
 import { useI18n } from "../../../i18n";
-import { apiClient } from "../../../lib/api-client";
+import { ApiError, apiClient } from "../../../lib/api-client";
 import { journeyApi } from "../../journey/api/journeyApi";
 import ActivityResponseChart from "./ActivityResponseChart";
 import PerformanceAnalytics from "./PerformanceAnalytics";
+
 
 export function meta() {
   return [{ title: "Performance Analytics | Nawah" }];
@@ -34,6 +36,10 @@ export interface Metrics {
 }
 
 export interface Report {
+  manualUpdate?: { eligible: boolean; canSubmit: boolean; nextAvailableAt: string | null };
+  dailyCohorts?: { date: string; logged: number; positive: number }[];
+  analyticsAccess?: { cv: boolean; pipeline: boolean; tailoring: boolean; publishing: boolean; networking: boolean; freeChanges: boolean };
+  cvFoundation?: { completed: boolean };
   asOf: string;
   overall: Metrics;
   weeks: (Metrics & { week: number })[];
@@ -46,6 +52,7 @@ export interface Report {
     startAt: string;
     endAt: string | null;
     metrics: Omit<Metrics, "posts" | "outreach" | "reviews">;
+    applications?: { id: string; companyName: string; jobTitle: string; createdAt: string; stage: string; outcome: string; isTailored: boolean; positive?: boolean }[];
   }[];
   cvs: { id: string; versionNumber: number; originalName: string; uploadedAt: string }[];
   tasks: { id: string; title: string; completedAt: string | null }[];
@@ -240,7 +247,7 @@ function FinalJourneyReport({ report, readOnly, onComplete, pending, saveError }
   const allReflections = report.activities.filter((item) => item.type === "WEEKLY_REVIEW" && !item.legacyChange);
   const reflectionTexts = allReflections.map((item) => item.summary?.trim()).filter((item): item is string => Boolean(item));
   const checkpoints = [
-    ...report.cvs.map((cv) => ({ date: cv.uploadedAt, title: `${text("رفع نسخة CV", "CV version uploaded")} v${number(cv.versionNumber)}` })),
+    ...report.cvs.map((cv) => ({ date: cv.uploadedAt, title: `${text("رفع نسخة CV", "CV version uploaded")} ${number(Math.max(0, cv.versionNumber - 1))}` })),
     ...report.activities.filter((item) => item.type === "USER_CHANGE" && !item.legacyChange).map((item) => ({ date: item.createdAt, title: text("تغيير مهني مسجل", "Professional change recorded") })),
   ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   const weekRows = report.weeks.filter((item) => item.week >= 1 && item.week <= 4);
@@ -313,7 +320,7 @@ export default function ReportsPage() {
   const text = (a: string, e: string) => ar ? a : e;
   const queryClient = useQueryClient();
   const preview = useContext(ReportPreviewContext);
-  const query = useQuery({ queryKey: ["journey", "reports"], queryFn: () => apiClient.get<Report>("/journey/reports"), enabled: !preview });
+  const query = useQuery({ queryKey: ["journey", "reports"], queryFn: () => apiClient.get<Report>("/journey/reports"), retry: (count,error) => !(error instanceof ApiError && error.status === 403) && count < 2, enabled: !preview });
   const [memberScope, setMemberScope] = useState<number | null | "final">(null);
   const scope = preview ? preview.forceFinalPreview && preview.scope === null ? "final" : preview.scope : memberScope;
   const setScope = (next: number | null | "final") => preview ? preview.onScopeChange(next === "final" ? null : next) : setMemberScope(next);
@@ -333,7 +340,7 @@ export default function ReportsPage() {
     try {
       await journeyApi.submitSideTask({ nodeCode: report.currentNodeCode, type: "USER_CHANGE", reviewSummary: note.trim(), sharedInGroup: false });
       await refresh(); setNote(""); setChangeOpen(false);
-    } catch { setSaveError(text("الحفظ فشل. الكلام لسه موجود؛ حاول تاني.", "Saving failed. Your text is preserved; please retry.")); }
+    } catch { await refresh(); setSaveError(text("الحفظ فشل. الكلام لسه موجود؛ حاول تاني.", "Saving failed. Your text is preserved; please retry.")); }
     finally { setPending(false); }
   }
   async function completeFinal() {
@@ -344,7 +351,9 @@ export default function ReportsPage() {
     finally { setPending(false); }
   }
 
-  if (!preview && query.isPending) return <div role="status" className="rounded-xl bg-surface p-6">{text("بنحمّل تقاريرك…", "Loading your reports…")}</div>;
+  const reportErrorDetails = query.error && typeof query.error === "object" && "details" in query.error ? query.error.details as {code?:string;guidanceUnlocked?:boolean} : undefined;
+  if (!preview && reportErrorDetails?.code === "CV_FOUNDATION_REQUIRED") return <section className="rounded-2xl border border-border bg-surface p-6"><h1 className="text-xl font-bold">{text("تحليل الأداء لسه مقفول", "Performance analytics is locked")}</h1><p className="mt-3 text-sm leading-6 text-text-secondary">{reportErrorDetails.guidanceUnlocked ? text("طبّق إرشاد تحسين السيرة وارفع نسخة محدّثة من داخله؛ الإكمال وفتح التحليل بيحصلوا تلقائيًا بعد الحفظ.", "Apply the CV guidance, upload a revised file inside it. Completion and analytics access follow automatically once saved.") : text("أكمل أول 5 طلبات في المهمة صفر. بعدها هتظهر لك الخطوة اللي تفتح التحليل.", "Complete the first five applications in Task 0 to reveal the next analytics prerequisite.")}</p><Link className="button-primary mt-4 inline-flex min-h-11 items-center" to={reportErrorDetails.guidanceUnlocked?"/professional-development?guidance=INSIGHT_TASK_0_CV_BASE":"/applications"}>{reportErrorDetails.guidanceUnlocked?text("افتح إرشاد السيرة", "Open CV guidance"):text("كمّل مهمتك الحالية", "Continue your current quest")}</Link></section>;
+  if (!preview && query.isPending) return <div role="status" className="rounded-xl bg-surface p-6"><FeatureTourPending feature="analytics-week1-v1" />{text("بنحمّل تقاريرك…", "Loading your reports…")}</div>;
   if (!preview && (query.isError || !report)) return <div role="alert" className="rounded-2xl border border-border bg-surface p-6"><p>{text("تعذر تحميل التقارير.", "Could not load your reports.")}</p><button className="button-primary mt-3 min-h-10" onClick={() => void query.refetch()}>{text("حاول تاني", "Retry")}</button></div>;
   if (!report) return null;
   const selectedWeek = typeof scope === "number" ? scope : null;
@@ -353,13 +362,13 @@ export default function ReportsPage() {
   const pageTitle = finalSelected ? text("التقرير النهائي", "Final report") : selectedWeek ? text(`تقرير الأسبوع ${number(selectedWeek)}`, `Week ${number(selectedWeek)} report`) : text("تحليلات الأداء", "Performance analytics");
 
   return (
-    <main dir={ar ? "rtl" : "ltr"} className="mx-auto w-full max-w-[1440px] space-y-5 pb-10">
+    <main dir={ar ? "rtl" : "ltr"} className="member-reports mx-auto w-full max-w-[1440px] space-y-5 pb-10">
       <header className="flex flex-wrap items-start justify-between gap-4">
-        <div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">{text("نواة · رحلة البحث عن وظيفة", "NAWAH · JOB SEARCH JOURNEY")}</p><h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-[28px]">{pageTitle}</h1><p className="mt-1 text-sm text-text-secondary">{text("البيانات المحفوظة حتى", "Recorded data as of")} {formatDate(report.asOf, locale, true)}</p></div>
-        {!readOnly && !selectedWeek && !finalSelected && report.currentWeek >= 3 && <button type="button" className="button-secondary inline-flex min-h-10 items-center gap-2" onClick={() => { setSaveError(""); setChangeOpen(true); }}><Plus className="h-4 w-4" aria-hidden="true" />{text("سجّل تغيير مهني", "Record a professional change")}</button>}
+        <div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">{text("مشروع نواة · اقرأ أثر خطواتك", "NAWAH PROJECT · UNDERSTAND YOUR PROGRESS")}</p><h1 className="report-page-title mt-1 text-2xl font-bold tracking-tight sm:text-[28px]">{pageTitle}</h1><p className="mt-1 text-sm text-text-secondary">{text("البيانات المحفوظة حتى", "Recorded data as of")} {formatDate(report.asOf, locale, true)}</p></div>
+
       </header>
 
-      {!preview && <nav aria-label={text("اختيار التقرير", "Report navigation")} className="flex flex-wrap gap-2 rounded-xl border border-border bg-surface p-2">
+      {!preview && <nav aria-label={text("اختيار التقرير", "Report navigation")} className="report-navigation n-segmented flex flex-wrap gap-2 rounded-xl border border-border bg-surface p-2">
         <button type="button" aria-pressed={scope === null} className={`min-h-10 rounded-lg px-3 text-sm font-semibold ${scope === null ? "bg-emerald-700 text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`} onClick={() => { setLockedWeek(null); setScope(null); }}>{text("تحليلات مستمرة", "Continuous analytics")}</button>
         {[1, 2, 3, 4].map((week) => {
           const unlocked = weekReportUnlocked(week, report);
@@ -371,16 +380,17 @@ export default function ReportsPage() {
       {lockedWeek !== null && <p role="note" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"><Lock className="me-1 inline h-4 w-4" aria-hidden="true" />{lockedWeek === "final" || lockedWeek === 4 ? text("التقرير النهائي والأسبوع الرابع بيظهروا عند الوصول لمرحلة التقرير النهائي.", "Week 4 and the final report are available at the final-report journey stage.") : !report.week1StartedAt ? text("التقرير ده هيفتح بعد إكمال Task 0 وبداية الأسبوع الأول.", "This report unlocks after Task 0 is complete and Week 1 begins.") : text(`التقرير ده لسه مقفول حسب تقدم الرحلة الحالي.`, `This report is still locked at the current journey stage.`)}</p>}
 
       <div hidden={selectedWeek !== null || finalSelected}>
-        <PerformanceAnalytics report={report} metrics={report.overall} canNavigate={!readOnly} />
+        <PerformanceAnalytics report={report} metrics={report.overall} canNavigate={!readOnly} admin={readOnly} onAddUpdate={() => { setSaveError(""); setChangeOpen(true); }} />
       </div>
       {selectedWeek !== null && <WeeklyReportView report={report} week={selectedWeek} metrics={metrics} readOnly={readOnly} />}
       {finalSelected && <FinalJourneyReport report={report} readOnly={readOnly} onComplete={() => void completeFinal()} pending={pending} saveError={saveError} />}
 
-      <Modal isOpen={changeOpen} onClose={() => { if (!pending) setChangeOpen(false); }} disableClose={pending} title={text("تسجيل تغيير مهني", "Record a professional change")}>
+      <Modal isOpen={changeOpen} onClose={() => { if (!pending) setChangeOpen(false); }} disableClose={pending} title={text("إضافة تحديث", "Add an update")}>
         <form className="space-y-3 p-5" onSubmit={saveChange}>
-          <label className="block text-sm">{text("إيه اللي غيرته؟ ده سجل يدوي ومش نسخة CV جديدة.", "What changed? This is a manual log, not a new CV version.")}<textarea className="field-control mt-2 min-h-32" required maxLength={5000} value={note} onChange={(event) => setNote(event.target.value)} /></label>
+          <label className="block text-sm">{text("إيه اللي غيّرته في تجهيزاتك أو طريقة تقديمك؟ صف التغيير عشان تتابع الطلبات اللي هتتسجل بعده.", "What changed in your preparation or application approach? Describe it to follow applications recorded afterwards.")}<textarea className="field-control mt-2 min-h-32" required maxLength={5000} value={note} onChange={(event) => setNote(event.target.value)} /></label>
+          <p className="text-xs text-text-secondary">{text("تقدر تضيف تحديث مرة كل 3 أيام. رفع CV بيظل من الملف الشخصي.", "You can add an update once every 3 days. CV uploads remain in your profile.")}</p>
           {saveError && <p role="alert" className="text-sm text-rose-700">{saveError}</p>}
-          <button className="button-primary min-h-10" disabled={pending}>{pending ? text("بنحفظ…", "Saving…") : text("احفظ التغيير", "Save change")}</button>
+          <button className="button-primary min-h-10" disabled={pending}>{pending ? text("بنحفظ…", "Saving…") : text("احفظ التحديث", "Save update")}</button>
         </form>
       </Modal>
     </main>

@@ -1,5 +1,6 @@
+import { useSectionDesign } from "../features/ux-lab/SectionExperience";
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import {
   ChevronDown,
   Eye,
@@ -19,6 +20,11 @@ import {
 } from "../features/journey/lib/journey-policies";
 import { ContextualLockBubble } from "./ui/ContextualLockBubble";
 import { openJourneyTasksPanel } from "./journeyTasksPanelEvents";
+import {
+  adminHomePath,
+  canAdminAccess,
+  type AdminSection,
+} from "../features/admin/adminAccess";
 
 type NavItem = {
   labelKey: string;
@@ -36,6 +42,7 @@ type NavItem = {
     | "admin-mentoring"
     | "admin-journey"
     | "admin-ux-lab"
+    | "admin-marketing"
     | "admin-operations";
   end?: boolean;
   hasStatusDot?: boolean;
@@ -76,6 +83,7 @@ type AdminNavItem = {
   icon: NavItem["icon"];
   end?: boolean;
   hasStatusDot?: boolean;
+  section: AdminSection;
 };
 
 const ADMIN_PRIMARY_ITEMS: AdminNavItem[] = [
@@ -85,36 +93,49 @@ const ADMIN_PRIMARY_ITEMS: AdminNavItem[] = [
     to: "/admin",
     icon: "admin-overview",
     end: true,
+    section: "OVERVIEW",
   },
   {
     labelAr: "إدارة المنصة والأعضاء",
     labelEn: "Community & Members",
     to: "/admin/community",
     icon: "admin-community",
+    section: "COMMUNITY",
   },
   {
     labelAr: "التوجيه والإرشاد",
     labelEn: "Mentoring & Guidance",
     to: "/admin/mentoring",
     icon: "admin-mentoring",
+    section: "MENTORING",
   },
   {
     labelAr: "هندسة الرحلة والحبكة",
     labelEn: "Journey & Plot Engine",
     to: "/admin/journey",
     icon: "admin-journey",
+    section: "JOURNEY",
   },
   {
     labelAr: "معاينة تقارير الرحلة",
     labelEn: "Journey Report Preview",
     to: "/admin/report-preview",
     icon: "reports",
+    section: "REPORTS",
   },
   {
     labelAr: "تحليلات التجربة والسلوك",
     labelEn: "UX & Behavior Lab",
     to: "/admin/ux-lab",
     icon: "admin-ux-lab",
+    section: "UX_LAB",
+  },
+  {
+    labelAr: "المركتنج ونمو الزيارات",
+    labelEn: "Marketing & Acquisition",
+    to: "/admin/marketing",
+    icon: "admin-marketing",
+    section: "MARKETING",
   },
   {
     labelAr: "العمليات والموارد التشغيلية",
@@ -122,6 +143,7 @@ const ADMIN_PRIMARY_ITEMS: AdminNavItem[] = [
     to: "/admin/operations",
     icon: "admin-operations",
     hasStatusDot: true,
+    section: "OPERATIONS",
   },
 ];
 
@@ -191,6 +213,16 @@ function NavIcon({ name }: { name: NavItem["icon"] }) {
           strokeLinecap="round"
           strokeLinejoin="round"
           d="M5.25 14.25h13.5m-13.5 0a3 3 0 0 1-3-3m3 3a3 3 0 1 0 0 6h13.5a3 3 0 1 0 0-6m-16.5-3a3 3 0 0 1 3-3h13.5a3 3 0 0 1 3 3m-19.5 0a4.5 4.5 0 0 1 .9-2.7L5.75 5.1A3 3 0 0 1 8.25 3.75h7.5a3 3 0 0 1 2.5 1.35l2.1 3.45a4.5 4.5 0 0 1 .9 2.7M6.75 17.25h.008v.008H6.75v-.008Zm3.75 0h.008v.008H10.5v-.008Z"
+        />
+      </svg>
+    );
+  if (name === "admin-marketing")
+    return (
+      <svg {...common}>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M3.75 13.5 5.1 18a1.5 1.5 0 0 0 1.44 1.08h1.71l-1.5-5.58m-3 0h3l9.75 4.5V6L6.75 10.5h-3v3Zm12.75-4.125a3.375 3.375 0 0 1 0 5.25"
         />
       </svg>
     );
@@ -267,7 +299,9 @@ function isPathActive(pathname: string, to: string, end?: boolean) {
     return pathname === to;
   }
   if (to === "/applications") {
-    return pathname === "/applications" || pathname.startsWith("/applications/");
+    return (
+      pathname === "/applications" || pathname.startsWith("/applications/")
+    );
   }
   return pathname === to || pathname.startsWith(`${to}/`);
 }
@@ -280,11 +314,28 @@ export function AppSidebar({
   onToggleCollapsed: () => void;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [guidanceHint, setGuidanceHint] = useState<{ mobile: boolean } | null>(
+    null,
+  );
+  useEffect(() => {
+    const show = () => {
+      const mobile = window.matchMedia("(max-width: 1023px)").matches;
+      if (mobile) setMobileOpen(true);
+      setGuidanceHint({ mobile });
+    };
+    window.addEventListener("nawah:guidance-available", show);
+    return () => window.removeEventListener("nawah:guidance-available", show);
+  }, []);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { t, locale, setLocale } = useI18n();
   const logout = useLogout();
-  const isReportPreviewRoute = location.pathname === "/admin/report-preview";
+  const isReportPreviewRoute =
+    location.pathname === "/admin/report-preview" ||
+    (user?.role === "ADMIN" &&
+      location.pathname === "/" &&
+      new URLSearchParams(location.search).get("labPreview") === "home:B");
   const journeyQuery = useJourneyState({
     enabled: Boolean(user) && !isReportPreviewRoute,
   });
@@ -296,6 +347,7 @@ export function AppSidebar({
     null,
   );
 
+  const homeDesign = useSectionDesign("home");
   const isAdmin = user?.role === "ADMIN";
   const isInsideAdmin = location.pathname.startsWith("/admin");
   const [userViewOpen, setUserViewOpen] = useState(!isInsideAdmin);
@@ -311,27 +363,39 @@ export function AppSidebar({
     new Date(),
   );
 
-  const localeToggle = (
+  useEffect(() => {
+    const reveal = () => {
+      if (window.matchMedia("(max-width: 1023px)").matches) setMobileOpen(true);
+    };
+    window.addEventListener("nawah:analytics-unlocked", reveal);
+    return () => window.removeEventListener("nawah:analytics-unlocked", reveal);
+  }, []);
+
+  const localeToggle = (iconOnly = false) => (
     <button
       type="button"
       aria-label={t("common.changeLanguage")}
       title={t("common.changeLanguage")}
       onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
-      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-neutral-700 px-2.5 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-info-strong cursor-pointer"
+      className={`inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-neutral-700 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-info-strong cursor-pointer ${iconOnly ? "w-9" : "px-2.5"}`}
     >
       <GlobeIcon className="h-4 w-4" />
-      <span>{locale === "ar" ? "ع" : "EN"}</span>
+      {!iconOnly && <span>{locale === "ar" ? "ع" : "EN"}</span>}
     </button>
   );
 
   const renderAdminPrimaryNav = (mobile = false) => (
     <div className="space-y-1">
-      <div className={`px-3 pb-1 pt-1 ${collapsed && !mobile ? "sr-only" : ""}`}>
+      <div
+        className={`px-3 pb-1 pt-1 ${collapsed && !mobile ? "sr-only" : ""}`}
+      >
         <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
           {locale === "ar" ? "مركز قيادة المنصة" : "Admin Command Center"}
         </p>
       </div>
-      {ADMIN_PRIMARY_ITEMS.map((item) => {
+      {ADMIN_PRIMARY_ITEMS.filter((item) =>
+        canAdminAccess(user, item.section),
+      ).map((item) => {
         const active = isPathActive(location.pathname, item.to, item.end);
         const className = `flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-xs sm:text-sm transition duration-150 hover:scale-[1.01] ${
           mobile
@@ -350,10 +414,18 @@ export function AppSidebar({
             onClick={() => mobile && setMobileOpen(false)}
             aria-current={active ? "page" : undefined}
             aria-label={locale === "ar" ? item.labelAr : item.labelEn}
-            title={collapsed && !mobile ? (locale === "ar" ? item.labelAr : item.labelEn) : undefined}
+            title={
+              collapsed && !mobile
+                ? locale === "ar"
+                  ? item.labelAr
+                  : item.labelEn
+                : undefined
+            }
             className={className}
           >
-            <span className={`flex min-w-0 items-center gap-2.5 ${collapsed && !mobile ? "justify-center" : ""}`}>
+            <span
+              className={`flex min-w-0 items-center gap-2.5 ${collapsed && !mobile ? "justify-center" : ""}`}
+            >
               <NavIcon name={item.icon} />
               <span className={collapsed && !mobile ? "sr-only" : "truncate"}>
                 {locale === "ar" ? item.labelAr : item.labelEn}
@@ -376,12 +448,24 @@ export function AppSidebar({
       <button
         type="button"
         onClick={() => setUserViewOpen((prev) => !prev)}
-        aria-label={locale === "ar" ? "منظور الباحث (معاينة)" : "Researcher View (Preview)"}
-        title={collapsed && !mobile ? (locale === "ar" ? "منظور الباحث (معاينة)" : "Researcher View (Preview)") : undefined}
+        aria-label={
+          locale === "ar"
+            ? "منظور الباحث (معاينة)"
+            : "Researcher View (Preview)"
+        }
+        title={
+          collapsed && !mobile
+            ? locale === "ar"
+              ? "منظور الباحث (معاينة)"
+              : "Researcher View (Preview)"
+            : undefined
+        }
         className={`flex w-full items-center justify-between px-3 py-2 text-xs font-semibold text-neutral-400 hover:text-neutral-200 transition-colors rounded-lg hover:bg-neutral-800/50 cursor-pointer ${collapsed && !mobile ? "justify-center px-2" : ""}`}
         aria-expanded={userViewOpen}
       >
-        <span className={`flex items-center gap-2 ${collapsed && !mobile ? "justify-center" : ""}`}>
+        <span
+          className={`flex items-center gap-2 ${collapsed && !mobile ? "justify-center" : ""}`}
+        >
           <Eye className="h-4 w-4 text-neutral-400" />
           <span className={collapsed && !mobile ? "sr-only" : ""}>
             {locale === "ar"
@@ -389,15 +473,35 @@ export function AppSidebar({
               : "Researcher View (Preview)"}
           </span>
         </span>
-        {!collapsed || mobile ? <ChevronDown
-          className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${
-            userViewOpen ? "rotate-180" : ""
-          }`}
-        /> : null}
+        {!collapsed || mobile ? (
+          <ChevronDown
+            className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${
+              userViewOpen ? "rotate-180" : ""
+            }`}
+          />
+        ) : null}
       </button>
 
       {userViewOpen && (
         <div className="mt-1 space-y-1 ps-2 animate-in fade-in slide-in-from-top-1 duration-150">
+          <Link
+            to="/?labPreview=home:B"
+            onClick={() => mobile && setMobileOpen(false)}
+            className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs sm:text-[13px] ${new URLSearchParams(location.search).get("labPreview") === "home:B" && location.pathname === "/" ? "bg-white font-semibold text-neutral-950" : mobile ? "text-neutral-600 hover:bg-neutral-50" : "text-neutral-300 hover:bg-neutral-800 hover:text-white"}`}
+            aria-current={
+              location.pathname === "/" &&
+              new URLSearchParams(location.search).get("labPreview") ===
+                "home:B"
+                ? "page"
+                : undefined
+            }
+            title={locale === "ar" ? "الرئيسية — معاينة B" : "Home — Preview B"}
+          >
+            <NavIcon name="dashboard" />
+            <span className={collapsed && !mobile ? "sr-only" : "truncate"}>
+              {locale === "ar" ? "الرئيسية — معاينة B" : "Home — Preview B"}
+            </span>
+          </Link>
           {USER_NAV_ITEMS.map((item) => {
             const active = isPathActive(location.pathname, item.to, item.end);
             const className = `flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-xs sm:text-[13px] transition duration-150 hover:scale-[1.01] ${
@@ -420,9 +524,15 @@ export function AppSidebar({
                 title={collapsed && !mobile ? t(item.labelKey) : undefined}
                 className={className}
               >
-                <span className={`flex min-w-0 items-center gap-2.5 ${collapsed && !mobile ? "justify-center" : ""}`}>
+                <span
+                  className={`flex min-w-0 items-center gap-2.5 ${collapsed && !mobile ? "justify-center" : ""}`}
+                >
                   <NavIcon name={item.icon} />
-                  <span className={collapsed && !mobile ? "sr-only" : "truncate"}>{t(item.labelKey)}</span>
+                  <span
+                    className={collapsed && !mobile ? "sr-only" : "truncate"}
+                  >
+                    {t(item.labelKey)}
+                  </span>
                 </span>
               </Link>
             );
@@ -434,11 +544,27 @@ export function AppSidebar({
 
   const renderStandardUserNav = (mobile = false) => (
     <div className="space-y-1">
+      {user?.role === "USER" && homeDesign.version === "B" && (
+        <Link
+          to="/"
+          onClick={() => mobile && setMobileOpen(false)}
+          className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+            location.pathname === "/"
+              ? "bg-neutral-700/80 font-semibold text-white shadow-xs"
+              : "text-white hover:bg-neutral-800"
+          }`}
+          aria-current={location.pathname === "/" ? "page" : undefined}
+        >
+          <NavIcon name="dashboard" />
+          {locale === "ar" ? "الرئيسية" : "Home"}
+        </Link>
+      )}
       {USER_NAV_ITEMS.map((item) => {
         const active = isPathActive(location.pathname, item.to, item.end);
         const isLocked =
           !journeyLoading &&
-          ((item.to === "/members-progress" && !isGroupUnlocked) ||
+          ((item.to === "/reports" && !journeyData?.features.analytics) ||
+            (item.to === "/members-progress" && !isGroupUnlocked) ||
             (item.to === "/professional-development" && !isProfDevUnlocked));
 
         const className = `flex items-center justify-between gap-3 rounded-lg px-3 py-3 text-sm transition duration-150 hover:scale-[1.01] ${
@@ -449,17 +575,21 @@ export function AppSidebar({
                 ? "text-neutral-400 hover:bg-neutral-50/60 hover:text-neutral-500"
                 : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
             : active && !isLocked
-              ? "bg-neutral-700 font-medium text-white shadow-xs"
+              ? "bg-white font-semibold text-neutral-950 shadow-xs"
               : isLocked
-                ? "text-neutral-500 hover:bg-neutral-800/60 hover:text-neutral-400"
-                : "text-neutral-300 hover:bg-neutral-800 hover:text-white"
+                ? "text-neutral-400 hover:bg-neutral-800 hover:text-white"
+                : "text-white hover:bg-neutral-800"
         } ${collapsed && !mobile ? "justify-center px-2" : ""}`;
 
         const content = (
           <>
-            <span className={`flex min-w-0 items-center gap-3 ${collapsed && !mobile ? "justify-center" : ""}`}>
+            <span
+              className={`flex min-w-0 items-center gap-3 ${collapsed && !mobile ? "justify-center" : ""}`}
+            >
               <NavIcon name={item.icon} />
-              <span className={collapsed && !mobile ? "sr-only" : "truncate"}>{t(item.labelKey)}</span>
+              <span className={collapsed && !mobile ? "sr-only" : "truncate"}>
+                {t(item.labelKey)}
+              </span>
             </span>
             {isLocked && !(collapsed && !mobile) && (
               <span
@@ -476,13 +606,23 @@ export function AppSidebar({
           const bubbleKey = `${mobile ? "m" : "d"}-${item.to}`;
           const isBubbleOpen = openLockedBubbleKey === bubbleKey;
           const lockTitle =
-            item.to === "/professional-development"
-              ? t("common.navProfessionalDevelopment")
-              : t("common.navMembersProgress");
+            item.to === "/reports"
+              ? t("common.navReports")
+              : item.to === "/professional-development"
+                ? t("common.navProfessionalDevelopment")
+                : t("common.navMembersProgress");
           const lockRequirement =
-            item.to === "/professional-development"
-              ? t("journey.profDevLockedTooltip")
-              : t("journey.groupLockedTooltip");
+            item.to === "/reports"
+              ? journeyData?.cvFoundation?.unlocked
+                ? locale === "ar"
+                  ? "أكمل إرشاد السيرة: ارفع النسخة المحدّثة من داخله؛ بعدها يكتمل الإرشاد ويفتح التحليل تلقائيًا."
+                  : "Upload your revised CV inside its guide to automatically complete it and unlock analytics."
+                : locale === "ar"
+                  ? "أكمل المهمة صفر أولًا. خطوتك الحالية موجودة في درج المهام."
+                  : "Complete Task 0 first. Your current step is in the tasks drawer."
+              : item.to === "/professional-development"
+                ? t("journey.profDevLockedTooltip")
+                : t("journey.groupLockedTooltip");
 
           return (
             <div key={item.to} className="relative">
@@ -505,11 +645,24 @@ export function AppSidebar({
                 onClose={() => setOpenLockedBubbleKey(null)}
                 title={lockTitle}
                 requirement={lockRequirement}
-                ctaLabel={t("journey.panelTitle")}
+                ctaLabel={
+                  item.to === "/reports" && journeyData?.cvFoundation?.unlocked
+                    ? locale === "ar"
+                      ? "افتح إرشاد السيرة"
+                      : "Open CV guide"
+                    : t("journey.panelTitle")
+                }
                 onCtaClick={() => {
                   if (mobile) setMobileOpen(false);
                   setOpenLockedBubbleKey(null);
-                  openJourneyTasksPanel();
+                  if (
+                    item.to === "/reports" &&
+                    journeyData?.cvFoundation?.unlocked
+                  )
+                    navigate(
+                      "/professional-development?guidance=INSIGHT_TASK_0_CV_BASE",
+                    );
+                  else openJourneyTasksPanel();
                 }}
                 placement={mobile ? "bottom" : "inline-end"}
               />
@@ -518,17 +671,49 @@ export function AppSidebar({
         }
 
         return (
-          <Link
-            key={item.to}
-            to={item.to}
-            onClick={() => mobile && setMobileOpen(false)}
-            aria-current={active ? "page" : undefined}
-            aria-label={t(item.labelKey)}
-            title={collapsed && !mobile ? t(item.labelKey) : undefined}
-            className={className}
-          >
-            {content}
-          </Link>
+          <div key={item.to} className="relative">
+            <Link
+              to={item.to}
+              onClick={() => {
+                setGuidanceHint(null);
+                if (mobile) setMobileOpen(false);
+              }}
+              aria-current={active ? "page" : undefined}
+              aria-label={t(item.labelKey)}
+              data-tour-step={
+                item.to === "/reports" ? "analytics-unlocked-nav" : undefined
+              }
+              title={collapsed && !mobile ? t(item.labelKey) : undefined}
+              className={className}
+            >
+              {content}
+            </Link>
+            {item.to === "/professional-development" && (
+              <ContextualLockBubble
+                kind="guidance"
+                isOpen={Boolean(guidanceHint && guidanceHint.mobile === mobile)}
+                onClose={() => setGuidanceHint(null)}
+                title={
+                  locale === "ar"
+                    ? "إرشاد جديد متاح ليك"
+                    : "New guidance is available"
+                }
+                requirement={
+                  locale === "ar"
+                    ? "خطوتك الجاية هنا: راجع إرشاد تحسين السيرة وطبّقه على نسختك الجديدة. تقدر تفتحه دلوقتي أو ترجع له من التطوير المهني."
+                    : "Your next step is the CV guide. Apply it to your revised CV now, or return from Professional Development when ready."
+                }
+                ctaLabel={locale === "ar" ? "افتح الإرشاد" : "Open the guide"}
+                onCtaClick={() => {
+                  if (mobile) setMobileOpen(false);
+                  navigate(
+                    "/professional-development?guidance=INSIGHT_TASK_0_CV_BASE",
+                  );
+                }}
+                placement={mobile ? "bottom" : "inline-end"}
+              />
+            )}
+          </div>
         );
       })}
     </div>
@@ -563,58 +748,89 @@ export function AppSidebar({
           d="M10 17l5-5-5-5m5 5H3.5m8-8.5h5A3.5 3.5 0 0 1 20 7v10a3.5 3.5 0 0 1-3.5 3.5h-5"
         />
       </svg>
-      <span className={collapsed && !mobile ? "sr-only" : ""}>{t("common.signOut")}</span>
+      <span className={collapsed && !mobile ? "sr-only" : ""}>
+        {t("common.signOut")}
+      </span>
     </button>
   );
 
   return (
     <>
-      <aside className={`fixed inset-y-0 start-0 z-[65] hidden flex-col border-e border-neutral-800 bg-neutral-900 py-7 transition-[width,padding] duration-200 lg:flex overflow-y-auto ${collapsed ? "w-20 px-2.5" : "w-64 px-5"}`}>
+      <aside
+        className={`workspace-sidebar fixed inset-y-0 start-0 z-[65] hidden flex-col border-e border-neutral-800 bg-neutral-900 py-7 transition-[width,padding] duration-200 lg:flex overflow-y-auto ${collapsed ? "w-20 px-2.5" : "w-64 px-5"}`}
+      >
         <div className={`mb-6 ${collapsed ? "" : "px-1"}`}>
-          <div className={`flex ${collapsed ? "flex-col items-center gap-3" : "items-start justify-between gap-2"}`}>
-          <Link
-            to={isAdmin ? "/admin" : "/"}
-            title={collapsed ? t("common.brand") : undefined}
-            className={`flex min-w-0 items-start gap-3 text-sm font-semibold tracking-tight text-white ${collapsed ? "justify-center" : ""}`}
+          <div
+            className={`flex ${collapsed ? "flex-col items-center gap-3" : "items-start justify-between gap-2"}`}
           >
-            <img
-              src="/nawah-logo.svg"
-              alt=""
-              className="h-9 w-9 shrink-0 rounded-md object-contain"
-            />
-            <span className={collapsed ? "sr-only" : "min-w-0 flex-1 pt-0.5"}>
-              <span className="block whitespace-nowrap leading-tight">
-                {t("common.brand")}
+            <Link
+              to={isAdmin ? adminHomePath(user) : "/"}
+              title={collapsed ? t("common.brand") : undefined}
+              className={`flex min-w-0 items-start gap-3 text-sm font-semibold tracking-tight text-white ${collapsed ? "justify-center" : ""}`}
+            >
+              <img
+                src="/nawah-logo.svg?v=project-20261031"
+                alt=""
+                className="h-9 w-9 shrink-0 rounded-md object-contain"
+              />
+              <span className={collapsed ? "sr-only" : "min-w-0 flex-1 pt-0.5"}>
+                <span className="block whitespace-nowrap leading-tight">
+                  {t("common.brand")}
+                </span>
+                <time
+                  className="mt-1 block text-xs font-normal tracking-normal text-neutral-400"
+                  dateTime={new Date().toISOString()}
+                >
+                  {today}
+                </time>
               </span>
-              <time
-                className="mt-1 block text-xs font-normal tracking-normal text-neutral-400"
-                dateTime={new Date().toISOString()}
-              >
-                {today}
-              </time>
-            </span>
-          </Link>
-          <button
-            type="button"
-            onClick={onToggleCollapsed}
-            aria-label={collapsed ? (locale === "ar" ? "توسيع القائمة الجانبية" : "Expand sidebar") : (locale === "ar" ? "تصغير القائمة الجانبية" : "Collapse sidebar")}
-            title={collapsed ? (locale === "ar" ? "توسيع القائمة الجانبية" : "Expand sidebar") : (locale === "ar" ? "تصغير القائمة الجانبية" : "Collapse sidebar")}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-neutral-700 text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-white focus-visible:outline-2 focus-visible:outline-info-strong"
-          >
-            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </button>
+            </Link>
+            <button
+              type="button"
+              onClick={onToggleCollapsed}
+              aria-label={
+                collapsed
+                  ? locale === "ar"
+                    ? "توسيع القائمة الجانبية"
+                    : "Expand sidebar"
+                  : locale === "ar"
+                    ? "تصغير القائمة الجانبية"
+                    : "Collapse sidebar"
+              }
+              title={
+                collapsed
+                  ? locale === "ar"
+                    ? "توسيع القائمة الجانبية"
+                    : "Expand sidebar"
+                  : locale === "ar"
+                    ? "تصغير القائمة الجانبية"
+                    : "Collapse sidebar"
+              }
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-neutral-700 text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-white focus-visible:outline-2 focus-visible:outline-info-strong"
+            >
+              {collapsed ? (
+                <PanelLeftOpen className="h-4 w-4" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" />
+              )}
+            </button>
           </div>
-          <div className={`mt-3 flex items-center gap-1.5 ${collapsed ? "flex-col" : "justify-end"}`}>
+          <div
+            className={`mt-3 flex items-center gap-1.5 ${collapsed ? "flex-col" : "justify-end"}`}
+          >
             {!isReportPreviewRoute && <NotificationCenter variant="dark" />}
-            {localeToggle}
+            {localeToggle(collapsed)}
           </div>
         </div>
 
-        <nav aria-label={t("common.primaryNavigation")} className="flex-1 space-y-1">
+        <nav
+          aria-label={t("common.primaryNavigation")}
+          className="flex-1 space-y-1"
+        >
           {isAdmin ? (
             <>
               {renderAdminPrimaryNav(false)}
-              {renderResearcherPreviewNav(false)}
+              {user?.adminAccess?.isRoot && renderResearcherPreviewNav(false)}
             </>
           ) : (
             renderStandardUserNav(false)
@@ -630,11 +846,11 @@ export function AppSidebar({
         <div className="flex items-center justify-between">
           <div className="flex min-w-0 items-start gap-3">
             <Link
-              to={isAdmin ? "/admin" : "/"}
+              to={isAdmin ? adminHomePath(user) : "/"}
               className="flex min-w-0 flex-1 items-start gap-2.5 text-sm font-semibold tracking-tight text-neutral-950 dark:text-white"
             >
               <img
-                src="/nawah-logo.svg"
+                src="/nawah-logo.svg?v=project-20261031"
                 alt=""
                 className="h-8 w-8 shrink-0 rounded-md object-contain"
               />
@@ -650,16 +866,14 @@ export function AppSidebar({
                 </time>
               </span>
             </Link>
-            {localeToggle}
+            {localeToggle()}
           </div>
           <div className="flex items-center gap-2">
             {!isReportPreviewRoute && <NotificationCenter variant="light" />}
             <button
               type="button"
               aria-label={
-                mobileOpen
-                  ? t("common.closeMenu")
-                  : t("common.openMenu")
+                mobileOpen ? t("common.closeMenu") : t("common.openMenu")
               }
               onClick={() => setMobileOpen((o) => !o)}
               className="rounded-lg p-2 text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"
@@ -692,11 +906,14 @@ export function AppSidebar({
 
         {mobileOpen && (
           <div className="mt-4 border-t border-border pt-4 dark:border-neutral-800 max-h-[calc(100vh-80px)] overflow-y-auto pb-6">
-            <nav aria-label={t("common.mobileNavigation")} className="space-y-1">
+            <nav
+              aria-label={t("common.mobileNavigation")}
+              className="space-y-1"
+            >
               {isAdmin ? (
                 <>
                   {renderAdminPrimaryNav(true)}
-                  {renderResearcherPreviewNav(true)}
+                  {user?.adminAccess?.isRoot && renderResearcherPreviewNav(true)}
                 </>
               ) : (
                 renderStandardUserNav(true)

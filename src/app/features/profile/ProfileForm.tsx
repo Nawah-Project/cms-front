@@ -1,6 +1,7 @@
+import { trackSectionAction } from '../ux-lab/lab-events';
 import { useRef, useState, type FormEvent } from "react";
 import { useI18n } from "../../i18n";
-import { CheckIcon, DocumentPdfIcon, SparklesIcon } from "../../components/Icons";
+import { DocumentPdfIcon, SparklesIcon } from "../../components/Icons";
 import { useToast } from "../../components/ui/ToastProvider";
 import type { ProfessionalProfile } from "./profileApi";
 import { isPdf, MAX_CV_BYTES, MAX_CV_SIZE_MB, profileApi } from "./profileApi";
@@ -108,7 +109,7 @@ export function ProfileForm({
         setUploadState("uploaded");
       }
       if (!next.profileComplete) throw new Error("Profile is incomplete");
-      toast.success(t("profile.savedSuccess"));
+      if (!onboarding) { trackSectionAction("profile_saved"); toast.success(t("profile.savedSuccess")); }
       onSaved(next);
     } catch {
       setUploadState(file ? "error" : uploadState);
@@ -119,11 +120,11 @@ export function ProfileForm({
   };
 
   return (
-    <form onSubmit={submit} className="space-y-6" noValidate>
+    <form onSubmit={submit} className="space-y-4 sm:space-y-6" noValidate>
       {/* 1. Specialization Selection */}
       <div className="space-y-2.5">
         <div className="flex items-center justify-between">
-          <label className="field-label text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-0">
+          <label htmlFor="profile-specialization" className="field-label text-sm font-bold text-neutral-900 dark:text-neutral-100 mb-0">
             اختر تخصصك الوظيفي الأساسي
           </label>
           <span className="text-xs text-neutral-400 font-mono">Specialization</span>
@@ -132,48 +133,21 @@ export function ProfileForm({
           سيُستخدم هذا التخصص لتوجيهك تلقائياً إلى الوظائف المطابقة لمجالك في مستكشف الوظائف.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-          {STANDARDIZED_SPECIALIZATIONS.map((spec) => {
-            const isSelected = targetJobTitle === spec.value;
-            return (
-              <div
-                key={spec.value}
-                onClick={() => {
-                  setTargetJobTitle(spec.value);
-                  setSpecializationError("");
-                }}
-                className={`relative flex flex-col justify-between cursor-pointer rounded-xl border p-3.5 transition-all text-start select-none ${
-                  isSelected
-                    ? "border-neutral-900 bg-neutral-900/5 ring-2 ring-neutral-900 shadow-xs dark:border-white dark:bg-white/10 dark:ring-white"
-                    : "border-border bg-surface hover:border-neutral-400 hover:bg-neutral-50/70 dark:hover:bg-neutral-900"
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                      {spec.titleAr}
-                    </span>
-                    <span
-                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                        isSelected
-                          ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900"
-                          : "border-neutral-300 dark:border-neutral-700"
-                      }`}
-                    >
-                      {isSelected && <CheckIcon className="h-2.5 w-2.5" />}
-                    </span>
-                  </div>
-                  <span className="mt-0.5 block font-mono text-[11px] text-neutral-500 dark:text-neutral-400" dir="ltr">
-                    {spec.titleEn}
-                  </span>
-                </div>
-                <p className="mt-1.5 text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed line-clamp-2">
-                  {spec.descriptionAr}
-                </p>
-              </div>
-            );
-          })}
-        </div>
+        <select
+          id="profile-specialization"
+          aria-label={locale === "ar" ? "التخصص الوظيفي الأساسي" : "Primary specialization"}
+          aria-invalid={Boolean(specializationError)}
+          aria-describedby="profile-specialization-help"
+          value={targetJobTitle}
+          onChange={event => { setTargetJobTitle(event.target.value); setSpecializationError(""); }}
+          className="field-control min-h-12 w-full text-sm"
+          required
+        >
+          <option value="" disabled>{locale === "ar" ? "اختار تخصصك" : "Choose your specialization"}</option>
+          {targetJobTitle && !STANDARDIZED_SPECIALIZATIONS.some(spec => spec.value === targetJobTitle) && <option value={targetJobTitle}>{targetJobTitle}</option>}
+          {STANDARDIZED_SPECIALIZATIONS.map(spec => <option key={spec.value} value={spec.value}>{locale === "ar" ? `${spec.titleAr} — ${spec.titleEn}` : spec.titleEn}</option>)}
+        </select>
+        <p id="profile-specialization-help" className="text-xs leading-5 text-text-secondary">{STANDARDIZED_SPECIALIZATIONS.find(spec => spec.value === targetJobTitle)?.descriptionAr ?? (locale === "ar" ? "اختيار واحد يكفي، وتقدر تعدّله لاحقًا من ملفك الشخصي." : "Choose one specialization. You can change it later in your profile.")}</p>
         {specializationError && (
           <p role="alert" className="text-xs text-danger-strong font-medium">
             {specializationError}
@@ -230,7 +204,7 @@ export function ProfileForm({
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-text-primary">{file?.name ?? initial.cv?.originalName ?? t("profile.uploadCv")}</p>
                 <p className="mt-1 text-xs text-text-muted">
-                  {file ? `${formatSize(file.size, locale)} MB · ${t(({ idle: "profile.uploadIdle", selected: "profile.uploadSelected", uploading: "profile.uploadInProgress", uploaded: "profile.uploadComplete", error: "profile.uploadFailed" })[uploadState])}` : initial.hasCv ? t("profile.currentCv") : t("profile.pdfLimit")}
+                  {file ? `${formatSize(file.size, locale)} MB · ${t(({ idle: "profile.uploadIdle", selected: "profile.uploadSelected", uploading: "profile.uploadInProgress", uploaded: "profile.uploadComplete", error: "profile.uploadFailed" })[uploadState])}` : initial.hasCv ? t("profile.currentCv") : t("profile.pdfLimit", { size: MAX_CV_SIZE_MB })}
                 </p>
               </div>
             </div>

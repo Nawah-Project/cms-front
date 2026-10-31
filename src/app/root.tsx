@@ -5,31 +5,29 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
 } from "react-router";
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import type { Route } from "./+types/root";
 import "./app.css";
+import "./brand-user.css";
+import "./brand-admin.css";
 import { AuthProvider } from "./features/auth/store/authStore";
 import { I18nProvider } from "./i18n";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { queryClient } from "./lib/react-query";
+import { MarketingTracker } from "./utils/MarketingTracker";
 
 export const links: Route.LinksFunction = () => [
-  { rel: "icon", type: "image/svg+xml", href: "/nawah-logo.svg" },
-  { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  {
-    rel: "preconnect",
-    href: "https://fonts.gstatic.com",
-    crossOrigin: "anonymous",
-  },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
-  },
+  { rel: "icon", type: "image/svg+xml", href: "/nawah-logo.svg?v=project-20261031" },
+
+  { rel: "preload", href: "/fonts/plex-ar-v15-400-arabic.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+  { rel: "preload", href: "/fonts/plex-ar-v15-700-arabic.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
   return (
     <html lang="ar" dir="rtl">
       <head>
@@ -38,7 +36,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body data-brand-scope={pathname.startsWith("/admin") ? "admin" : "user"}>
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -52,6 +50,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
         <AuthProvider>
+          <MarketingTracker />
           <ToastProvider>
             <Outlet />
           </ToastProvider>

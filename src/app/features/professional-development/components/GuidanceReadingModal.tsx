@@ -10,6 +10,7 @@ import { useToast } from "../../../components/ui/ToastProvider";
 import { useI18n } from "../../../i18n";
 import { useDialogFocus } from "../../../components/ui/useDialogFocus";
 import { trackUxEvent } from "../../../utils/uxAnalytics";
+import { isPdf, MAX_CV_BYTES, MAX_CV_SIZE_MB } from "../../profile/profileApi";
 import type { FeedbackPost, FeedbackResource } from "../types";
 
 interface GuidanceReadingModalProps {
@@ -25,6 +26,7 @@ interface GuidanceReadingModalProps {
         isRead?: boolean;
         publishedAt?: string;
       };
+  cvUpdate?: { canComplete: boolean; completed: boolean; onUpload: (file: File) => Promise<void> };
   onClose: () => void;
   onMarkRead: (postId: string) => Promise<void>;
 }
@@ -50,13 +52,19 @@ export function GuidanceReadingModal({
   post,
   onClose,
   onMarkRead,
+  cvUpdate,
 }: GuidanceReadingModalProps) {
   const toast = useToast();
   const { locale } = useI18n();
   const ar = locale === "ar";
   const text = (a: string, e: string) => (ar ? a : e);
   const dialogRef = useRef<HTMLDivElement>(null);
-  useDialogFocus(dialogRef, true, onClose);
+  const mustComplete = Boolean(cvUpdate && !cvUpdate.completed && !post.isRead);
+  const [closeMessage, setCloseMessage] = useState("");
+  const attemptClose = () => { if(mustComplete) { setCloseMessage(text("لازم ترفع الـCV المحدّث علشان تكمل الخطوة اللي بعدها. بعد حفظه، الإرشاد هيكتمل ويتقفل تلقائيًا.","Upload your revised CV to continue to the next step. Once saved, this guide completes and closes automatically.")); document.getElementById("guidance-cv-upload")?.scrollIntoView({block:"center"}); } else onClose(); };
+  useDialogFocus(dialogRef, true, attemptClose);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isRead, setIsRead] = useState(Boolean(post.isRead));
@@ -67,9 +75,7 @@ export function GuidanceReadingModal({
       await navigator.clipboard.writeText(post.promptTemplate);
       trackUxEvent("prompt_copied");
       setCopied(true);
-      toast.success(
-        text("تم نسخ موجه الذكاء الاصطناعي بنجاح", "AI prompt copied"),
-      );
+
       setTimeout(() => setCopied(false), 2500);
     } catch {
       toast.error(
@@ -82,13 +88,12 @@ export function GuidanceReadingModal({
   };
 
   const handleCompleteReading = async () => {
+    if (cvUpdate && !cvUpdate.canComplete) { setUploadError(text("ارفع الـCV المحدّث أولًا قبل تأكيد إكمال الإرشاد.", "Upload your revised CV before completing this guide.")); return; }
     setSaving(true);
     try {
       await onMarkRead(post.id);
       setIsRead(true);
-      toast.success(
-        text("تم حفظ قراءة الإرشادات بنجاح / Reading saved", "Reading saved"),
-      );
+
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -126,15 +131,15 @@ export function GuidanceReadingModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="guidance-modal-title"
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-950/65 backdrop-blur-xs p-3.5 sm:p-5"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-950/25 backdrop-blur-sm p-3.5 sm:p-5"
     >
-      <div className="relative flex flex-col w-full max-w-2xl max-h-[90dvh] rounded-2xl border border-border bg-surface shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="n-dialog-card relative flex flex-col w-full max-w-2xl max-h-[90dvh] rounded-2xl border border-border bg-surface shadow-2xl overflow-hidden ">
         {/* 1. Sticky Header */}
-        <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-surface/95 px-5 py-4 backdrop-blur-md">
+        <header className="n-dialog-header sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-surface/95 px-5 py-4 backdrop-blur-md">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-xs font-semibold text-purple-700 border border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800">
-                <SparklesIcon className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+              <span className="inline-flex items-center gap-1 rounded-md bg-surface px-2 py-0.5 text-xs font-semibold text-accent border border-border-strong">
+                <SparklesIcon className="h-3 w-3 text-accent" />
                 <span>{text("إرشادات الحبكة الذكية", "Journey guidance")}</span>
               </span>
               {isRead ? (
@@ -159,9 +164,10 @@ export function GuidanceReadingModal({
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={attemptClose}
+            aria-describedby={closeMessage ? "guidance-close-reason" : undefined}
             aria-label={text("إغلاق", "Close")}
-            className="rounded-lg p-2 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 transition-colors"
+            className="rounded-lg p-2 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 transition-colors"
           >
             <CloseIcon className="h-5 w-5" />
           </button>
@@ -169,10 +175,11 @@ export function GuidanceReadingModal({
 
         {/* 2. Scrollable Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-7 py-6 space-y-6">
+
           {/* Main Content */}
           <div className="space-y-3">
             <div
-              className="text-sm sm:text-[15px] leading-7 text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap break-words"
+              className="text-sm sm:text-[15px] leading-7 text-neutral-800 dark:text-neutral-200 break-words [&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:font-bold [&_h3]:text-neutral-950 [&_p]:my-3 [&_li]:my-2 [&_ul]:list-disc [&_ul]:ps-5"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
           </div>
@@ -180,7 +187,7 @@ export function GuidanceReadingModal({
           {/* Video Resources Section */}
           {videoResources.length > 0 && (
             <div className="space-y-3 pt-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-700 flex items-center gap-1.5">
                 <PlayCircleIcon className="h-4 w-4 text-rose-500" />
                 <span>
                   {text(
@@ -224,7 +231,7 @@ export function GuidanceReadingModal({
                         </div>
                       ) : (
                         <div className="flex items-center gap-3 rounded-lg border border-border bg-surface p-3">
-                          <PlayCircleIcon className="h-8 w-8 text-neutral-500" />
+                          <PlayCircleIcon className="h-8 w-8 text-neutral-700" />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
                               {video.title}
@@ -251,7 +258,7 @@ export function GuidanceReadingModal({
           {/* Other Resources Section */}
           {otherResources.length > 0 && (
             <div className="space-y-2.5 pt-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-700">
                 {text("المصادر والمراجع المقترحة", "Suggested resources")}
               </h3>
               <div className="grid gap-2 sm:grid-cols-2">
@@ -272,13 +279,13 @@ export function GuidanceReadingModal({
                               ? text("مستند", "Document")
                               : text("مقال", "Article")}
                         </span>
-                        <ExternalLinkIcon className="h-3.5 w-3.5 text-neutral-400 group-hover:text-neutral-700 dark:group-hover:text-neutral-200" />
+                        <ExternalLinkIcon className="h-3.5 w-3.5 text-neutral-600 group-hover:text-neutral-700 dark:group-hover:text-neutral-200" />
                       </div>
                       <p className="mt-1.5 text-xs font-bold text-neutral-900 dark:text-neutral-100 group-hover:text-info-strong line-clamp-1">
                         {res.title}
                       </p>
                       {res.description && (
-                        <p className="mt-1 text-[11px] text-neutral-500 line-clamp-2 leading-relaxed">
+                        <p className="mt-1 text-[11px] text-neutral-700 line-clamp-2 leading-relaxed">
                           {res.description}
                         </p>
                       )}
@@ -305,11 +312,7 @@ export function GuidanceReadingModal({
                 <button
                   type="button"
                   onClick={handleCopyPrompt}
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
-                    copied
-                      ? "bg-emerald-600 text-white"
-                      : "bg-neutral-800 text-neutral-100 hover:bg-neutral-700"
-                  }`}
+                  className="button-secondary text-xs"
                 >
                   {copied ? (
                     <>
@@ -324,7 +327,7 @@ export function GuidanceReadingModal({
                 </button>
               </div>
 
-              <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-4 font-mono text-xs leading-relaxed text-neutral-100 shadow-inner">
+              <div className="guidance-prompt rounded-xl border border-neutral-800 bg-neutral-950 p-4 font-mono text-xs leading-relaxed text-neutral-100 shadow-inner">
                 <pre
                   className="whitespace-pre-wrap break-words font-mono text-xs selection:bg-neutral-700"
                   dir="auto"
@@ -332,7 +335,7 @@ export function GuidanceReadingModal({
                   {post.promptTemplate}
                 </pre>
               </div>
-              <p className="text-[11px] text-neutral-400">
+              <p className="text-[11px] text-neutral-600">
                 {text(
                   "انسخ البرومبت واستخدمه مع بياناتك في أداة AI تختارها، وراجع النتيجة قبل استخدامها.",
                   "Copy the prompt into your preferred AI tool, add your context, and review the result before using it.",
@@ -340,22 +343,35 @@ export function GuidanceReadingModal({
               </p>
             </div>
           )}
+          {cvUpdate && !isRead && <section id="guidance-cv-upload" className="guidance-cv-action rounded-xl border border-border-strong bg-surface p-4">
+            <h3 className="font-semibold">{text("طبّق الإرشاد وارفع نسختك الجديدة هنا", "Apply the guide and upload your revised CV here")}</h3>
+            <p className="mt-2 text-sm leading-6 text-text-secondary">{text("ارفع النسخة المعدّلة بعد تطبيق الإرشاد. بعد حفظها، هيتم تأكيد الإكمال تلقائيًا ويفتح تحليل الأداء. رفع نفس الملف الحالي لا يبدأ فترة جديدة.", "Upload your revised CV after applying the guide. Once saved, completion is confirmed automatically and analytics opens. Re-uploading the current file does not start a new period.")}</p>
+            <label className="button-secondary mt-3 inline-flex min-h-11 cursor-pointer items-center">{uploading ? text("جارٍ رفع السيرة…", "Uploading CV…") : text("رفع الـCV المحدّث", "Upload revised CV")}<input type="file" accept="application/pdf,.pdf" disabled={uploading || saving} className="sr-only" aria-label={text("رفع الـCV المحدّث", "Upload revised CV")} onChange={async event => {
+              const file = event.target.files?.[0];event.target.value="";if(!file)return;setUploadError("");
+              if(!isPdf(file)||file.size>MAX_CV_BYTES){setUploadError(text(`ارفع ملف PDF بحد أقصى ${MAX_CV_SIZE_MB} ميغابايت.`,`Upload a PDF up to ${MAX_CV_SIZE_MB} MB.`));return;}
+              setUploading(true);try{await cvUpdate.onUpload(file);}catch(error){setUploadError(error instanceof Error?error.message:text("تعذر رفع الملف، حاول تاني.","Upload failed; please retry."));}finally{setUploading(false);}
+            }}/></label>
+            {cvUpdate.canComplete && <p role="status" className="mt-3 text-sm font-semibold text-info-strong">{text("نسختك المحدّثة محفوظة. لو تعذر تأكيد الإكمال، تقدر تعيد المحاولة من الزر تحت من غير رفعها تاني.", "Your revised CV is saved. If completion failed, retry below without uploading it again.")}</p>}
+            {uploadError && <p role="alert" className="mt-3 text-sm text-rose-700 dark:text-rose-300">{uploadError}</p>}
+          </section>}
         </div>
 
         {/* 3. Sticky Footer */}
-        <footer className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface/95 px-5 py-3.5 backdrop-blur-md">
+        <footer className="n-dialog-footer sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface/95 px-5 py-3.5 backdrop-blur-md">
+          {closeMessage && <p id="guidance-close-reason" role="alert" className="w-full border-s-2 border-accent ps-3 text-sm font-medium leading-6 text-text-primary">{closeMessage}</p>}
           <button
             type="button"
-            onClick={onClose}
-            className="button-ghost px-4 py-2 text-xs text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
+            onClick={attemptClose}
+            aria-describedby={closeMessage ? "guidance-close-reason" : undefined}
+            className="button-ghost px-4 py-2 text-xs text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-200"
           >
             {text("إغلاق", "Close")}
           </button>
 
-          <button
+          {(!cvUpdate || (!isRead && cvUpdate.canComplete)) && <button
             type="button"
             onClick={handleCompleteReading}
-            disabled={saving}
+            disabled={isRead || saving || uploading || Boolean(cvUpdate && !cvUpdate.canComplete)}
             className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all shadow-xs ${
               isRead
                 ? "border border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
@@ -366,9 +382,9 @@ export function GuidanceReadingModal({
             <span>
               {isRead
                 ? text("تم تأكيد القراءة ✓", "Reading confirmed ✓")
-                : text("أتممت قراءة الإرشادات ✓", "Mark guidance as read ✓")}
+                : cvUpdate ? text("تأكيد الإكمال والمتابعة", "Confirm completion and continue") : text("أتممت قراءة الإرشادات", "Mark guidance as read")}
             </span>
-          </button>
+          </button>}
         </footer>
       </div>
     </div>

@@ -1,6 +1,6 @@
 FROM node:24-alpine AS development-dependencies-env
-COPY . /app
 WORKDIR /app
+COPY package.json package-lock.json ./
 RUN npm ci --include=optional
 
 FROM node:24-alpine AS production-dependencies-env
@@ -15,7 +15,7 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 COPY . /app/
 COPY --from=development-dependencies-env /app/node_modules /app/node_modules
 WORKDIR /app
-RUN npm run build
+RUN npm run test:job-explorer && npm run build
 
 FROM node:24-alpine
 COPY ./package.json package-lock.json /app/

@@ -1,0 +1,77 @@
+/* Admin colour layer: green actions, blue comparisons, gold decision focus. */
+body[data-brand-scope="admin"] {
+  --color-accent: #125e4e;
+  --color-text-primary: #183b37;
+  --color-info-soft: #e8eff7;
+  --color-info-hover: #dce7f3;
+  --color-info-strong: #174c87;
+  --color-info-border: #b6cbe1;
+  --color-success-strong: #125e4e;
+  background-color: #f4f4ed;
+}
+body[data-brand-scope="admin"] .workspace-shell {
+  --color-text-primary: #183b37;
+  --color-info-soft: #e8eff7;
+  --color-info-strong: #174c87;
+  --color-info-border: #b6cbe1;
+}
+body[data-brand-scope="admin"] :focus-visible { outline-color: #174c87; }
+body[data-brand-scope="admin"] .field-control:focus { border-color: #174c87; box-shadow: 0 0 0 3px #174c871c; }
+body[data-brand-scope="admin"] .field-control-error:focus { border-color: var(--color-danger-strong); box-shadow: 0 0 0 3px var(--color-danger-soft); }
+body[data-brand-scope="admin"] .button-primary { background-color: #125e4e; border-color: #125e4e; color: #fff; }
+body[data-brand-scope="admin"] .button-primary:hover:not(:disabled) { background-color: #0d493d; border-color: #0d493d; }
+body[data-brand-scope="admin"] .button-secondary { color: #174c87; border-color: #b6cbe1; }
+body[data-brand-scope="admin"] .button-secondary:hover:not(:disabled) { background-color: #edf2f8; }
+body[data-brand-scope="admin"] .workspace-sidebar { background-color: #103c32; }
+body[data-brand-scope="admin"] .workspace-sidebar nav a[aria-current="page"] {
+  background-color: #174c87; border-color: #174c87; color: #fff;
+  box-shadow: inset 0 -2px 0 #e7b85a;
+}
+body[data-brand-scope="admin"] .workspace-sidebar nav a:hover:not([aria-current="page"]) { background-color: #ffffff12; }
+body[data-brand-scope="admin"] .workspace-shell > header nav a { color: #174c87; }
+body[data-brand-scope="admin"] .workspace-shell > header nav a[aria-current="page"] { background-color: #174c87; color: #fff; }
+body[data-brand-scope="admin"] .ops-console { --ops-forest: #125e4e; --ops-ink: #183b37; --ops-soft: #edf4ef; }
+body[data-brand-scope="admin"] .ops-masthead .ops-eyebrow { color: #e7b85a; }
+body[data-brand-scope="admin"] .ops-kpi { border-top-color: #125e4e; }
+body[data-brand-scope="admin"] .ops-kpi:nth-child(2),
+body[data-brand-scope="admin"] .ops-kpi:nth-child(6) { border-top-color: #174c87; }
+body[data-brand-scope="admin"] .ops-peak-row { background-color: #fbf6e9; border-color: #dcc48f; }
+body[data-brand-scope="admin"] .ops-peak-row .ops-eyebrow { color: #72500f; }
+body[data-brand-scope="admin"] .ops-peak-row article { border-color: #e5d6b6; }
+body[data-brand-scope="admin"] .ops-range button[aria-pressed=true] { background-color: #e8eff7; color: #174c87; border-color: #b6cbe1; }
+body[data-brand-scope="admin"] .ops-guide a { color: #174c87; }
+body[data-brand-scope="admin"] .ops-modal-actions .ops-primary { background-color: #125e4e; border-color: #125e4e; color: #fff; }
+body[data-brand-scope="admin"] .mk-page { --mk-green: #125e4e; --mk-ink: #183b37; --mk-soft: #edf4ef; }
+body[data-brand-scope="admin"] .mk-hero { background: linear-gradient(115deg,#103c32,#125e4e); }
+body[data-brand-scope="admin"] .mk-hero .mk-eyebrow { color: #e7b85a; }
+body[data-brand-scope="admin"] .mk-kpi > span { background-color: #edf4ef; color: #125e4e; }
+body[data-brand-scope="admin"] .mk-kpi:nth-child(2) > span,
+body[data-brand-scope="admin"] .mk-kpi:nth-child(3) > span { background-color: #e8eff7; color: #174c87; }
+body[data-brand-scope="admin"] .mk-kpi:nth-child(5) > span,
+body[data-brand-scope="admin"] .mk-kpi:nth-child(6) > span { background-color: #fbf4e4; color: #72500f; }
+body[data-brand-scope="admin"] .mk-builder-fields input:focus { border-color: #174c87; outline-color: #174c87; }
+body[data-brand-scope="admin"] .ux-lab { --lab-green: #125e4e; --lab-ink: #183b37; color: #183b37; }
+body[data-brand-scope="admin"] .ux-lab .lab-tabs button[aria-current],
+body[data-brand-scope="admin"] .ux-lab .lab-primary { background-color: #125e4e; border-color: #125e4e; color: #fff; }
+body[data-brand-scope="admin"] .ux-lab .lab-primary:hover { background-color: #0d493d; }
+body[data-brand-scope="admin"] .ux-lab :is(.lab-button,.lab-icon,.lab-text-link) { color: #174c87; }
+body[data-brand-scope="admin"] .ux-lab .lab-series-views { background-color: #174c87; }
+body[data-brand-scope="admin"] .ux-lab .lab-series-actions { background-color: #125e4e; }
+body[data-brand-scope="admin"] .ux-lab .lab-node.selected,
+body[data-brand-scope="admin"] .ux-lab .lab-experiment-list > button.selected { border-color: #125e4e; }
+body[data-brand-scope="admin"] .ux-lab .lab-node.traced { outline-color: #e7b85a; }
+body[data-brand-scope="admin"] .jro-shell { --jro-forest: #125e4e; --jro-ink: #183b37; }
+body[data-brand-scope="admin"] .jro-shell :is(.jro-context,.jro-board-head,.jro-primary) { background-color: #125e4e; border-color: #125e4e; }
+body[data-brand-scope="admin"] .jro-shell .jro-primary { color: #fff; }
+body[data-brand-scope="admin"] .jro-shell .jro-eyebrow.inverse { color: #e7b85a; }
+body[data-brand-scope="admin"] .jro-shell :is(.jro-icon,.jro-small) { color: #174c87; }
+body[data-brand-scope="admin"] .jro-shell .jro-week-switch button.active { background-color: #e8eff7; border-color: #b6cbe1; color: #174c87; }
+body[data-brand-scope="admin"] .jro-shell .jro-step { border-top-color: #125e4e; }
+body[data-brand-scope="admin"] .jro-shell .jro-step.review { background-color: #174c87; border-color: #174c87; }
+body[data-brand-scope="admin"] .jro-shell .jro-step.occupied,
+body[data-brand-scope="admin"] .jro-shell .jro-step.completed { background-color: #125e4e; border-color: #125e4e; }
+body[data-brand-scope="admin"] .jro-shell .jro-step.selected { outline-color: #e7b85a; }
+body[data-brand-scope="admin"] .jro-shell .jro-board-legend .review { background-color: #174c87; }
+body[data-brand-scope="admin"] .jro-shell .jro-board-legend .guidance { background-color: #b1822b; }
+body[data-brand-scope="admin"] .jro-shell .jro-summary > button.review .jro-metric-icon { background-color: #e8eff7; color: #174c87; }
+body[data-brand-scope="admin"] .jro-shell .jro-summary > button.guidance .jro-metric-icon { background-color: #fbf4e4; color: #72500f; }

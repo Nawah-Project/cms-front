@@ -1,3 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
+import { fetchApi } from "../../../lib/api-client";
+import { ProfessionalImage } from "../../../components/ProfessionalImage";
+import { JourneyScenery } from "../../../components/JourneyScenery";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { useMe } from "../hooks/useMe";
@@ -8,10 +12,21 @@ import { useI18n } from "../../../i18n";
 import { LanguageSwitcher } from "../../../i18n/LanguageSwitcher";
 import { Modal } from "../../../components/ui/Modal";
 import { IntroVideoPlayer } from "../../../components/IntroVideoPlayer";
-import { CheckIcon, PlayCircleIcon, SparklesIcon } from "../../../components/Icons";
+import {
+  CheckIcon,
+  PlayCircleIcon,
+  SparklesIcon,
+} from "../../../components/Icons";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const registering = mode === "register";
+  const registration = useQuery({
+    queryKey: ["registration-status"],
+    queryFn: () => fetchApi<{ open: boolean }>("/auth/registration-status"),
+    enabled: registering,
+    staleTime: 15000,
+    refetchInterval: registering ? 30000 : false,
+  });
   const { t } = useI18n();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -26,7 +41,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from || "/";
   const notice = (location.state as { notice?: string } | null)?.notice;
-  const socialError = getSocialError(new URLSearchParams(location.search).get("socialError"), t);
+  const socialError = getSocialError(
+    new URLSearchParams(location.search).get("socialError"),
+    t,
+  );
 
   useEffect(() => {
     if (!loading && authenticated) navigate(from, { replace: true });
@@ -34,11 +52,12 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   if (loading || authenticated) {
     return (
-      <main
-        className="flex min-h-screen items-center justify-center bg-app text-sm text-neutral-500"
-        role="status"
-      >
-        {t("auth.sessionLoading")}
+      <main className="entry-loading" role="status">
+        <ProfessionalImage className="entry-loading-image" />
+        <div>
+          <img src="/nawah-logo.svg?v=project-20261031" alt="" />
+          <p>{t("auth.sessionLoading")}</p>
+        </div>
       </main>
     );
   }
@@ -65,9 +84,12 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         navigate(from, { replace: true });
       }
     } catch (caught: any) {
-      const message = caught instanceof Error ? caught.message.toLowerCase() : "";
+      const message =
+        caught instanceof Error ? caught.message.toLowerCase() : "";
       const status = caught?.status;
-      if (
+      if (status === 403 && registering) {
+        setError(t("auth.registrationClosed"));
+      } else if (
         status === 409 ||
         message.includes("already exists") ||
         message.includes("already registered") ||
@@ -93,7 +115,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         status === 401
       ) {
         setError(t("auth.invalidCredentials"));
-      } else if (message.includes("failed to fetch") || message.includes("network")) {
+      } else if (
+        message.includes("failed to fetch") ||
+        message.includes("network")
+      ) {
         setError(t("common.connectionError"));
       } else {
         setError(t("auth.authFailed"));
@@ -109,30 +134,25 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     error === t("auth.invalidEmailDomainError");
   const isPasswordError = error === t("auth.passwordRequirementsError");
   const generalAlert =
+    (registering && registration.data?.open === false
+      ? t("auth.registrationClosed")
+      : "") ||
     socialError ||
     (error && !isEmailError && !isPasswordError ? error : "");
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-2 bg-app">
+    <main className="entry-layout">
       {/* Side 1: Form Card */}
-      <div className="flex flex-col justify-center items-center px-6 py-12 lg:px-12">
+      <div className="entry-form-panel">
         <div className="w-full max-w-md">
-          {/* Mobile Value Banner */}
-          <div className="lg:hidden mb-6 rounded-2xl bg-neutral-900 p-5 text-white shadow-sm">
-            <span className="inline-block rounded-full bg-info-soft/20 text-info-soft px-3 py-1 text-xs font-semibold mb-2">
-              {t("auth.heroBadge")}
-            </span>
-            <h2 className="text-base font-semibold leading-snug">{t("auth.heroTitle")}</h2>
-          </div>
-
-          <div className="rounded-2xl border border-border-strong bg-surface p-7 sm:p-9 shadow-sm">
+          <div className="entry-form-card">
             <div className="flex items-center justify-between gap-3">
               <Link
                 to="/"
                 className="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-neutral-900"
               >
                 <img
-                  src="/nawah-logo.svg"
+                  src="/nawah-logo.svg?v=project-20261031"
                   alt=""
                   aria-hidden="true"
                   className="h-10 w-10 shrink-0 rounded-md border border-neutral-200 object-cover"
@@ -146,7 +166,9 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               {registering ? t("auth.registerTitle") : t("auth.loginTitle")}
             </h1>
             <p className="mt-2 text-sm leading-6 text-neutral-600">
-              {registering ? t("auth.registerSubtitle") : t("auth.loginSubtitle")}
+              {registering
+                ? t("auth.registerSubtitle")
+                : t("auth.loginSubtitle")}
             </p>
 
             {/* Notice Banner */}
@@ -198,7 +220,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                   className={`field-control ${isEmailError ? "border-danger-strong ring-1 ring-danger-strong/30" : ""}`}
                 />
                 {isEmailError && (
-                  <span role="alert" className="mt-1.5 block text-xs font-medium text-danger-strong">
+                  <span
+                    role="alert"
+                    className="mt-1.5 block text-xs font-medium text-danger-strong"
+                  >
                     {error}
                   </span>
                 )}
@@ -209,7 +234,9 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                   required
                   type="password"
                   minLength={8}
-                  autoComplete={registering ? "new-password" : "current-password"}
+                  autoComplete={
+                    registering ? "new-password" : "current-password"
+                  }
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
@@ -218,7 +245,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                   className={`field-control ${isPasswordError ? "border-danger-strong ring-1 ring-danger-strong/30" : ""}`}
                 />
                 {isPasswordError ? (
-                  <span role="alert" className="mt-1.5 block text-xs font-medium text-danger-strong">
+                  <span
+                    role="alert"
+                    className="mt-1.5 block text-xs font-medium text-danger-strong"
+                  >
                     {error}
                   </span>
                 ) : registering ? (
@@ -229,7 +259,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
               </div>
 
               <button
-                disabled={submitting}
+                disabled={
+                  submitting ||
+                  (registering && registration.data?.open === false)
+                }
                 className="button-primary w-full py-2.5 mt-2"
               >
                 {submitting
@@ -248,90 +281,33 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
                   <span>{t("auth.continueWith")}</span>
                   <span className="h-px flex-1 bg-border" />
                 </div>
-                <SocialSignInButtons disabled={submitting} />
+                <SocialSignInButtons
+                  disabled={
+                    submitting ||
+                    (registering && registration.data?.open === false)
+                  }
+                />
               </div>
             </form>
 
             <p className="mt-6 text-center text-sm text-neutral-600">
-              {registering ? t("auth.alreadyHaveAccount") + " " : t("auth.newToApp") + " "}
+              {registering
+                ? t("auth.alreadyHaveAccount") + " "
+                : t("auth.newToApp") + " "}
               <Link
                 className="font-medium text-neutral-900 underline-offset-4 hover:underline"
                 to={registering ? "/auth/login" : "/auth/register"}
               >
-                {registering ? t("auth.signInLink") : t("auth.createAccountLink")}
+                {registering
+                  ? t("auth.signInLink")
+                  : t("auth.createAccountLink")}
               </Link>
             </p>
           </div>
         </div>
       </div>
 
-      {/* Side 2: Value Proposition & Video Preview Panel */}
-      <div className="hidden lg:flex flex-col justify-between bg-neutral-900 text-white p-12 xl:p-16 relative overflow-hidden">
-        {/* Background glow decoration */}
-        <div className="absolute -top-32 -end-32 w-96 h-96 rounded-full bg-info-strong/20 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 -start-32 w-96 h-96 rounded-full bg-warning-strong/10 blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 mx-auto w-full max-w-lg">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1 text-xs font-medium text-info-soft backdrop-blur-sm">
-            <SparklesIcon className="w-3.5 h-3.5" />
-            <span>{t("auth.heroBadge")}</span>
-          </div>
-          <h2 className="mt-6 text-3xl xl:text-4xl font-bold leading-tight tracking-tight">
-            {t("auth.heroTitle")}
-          </h2>
-          <p className="mt-4 text-base leading-relaxed text-neutral-300 max-w-xl">
-            {t("auth.heroDescription")}
-          </p>
-
-          {/* Onboarding Video Card */}
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => setVideoModalOpen(true)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") setVideoModalOpen(true);
-            }}
-            className="mt-8 bg-white/10 border border-white/15 rounded-2xl p-5 flex items-center gap-4 hover:bg-white/15 transition cursor-pointer backdrop-blur-md group"
-          >
-            <div className="w-12 h-12 rounded-xl bg-info-soft/20 text-info-soft flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <PlayCircleIcon className="w-8 h-8" />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                <span>{t("auth.watchIntroTitle")}</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-info-soft/20 text-info-soft">
-                  90s
-                </span>
-              </h3>
-              <p className="text-xs text-neutral-300 mt-0.5 line-clamp-1">
-                {t("auth.watchIntroSubtitle")}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Feature Pills */}
-        <div className="relative z-10 mx-auto w-full max-w-lg space-y-3 pt-12">
-          <div className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3">
-            <div className="w-2 h-2 rounded-full bg-info-soft shrink-0" />
-            <span className="text-sm font-medium text-neutral-200">
-              {t("auth.featureTrackTitle")}
-            </span>
-          </div>
-          <div className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3">
-            <div className="w-2 h-2 rounded-full bg-warning-soft shrink-0" />
-            <span className="text-sm font-medium text-neutral-200">
-              {t("auth.featureMentorTitle")}
-            </span>
-          </div>
-          <div className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3">
-            <div className="w-2 h-2 rounded-full bg-success-soft shrink-0" />
-            <span className="text-sm font-medium text-neutral-200">
-              {t("auth.featureGroupTitle")}
-            </span>
-          </div>
-        </div>
-      </div>
+      <JourneyScenery onExplore={() => setVideoModalOpen(true)} />
 
       {/* Intro Video / Walkthrough Modal */}
       <Modal
@@ -375,8 +351,13 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   );
 }
 
-function getSocialError(code: string | null, t: (key: string) => string): string {
+function getSocialError(
+  code: string | null,
+  t: (key: string) => string,
+): string {
   switch (code) {
+    case "registration_closed":
+      return t("auth.registrationClosed");
     case "account_link_required":
       return t("auth.accountExists");
     case "google_unavailable":
@@ -385,4 +366,3 @@ function getSocialError(code: string | null, t: (key: string) => string): string
       return "";
   }
 }
-

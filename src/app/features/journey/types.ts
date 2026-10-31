@@ -74,13 +74,15 @@ export interface WeeklyConversionStats {
   conversionRate: number;
 }
 
+export interface CvFoundationStatus { unlocked: boolean; baselineVersion: number; currentVersion: number; uploadedAfterUnlock: boolean; canComplete: boolean; completed: boolean }
 export interface JourneyStateResponse {
+  cvFoundation?: CvFoundationStatus;
   state: UserJourneyState;
   currentNode: EnrichedJourneyNode | null;
   currentWeekNodes: EnrichedJourneyNode[];
   nodes: EnrichedJourneyNode[];
   weeklyStats: WeeklyConversionStats;
-  features: { groups: boolean; tableView: boolean; professionalTasks: boolean };
+  features: { groups: boolean; tableView: boolean; professionalTasks: boolean; analytics?: boolean };
 }
 
 export interface JobMarketCompassPlatform {

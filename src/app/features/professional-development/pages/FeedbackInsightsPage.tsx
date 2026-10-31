@@ -15,7 +15,7 @@ import { openJourneyTasksPanel } from "../../../components/journeyTasksPanelEven
 import { SpinnerIcon } from "../../../components/Icons";
 import { ProfessionalDevelopmentNav } from "../components/ProfessionalDevelopmentNav";
 import { FeedbackCard } from "../components/FeedbackPresentation";
-import { FeedbackDetailDrawer } from "../components/FeedbackDetailDrawer";
+import { FeedbackDetailModal } from "../components/FeedbackDetailModal";
 import { FeedbackFormDialog } from "../components/FeedbackFormDialog";
 
 const PAGE_SIZE = 20;
@@ -40,7 +40,11 @@ function MemberFeedbackPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawScope = searchParams.get("scope");
   const scope: "all" | FeedbackScope =
-    rawScope === "for-you" ? "for-you" : rawScope === "shared" ? "shared" : "all";
+    rawScope === "for-you"
+      ? "for-you"
+      : rawScope === "shared"
+        ? "shared"
+        : "all";
   const feedbackId = searchParams.get("feedback");
   const [posts, setPosts] = useState<FeedbackPost[]>([]);
   const [page, setPage] = useState(1);
@@ -104,8 +108,14 @@ function MemberFeedbackPage() {
       return matchesContext && matchesSearch;
     });
   }, [contextFilter, posts, search]);
-  const visiblePosts = filteredPosts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const filteredTotalPages = Math.max(1, Math.ceil(filteredPosts.length / PAGE_SIZE));
+  const visiblePosts = filteredPosts.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
+  const filteredTotalPages = Math.max(
+    1,
+    Math.ceil(filteredPosts.length / PAGE_SIZE),
+  );
 
   const selectScope = (next: "all" | FeedbackScope) => {
     setPage(1);
@@ -121,24 +131,21 @@ function MemberFeedbackPage() {
     setSearchParams(next, { preventScrollReset: true });
   };
 
-  const markReadLocally = useCallback(
-    (id: string) => {
-      setPosts((current) =>
-        current.map((post) =>
-          post.id === id ? { ...post, isRead: true } : post,
-        ),
-      );
-      const key =
-        postsRef.current.find((post) => post.id === id)?.visibility === "DIRECT"
-          ? "forYou"
-          : "shared";
-      setUnreadCount((current) => ({
-        ...current,
-        [key]: Math.max(0, current[key] - 1),
-      }));
-    },
-    [],
-  );
+  const markReadLocally = useCallback((id: string) => {
+    setPosts((current) =>
+      current.map((post) =>
+        post.id === id ? { ...post, isRead: true } : post,
+      ),
+    );
+    const key =
+      postsRef.current.find((post) => post.id === id)?.visibility === "DIRECT"
+        ? "forYou"
+        : "shared";
+    setUnreadCount((current) => ({
+      ...current,
+      [key]: Math.max(0, current[key] - 1),
+    }));
+  }, []);
 
   return (
     <div className="space-y-7">
@@ -194,7 +201,9 @@ function MemberFeedbackPage() {
                   setSearch(event.target.value);
                   setPage(1);
                 }}
-                placeholder={t("professionalDevelopment.searchFeedbackPlaceholder")}
+                placeholder={t(
+                  "professionalDevelopment.searchFeedbackPlaceholder",
+                )}
                 className="field-control w-full py-2 text-sm"
               />
             </label>
@@ -225,98 +234,100 @@ function MemberFeedbackPage() {
 
         <section
           aria-label={t(
-              `professionalDevelopment.${scope === "all" ? "allFeedback" : scope === "for-you" ? "forYouTab" : "sharedTab"}`,
+            `professionalDevelopment.${scope === "all" ? "allFeedback" : scope === "for-you" ? "forYouTab" : "sharedTab"}`,
           )}
           className="min-w-0 space-y-4"
         >
-            {loading ? (
-              <div
-                className="space-y-4"
-                role="status"
-                aria-label={t("professionalDevelopment.feedbackLoading")}
+          {loading ? (
+            <div
+              className="space-y-4"
+              role="status"
+              aria-label={t("professionalDevelopment.feedbackLoading")}
+            >
+              {[0, 1, 2].map((item) => (
+                <div
+                  key={item}
+                  className="h-48 animate-pulse rounded-xl border border-border bg-neutral-50 dark:bg-neutral-900"
+                />
+              ))}
+            </div>
+          ) : error ? (
+            <div
+              role="alert"
+              className="rounded-xl border border-danger-border bg-surface px-5 py-8 text-center"
+            >
+              <p className="text-sm text-neutral-700 dark:text-neutral-300">
+                {t("professionalDevelopment.feedbackLoadError")}
+              </p>
+              <button
+                type="button"
+                onClick={() => void load()}
+                className="button-secondary mt-4 px-3 py-2 text-xs"
               >
-                {[0, 1, 2].map((item) => (
-                  <div
-                    key={item}
-                    className="h-48 animate-pulse rounded-xl border border-border bg-neutral-50 dark:bg-neutral-900"
-                  />
-                ))}
-              </div>
-            ) : error ? (
-              <div
-                role="alert"
-                className="rounded-xl border border-danger-border bg-surface px-5 py-8 text-center"
-              >
-                <p className="text-sm text-neutral-700 dark:text-neutral-300">
-                  {t("professionalDevelopment.feedbackLoadError")}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => void load()}
-                  className="button-secondary mt-4 px-3 py-2 text-xs"
-                >
-                  {t("professionalDevelopment.retryFeedback")}
-                </button>
-              </div>
-            ) : !visiblePosts.length ? (
-              <EmptyState
-                compact
-                title={t(
-                  contextFilter !== "ALL" || search.trim()
-                    ? "professionalDevelopment.noFilteredFeedback"
-                    : scope === "for-you"
-                      ? "professionalDevelopment.noDirectFeedback"
-                      : "professionalDevelopment.noSharedInsights",
-                )}
-              />
-            ) : (
-              <div className="space-y-4">
-                {visiblePosts.map((post) => (
-                  <FeedbackCard
-                    key={post.id}
-                    post={post}
-                    scope={post.visibility === "DIRECT" ? "for-you" : "shared"}
-                    onOpen={() => selectFeedback(post.id)}
-                  />
-                ))}
-              </div>
-            )}
+                {t("professionalDevelopment.retryFeedback")}
+              </button>
+            </div>
+          ) : !visiblePosts.length ? (
+            <EmptyState
+              compact
+              title={t(
+                contextFilter !== "ALL" || search.trim()
+                  ? "professionalDevelopment.noFilteredFeedback"
+                  : scope === "for-you"
+                    ? "professionalDevelopment.noDirectFeedback"
+                    : "professionalDevelopment.noSharedInsights",
+              )}
+            />
+          ) : (
+            <div className="space-y-4">
+              {visiblePosts.map((post) => (
+                <FeedbackCard
+                  key={post.id}
+                  post={post}
+                  scope={post.visibility === "DIRECT" ? "for-you" : "shared"}
+                  onOpen={() => selectFeedback(post.id)}
+                />
+              ))}
+            </div>
+          )}
 
-            {!loading && !error && filteredTotalPages > 1 && (
-              <nav
-                aria-label={t("professionalDevelopment.feedbackPagination")}
-                className="flex flex-wrap items-center justify-center gap-3 border-t border-border pt-5"
+          {!loading && !error && filteredTotalPages > 1 && (
+            <nav
+              aria-label={t("professionalDevelopment.feedbackPagination")}
+              className="flex flex-wrap items-center justify-center gap-3 border-t border-border pt-5"
+            >
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                className="button-secondary px-3 py-2 text-xs disabled:opacity-50"
               >
-                <button
-                  type="button"
-                  disabled={page <= 1}
-                  onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  className="button-secondary px-3 py-2 text-xs disabled:opacity-50"
-                >
-                  {t("professionalDevelopment.previousPage")}
-                </button>
-                <span className="text-xs text-neutral-500">
-                  {t("professionalDevelopment.feedbackPageOf", {
-                    page: number(page),
-                    pages: number(filteredTotalPages),
-                  })}
-                </span>
-                <button
-                  type="button"
-                  disabled={page >= filteredTotalPages}
-                  onClick={() =>
-                    setPage((current) => Math.min(filteredTotalPages, current + 1))
-                  }
-                  className="button-secondary px-3 py-2 text-xs disabled:opacity-50"
-                >
-                  {t("professionalDevelopment.nextPage")}
-                </button>
-              </nav>
-            )}
-          </section>
-        </div>
+                {t("professionalDevelopment.previousPage")}
+              </button>
+              <span className="text-xs text-neutral-500">
+                {t("professionalDevelopment.feedbackPageOf", {
+                  page: number(page),
+                  pages: number(filteredTotalPages),
+                })}
+              </span>
+              <button
+                type="button"
+                disabled={page >= filteredTotalPages}
+                onClick={() =>
+                  setPage((current) =>
+                    Math.min(filteredTotalPages, current + 1),
+                  )
+                }
+                className="button-secondary px-3 py-2 text-xs disabled:opacity-50"
+              >
+                {t("professionalDevelopment.nextPage")}
+              </button>
+            </nav>
+          )}
+        </section>
+      </div>
 
-      <FeedbackDetailDrawer
+      <FeedbackDetailModal
         feedbackId={feedbackId}
         onClose={() => selectFeedback(null)}
         onRead={markReadLocally}
@@ -593,7 +604,7 @@ function AdminFeedbackPage() {
           onSaved={saved}
         />
       )}
-      <FeedbackDetailDrawer
+      <FeedbackDetailModal
         feedbackId={feedbackId}
         admin
         onClose={() => openDetail(null)}

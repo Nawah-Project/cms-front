@@ -99,7 +99,7 @@ export default {
   distributionSubtitle: "تحليل نسب تحول الطلبات عبر محطات التوظيف ومصير الطلبات المغلقة",
   eraComparisonTitle: "مقارنة الأداء حسب تحديثاتك وتجهيزاتك",
   eraComparisonSubtitle: "كيف أثر كل تعديل في سيرتك الذاتية وأدواتك على معدل استجابة السوق",
-  baselineEraTitle: "التجهيز الأولي (CV v1)",
+  baselineEraTitle: "التجهيز الأولي (CV 0)",
   nextEraLocked: "التعديل القادم (يُفتح بعد إتمام المهمة الحالية)",
   filterLockedHint: "يُفتح التقرير في اليوم السابع عند الوصول لمحطة التقييم والتعديل",
   categoryCv: "تحديث السيرة الذاتية (CV Update)",

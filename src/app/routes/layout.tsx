@@ -1,4 +1,10 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { OperationsPerformanceObserver } from "../features/admin/operations/OperationsPerformanceObserver";
+import { useAuth } from "../features/auth/store/authStore";
+import {
+  SectionExperienceProvider,
+  SectionExposure,
+} from "../features/ux-lab/SectionExperience";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { AddApplicationModal } from "../features/applications/components/AddApplicationModal";
@@ -22,19 +28,10 @@ import {
 } from "../features/journey/lib/celebrationEvents";
 import { closeJourneyTasksPanel } from "../components/journeyTasksPanelEvents";
 import { MilestoneCelebrationModal } from "../components/ui/MilestoneCelebrationModal";
+import { AppContext } from "../components/AppModalContext";
+export { useAppModal } from "../components/AppModalContext";
 import { FirstApplicationGuidedTourProvider } from "../features/applications/components/FirstApplicationGuidedTour";
-
-export interface AppContextType {
-  openAddModal: (initialValues?: Partial<CreateApplicationInput>) => void;
-}
-
-const AppContext = createContext<AppContextType>({
-  openAddModal: () => {},
-});
-
-export function useAppModal() {
-  return useContext(AppContext);
-}
+import { ExperienceProgressProvider } from "../features/experience/ExperienceProgress";
 
 export default function Layout() {
   const { t, locale } = useI18n();
@@ -45,10 +42,27 @@ export default function Layout() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [draftValues, setDraftValues] =
     useState<Partial<CreateApplicationInput> | null>(null);
+  const openedFromMemberHome = useRef(false);
   const [celebrationData, setCelebrationData] =
     useState<MilestoneCelebrationData | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user: previewUser } = useAuth();
+  const isHomePreview =
+    previewUser?.role === "ADMIN" &&
+    location.pathname === "/" &&
+    new URLSearchParams(location.search).get("labPreview") === "home:B";
+
+  const openAddModal = useCallback(
+    (initialValues?: Partial<CreateApplicationInput>) => {
+      openedFromMemberHome.current =
+        location.pathname === "/" && previewUser?.role === "USER";
+      closeJourneyTasksPanel();
+      setDraftValues(initialValues ?? null);
+      setIsAddModalOpen(true);
+    },
+    [location.pathname, previewUser?.role],
+  );
 
   useEffect(() => {
     if (window.localStorage.getItem("nawah.sidebar.collapsed") === "true") {
@@ -81,24 +95,15 @@ export default function Layout() {
       window.removeEventListener(CELEBRATE_MILESTONE_EVENT, handler);
       window.removeEventListener("nawah_open_add_modal", openAddHandler);
     };
-  }, []);
-
-  const openAddModal = (initialValues?: Partial<CreateApplicationInput>) => {
-    closeJourneyTasksPanel();
-    setDraftValues(initialValues ?? null);
-    setIsAddModalOpen(true);
-  };
+  }, [openAddModal]);
 
   const handleCreateApplication = async (data: CreateApplicationInput) => {
     const prevJourney = queryClient.getQueryData<JourneyStateResponse>(
       journeyQueryKeys.state(),
     );
     const created = await createAppMutation.mutateAsync(data);
-    showToast({
-      message: t("applications.applicationCreated"),
-      variant: "success",
-    });
-    trackUxEvent("application_created", { company: created.companyName });
+
+    trackUxEvent("application_created");
 
     try {
       const nextJourney = await queryClient.fetchQuery({
@@ -111,72 +116,84 @@ export default function Layout() {
     }
 
     window.dispatchEvent(new CustomEvent("nawah_app_created"));
-    navigate("/applications");
+    const stayOnHome = openedFromMemberHome.current;
+    openedFromMemberHome.current = false;
+    if (!stayOnHome) navigate("/applications");
     return created;
   };
 
   return (
     <ProtectedRoute>
-      <EmailVerificationGate>
-        <ProfileCompletionGate>
-          <FirstApplicationGuidedTourProvider
-            enabled={!location.pathname.startsWith("/admin")}
-          >
-            <AppContext.Provider value={{ openAddModal }}>
-              <div className="min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200">
-                <AppSidebar
-                  collapsed={isSidebarCollapsed}
-                  onToggleCollapsed={() =>
-                    setIsSidebarCollapsed((collapsed) => !collapsed)
-                  }
-                />
-                {!location.pathname.startsWith("/admin") && (
-                  <JourneyTasksPanel />
-                )}
-
-                <div
-                  className={`min-h-screen w-full transition-[padding] duration-200 ${
-                    isSidebarCollapsed ? "lg:ps-20" : "lg:ps-64"
-                  }`}
-                >
-                  <main className="w-full px-5 py-7 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 lg:py-10">
-                    <Outlet context={{ openAddModal }} />
-                  </main>
-                </div>
-
-                <AddApplicationModal
-                  isOpen={isAddModalOpen}
-                  journeyQueryEnabled={location.pathname !== "/admin/report-preview"}
-                  initialValues={draftValues}
-                  onClose={() => {
-                    setIsAddModalOpen(false);
-                    setDraftValues(null);
-                  }}
-                  onSubmit={handleCreateApplication}
-                />
-
-                {celebrationData && (
-                  <MilestoneCelebrationModal
-                    isOpen={Boolean(celebrationData)}
-                    onClose={() => setCelebrationData(null)}
-                    title={celebrationData.title}
-                    description={celebrationData.description}
-                    unlockedItems={celebrationData.unlockedItems}
-                    ctaLabel={celebrationData.ctaLabel}
-                    onCtaClick={() => {
-                      const targetRoute = celebrationData.ctaRoute;
-                      setCelebrationData(null);
-                      if (targetRoute) {
-                        navigate(targetRoute);
+      <SectionExperienceProvider>
+        <EmailVerificationGate>
+          <ProfileCompletionGate>
+            <ExperienceProgressProvider>
+              <FirstApplicationGuidedTourProvider
+                enabled={
+                  !location.pathname.startsWith("/admin") && !isHomePreview
+                }
+              >
+                <AppContext.Provider value={{ openAddModal }}>
+                  <OperationsPerformanceObserver />
+                  <div className="workspace-shell min-h-screen bg-app font-sans text-text-primary selection:bg-neutral-200">
+                    <AppSidebar
+                      collapsed={isSidebarCollapsed}
+                      onToggleCollapsed={() =>
+                        setIsSidebarCollapsed((collapsed) => !collapsed)
                       }
-                    }}
-                  />
-                )}
-              </div>
-            </AppContext.Provider>
-          </FirstApplicationGuidedTourProvider>
-        </ProfileCompletionGate>
-      </EmailVerificationGate>
+                    />
+                    {!location.pathname.startsWith("/admin") &&
+                      !isHomePreview && <JourneyTasksPanel />}
+
+                    <div
+                      className={`min-h-screen w-full min-w-0 transition-none lg:transition-[padding] duration-200 ${
+                        isSidebarCollapsed ? "lg:ps-20" : "lg:ps-64"
+                      }`}
+                    >
+                      <main className="min-w-0 w-full px-5 py-7 sm:px-8 lg:px-10 xl:px-12 2xl:px-14 lg:py-10">
+                        <SectionExposure>
+                          <Outlet context={{ openAddModal }} />
+                        </SectionExposure>
+                      </main>
+                    </div>
+
+                    <AddApplicationModal
+                      isOpen={isAddModalOpen}
+                      journeyQueryEnabled={
+                        location.pathname !== "/admin/report-preview"
+                      }
+                      initialValues={draftValues}
+                      onClose={() => {
+                        setIsAddModalOpen(false);
+                        setDraftValues(null);
+                      }}
+                      onSubmit={handleCreateApplication}
+                    />
+
+                    {celebrationData && (
+                      <MilestoneCelebrationModal
+                        isOpen={Boolean(celebrationData)}
+                        onClose={() => setCelebrationData(null)}
+                        title={celebrationData.title}
+                        description={celebrationData.description}
+                        unlockedItems={celebrationData.unlockedItems}
+                        ctaLabel={celebrationData.ctaLabel}
+                        onCtaClick={() => {
+                          const targetRoute = celebrationData.ctaRoute;
+                          setCelebrationData(null);
+                          if (targetRoute) {
+                            navigate(targetRoute);
+                          }
+                        }}
+                      />
+                    )}
+                  </div>
+                </AppContext.Provider>
+              </FirstApplicationGuidedTourProvider>
+            </ExperienceProgressProvider>
+          </ProfileCompletionGate>
+        </EmailVerificationGate>
+      </SectionExperienceProvider>
     </ProtectedRoute>
   );
 }

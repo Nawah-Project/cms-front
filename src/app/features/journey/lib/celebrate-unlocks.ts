@@ -20,28 +20,9 @@ export function celebrateJourneyUnlocks(
   // Check if Group & Professional Development unlocked (Milestone 0 completion)
   if (!prev.state.isGroupUnlocked && next.state.isGroupUnlocked) {
     dispatchMilestoneCelebration({
-      title:
-        locale === "ar"
-          ? "🎉 مبارك! تم فتح قسم تقدم المجموعة والتطوير المهني"
-          : "🎉 Milestone Unlocked: Group & Professional Development Available!",
-      description:
-        locale === "ar"
-          ? "أتممت بنجاح المهمة صفر (تسجيل أول 5 طلبات تقديم). تم فك قفل دليل السيرة الذاتية، ومشاركة رحلتك مع زملائك في المجموعة، والاطلاع على الرؤى الاستراتيجية!"
-          : "You have completed Milestone 0 (5 applications). You can now read your CV guidance, collaborate with your group, and access foundational insights!",
-      unlockedItems:
-        locale === "ar"
-          ? [
-              "قسم متابعة تقدم المجموعة (Group Progress)",
-              "المهام المهنية تفتح بعد قراءة دليل إدارة الوقت في الأسبوع الثالث",
-              "ملاحظة تأسيس السيرة الذاتية (CV Baseline Insight)",
-              "فتح مسار الأسبوع الأول (Week 1 Quests)",
-            ]
-          : [
-              "Group Progress Section",
-              "Professional tasks open after reading the Week 3 time-management guide",
-              "CV Baseline Strategy Insight",
-              "Week 1 Quests Unlocked",
-            ],
+      title: locale === "ar" ? "🎉 مبارك! اتفتح قسم مجموعتك" : "🎉 Your group is unlocked!",
+      description: locale === "ar" ? "أكملت أول 5 طلبات في المهمة صفر. دلوقتي تقدر تتعرف على مجموعتك وتتابع تقدم زملائك." : "You completed your first five applications. Meet your group and follow their progress.",
+      unlockedItems: [locale === "ar" ? "قسم تقدم المجموعة" : "Group progress"],
       ctaLabel:
         locale === "ar" ? "انتقل إلى مجموعتك الآن" : "Go to Group Section",
       ctaRoute: "/members-progress",

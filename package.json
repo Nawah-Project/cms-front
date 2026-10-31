@@ -7,7 +7,9 @@
     "dev": "react-router dev",
     "start": "node --import ./monitoring/instrumentation.mjs ./node_modules/.bin/react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
-    "test:stabilization": "node --test scripts/stabilization-checks.mjs"
+    "test:stabilization": "node --test scripts/stabilization-checks.mjs",
+    "test:job-explorer": "node --test scripts/job-explorer-checks.mjs",
+    "test:design-system": "node --test scripts/design-system-checks.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

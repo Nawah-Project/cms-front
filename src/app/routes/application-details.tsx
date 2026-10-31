@@ -319,7 +319,7 @@ export default function ApplicationDetailsPage() {
     Boolean(application.hasAssignment);
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in duration-200">
+    <div className="member-application-detail w-full space-y-6 animate-in fade-in duration-200">
       {/* Back Link and Actions Header */}
       <div className="flex items-center justify-between">
         <Link
@@ -334,7 +334,7 @@ export default function ApplicationDetailsPage() {
           <button
             type="button"
             onClick={() => setIsEditModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors shadow-2xs"
+            className="button-secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors shadow-2xs"
           >
             <EditIcon className="w-3.5 h-3.5" />
             <span>{t("common.edit")}</span>
@@ -342,7 +342,7 @@ export default function ApplicationDetailsPage() {
           <button
             type="button"
             onClick={() => setIsDeleteModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 hover:border-red-200 dark:hover:border-red-900 transition-colors shadow-2xs"
+            className="button-danger inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 hover:border-red-200 dark:hover:border-red-900 transition-colors shadow-2xs"
           >
             <TrashIcon className="w-3.5 h-3.5" />
             <span>{t("common.delete")}</span>
@@ -351,7 +351,7 @@ export default function ApplicationDetailsPage() {
       </div>
 
       {/* Main Job Card with Integrated Metadata Pills and Single Interactive Pipeline Controller */}
-      <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-xs">
+      <div className="application-detail-summary bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2.5">
@@ -448,7 +448,7 @@ export default function ApplicationDetailsPage() {
               CV:
             </span>
             <span className="font-bold text-neutral-900 dark:text-neutral-100">
-              CV v{cvVersion}
+              CV {Math.max(0, cvVersion - 1)}
             </span>
           </span>
 

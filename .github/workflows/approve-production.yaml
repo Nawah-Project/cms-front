@@ -1,0 +1,30 @@
+name: Approve production
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_tag:
+        description: Exact build tag from a successful main candidate
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: frontend-production-approval
+  cancel-in-progress: false
+jobs:
+  approve:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - name: Approve existing tested image
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_TAG: ${{ inputs.candidate_tag }}
+        run: |
+          args=()
+          python3 scripts/release/release.py approve --tag "$CANDIDATE_TAG" "${args[@]}"

@@ -13,6 +13,7 @@ export interface ModalProps {
   size?: "sm" | "md" | "lg" | "xl" | "2xl";
   zIndex?: number;
   disableClose?: boolean;
+  closeJourneyPanelOnOpen?: boolean;
   children: React.ReactNode;
   footer?: React.ReactNode;
 }
@@ -33,11 +34,11 @@ export function Modal({
   size = "md",
   zIndex,
   disableClose = false,
+  closeJourneyPanelOnOpen = true,
   children,
   footer,
 }: ModalProps) {
   const { t } = useI18n();
-  const previouslyFocusedElement = useRef<HTMLElement | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocus(dialogRef, isOpen, onClose, disableClose);
   const titleId = useId();
@@ -45,18 +46,14 @@ export function Modal({
 
   useEffect(() => {
     if (isOpen) {
-      closeJourneyTasksPanel();
-      previouslyFocusedElement.current = document.activeElement as HTMLElement;
+      if (closeJourneyPanelOnOpen) closeJourneyTasksPanel();
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
       return () => {
         document.body.style.overflow = originalOverflow;
-        if (previouslyFocusedElement.current) {
-          previouslyFocusedElement.current.focus();
-        }
       };
     }
-  }, [isOpen]);
+  }, [isOpen, closeJourneyPanelOnOpen]);
 
   if (!isOpen || typeof document === "undefined") {
     return null;
@@ -78,7 +75,8 @@ export function Modal({
     >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-neutral-950/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-150"
+        data-dialog-backdrop
+        className="fixed inset-0 bg-neutral-950/25 backdrop-blur-sm transition-opacity animate-in fade-in duration-150"
         onClick={() => {
           if (!disableClose) onClose();
         }}
@@ -87,14 +85,17 @@ export function Modal({
 
       {/* Modal Dialog Card */}
       <div
-        className={`relative z-10 w-full ${SIZE_CLASSES[size]} rounded-2xl border border-border bg-surface p-0 text-text-primary shadow-2xl animate-in fade-in zoom-in-95 duration-150 my-auto`}
+        className={`n-dialog-card relative z-10 w-full ${SIZE_CLASSES[size]} rounded-2xl border border-border bg-surface p-0 text-text-primary shadow-2xl animate-in fade-in zoom-in-95 duration-150 my-auto`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex max-h-[90vh] flex-col overflow-hidden">
           {/* Header */}
-          <div className="flex items-start justify-between border-b border-border px-6 py-4">
-            <div className="space-y-0.5 pe-4">
-              <h2 id={titleId} className="text-base font-semibold text-text-primary">
+          <div className="n-dialog-header flex items-start justify-between border-b border-border px-6 py-4">
+            <div className="min-w-0 space-y-0.5 pe-4 [overflow-wrap:anywhere]">
+              <h2
+                id={titleId}
+                className="text-base font-semibold text-text-primary"
+              >
                 {title}
               </h2>
               {subtitle && (
@@ -104,6 +105,7 @@ export function Modal({
               )}
             </div>
             <button
+              data-modal-close
               type="button"
               onClick={onClose}
               disabled={disableClose}
@@ -115,11 +117,11 @@ export function Modal({
           </div>
 
           {/* Scrollable Content */}
-          <div className="overflow-y-auto p-6">{children}</div>
+          <div className="n-dialog-body overflow-y-auto p-6">{children}</div>
 
           {/* Footer */}
           {footer && (
-            <div className="flex items-center justify-end gap-3 border-t border-border bg-neutral-50/60 px-6 py-4">
+            <div className="n-dialog-footer flex items-center justify-end gap-3 border-t border-border bg-neutral-50/60 px-6 py-4">
               {footer}
             </div>
           )}

@@ -1,0 +1,660 @@
+/* One continuous landscape; journey weeks label stops rather than enclosing rows. */
+.home-b .home-goal {
+  background: #fff;
+  border-color: #b5c8ba;
+  border-top: 4px solid #3e7755;
+  box-shadow: 0 6px 20px #1b4b3010;
+}
+.home-b .home-goal--people {
+  border-top-color: #527d8c;
+}
+.home-b .home-goal--business {
+  border-top-color: #607b44;
+}
+.home-b .home-goal > p {
+  color: #425e4c;
+}
+.home-b .home-goal footer {
+  background: #f1f6ee;
+  border-top-color: #cad9c9;
+  margin-inline: -24px;
+  padding-inline: 24px;
+  border-radius: 0 0 17px 17px;
+}
+.home-b .home-goal footer span,
+.home-b .home-goal-top {
+  color: #4d6a55;
+}
+.home-treasure-section {
+  border: 1px solid #b1c6b8;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #dfeae3;
+  box-shadow: 0 5px 18px #1a43300b;
+  scroll-margin-top: 20px;
+}
+.home-treasure-section .home-map-masthead {
+  background: #204f3e;
+  color: #fff;
+  padding: 24px 26px;
+  margin: 0;
+  gap: 20px;
+  align-items: center;
+}
+.home-map-masthead .home-eyebrow {
+  color: #d8e5b1;
+  font-size: 10px;
+}
+.home-map-masthead h2 {
+  color: white;
+  font-size: 26px;
+  margin: 5px 0 7px;
+}
+.home-map-masthead p {
+  color: #dce8df;
+  font-size: 11px;
+}
+.home-map-masthead > .home-secondary {
+  background: #ffffff0b;
+  border-color: #759a82;
+  color: #fff;
+  min-height: 40px;
+}
+.home-map-masthead > .home-secondary:hover {
+  background: #ffffff18;
+}
+.home-treasure-section .home-map-controls {
+  background: #f3f7f0;
+  border: 0;
+  border-radius: 0;
+  padding: 16px 25px;
+  border-bottom: 1px solid #c1d2c4;
+}
+.home-treasure-section .home-map-controls > p {
+  color: #47624e;
+}
+.home-treasure-section .home-map-legend {
+  padding: 13px 25px;
+  background: transparent;
+  color: #405e4b;
+  gap: 18px;
+  border-bottom: 1px solid #c5d5c6;
+}
+.home-peer-example {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 17px;
+  padding: 15px 25px;
+  background: #e7f0e6;
+  border-bottom: 1px solid #c5d5c6;
+}
+.home-peer-example > div {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: #355e43;
+}
+.home-peer-example > div > svg {
+  flex: none;
+}
+.home-peer-example strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+}
+.home-peer-example small {
+  display: block;
+  font-size: 10px;
+  color: #4b6755;
+  margin-top: 3px;
+  line-height: 1.9;
+}
+.home-example-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex: none;
+  min-height: 38px;
+  border: 1px solid #8daa94;
+  border-radius: 9px;
+  background: #fff;
+  padding: 8px 12px;
+  color: #2d5b3e;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+.home-example-button:hover {
+  background: #f4f8ef;
+  border-color: #547c5b;
+}
+.home-map-window {
+  position: relative;
+  overflow: hidden;
+  background-color: #dfeae3;
+  background-image: radial-gradient(#9db79e45 0.7px, transparent 0.7px);
+  background-size: 24px 24px;
+}
+.home-map-window.collapsed {
+  max-height: 630px;
+}
+.home-map-window.collapsed:after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 125px;
+  background: linear-gradient(180deg, #dfeae300, #dfeae3ed 72%, #dfeae3);
+  pointer-events: none;
+  z-index: 4;
+}
+.home-map-window.expanded {
+  max-height: none;
+}
+.home-map.home-trail {
+  padding: 44px 36px 42px;
+  display: grid;
+  grid-template-columns: repeat(var(--trail-columns), minmax(0, 1fr));
+  gap: 54px 34px;
+  align-items: start;
+  background: transparent;
+  isolation: isolate;
+  position: relative;
+  min-width: 0;
+}
+.trail-stop {
+  padding-top: var(--trail-offset);
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  align-self: start;
+}
+.trail-stop[inert] {
+  pointer-events: none;
+}
+.home-trail .home-station {
+  min-height: 183px;
+  padding: 15px 14px 11px;
+  border: 1px solid #a9c1ad;
+  border-top: 3px solid #648e6a;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 7px #204b3010;
+  overflow: visible;
+}
+.home-trail .home-station h4 {
+  font-size: 13px;
+  min-height: 47px;
+  margin: 11px 0 9px;
+}
+.home-trail .home-station-top {
+  font-size: 11px;
+  color: #365b43;
+  gap: 6px;
+  padding-inline-end: 0;
+}
+.home-trail .home-station-top > svg {
+  display: none;
+}
+.home-trail .home-card-metric strong {
+  font-size: 25px;
+}
+.home-trail .home-card-metric > span {
+  font-size: 10px;
+}
+.home-trail .home-station-footer {
+  font-size: 10px;
+  color: #496451;
+  padding-top: 8px;
+  border-color: #dfe8db;
+}
+.home-trail .home-station.locked {
+  background: #f7fbf7;
+  border-color: #b5c9b8;
+  border-top-color: #99b59e;
+}
+.home-trail .home-station.locked .home-station-top,
+.home-trail .home-station.locked .home-station-footer {
+  color: #476650;
+}
+.home-trail .home-masked {
+  margin-block: 25px 24px;
+}
+.home-trail .home-masked i {
+  background: linear-gradient(90deg, #d5e2d0, #cbdcc8, #e2ebdc);
+  filter: blur(2px);
+}
+.home-trail .home-station.active {
+  border: 2px solid #28613d;
+  border-top-width: 3px;
+  background: #fffef8;
+  box-shadow:
+    0 0 0 5px #d7e6bd,
+    0 4px 18px #30623e22;
+}
+.home-trail .home-you-here {
+  color: #235938;
+}
+.home-trail .home-station.review.completed,
+.home-trail .home-station.final.completed {
+  background: #34544f;
+  border-color: #34544f;
+  border-top-color: #628b75;
+}
+.home-trail .home-station.review.completed .home-station-top,
+.home-trail .home-station.final.completed .home-station-top,
+.home-trail .home-station.review.completed .home-station-footer,
+.home-trail .home-station.final.completed .home-station-footer {
+  color: #eef4e9;
+}
+.home-trail .home-station.review.completed .home-card-metric strong,
+.home-trail .home-station.final.completed .home-card-metric strong {
+  color: #e2edb5;
+}
+.home-trail .home-station.review.locked,
+.home-trail .home-station.final.locked {
+  background: #edf5ee;
+}
+.trail-week-badge {
+  position: absolute;
+  inset-inline-end: 12px;
+  top: -14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 25px;
+  padding: 3px 9px;
+  border-radius: 7px;
+  border: 1px solid #a2bba8;
+  background: #e8f1e4;
+  color: #34553b;
+  font-size: 10px;
+  font-weight: 750;
+  box-shadow: 0 2px 3px #19492c06;
+}
+.trail-week-badge.current {
+  background: #285b3d;
+  color: #fff;
+  border-color: #285b3d;
+}
+.home-origin-card {
+  position: relative;
+  min-height: 183px;
+  border: 1px solid #87a98e;
+  border-radius: 12px;
+  padding: 19px 14px 14px;
+  background: #eaf3df;
+  box-shadow: 0 4px 7px #204b300b;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  color: #2b563b;
+}
+.home-origin-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  background: #d8e8bf;
+  border: 1px solid #a9c38d;
+  border-radius: 13px;
+  margin-bottom: 10px;
+}
+.home-origin-card h3 {
+  font-size: 16px;
+  font-weight: 750;
+  margin-bottom: 5px;
+}
+.home-origin-card p {
+  font-size: 11px;
+  color: #476349;
+}
+.home-origin-ready {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  margin-top: 11px;
+  color: #3e6846;
+}
+.home-trail .trail-branches {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px 9px;
+  margin-top: 17px;
+}
+.home-trail .home-branch {
+  min-height: 40px;
+  border-radius: 8px;
+  background: #e2eff0;
+  border-color: #9ebfca;
+  color: #315b68;
+  font-size: 10px !important;
+  padding: 7px;
+  line-height: 1.85;
+  position: relative;
+  z-index: 2;
+}
+.home-trail .home-branch.guidance {
+  grid-column: 1/-1;
+  min-height: 51px;
+  background: #e7efdc;
+  border-color: #9bb187;
+  color: #37512c;
+}
+.home-trail .home-branch:only-child {
+  grid-column: 1/-1;
+}
+.home-trail .home-branch.locked {
+  background: #eaf2e8;
+  border-color: #b2c7ad;
+  color: #668262;
+}
+.home-trail .home-branch.posts {
+  background: #e9e8f3;
+  border-color: #b6b0c9;
+  color: #574c72;
+}
+.home-trail .home-branch.outreach {
+  background: #e0eee7;
+  border-color: #98b8a7;
+  color: #315d49;
+}
+.home-trail .home-branch-mask {
+  background: #c5d7c2;
+}
+.home-trail .home-connections path.main {
+  stroke: #6e9479;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.home-trail .home-connections path.main.completed {
+  stroke: #527e63;
+  stroke-width: 2.1;
+}
+.home-trail .home-connections path.main.future {
+  stroke: #86a58b;
+  stroke-dasharray: 5 5;
+}
+.home-trail .home-connections path.branch {
+  stroke: #85a384;
+  stroke-width: 1.1;
+  stroke-dasharray: 3 3;
+  stroke-linecap: round;
+}
+.home-trail .home-station.has-group {
+  border-color: #659269;
+  box-shadow:
+    0 0 0 3px #b8d4b45e,
+    0 4px 8px #1c4d3220;
+}
+.home-trail .home-station.has-platform {
+  border-inline-start: 3px solid #719bb7;
+  background-image: linear-gradient(180deg, #eaf3f944, transparent 65%);
+}
+.home-trail .home-station.active.has-group,
+.home-trail .home-station.active.has-platform {
+  box-shadow:
+    0 0 0 5px #d7e6bd,
+    0 4px 18px #30623e22;
+  border-color: #28613d;
+}
+.trail-peers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding-top: 10px;
+  margin-top: 9px;
+  border-top: 1px solid #d9e6d5;
+  line-height: 1.5;
+}
+.trail-peers > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 9px;
+  white-space: nowrap;
+}
+.trail-peer-group {
+  color: #2b5f39;
+  background: #e3f0dd;
+  border: 1px solid #9ec19c;
+}
+.trail-peer-platform {
+  color: #2e5775;
+  background: #e0edf7;
+  border: 1px solid #9bb9ce;
+}
+.trail-peers b {
+  font-size: 11px;
+}
+.trail-avatar-pair {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  padding-inline-end: 3px;
+}
+.trail-avatar-pair i {
+  display: block;
+  width: 13px;
+  height: 13px;
+  border: 1px solid #e7f2e1;
+  border-radius: 50%;
+  background: #7aab7a;
+  box-shadow: 0 0 0 1px #9fbc92;
+}
+.trail-avatar-pair i + i {
+  margin-inline-start: -5px;
+  background: #4f8258;
+}
+.home-map-expand-bar {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: #e5eee2;
+  border-top: 1px solid #b9cdb9;
+  padding: 15px 20px 12px;
+}
+.home-map-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 43px;
+  border: 1px solid #285e40;
+  border-radius: 10px;
+  background: #285e40;
+  padding: 10px 25px;
+  color: white;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 3px 5px #1d462d12;
+}
+.home-map-toggle:hover {
+  background: #1b4931;
+}
+.home-map-expand-bar > small {
+  font-size: 10px;
+  color: #4e6b53;
+}
+.home-treasure-section .home-map-foot {
+  background: #e5eee2;
+  padding: 12px 24px 17px;
+  font-size: 10px;
+  color: #425f4b;
+  line-height: 1.9;
+}
+@container home-content (max-width:950px) {
+  .home-map.home-trail {
+    padding-inline: 29px;
+    gap: 44px 27px;
+  }
+  .home-trail .home-station h4 {
+    font-size: 12px;
+  }
+  .home-trail .home-branch {
+    font-size: 10px !important;
+  }
+}
+@container home-content (max-width:680px) {
+  .home-map.home-trail {
+    padding: 35px 30px 35px;
+    gap: 31px;
+  }
+  .home-trail .home-station {
+    min-height: 170px;
+    padding-inline: 16px;
+  }
+  .home-trail .home-station h4 {
+    font-size: 14px;
+    min-height: 28px;
+  }
+  .home-origin-card {
+    min-height: 156px;
+    padding: 17px;
+  }
+  .home-origin-icon {
+    width: 41px;
+    height: 41px;
+    float: inline-end;
+  }
+  .home-trail .trail-branches {
+    gap: 10px;
+    margin-top: 15px;
+  }
+  .home-trail .home-branch {
+    font-size: 11px !important;
+    min-height: 42px;
+  }
+  .trail-week-badge {
+    font-size: 10px;
+  }
+  .trail-peers > span {
+    font-size: 10px;
+  }
+  .home-map-window.collapsed {
+    max-height: 580px;
+  }
+}
+@media (max-width: 760px) {
+  .home-b .home-goal footer {
+    margin-inline: -18px;
+    padding-inline: 18px;
+  }
+  .home-treasure-section {
+    border-radius: 15px;
+  }
+  .home-treasure-section .home-map-masthead {
+    padding: 20px 17px;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .home-map-masthead h2 {
+    font-size: 23px;
+  }
+  .home-map-masthead .home-eyebrow {
+    font-size: 9px;
+  }
+  .home-map-masthead p {
+    font-size: 10px;
+  }
+  .home-map-masthead > .home-secondary {
+    margin-top: 25px;
+    padding: 8px;
+    font-size: 10px !important;
+    min-height: 36px;
+  }
+  .home-treasure-section .home-map-controls {
+    padding: 14px 17px;
+  }
+  .home-peer-example {
+    padding: 13px 17px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .home-peer-example strong {
+    font-size: 11px;
+  }
+  .home-peer-example small {
+    font-size: 9px;
+  }
+  .home-example-button {
+    width: 100%;
+    font-size: 11px !important;
+  }
+  .home-treasure-section .home-map-legend {
+    padding: 12px 17px;
+    gap: 10px 14px;
+    font-size: 9px;
+  }
+  .home-map-expand-bar {
+    padding: 13px 16px;
+  }
+  .home-map-toggle {
+    width: 100%;
+    max-width: 290px;
+    font-size: 11px !important;
+  }
+  .home-treasure-section .home-map-foot {
+    padding: 10px 17px 15px;
+    font-size: 9px;
+  }
+}
+
+/* Compact branches keep the trail tight; full titles remain in accessible dialogs. */
+.home-trail .trail-branches {
+  gap: 9px;
+  margin-top: 15px;
+}
+.home-trail .home-branch,
+.home-trail .home-branch.guidance {
+  min-height: 36px;
+  padding: 6px;
+  font-size: 10px !important;
+  grid-column: auto;
+}
+.home-trail .home-branch:only-child {
+  grid-column: 1/-1;
+}
+.home-map.home-trail {
+  row-gap: 43px;
+}
+.workspace-shell:has(.home-b) > div {
+  transition: none !important;
+}
+@media (min-width: 761px) {
+  .home-b .home-goal {
+    display: flex;
+    flex-direction: column;
+  }
+  .home-b .home-goal footer {
+    margin-top: auto;
+  }
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  .home-b .home-goal footer {
+    margin-inline: -15px;
+    padding-inline: 15px;
+  }
+}
+@container home-content (max-width:680px) {
+  .home-map.home-trail {
+    row-gap: 30px;
+  }
+  .home-trail .home-branch,
+  .home-trail .home-branch.guidance {
+    min-height: 40px;
+    font-size: 11px !important;
+  }
+}

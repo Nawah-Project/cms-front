@@ -55,7 +55,8 @@ export function FocusDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-neutral-950/55 p-4 backdrop-blur-[2px]"
+      data-dialog-backdrop
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-neutral-950/25 p-4 backdrop-blur-sm"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}

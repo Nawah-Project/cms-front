@@ -7,7 +7,7 @@ import { MemberAvatar } from "./MemberAvatar";
 import { relativeActivityTime } from "./LastUpdated";
 import { useI18n } from "../../../i18n";
 import { EmptyState } from "../../../components/EmptyState";
-import { useAppModal } from "../../../routes/layout";
+import { useAppModal } from "../../../components/AppModalContext";
 
 function parseSideTaskSummary(
   sideTask: RecentMemberProgress["sideTask"],
@@ -20,7 +20,7 @@ function parseSideTaskSummary(
       const parsed = JSON.parse(raw);
       if (parsed.category === "CV_UPDATE") {
         return {
-          title: `قام بتحديث السيرة الذاتية (CV v${parsed.version || 1})`,
+          title: `قام بتحديث السيرة الذاتية (CV ${Math.max(0, (parsed.version || 1) - 1)})`,
           category: "CV_UPDATE",
         };
       }

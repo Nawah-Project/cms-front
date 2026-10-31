@@ -1,3 +1,4 @@
+import type { GuidanceMember } from "../components/GuidanceMembersModal";
 import type {
   CreateTaskInput,
   ProfessionalTask,
@@ -11,6 +12,25 @@ import type {
 import type { Stage } from "../../../types";
 import { apiClient } from "../../../lib/api-client";
 import type { Report } from "../../reports/pages/ReportsPage";
+import type {
+  AdminPermissionMap,
+  AdminSection,
+} from "../adminAccess";
+
+export type AdminAccessAccount = {
+  id: string;
+  name: string;
+  email: string;
+  updatedAt: string;
+  access: {
+    isRoot: boolean;
+    fullAccess: boolean;
+    canManageAdmins: boolean;
+    permissions: AdminPermissionMap;
+  };
+};
+
+export type AccountDeletionPreview = { id: string; name: string; email: string; counts: { applications: number; assignedTasks: number; sideTaskSubmissions: number; notifications: number; experienceProgress: number; cvVersions: number } };
 
 export type ActivityStatus = "ACTIVE" | "WARNING" | "CRITICAL" | "NEVER_ACTIVE";
 export type ExperimentVariant = "A" | "B" | "C";
@@ -211,6 +231,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const adminApi = {
+  admins: () =>
+    request<{ sections: AdminSection[]; items: AdminAccessAccount[] }>(
+      "/admin/access/admins",
+    ),
+  updateAdminAccess: (id: string, permissions: AdminPermissionMap) =>
+    request<AdminAccessAccount>(`/admin/access/admins/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      body: JSON.stringify({ permissions }),
+    }),
   reportPreviewDemo: (scenario: "EMPTY" | "ONE" | "EARLY" | "WEEK1_COMPLETE" | "WEEK3_COMPLETE" | "POPULATED" | "COMPLETED" = "COMPLETED") =>
     request<AdminReportPreviewResponse>(`/admin/journey/reports/demo?scenario=${scenario}`),
   reportPreviewUser: (userId: string) =>
@@ -263,6 +292,8 @@ export const adminApi = {
     request<AdminUserDetail>(
       `/admin/monitoring/users/${encodeURIComponent(id)}`,
     ),
+  deletionPreview: (userId: string) => request<AccountDeletionPreview>(`/admin/users/${encodeURIComponent(userId)}/deletion-preview`),
+  deleteAccount: (userId: string, email: string) => request<{ deleted: boolean; cvFilesPending: number }>(`/admin/users/${encodeURIComponent(userId)}`, { method: "DELETE", body: JSON.stringify({ email, confirmation: "DELETE_PERMANENTLY" }) }),
   removeFromGroup: (groupId: string, userId: string) =>
     request<{ success: boolean }>(
       `/admin/groups/${encodeURIComponent(groupId)}/members/${encodeURIComponent(userId)}`,
@@ -799,6 +830,12 @@ export type PlotGuidanceItem = {
   tierLevel: string;
   unlockedCount: number;
   readsCount: number;
+  completedCount: number;
+  pendingCount: number;
+  blockingCount: number;
+  totalMembers: number;
+  required: boolean;
+  members: GuidanceMember[];
   unlockedPercent: number;
   readPercent: number;
   isCustomized: boolean;

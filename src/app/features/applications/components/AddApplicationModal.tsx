@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import { trackSectionAction } from '../../ux-lab/lab-events';
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import {
   APPLICATION_METHODS,
   formatApplicationMethod,
@@ -15,7 +16,10 @@ import { useJourneyState } from "../../journey/api/journeyApi";
 import { canAddTailoredApplication } from "../../journey/lib/journey-policies";
 import { useAuth } from "../../auth/store/authStore";
 import { useTour } from "./FirstApplicationGuidedTour";
+import { FeatureTour, markFeatureTourSeen } from "../../../components/FeatureTour";
+import { EXPLORER_INTRO_TOUR, EXPLORER_TOUR } from "../../journey/lib/week-one-tours";
 import { sanitizeJobUrl } from "../../../utils/urlSanitizer";
+import { FIRST_APPLICATION_FLOW, isGuideFinished, useExperienceProgress } from "../../experience/ExperienceProgress";
 
 interface AddApplicationModalProps {
   isOpen: boolean;
@@ -35,11 +39,23 @@ export function AddApplicationModal({
   const { t, locale } = useI18n();
   const { user } = useAuth();
   const { isTourActive, step, setStep } = useTour();
+  const experience = useExperienceProgress();
+  const firstGuideDone = isGuideFinished(experience.progress[FIRST_APPLICATION_FLOW]);
+  const [postTourEntry, setPostTourEntry] = useState(false);
+  const priorEntryOpen = React.useRef(false);
+  useEffect(() => {
+    if (isOpen && !priorEntryOpen.current) {
+      setPostTourEntry(!isTourActive && firstGuideDone);
+    }
+    if (!isOpen) setPostTourEntry(false);
+    priorEntryOpen.current = isOpen;
+  }, [isOpen, user?.id, firstGuideDone]);
   const { data: journeyData } = useJourneyState({
     enabled: Boolean(user) && journeyQueryEnabled,
   });
   const showTailoredOption = canAddTailoredApplication(journeyData, user);
 
+  const canShare = Boolean(journeyData?.features.groups);
   const [companyName, setCompanyName] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [applicationDate, setApplicationDate] = useState(getTodayDateString());
@@ -49,6 +65,8 @@ export function AddApplicationModal({
   const [jobUrl, setJobUrl] = useState("");
   const [isTailored, setIsTailored] = useState(false);
   const [sharedWithGroup, setSharedWithGroup] = useState(false);
+  const sharingTouched = React.useRef(false);
+  useLayoutEffect(()=>{if(isOpen && !sharingTouched.current)setSharedWithGroup(canShare);if(!isOpen)sharingTouched.current=false;},[isOpen,canShare]);
 
   const [errors, setErrors] = useState<{
     companyName?: string;
@@ -58,34 +76,28 @@ export function AddApplicationModal({
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showExplorerModal, setShowExplorerModal] = useState(false);
+  useEffect(() => {
+    if (isOpen && isTourActive) setShowExplorerModal(step === 4);
+  }, [isOpen, isTourActive, step]);
   const [companyPasteHint, setCompanyPasteHint] = useState(false);
-  const [showHint, setShowHint] = useState(() => {
-    try {
-      return (
-        localStorage.getItem("nawah_add_modal_explorer_hint_seen") !== "true"
-      );
-    } catch {
-      return false;
-    }
-  });
+  const [hintDismissed, setHintDismissed] = useState(false);
+  const showHint = !hintDismissed && !isGuideFinished(experience.progress["explorer-intro-week1-v1"]);
+  useEffect(() => setHintDismissed(false), [user?.id]);
 
   const dismissHint = () => {
-    try {
-      localStorage.setItem("nawah_add_modal_explorer_hint_seen", "true");
-    } catch {
-      // ignore
-    }
-    setShowHint(false);
+    experience.record("explorer-intro-week1-v1", "SKIPPED");
+    setHintDismissed(true);
   };
 
   const prevIsOpenRef = React.useRef(false);
   const prevInitialValuesRef = React.useRef(initialValues);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const isOpening = isOpen && !prevIsOpenRef.current;
     const isNewInitialValues = isOpen && initialValues !== prevInitialValuesRef.current;
 
     if (isOpening || isNewInitialValues) {
+      setSharedWithGroup(canShare);
       if (initialValues) {
         if (initialValues.companyName !== undefined) {
           setCompanyName(initialValues.companyName);
@@ -108,7 +120,8 @@ export function AddApplicationModal({
           setIsTailored(Boolean(initialValues.isTailored));
         }
         if (initialValues.sharedWithGroup !== undefined) {
-          setSharedWithGroup(Boolean(initialValues.sharedWithGroup));
+          sharingTouched.current=true;
+          setSharedWithGroup(canShare && Boolean(initialValues.sharedWithGroup));
         }
       } else if (user?.targetJobTitle) {
         setJobTitle(user.targetJobTitle);
@@ -176,7 +189,7 @@ export function AddApplicationModal({
     setApplicationMethod("COMPANY_WEBSITE");
     setJobUrl("");
     setIsTailored(false);
-    setSharedWithGroup(false);
+    setSharedWithGroup(canShare);
     setCompanyPasteHint(false);
     setErrors({});
   };
@@ -203,7 +216,7 @@ export function AddApplicationModal({
         applicationMethod,
         jobUrl: sanitizeJobUrl(jobUrl),
         isTailored: showTailoredOption ? isTailored : false,
-        sharedWithGroup,
+        sharedWithGroup: canShare && sharedWithGroup,
       });
       window.dispatchEvent(new CustomEvent("nawah_app_created"));
       resetForm();
@@ -219,7 +232,9 @@ export function AddApplicationModal({
 
   return (
     <>
-      <Modal
+      <FeatureTour feature="explorer-intro-week1-v1" enabled={isOpen && postTourEntry && !isTourActive} steps={EXPLORER_INTRO_TOUR} />
+    <FeatureTour feature="explorer-filters-week1-v1" enabled={showExplorerModal && postTourEntry && !isTourActive} steps={EXPLORER_TOUR} />
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       title={t("applications.addTitle")}
@@ -248,7 +263,7 @@ export function AddApplicationModal({
         </>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onInvalidCapture={()=>trackSectionAction("validation_failed")} onSubmit={handleSubmit} className="space-y-4">
         {/* Job Explorer Shortcut in Form Header */}
         <div className="flex items-center justify-between pb-3 border-b border-border/80 overflow-visible relative z-20">
           <span className="text-xs text-neutral-500 font-medium">
@@ -265,10 +280,10 @@ export function AddApplicationModal({
                 }
                 setShowExplorerModal(true);
               }}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-300 bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800 px-3 py-1.5 text-xs font-bold text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors shadow-2xs"
+              className="button-secondary text-xs"
             >
               <Compass className="h-3.5 w-3.5 text-neutral-600 dark:text-neutral-300" />
-              <span>{locale === "ar" ? "🧭 مستكشف الوظائف" : "🧭 Job Explorer"}</span>
+              <span>{locale === "ar" ? "مستكشف الوظائف" : "Job Explorer"}</span>
             </button>
 
             {/* Welcoming Floating Hint on First Visit */}
@@ -449,7 +464,7 @@ export function AddApplicationModal({
         </div>
 
         {/* V2 Strategic Options: Tailored Application & Group Sharing */}
-        <div className="space-y-3 rounded-xl border border-border bg-neutral-50/70 p-3.5 dark:bg-neutral-900/50">
+        {(showTailoredOption || canShare) && <div data-application-options className="space-y-3 rounded-xl border border-border bg-surface p-3.5">
           {showTailoredOption && (
             <label className="flex cursor-pointer items-start gap-3">
               <input
@@ -470,11 +485,11 @@ export function AddApplicationModal({
             </label>
           )}
 
-          <label className="flex cursor-pointer items-start gap-3">
+          {canShare && <label className="flex cursor-pointer items-start gap-3">
             <input
               type="checkbox"
               checked={sharedWithGroup}
-              onChange={(e) => setSharedWithGroup(e.target.checked)}
+              onChange={(e) => {sharingTouched.current=true;setSharedWithGroup(e.target.checked);}}
               className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-500"
             />
             <span className="text-xs leading-5 text-text-primary">
@@ -485,8 +500,8 @@ export function AddApplicationModal({
                 {t("applications.sharedWithGroupHint")}
               </span>
             </span>
-          </label>
-        </div>
+          </label>}
+        </div>}
       </form>
     </Modal>
 
@@ -495,7 +510,7 @@ export function AddApplicationModal({
         isOpen={true}
         zIndex={110}
         onClose={() => {
-          if (!isTourActive) setShowExplorerModal(false);
+          if (!isTourActive) { setShowExplorerModal(false); if(postTourEntry) markFeatureTourSeen(user?.id,"explorer-filters-week1-v1",true); }
         }}
         disableClose={isTourActive}
         title={locale === "ar" ? "مستكشف الوظائف" : "Job Explorer"}
@@ -504,6 +519,7 @@ export function AddApplicationModal({
         <div className="max-h-[75vh] overflow-y-auto -m-4 p-4 sm:-m-6 sm:p-6">
           <JobMarketCompass
             collapsible={false}
+            guided={isTourActive && step === 4}
             onLaunchDraft={(draft) => {
               setShowExplorerModal(false);
               if (isTourActive && step === 4) {

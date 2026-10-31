@@ -82,6 +82,10 @@ export const api = {
    * Handles both flat array responses and paginated { data: [] } responses.
    */
   async getApplications(params?: {
+    cvVersion?: number;
+    createdFrom?: string;
+    createdBefore?: string;
+    page?: number;
     stage?: string;
     outcome?: string;
     search?: string;
@@ -93,6 +97,10 @@ export const api = {
     if (params?.stage) {
       searchParams.set("stage", params.stage);
     }
+    if (params?.cvVersion) searchParams.set("cvVersion", String(params.cvVersion));
+    if (params?.createdFrom) searchParams.set("createdFrom", params.createdFrom);
+    if (params?.createdBefore) searchParams.set("createdBefore", params.createdBefore);
+    if (params?.page) searchParams.set("page", String(params.page));
     if (params?.outcome) searchParams.set("outcome", params.outcome);
     if (params?.search) searchParams.set("search", params.search);
     searchParams.set("limit", String(Math.min(params?.limit ?? 100, 1000)));

@@ -7,7 +7,7 @@ import { SpinnerIcon } from "../../../components/Icons";
 export function ProtectedRoute({ children }: { children: ReactNode }) {
   const { loading, authenticated } = useMe(); const navigate = useNavigate(); const location = useLocation();
   const { t } = useI18n();
-  useEffect(() => { if (!loading && !authenticated) navigate("/auth/login", { replace: true, state: { from: location.pathname } }); }, [loading, authenticated, navigate, location.pathname]);
+  useEffect(() => { if (!loading && !authenticated) navigate("/auth/login", { replace: true, state: { from: location.pathname === "/" && new URLSearchParams(location.search).get("labPreview") === "home:B" ? location.pathname + location.search : location.pathname } }); }, [loading, authenticated, navigate, location.pathname, location.search]);
   if (loading || !authenticated) {
     return (
       <main className="min-h-screen flex items-center justify-center text-sm text-neutral-500" role="status">

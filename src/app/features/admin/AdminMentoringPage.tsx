@@ -3,10 +3,14 @@ import { useSearchParams } from "react-router";
 import { useI18n } from "../../i18n";
 import { adminApi, type AdminGroup, type AdminMember } from "./api/adminApi";
 import { AdminMemberTasks } from "./components/AdminMemberTasks";
-import { MemberInspectorDrawer } from "./components/MemberInspectorDrawer";
+import { MemberInspectorModal } from "./components/MemberInspectorModal";
 import { FeedbackFormDialog } from "../professional-development/components/FeedbackFormDialog";
 import { TaskFormDialog } from "../professional-development/components/TaskFormDialog";
-import type { CreateTaskInput, UpdateTaskInput, FeedbackPost } from "../professional-development/types";
+import type {
+  CreateTaskInput,
+  UpdateTaskInput,
+  FeedbackPost,
+} from "../professional-development/types";
 import {
   EmptyState,
   ErrorState,
@@ -43,7 +47,9 @@ export default function AdminMentoringPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Active workspace tab for selected member: "tasks" | "feedback"
-  const [workspaceTab, setWorkspaceTab] = useState<"tasks" | "feedback">("tasks");
+  const [workspaceTab, setWorkspaceTab] = useState<"tasks" | "feedback">(
+    "tasks",
+  );
 
   // --- Members & Groups Data ---
   const [members, setMembers] = useState<AdminMember[]>([]);
@@ -55,10 +61,14 @@ export default function AdminMentoringPage() {
 
   // Filter & Search in member list
   const [searchQuery, setSearchQuery] = useState("");
-  const [memberFilter, setMemberFilter] = useState<"ALL" | "OVERDUE" | "TASK_0">("ALL");
+  const [memberFilter, setMemberFilter] = useState<
+    "ALL" | "OVERDUE" | "TASK_0"
+  >("ALL");
 
-  // Inspect Member Drawer
-  const [inspectorMemberId, setInspectorMemberId] = useState<string | null>(null);
+  // Inspect member dialog
+  const [inspectorMemberId, setInspectorMemberId] = useState<string | null>(
+    null,
+  );
 
   // Dialogs
   const [taskFormTarget, setTaskFormTarget] = useState<
@@ -69,7 +79,8 @@ export default function AdminMentoringPage() {
   const [taskFormOpen, setTaskFormOpen] = useState(false);
 
   const [cohortModalOpen, setCohortModalOpen] = useState(false);
-  const [selectedCohortForTask, setSelectedCohortForTask] = useState<AdminGroup | null>(null);
+  const [selectedCohortForTask, setSelectedCohortForTask] =
+    useState<AdminGroup | null>(null);
 
   // Feedback State
   const [feedbackPosts, setFeedbackPosts] = useState<FeedbackPost[]>([]);
@@ -78,17 +89,18 @@ export default function AdminMentoringPage() {
   const [feedbackTotalCount, setFeedbackTotalCount] = useState(0);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackError, setFeedbackError] = useState(false);
-  const [editingFeedback, setEditingFeedback] = useState<FeedbackPost | null>(null);
+  const [editingFeedback, setEditingFeedback] = useState<FeedbackPost | null>(
+    null,
+  );
   const [feedbackFormOpen, setFeedbackFormOpen] = useState(false);
-  const [feedbackScope, setFeedbackScope] = useState<"MEMBER_ONLY" | "ALL">("MEMBER_ONLY");
+  const [feedbackScope, setFeedbackScope] = useState<"MEMBER_ONLY" | "ALL">(
+    "MEMBER_ONLY",
+  );
 
   // Load directory
   const loadDirectory = useCallback(() => {
     setDataLoading(true);
-    Promise.all([
-      adminApi.users({ limit: 100 }),
-      adminApi.groups(),
-    ])
+    Promise.all([adminApi.users({ limit: 100 }), adminApi.groups()])
       .then(([usersRes, groupsRes]) => {
         setMembers(usersRes.items);
         setGroups(groupsRes.items);
@@ -168,7 +180,11 @@ export default function AdminMentoringPage() {
     if (!selectedMember || feedbackScope === "ALL") return feedbackPosts;
     return feedbackPosts.filter((post) => {
       if (post.targetUser?.id === selectedMember.id) return true;
-      if (post.visibility === "GROUP" && post.group?.id === selectedMember.group?.id) return true;
+      if (
+        post.visibility === "GROUP" &&
+        post.group?.id === selectedMember.group?.id
+      )
+        return true;
       if (post.visibility === "ALL") return true;
       return false;
     });
@@ -188,7 +204,9 @@ export default function AdminMentoringPage() {
     try {
       if (taskFormTarget.type === "MEMBER") {
         await adminApi.createTask(taskFormTarget.member.id, createInput);
-        toast.success(isAr ? "تم إسناد المهمة للعضو بنجاح" : "Task assigned successfully");
+        toast.success(
+          isAr ? "تم إسناد المهمة للعضو بنجاح" : "Task assigned successfully",
+        );
       } else {
         await adminApi.createTaskForGroup(taskFormTarget.group.id, createInput);
         toast.success(
@@ -289,16 +307,22 @@ export default function AdminMentoringPage() {
                 setSelectedCohortForTask(groups[0]);
                 setCohortModalOpen(true);
               } else {
-                toast.error(isAr ? "لا توجد مجموعات متاحة" : "No cohorts found");
+                toast.error(
+                  isAr ? "لا توجد مجموعات متاحة" : "No cohorts found",
+                );
               }
             }}
             className="button-primary w-full py-2.5 px-4 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm"
           >
             <Users className="h-4 w-4" />
-            <span>{isAr ? "📢 إسناد لمجموعة كاملة" : "📢 Assign to Entire Cohort"}</span>
+            <span>
+              {isAr ? "📢 إسناد لمجموعة كاملة" : "📢 Assign to Entire Cohort"}
+            </span>
           </button>
           <p className="text-[11px] text-neutral-500 text-center mt-2">
-            {isAr ? "إرسال مهمة تخصصية لجميع أعضاء دفعة معينة" : "Broadcast task to all cohort members"}
+            {isAr
+              ? "إرسال مهمة تخصصية لجميع أعضاء دفعة معينة"
+              : "Broadcast task to all cohort members"}
           </p>
         </div>
       </div>
@@ -324,7 +348,11 @@ export default function AdminMentoringPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={isAr ? "ابحث بالاسم أو الإيميل أو الدفعة..." : "Search name, email, cohort..."}
+                placeholder={
+                  isAr
+                    ? "ابحث بالاسم أو الإيميل أو الدفعة..."
+                    : "Search name, email, cohort..."
+                }
                 className="w-full rounded-xl border border-neutral-200 bg-neutral-50/60 py-1.5 ps-9 pe-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:bg-surface focus:outline-hidden dark:border-neutral-700 dark:bg-neutral-800/60 dark:text-neutral-100 dark:focus:border-neutral-100"
               />
             </div>
@@ -371,10 +399,14 @@ export default function AdminMentoringPage() {
           {/* Members Scroll List */}
           <div className="max-h-[640px] overflow-y-auto divide-y divide-neutral-100 dark:divide-neutral-800 pe-1">
             {dataLoading ? (
-              <LoadingState label={isAr ? "جارٍ تحميل الأعضاء..." : "Loading members..."} />
+              <LoadingState
+                label={isAr ? "جارٍ تحميل الأعضاء..." : "Loading members..."}
+              />
             ) : !filteredMembers.length ? (
               <div className="py-8 text-center text-xs text-neutral-500">
-                {isAr ? "لا توجد نتائج مطابقة للبحث" : "No matching members found"}
+                {isAr
+                  ? "لا توجد نتائج مطابقة للبحث"
+                  : "No matching members found"}
               </div>
             ) : (
               filteredMembers.map((m) => {
@@ -423,7 +455,10 @@ export default function AdminMentoringPage() {
               {/* Member Workspace Header (Fixed DOM: No div inside h4) */}
               <div className="flex flex-wrap items-start justify-between gap-4 pb-4 border-b border-neutral-200/80 dark:border-neutral-800">
                 <div className="flex items-start gap-3.5 min-w-0">
-                  <Initials name={selectedMember.name} avatar={selectedMember.avatar} />
+                  <Initials
+                    name={selectedMember.name}
+                    avatar={selectedMember.avatar}
+                  />
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-lg font-bold text-neutral-950 dark:text-neutral-100">
@@ -432,12 +467,13 @@ export default function AdminMentoringPage() {
                       <JourneyBadge journey={selectedMember.journey} compact />
                     </div>
                     <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
-                      {selectedMember.email} · {selectedMember.group?.name || t("common.unassigned")}
+                      {selectedMember.email} ·{" "}
+                      {selectedMember.group?.name || t("common.unassigned")}
                     </p>
                   </div>
                 </div>
 
-                {/* Inspect Drawer Action Button */}
+                {/* Inspect member action */}
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -445,7 +481,9 @@ export default function AdminMentoringPage() {
                     className="button-secondary text-xs font-semibold px-3 py-1.5 inline-flex items-center gap-1.5 cursor-pointer"
                   >
                     <ExternalLink className="h-3.5 w-3.5 text-neutral-500" />
-                    <span>{isAr ? "ملف العضو والسيرة 360°" : "Member 360° Profile"}</span>
+                    <span>
+                      {isAr ? "ملف العضو والسيرة 360°" : "Member 360° Profile"}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -496,7 +534,10 @@ export default function AdminMentoringPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      setTaskFormTarget({ type: "MEMBER", member: selectedMember });
+                      setTaskFormTarget({
+                        type: "MEMBER",
+                        member: selectedMember,
+                      });
                       setTaskFormOpen(true);
                     }}
                     className="button-primary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold cursor-pointer"
@@ -514,7 +555,9 @@ export default function AdminMentoringPage() {
                     className="button-secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold cursor-pointer"
                   >
                     <Send className="h-3.5 w-3.5 text-neutral-600 dark:text-neutral-300" />
-                    <span>{isAr ? "+ إرسال ملاحظة توجيهية" : "+ Send Guidance"}</span>
+                    <span>
+                      {isAr ? "+ إرسال ملاحظة توجيهية" : "+ Send Guidance"}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -546,7 +589,9 @@ export default function AdminMentoringPage() {
                             : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300"
                         }`}
                       >
-                        {isAr ? `توجيهات ${selectedMember.name} والمجموعة` : `Targeted to ${selectedMember.name}`}
+                        {isAr
+                          ? `توجيهات ${selectedMember.name} والمجموعة`
+                          : `Targeted to ${selectedMember.name}`}
                       </button>
                       <button
                         type="button"
@@ -575,13 +620,21 @@ export default function AdminMentoringPage() {
                   </div>
 
                   {feedbackLoading ? (
-                    <LoadingState label={isAr ? "جارٍ تحميل التوجيهات..." : "Loading guidance notes..."} />
+                    <LoadingState
+                      label={
+                        isAr
+                          ? "جارٍ تحميل التوجيهات..."
+                          : "Loading guidance notes..."
+                      }
+                    />
                   ) : feedbackError ? (
                     <ErrorState onRetry={() => loadFeedback(feedbackPage)} />
                   ) : !memberFeedbackPosts.length ? (
                     <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/50 p-8 text-center dark:border-neutral-700 dark:bg-neutral-900/30">
                       <p className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                        {isAr ? "لا توجد ملاحظات توجيهية مرسلة لهذا العضو بعد" : "No guidance notes sent to this member yet"}
+                        {isAr
+                          ? "لا توجد ملاحظات توجيهية مرسلة لهذا العضو بعد"
+                          : "No guidance notes sent to this member yet"}
                       </p>
                       <p className="text-xs text-neutral-500 mt-1">
                         {isAr
@@ -604,15 +657,21 @@ export default function AdminMentoringPage() {
                                     post.visibility === "DIRECT"
                                       ? "bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800"
                                       : post.visibility === "GROUP"
-                                      ? "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
-                                      : "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                                        ? "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
+                                        : "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
                                   }`}
                                 >
                                   {post.visibility === "DIRECT"
-                                    ? isAr ? "مباشر للعضو" : "Direct Member"
+                                    ? isAr
+                                      ? "مباشر للعضو"
+                                      : "Direct Member"
                                     : post.visibility === "GROUP"
-                                    ? isAr ? `مجموعة: ${post.group?.name || ""}` : `Group: ${post.group?.name || ""}`
-                                    : isAr ? "إعلان عام" : "Public Announcement"}
+                                      ? isAr
+                                        ? `مجموعة: ${post.group?.name || ""}`
+                                        : `Group: ${post.group?.name || ""}`
+                                      : isAr
+                                        ? "إعلان عام"
+                                        : "Public Announcement"}
                                 </span>
                                 {post.targetUser && (
                                   <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
@@ -681,7 +740,9 @@ export default function AdminMentoringPage() {
           ) : (
             <div className="rounded-2xl border border-neutral-200/80 bg-surface p-12 text-center dark:border-neutral-800">
               <p className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                {isAr ? "يرجى اختيار عضو من القائمة لعرض مساحة العمل التوجيهية" : "Select a member to view their mentoring workspace"}
+                {isAr
+                  ? "يرجى اختيار عضو من القائمة لعرض مساحة العمل التوجيهية"
+                  : "Select a member to view their mentoring workspace"}
               </p>
             </div>
           )}
@@ -734,7 +795,10 @@ export default function AdminMentoringPage() {
                 type="button"
                 onClick={() => {
                   if (selectedCohortForTask) {
-                    setTaskFormTarget({ type: "GROUP", group: selectedCohortForTask });
+                    setTaskFormTarget({
+                      type: "GROUP",
+                      group: selectedCohortForTask,
+                    });
                     setCohortModalOpen(false);
                     setTaskFormOpen(true);
                   }
@@ -785,8 +849,8 @@ export default function AdminMentoringPage() {
         />
       )}
 
-      {/* Member 360° Inspector Slide-over Drawer */}
-      <MemberInspectorDrawer
+      {/* Member 360° profile dialog */}
+      <MemberInspectorModal
         memberId={inspectorMemberId}
         onClose={() => setInspectorMemberId(null)}
         onMemberUpdated={loadDirectory}

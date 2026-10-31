@@ -1,19 +1,30 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router";
-import { Lock, Sparkles, Unlock } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useBlocker, useSearchParams } from "react-router";
+import { Lock, Sparkles, Check } from "lucide-react";
 import { useAuth } from "../../auth/store/authStore";
-import { PageHeading } from "../../../components/ui/PageHeading";
+import { MemberPageHeader } from "../../../design-system/MemberPageHeader";
 import { ProfessionalDevelopmentNav } from "../components/ProfessionalDevelopmentNav";
 import { GuidanceReadingModal } from "../components/GuidanceReadingModal";
 import { journeyApi, useJourneyState } from "../../journey/api/journeyApi";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { journeyQueryKeys } from "../../journey/config/query-keys";
 import { JOURNEY_INSIGHTS_CATALOG } from "../../journey/lib/journey-insights-catalog";
 import { api } from "../../../services/api";
 import { useI18n } from "../../../i18n";
 import type { FeedbackPost, FeedbackResource } from "../types";
+import { profileApi } from "../../profile/profileApi";
 import { LoadingState } from "../../admin/components/AdminUI";
 import { PlayCircleIcon } from "../../../components/Icons";
+import { FeatureTour, type FeatureTourStep } from "../../../components/FeatureTour";
+
+const ANALYTICS_UNLOCK_TOUR: FeatureTourStep[] = [{
+  selector: '[data-tour-step="analytics-unlocked-nav"]',
+  titleAr: "سيرتك اتحدّثت، وتحليل الأداء اتفتح",
+  titleEn: "Your CV is updated. Analytics is now open",
+  bodyAr: "من هنا هتشوف نتائج طلباتك، وتقارن الطلبات المرتبطة بكل نسخة من سيرتك. ادخل شوف نقطة البداية، أو تخطَّ الشرح وكمل في وقتك.",
+  bodyEn: "See your application results and compare applications linked to each CV version. Explore your starting point now, or skip and return when ready.",
+  activateTarget: true, finishOnTargetClick: true,
+}];
 
 interface UnifiedGuidanceItem {
   id: string;
@@ -33,6 +44,7 @@ export default function GuidancePage() {
   const text = (a: string, e: string) => (locale === "ar" ? a : e);
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: () => profileApi.get(), enabled: Boolean(user) });
   const {
     data: journeyData,
     isLoading: journeyLoading,
@@ -48,6 +60,11 @@ export default function GuidancePage() {
   const [selectedItem, setSelectedItem] = useState<UnifiedGuidanceItem | null>(
     null,
   );
+  const [analyticsUnlocked, setAnalyticsUnlocked] = useState(false);
+  const openedDeepLink = useRef<string | null>(null);
+  const mustCompleteCv = Boolean(selectedItem?.code === "INSIGHT_TASK_0_CV_BASE" && user?.role!=="ADMIN" && !journeyData?.cvFoundation?.completed);
+  const blocker = useBlocker(mustCompleteCv);
+  useEffect(()=>{if(blocker.state==="blocked")blocker.reset();},[blocker]);
   const loadGuidanceFromApi = useCallback(async () => {
     setDbLoading(true);
     setDbError(false);
@@ -88,7 +105,7 @@ export default function GuidancePage() {
 
       const content =
         matchedDb?.content ||
-        `<p>${locale === "ar" ? catalogItem.summaryAr : catalogItem.summaryEn}</p>`;
+        (locale === "ar" ? catalogItem.contentAr : catalogItem.contentEn) || `<p>${locale === "ar" ? catalogItem.summaryAr : catalogItem.summaryEn}</p>`;
 
       const promptTemplate =
         matchedDb?.promptTemplate !== undefined
@@ -99,7 +116,7 @@ export default function GuidancePage() {
 
       const resources = matchedDb?.resources || [];
 
-      const isRead =
+      const recordedRead =
         Boolean(matchedDb?.isRead) ||
         Boolean(
           journeyData?.state.readInsightCodes?.includes(catalogItem.code),
@@ -110,15 +127,17 @@ export default function GuidancePage() {
         code: catalogItem.code,
         weekNumber: catalogItem.weekNumber,
         title,
-        content,
-        promptTemplate: promptTemplate || null,
+        content: catalogItem.code === "INSIGHT_TASK_0_CV_BASE" ? content.replace("اضغط تم بعد الرفع. وقتها تفتح تحليلات الأداء وتبدأ فترة متابعة جديدة من غير تغيير الطلبات القديمة.", "بعد حفظ النسخة الجديدة، الإرشاد هيكتمل تلقائيًا وتفتح تحليلات الأداء، وتبدأ فترة متابعة جديدة من غير تغيير الطلبات القديمة.").replace("upload a genuinely updated CV below, then confirm completion to unlock analytics.", "upload a genuinely updated CV below. Completion is confirmed automatically after saving, unlocking analytics.") : content,
+        promptTemplate: promptTemplate ? promptTemplate
+          .replaceAll("{{specialization}}", profile?.targetJobTitle || user?.targetJobTitle || text("[حدّد تخصصك]", "[Your specialization]"))
+          .replaceAll("{{portfolioUrl}}", profile?.portfolioUrl || text("[أضف رابط بورتفوليوك من ملفك]", "[Add your portfolio URL]")) : null,
         resources,
-        isRead,
+        isRead: catalogItem.code === "INSIGHT_TASK_0_CV_BASE" ? Boolean(journeyData?.cvFoundation?.completed) : recordedRead,
         publishedAt: matchedDb?.publishedAt,
         isAdvanced: catalogItem.isAdvanced,
       };
     });
-  }, [dbPosts, locale, journeyData?.state.readInsightCodes]);
+  }, [dbPosts, locale, journeyData?.state.readInsightCodes, journeyData?.cvFoundation, profile?.targetJobTitle, profile?.portfolioUrl, user?.targetJobTitle]);
 
   const unlockedGuidance = useMemo(() => {
     return unifiedItems.filter((item) => isAdmin || unlockedSet.has(item.code));
@@ -129,15 +148,17 @@ export default function GuidancePage() {
     return unifiedItems.find((item) => !unlockedSet.has(item.code)) || null;
   }, [unifiedItems, isAdmin, unlockedSet]);
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const deepLinkCode = searchParams.get("guidance");
 
   useEffect(() => {
-    if (!deepLinkCode || !unlockedGuidance.length) return;
+    if (!deepLinkCode) { openedDeepLink.current = null; return; }
+    if (!deepLinkCode || !unlockedGuidance.length || openedDeepLink.current === deepLinkCode) return;
     const matched = unlockedGuidance.find(
       (item) => item.code === deepLinkCode || item.id === deepLinkCode,
     );
     if (matched) {
+      openedDeepLink.current = deepLinkCode;
       setSelectedItem(matched);
     }
   }, [deepLinkCode, unlockedGuidance]);
@@ -146,8 +167,14 @@ export default function GuidancePage() {
     const item = unifiedItems.find((i) => i.id === postId || i.code === postId);
     if (!item) throw new Error("Guidance is unavailable");
     await journeyApi.markInsightRead(item.code);
-    await queryClient.invalidateQueries({ queryKey: journeyQueryKeys.all });
+    await Promise.all([queryClient.invalidateQueries({ queryKey: journeyQueryKeys.all }), queryClient.invalidateQueries({ queryKey: ["journey", "reports"] })]);
     await loadGuidanceFromApi();
+    if (item.code === "INSIGHT_TASK_0_CV_BASE" && user?.role !== "ADMIN") {
+      setSelectedItem(null);
+      setSearchParams(previous => { const next = new URLSearchParams(previous); next.delete("guidance"); return next; }, {replace:true});
+      setAnalyticsUnlocked(true);
+      requestAnimationFrame(() => window.dispatchEvent(new Event("nawah:analytics-unlocked")));
+    }
   };
 
   const getWeekBadgeLabel = (week: number) => {
@@ -166,7 +193,8 @@ export default function GuidancePage() {
   };
 
   return (
-    <div className="space-y-7 animate-in fade-in duration-150">
+    <div className="member-guidance space-y-7 animate-in fade-in duration-150">
+      <FeatureTour feature="analytics-unlocked-v1" enabled={analyticsUnlocked && Boolean(journeyData?.features.analytics)} steps={ANALYTICS_UNLOCK_TOUR} onFinish={() => setAnalyticsUnlocked(false)} />
       {(journeyError || dbError) && (
         <div role="alert" className="rounded-xl border border-amber-300 p-4">
           <p>
@@ -186,7 +214,7 @@ export default function GuidancePage() {
           </button>
         </div>
       )}
-      <PageHeading
+      <MemberPageHeader
         eyebrow={text("التطوير المهني", "Professional development")}
         title={text("الإرشادات والتعليمات", "Guidance and instructions")}
         description={text(
@@ -198,9 +226,9 @@ export default function GuidancePage() {
       <ProfessionalDevelopmentNav />
 
       {/* Guidance Header Banner */}
-      <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
+      <div className="guidance-summary rounded-2xl border border-border bg-surface p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border-strong bg-surface text-accent">
             <Sparkles className="h-6 w-6" />
           </div>
           <div>
@@ -235,7 +263,7 @@ export default function GuidancePage() {
           )}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className={`guidance-grid grid grid-cols-1 md:grid-cols-2 gap-4 ${unlockedGuidance.length === 0 ? "is-empty" : ""}`}>
           {/* Unlocked Guidance Cards */}
           {unlockedGuidance.map((item) => {
             const hasVideo = item.resources.some(
@@ -256,7 +284,7 @@ export default function GuidancePage() {
                 type="button"
                 key={item.code}
                 onClick={() => setSelectedItem(item)}
-                className="group text-start flex flex-col justify-between cursor-pointer rounded-2xl border border-border bg-surface p-5 transition-all hover:border-neutral-400 hover:shadow-md hover:-translate-y-0.5 select-none"
+                className="guidance-card group text-start flex flex-col justify-between cursor-pointer rounded-2xl border border-border bg-surface p-5 transition-all hover:border-neutral-400 hover:shadow-md hover:-translate-y-0.5 select-none"
               >
                 <div className="space-y-3">
                   {/* Top Bar: Phase & Read Status */}
@@ -267,12 +295,12 @@ export default function GuidancePage() {
 
                     {item.isRead ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                        <Unlock className="h-3 w-3" />
-                        <span>{text("تمت القراءة ✓", "Read ✓")}</span>
+                        <Check className="h-3 w-3" />
+                        <span>{text("تمت القراءة", "Read")}</span>
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-bold text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
-                        <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-bold text-white">
+                        <span className="h-1.5 w-1.5 rounded-full bg-white" />
                         <span>{text("جديد • غير مقروء", "New • unread")}</span>
                       </span>
                     )}
@@ -291,12 +319,12 @@ export default function GuidancePage() {
                   {/* Content Feature Badges */}
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {item.promptTemplate && (
-                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
-                        <Sparkles className="h-3 w-3 text-amber-500" />
+                      <span className="inline-flex items-center gap-1 rounded-md bg-surface px-2 py-0.5 text-[11px] font-semibold text-accent border border-border-strong">
+                        <Sparkles className="h-3 w-3 text-accent" />
                         <span>
                           {text(
-                            "✨ موجه ذكاء اصطناعي للنسخ",
-                            "✨ Copyable AI prompt",
+                            "موجه ذكاء اصطناعي للنسخ",
+                            "Copyable AI prompt",
                           )}
                         </span>
                       </span>
@@ -331,7 +359,7 @@ export default function GuidancePage() {
 
           {/* Exactly ONE Mystery Card (Fog of War) */}
           {nextLockedItem && (
-            <article className="flex flex-col justify-between rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/60 p-5 dark:border-neutral-700 dark:bg-neutral-900/30 select-none opacity-85">
+            <article className="guidance-locked flex flex-col justify-between rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/60 p-5 dark:border-neutral-700 dark:bg-neutral-900/30 select-none">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-200 px-2.5 py-0.5 text-[11px] font-bold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
@@ -342,9 +370,6 @@ export default function GuidancePage() {
                         "Next milestone guidance 🔒",
                       )}
                     </span>
-                  </span>
-                  <span className="text-[11px] font-medium text-neutral-400">
-                    {text("ضباب الحرب المهني", "Coming next")}
                   </span>
                 </div>
 
@@ -381,8 +406,22 @@ export default function GuidancePage() {
       {selectedItem && (
         <GuidanceReadingModal
           post={selectedItem}
-          onClose={() => setSelectedItem(null)}
+          onClose={() => {if(!mustCompleteCv) {
+            setSelectedItem(null);
+            setSearchParams(previous => { const next = new URLSearchParams(previous); next.delete("guidance"); return next; }, {replace:true});
+          }}}
           onMarkRead={handleMarkRead}
+          cvUpdate={selectedItem.code === "INSIGHT_TASK_0_CV_BASE" && user?.role !== "ADMIN" ? {
+            canComplete: Boolean(journeyData?.cvFoundation?.canComplete),
+            completed: Boolean(journeyData?.cvFoundation?.completed),
+            onUpload: async (file: File) => {
+              await profileApi.uploadCv(file);
+              await Promise.all([queryClient.invalidateQueries({queryKey:["profile"]}),queryClient.invalidateQueries({queryKey:journeyQueryKeys.all})]);
+              const next = await journeyApi.getJourneyState();
+              if (!next.cvFoundation?.canComplete) throw new Error(text("دي نفس النسخة الحالية. ارفع نسخة فيها التعديلات اللي نفذتها بعد الإرشاد.", "This is the current file. Upload a revised CV containing your changes."));
+              await handleMarkRead(selectedItem.id);
+            },
+          } : undefined}
         />
       )}
     </div>

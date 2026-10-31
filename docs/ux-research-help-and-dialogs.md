@@ -1,0 +1,13 @@
+# Research help and centered detail dialogs
+
+The experience analytics heading now opens a bilingual User Guide with a table of contents, each area's purpose, usage and interpretation boundaries, a worked denominator example and primary research references. It covers research scope, summary, weekly blueprint, navigation, station evidence, transition history, guidance, investigation, observations, individual history/data quality and the other analytics tabs.
+
+Guidance monitoring uses neutral cards, dark text and green information accents. Access, saved reading and measurable subsequent work are separate fields. Zero access has no reading percentage. Missing dated reads or an unmeasured application outcome display a dash, not a misleading zero. Each card explains the denominator for subsequent work, and View Unread scrolls to its investigation queue.
+
+Member inspection is one shared centered `MemberInspectorModal` across Overview, Community, Mentoring and UX Research. It preserves existing APIs, assignment controls and mentoring actions, ignores stale loads and constrains wide form controls. Feedback details use a centered native dialog. Task details retain their centered presentation and are named `TaskDetailModal`.
+
+Station inspection opens in a centered dialog. The member quest panel is an explicit exception: it retains its original sliding panel and attached launcher at the screen edge. Its semantic tour selectors, event contract and persistent flow keys remain unchanged; mandatory step two keeps closing disabled and the next step closes the quest window before opening the application form. The quest panel is independent of the shared modal.
+
+The shared Modal delegates focus restoration to `useDialogFocus` once. Duplicate restoration was removed because it could capture an already-focused dialog control during strict effect replay. Body scroll locking remains, header text can wrap, and close/backdrop/Escape behaviors are consistent. App navigation sidebars and inline table disclosures remain navigation/inline content rather than overlay detail drawers.
+
+Validation uses real isolated APIs and synthetic accounts: guide navigation and keyboard focus, card definitions, central geometry, one dialog at a time, mobile overflow, Arabic/English, new and legacy first-application walkthroughs, reload at step two, completed-guide persistence and preservation of historical application records. Legacy preservation fixtures use closed historical applications so the existing seven-day NoResponse processor does not independently change their lifecycle during the check. Production data is not copied into QA.

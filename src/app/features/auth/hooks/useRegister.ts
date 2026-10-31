@@ -4,6 +4,8 @@ import type { RegistrationInput } from "../types/user";
 export function useRegister() {
   const { setUser } = useAuth();
   return async (input: RegistrationInput) => {
-    const user=await authApi.register(input);setUser(user);return user;
+    const user = await authApi.register(input);
+    setUser(user);
+    return user;
   };
 }

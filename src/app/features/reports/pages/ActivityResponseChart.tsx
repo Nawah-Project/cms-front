@@ -159,10 +159,10 @@ export default function ActivityResponseChart({ points, markers = [], compact = 
               />
               <YAxis allowDecimals={false} width={32} tick={{ fontSize: 11, fill: "currentColor" }} tickLine={false} axisLine={false} />
               <Tooltip content={<ChartTooltip locale={locale} bucket={bucket} text={text} number={number} />} cursor={{ fill: "currentColor", fillOpacity: 0.06 }} />
-              {showApplications && <Bar dataKey="applications" name={text("طلبات جديدة", "Applications")} fill="#059669" radius={[4, 4, 0, 0]} maxBarSize={22} isAnimationActive={false} />}
-              {showProgression && <Line dataKey="progressionEvents" name={text("انتقالات مراحل", "Stage transitions")} type="monotone" stroke="#0284c7" strokeWidth={2.5} dot={{ r: 2.5, fill: "#0284c7" }} activeDot={{ r: 5 }} isAnimationActive={false} />}
+              {showApplications && <Bar dataKey="applications" name={text("طلبات جديدة", "Applications")} fill="#125e4e" radius={[4, 4, 0, 0]} maxBarSize={22} isAnimationActive={false} />}
+              {showProgression && <Line dataKey="progressionEvents" name={text("انتقالات مراحل", "Stage transitions")} type="monotone" stroke="#174c87" strokeWidth={2.5} dot={{ r: 2.5, fill: "#174c87" }} activeDot={{ r: 5 }} isAnimationActive={false} />}
               {rows.filter((row) => row.markerTitles.length > 0).map((row) => (
-                <ReferenceDot key={`${row.date}-${row.markerTitles.join("|")}`} x={row.date} y={0} r={5} fill="#d97706" stroke="var(--color-surface, #fff)" />
+                <ReferenceDot key={`${row.date}-${row.markerTitles.join("|")}`} x={row.date} y={0} r={5} fill="#e7b85a" stroke="#8b641b" />
               ))}
             </ComposedChart>
           </ResponsiveContainer>

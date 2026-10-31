@@ -100,7 +100,7 @@ export default {
   distributionSubtitle: "Breakdown of stage progression and closed application outcomes",
   eraComparisonTitle: "Performance Comparison by Tooling Iterations",
   eraComparisonSubtitle: "Quantifying response rate changes across each tooling iteration",
-  baselineEraTitle: "Initial Setup (CV v1)",
+  baselineEraTitle: "Initial Setup (CV 0)",
   nextEraLocked: "Next Iteration (Unlocks after current milestone)",
   filterLockedHint: "Unlocks on Day 7 at the evaluation & review station",
   categoryCv: "Resume Update (CV Update)",

@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { ArrowUp } from "lucide-react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router";
 import { useI18n } from "../i18n";
@@ -33,6 +34,8 @@ export function NotificationCenter({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const positionedUnread = useRef(false);
+  const [showEarlier, setShowEarlier] = useState(false);
   const [popoverPosition, setPopoverPosition] = useState<{
     top: number;
     left: number;
@@ -87,9 +90,33 @@ export function NotificationCenter({
   const persistentItems = notificationsData?.items ?? [];
   const persistentUnreadCount = notificationsData?.unreadCount ?? 0;
 
+  const updateEarlier = () => {
+    const list = scrollContainerRef.current;
+    if (!list) return;
+    const sixth = list.querySelectorAll<HTMLElement>('[data-notification-id]')[5];
+    setShowEarlier(Boolean(sixth && sixth.getBoundingClientRect().bottom <= list.getBoundingClientRect().top + 1));
+  };
+
+  // Start at the oldest unread item once per opening. Updates never move the reader.
+  useLayoutEffect(() => {
+    if (!open) { positionedUnread.current = false; setShowEarlier(false); return; }
+    if (notificationsLoading || !popoverPosition || positionedUnread.current) return;
+    const list = scrollContainerRef.current;
+    if (!list) return;
+    positionedUnread.current = true;
+    const target = list.querySelectorAll<HTMLElement>('[data-unread="true"]').item(
+      list.querySelectorAll('[data-unread="true"]').length - 1,
+    );
+    if (target) {
+      const bounds = list.getBoundingClientRect(), row = target.getBoundingClientRect();
+      if (row.bottom > bounds.bottom) list.scrollTop += row.bottom - bounds.bottom + 8;
+    } else list.scrollTop = 0;
+    updateEarlier();
+  }, [open, notificationsLoading, popoverPosition, persistentItems]);
+
   // Viewport Auto-Read via IntersectionObserver (65% visibility, 350ms dwell)
   useEffect(() => {
-    if (!open || readError) return;
+    if (!open || !popoverPosition || readError) return;
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
@@ -140,7 +167,7 @@ export function NotificationCenter({
       timerMap.current.forEach((t) => clearTimeout(t));
       timerMap.current.clear();
     };
-  }, [open, persistentItems, markReadMutation, readError]);
+  }, [open, popoverPosition, persistentItems, markReadMutation, readError]);
 
   const expiringSoon = stats?.expiringSoonCount ?? 0;
   const recentNoResponse = stats?.recentNoResponseCount ?? 0;
@@ -287,7 +314,7 @@ export function NotificationCenter({
       {open && typeof document !== "undefined" && createPortal(
         <div
           ref={dropdownRef}
-          className="fixed z-[90] flex max-h-[calc(100dvh-1.5rem)] w-80 max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-2xl border border-border bg-surface p-4 text-text-primary shadow-xl sm:w-96"
+          className="fixed z-[12020] flex max-h-[calc(100dvh-1.5rem)] w-80 max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-2xl border border-border bg-surface p-4 text-text-primary shadow-xl sm:w-96"
           style={{
             top: popoverPosition?.top ?? 12,
             left: popoverPosition?.left ?? 12,
@@ -319,8 +346,16 @@ export function NotificationCenter({
             </div>
           </div>
 
+          {showEarlier && <button type="button" onClick={() => {
+            scrollContainerRef.current?.scrollTo({top:0, behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
+          }} className="mt-2 flex min-h-9 items-center justify-center gap-2 rounded-lg border border-border bg-surface text-xs font-semibold text-info-strong">
+            <ArrowUp className="h-3.5 w-3.5" />{locale === 'ar' ? 'إشعارات أحدث بالأعلى' : 'Newer notifications above'}
+          </button>}
+
           <div
             ref={scrollContainerRef}
+            data-notifications-list
+            onScroll={updateEarlier}
             className="min-h-0 max-h-[min(20rem,calc(100dvh-12rem))] flex-1 overflow-y-auto py-2 divide-y divide-border/60"
           >
             {(readError || notificationsError) && <div role="alert" className="p-3 text-xs"><p>{locale==='ar'?'تعذر تحديث الإشعارات؛ القراءة لسه مش مؤكدة.':'Notifications could not update; reading is not confirmed.'}</p><button className="button-secondary mt-2" onClick={()=>{setReadError(false);void retryNotifications();}}>{t('common.retry')}</button></div>}
@@ -338,8 +373,8 @@ export function NotificationCenter({
                   onClick={() => handleNotificationClick(item)}
                   className={`flex w-full items-start gap-3 p-2.5 rounded-xl text-start transition hover:bg-neutral-50 dark:hover:bg-neutral-800/60 ${
                     !item.isRead
-                      ? "bg-info-soft/20 dark:bg-blue-950/20"
-                      : "opacity-80"
+                      ? "bg-info-soft/40"
+                      : "bg-surface"
                   }`}
                 >
                   <div
@@ -479,7 +514,6 @@ export function NotificationCenter({
             )}
           </div>
 
-          <p className="mt-2 border-t border-border pt-3 text-xs text-text-muted">{locale === 'ar' ? 'إرسال البريد حسب إعدادات المنصة؛ التحكم الفردي في التذكيرات مش متاح حاليًا.' : 'Email follows platform settings; individual reminder preferences are not available yet.'}</p>
         </div>,
         document.body,
       )}

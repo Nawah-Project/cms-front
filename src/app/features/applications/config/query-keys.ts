@@ -1,4 +1,7 @@
 export interface ApplicationListFilters {
+  cvVersion?: number;
+  createdFrom?: string;
+  createdBefore?: string;
   stage?: string;
   outcome?: string;
   search?: string;

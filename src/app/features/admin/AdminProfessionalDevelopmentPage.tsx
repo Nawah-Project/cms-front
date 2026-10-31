@@ -15,8 +15,17 @@ import {
 import { TaskFormDialog } from "../professional-development/components/TaskFormDialog";
 import { FeedbackFormDialog } from "../professional-development/components/FeedbackFormDialog";
 import { GuidanceFormDialog } from "../professional-development/components/GuidanceFormDialog";
-import type { CreateTaskInput, FeedbackPost } from "../professional-development/types";
-import { ArrowLeftIcon, EditIcon, PlusIcon, SparklesIcon, TrashIcon } from "../../components/Icons";
+import type {
+  CreateTaskInput,
+  FeedbackPost,
+} from "../professional-development/types";
+import {
+  ArrowLeftIcon,
+  EditIcon,
+  PlusIcon,
+  SparklesIcon,
+  TrashIcon,
+} from "../../components/Icons";
 import { useToast } from "../../components/ui/ToastProvider";
 
 const TRIGGER_LABELS: Record<string, string> = {
@@ -52,7 +61,9 @@ export default function AdminProfessionalDevelopmentPage() {
   const { t, tp, locale } = useI18n();
   const toast = useToast();
 
-  const [activeTab, setActiveTab] = useState<"guidance" | "memberFeedback" | "tasks">("guidance");
+  const [activeTab, setActiveTab] = useState<
+    "guidance" | "memberFeedback" | "tasks"
+  >("guidance");
 
   // --- Tab 1: Journey Guidance State ---
   const [guidancePosts, setGuidancePosts] = useState<FeedbackPost[]>([]);
@@ -61,7 +72,9 @@ export default function AdminProfessionalDevelopmentPage() {
   const [guidanceTotalCount, setGuidanceTotalCount] = useState(0);
   const [guidanceLoading, setGuidanceLoading] = useState(false);
   const [guidanceError, setGuidanceError] = useState(false);
-  const [editingGuidance, setEditingGuidance] = useState<FeedbackPost | null>(null);
+  const [editingGuidance, setEditingGuidance] = useState<FeedbackPost | null>(
+    null,
+  );
   const [guidanceFormOpen, setGuidanceFormOpen] = useState(false);
 
   const loadGuidance = useCallback(async (p = 1) => {
@@ -81,13 +94,17 @@ export default function AdminProfessionalDevelopmentPage() {
   }, []);
 
   // --- Tab 2: Member & Group Feedback State ---
-  const [memberFeedbackPosts, setMemberFeedbackPosts] = useState<FeedbackPost[]>([]);
+  const [memberFeedbackPosts, setMemberFeedbackPosts] = useState<
+    FeedbackPost[]
+  >([]);
   const [memberFeedbackPage, setMemberFeedbackPage] = useState(1);
   const [memberFeedbackTotalPages, setMemberFeedbackTotalPages] = useState(1);
   const [memberFeedbackTotalCount, setMemberFeedbackTotalCount] = useState(0);
   const [memberFeedbackLoading, setMemberFeedbackLoading] = useState(false);
   const [memberFeedbackError, setMemberFeedbackError] = useState(false);
-  const [editingFeedback, setEditingFeedback] = useState<FeedbackPost | null>(null);
+  const [editingFeedback, setEditingFeedback] = useState<FeedbackPost | null>(
+    null,
+  );
   const [feedbackFormOpen, setFeedbackFormOpen] = useState(false);
 
   const loadMemberFeedback = useCallback(async (p = 1) => {
@@ -172,7 +189,14 @@ export default function AdminProfessionalDevelopmentPage() {
     } else if (activeTab === "tasks") {
       void loadTasks();
     }
-  }, [activeTab, guidancePage, memberFeedbackPage, loadGuidance, loadMemberFeedback, loadTasks]);
+  }, [
+    activeTab,
+    guidancePage,
+    memberFeedbackPage,
+    loadGuidance,
+    loadMemberFeedback,
+    loadTasks,
+  ]);
 
   return (
     <div className="space-y-6">
@@ -199,8 +223,7 @@ export default function AdminProfessionalDevelopmentPage() {
             }}
             className="button-primary inline-flex items-center gap-1.5 px-4 py-2 text-sm shadow-xs"
           >
-            <PlusIcon className="h-4 w-4" />
-            + إضافة إرشاد حبكة جديد
+            <PlusIcon className="h-4 w-4" />+ إضافة إرشاد حبكة جديد
           </button>
         )}
 
@@ -213,8 +236,7 @@ export default function AdminProfessionalDevelopmentPage() {
             }}
             className="button-primary inline-flex items-center gap-1.5 px-4 py-2 text-sm shadow-xs"
           >
-            <PlusIcon className="h-4 w-4" />
-            + إرسال ملاحظة لعضو أو مجموعة
+            <PlusIcon className="h-4 w-4" />+ إرسال ملاحظة لعضو أو مجموعة
           </button>
         )}
 
@@ -288,13 +310,15 @@ export default function AdminProfessionalDevelopmentPage() {
             <ErrorState onRetry={() => void loadGuidance(guidancePage)} />
           ) : !guidancePosts.length ? (
             <EmptyState>
-              لا توجد إرشادات حبكة مسجلة حالياً. انقر على الزر أعلاه لإضافة أول إرشاد للمسار.
+              لا توجد إرشادات حبكة مسجلة حالياً. انقر على الزر أعلاه لإضافة أول
+              إرشاد للمسار.
             </EmptyState>
           ) : (
             <div className="grid gap-3">
               {guidancePosts.map((post) => {
                 const triggerLabel = post.unlockTriggerCode
-                  ? TRIGGER_LABELS[post.unlockTriggerCode] || post.unlockTriggerCode
+                  ? TRIGGER_LABELS[post.unlockTriggerCode] ||
+                    post.unlockTriggerCode
                   : "عام (بدون قفل)";
 
                 return (
@@ -342,7 +366,12 @@ export default function AdminProfessionalDevelopmentPage() {
                       <button
                         type="button"
                         onClick={async () => {
-                          if (!window.confirm("هل أنت متأكد من رغبتك في أرشفة هذا الإرشاد؟")) return;
+                          if (
+                            !window.confirm(
+                              "هل أنت متأكد من رغبتك في أرشفة هذا الإرشاد؟",
+                            )
+                          )
+                            return;
                           try {
                             await adminApi.archiveFeedback(post.id);
                             toast.success("تمت أرشفة الإرشاد بنجاح");
@@ -398,10 +427,13 @@ export default function AdminProfessionalDevelopmentPage() {
           {memberFeedbackLoading ? (
             <LoadingState label="جاري تحميل ملاحظات الأعضاء والمجموعات..." />
           ) : memberFeedbackError ? (
-            <ErrorState onRetry={() => void loadMemberFeedback(memberFeedbackPage)} />
+            <ErrorState
+              onRetry={() => void loadMemberFeedback(memberFeedbackPage)}
+            />
           ) : !memberFeedbackPosts.length ? (
             <EmptyState>
-              لا توجد ملاحظات أعضاء أو مجموعات مسجلة حالياً. انقر على الزر أعلاه لإرسال ملاحظة جديدة.
+              لا توجد ملاحظات أعضاء أو مجموعات مسجلة حالياً. انقر على الزر أعلاه
+              لإرسال ملاحظة جديدة.
             </EmptyState>
           ) : (
             <div className="grid gap-3">
@@ -417,7 +449,8 @@ export default function AdminProfessionalDevelopmentPage() {
                         ? `عضو: ${post.targetUser.name}`
                         : "عضو محدد";
 
-                const contextLabel = CONTEXT_LABELS[post.context] || post.context;
+                const contextLabel =
+                  CONTEXT_LABELS[post.context] || post.context;
 
                 return (
                   <div
@@ -432,14 +465,15 @@ export default function AdminProfessionalDevelopmentPage() {
                         <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
                           {contextLabel}
                         </span>
-                        {post.tags && post.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="rounded-md bg-neutral-50 px-1.5 py-0.5 text-[10px] text-neutral-500 border border-neutral-200 dark:bg-neutral-900 dark:border-neutral-800"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
+                        {post.tags &&
+                          post.tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="rounded-md bg-neutral-50 px-1.5 py-0.5 text-[10px] text-neutral-500 border border-neutral-200 dark:bg-neutral-900 dark:border-neutral-800"
+                            >
+                              #{tag}
+                            </span>
+                          ))}
                         {post.resources && post.resources.length > 0 && (
                           <span className="rounded-md bg-info-soft px-2 py-0.5 text-[11px] font-medium text-info-strong border border-info-border">
                             {post.resources.length} مصادر
@@ -469,7 +503,12 @@ export default function AdminProfessionalDevelopmentPage() {
                       <button
                         type="button"
                         onClick={async () => {
-                          if (!window.confirm("هل أنت متأكد من رغبتك في أرشفة هذه الملاحظة؟")) return;
+                          if (
+                            !window.confirm(
+                              "هل أنت متأكد من رغبتك في أرشفة هذه الملاحظة؟",
+                            )
+                          )
+                            return;
                           try {
                             await adminApi.archiveFeedback(post.id);
                             toast.success("تمت أرشفة الملاحظة بنجاح");
@@ -490,39 +529,45 @@ export default function AdminProfessionalDevelopmentPage() {
             </div>
           )}
 
-          {!memberFeedbackLoading && !memberFeedbackError && memberFeedbackTotalPages > 1 && (
-            <nav
-              aria-label="صفحات الملاحظات"
-              className="flex items-center justify-center gap-3 border-t border-border pt-5"
-            >
-              <button
-                type="button"
-                disabled={memberFeedbackPage <= 1}
-                onClick={() => setMemberFeedbackPage((v) => v - 1)}
-                className="button-secondary px-3 py-2 text-xs disabled:opacity-50"
+          {!memberFeedbackLoading &&
+            !memberFeedbackError &&
+            memberFeedbackTotalPages > 1 && (
+              <nav
+                aria-label="صفحات الملاحظات"
+                className="flex items-center justify-center gap-3 border-t border-border pt-5"
               >
-                السابق
-              </button>
-              <span className="text-xs text-neutral-500">
-                صفحة {memberFeedbackPage} من {memberFeedbackTotalPages}
-              </span>
-              <button
-                type="button"
-                disabled={memberFeedbackPage >= memberFeedbackTotalPages}
-                onClick={() => setMemberFeedbackPage((v) => v + 1)}
-                className="button-secondary px-3 py-2 text-xs disabled:opacity-50"
-              >
-                التالي
-              </button>
-            </nav>
-          )}
+                <button
+                  type="button"
+                  disabled={memberFeedbackPage <= 1}
+                  onClick={() => setMemberFeedbackPage((v) => v - 1)}
+                  className="button-secondary px-3 py-2 text-xs disabled:opacity-50"
+                >
+                  السابق
+                </button>
+                <span className="text-xs text-neutral-500">
+                  صفحة {memberFeedbackPage} من {memberFeedbackTotalPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={memberFeedbackPage >= memberFeedbackTotalPages}
+                  onClick={() => setMemberFeedbackPage((v) => v + 1)}
+                  className="button-secondary px-3 py-2 text-xs disabled:opacity-50"
+                >
+                  التالي
+                </button>
+              </nav>
+            )}
         </div>
       )}
 
       {/* --- Tab 3: Member Tasks --- */}
       {activeTab === "tasks" && (
         <>
-          {notice && <p role="status" className="text-sm text-success-strong">{notice}</p>}
+          {notice && (
+            <p role="status" className="text-sm text-success-strong">
+              {notice}
+            </p>
+          )}
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="flex flex-wrap items-end gap-3 flex-1">
               <label className="grid gap-1 text-xs text-neutral-500 min-w-60 flex-1 max-w-xs">
@@ -645,7 +690,10 @@ export default function AdminProfessionalDevelopmentPage() {
                 {t("professionalDevelopment.previous")}
               </button>
               <span className="text-xs text-neutral-500">
-                {t("professionalDevelopment.pageOf", { page, pages: totalPages })}
+                {t("professionalDevelopment.pageOf", {
+                  page,
+                  pages: totalPages,
+                })}
               </span>
               <button
                 type="button"
@@ -660,7 +708,7 @@ export default function AdminProfessionalDevelopmentPage() {
         </>
       )}
 
-      {/* Drawers and Dialogs */}
+      {/* Detail dialogs */}
       {selected && (
         <AdminMemberDetail
           member={selected}

@@ -28,3 +28,10 @@ for the GitHub organization. The runner account must be able to write to
 `/data/cms-front`, run Docker Compose, and use `rsync`. CI validation runs on a
 GitHub-hosted runner; only deployment runs on the production server runner.
 Deployment does not remove the server `.env` file or Docker volumes.
+
+Production API addresses are compiled into the browser assets. Build production
+with `VITE_API_URL=https://api.nawah-project.com npm run build`; changing the
+runtime container environment does not change existing assets. Production builds
+reject missing, HTTP, and loopback API addresses. An isolated local preview may
+use `npm run build -- --mode qa` with its own API address, and its assets must not
+be deployed to production.

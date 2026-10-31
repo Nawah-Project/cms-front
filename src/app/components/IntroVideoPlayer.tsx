@@ -1,3 +1,4 @@
+import { ProfessionalImage } from "./ProfessionalImage";
 import { PlayCircleIcon } from "./Icons";
 import { useI18n } from "../i18n";
 import { useUxExperiment } from "../utils/uxAnalytics";
@@ -88,7 +89,7 @@ function toEmbedUrl(rawUrl: string): ResolvedVideo | null {
 }
 
 export function IntroVideoPlayer() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { introVideoUrl } = useUxExperiment();
   const resolved = toEmbedUrl(introVideoUrl);
 
@@ -122,12 +123,9 @@ export function IntroVideoPlayer() {
   }
 
   return (
-    <div className="relative flex aspect-video w-full flex-col items-center justify-center overflow-hidden rounded-xl border border-border bg-neutral-900 p-6 text-center">
-      <PlayCircleIcon className="mb-3 h-16 w-16 text-info-soft opacity-90" />
-      <h4 className="text-base font-semibold text-white">{t("auth.heroTitle")}</h4>
-      <p className="mt-1 max-w-md text-xs text-neutral-400">
-        {t("auth.heroDescription")}
-      </p>
+    <div className="journey-video-poster">
+      <ProfessionalImage className="journey-poster-image" sizes="(max-width: 900px) 100vw, 900px" priority="low" />
+      <div><span>{locale==="ar"?"دليلك للبداية":"YOUR STARTING GUIDE"}</span><h4>{locale==="ar"?"خطوة واضحة. وبعدها خطوة.":"One clear step. Then the next."}</h4><p>{locale==="ar"?"جهّز ملفك، سجّل أول طلب، وخلي كل تجربة تعلّمك حاجة للخطوة الجاية. الشرح المكتوب تحت متاح ليك دلوقتي؛ الفيديو التعريفي هينضاف قريبًا.":"Prepare your profile, track your first application, and learn from each attempt. Your written starting guide is below; an introductory video will follow."}</p></div>
     </div>
   );
 }

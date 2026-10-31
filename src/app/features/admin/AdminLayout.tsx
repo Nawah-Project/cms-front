@@ -2,6 +2,11 @@ import { useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import { useAuth } from "../auth/store/authStore";
 import { useI18n } from "../../i18n";
+import {
+  adminHomePath,
+  adminSectionForPath,
+  canAdminAccess,
+} from "./adminAccess";
 
 function getSectionMeta(pathname: string, locale: string) {
   const isAr = locale === "ar";
@@ -53,6 +58,14 @@ function getSectionMeta(pathname: string, locale: string) {
         : "Granular funnel analysis, top drop-off bottlenecks, A/B/C experimentation, and V2 feature adoption",
     };
   }
+  if (pathname.startsWith("/admin/marketing")) {
+    return {
+      title: isAr ? "المركتنج ونمو الزيارات" : "Marketing & Acquisition",
+      description: isAr
+        ? "قِس أثر الحملات ومصادر الزيارات والتحويل من أول زيارة إلى التسجيل والاستقبال"
+        : "Measure campaigns, acquisition sources, and conversion from first visit through onboarding",
+    };
+  }
   if (pathname.startsWith("/admin/operations")) {
     return {
       title: isAr ? "العمليات والموارد التشغيلية" : "Operations & Resources",
@@ -63,7 +76,9 @@ function getSectionMeta(pathname: string, locale: string) {
   }
   return {
     title: isAr ? "مركز قيادة المنصة" : "Admin Command Center",
-    description: isAr ? "إدارة مساحة العمل والمنصة" : "Platform workspace management",
+    description: isAr
+      ? "إدارة مساحة العمل والمنصة"
+      : "Platform workspace management",
   };
 }
 
@@ -74,10 +89,21 @@ export default function AdminLayout() {
   const { t, locale } = useI18n();
 
   useEffect(() => {
-    if (!loading && user?.role !== "ADMIN") navigate("/", { replace: true });
-  }, [loading, user, navigate]);
+    if (loading) return;
+    if (user?.role !== "ADMIN") {
+      navigate("/", { replace: true });
+      return;
+    }
+    if (!canAdminAccess(user, adminSectionForPath(location.pathname))) {
+      navigate(adminHomePath(user), { replace: true });
+    }
+  }, [loading, user, navigate, location.pathname]);
 
-  if (loading || user?.role !== "ADMIN")
+  if (
+    loading ||
+    user?.role !== "ADMIN" ||
+    !canAdminAccess(user, adminSectionForPath(location.pathname))
+  )
     return (
       <div className="py-20 text-center text-sm text-neutral-500" role="status">
         {t("admin.checkingAccess")}
@@ -88,31 +114,43 @@ export default function AdminLayout() {
 
   return (
     <section className="space-y-6">
-      <header className="border-b border-border/80 pb-4 dark:border-neutral-800">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-neutral-500">
-              <Link to="/admin" className="hover:text-neutral-900 dark:hover:text-white transition-colors">
-                {locale === "ar" ? "مركز قيادة المنصة" : "Admin Command Center"}
-              </Link>
-              <span>/</span>
-              <span className="text-neutral-700 dark:text-neutral-300 font-medium">{section.title}</span>
-            </nav>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-neutral-950 dark:text-white">
-              {section.title}
-            </h1>
-            <p className="mt-0.5 text-xs text-neutral-600 dark:text-neutral-400">
-              {section.description}
-            </p>
+      {!location.pathname.startsWith("/admin/ux-lab") && (
+        <header className="border-b border-border/80 pb-4 dark:border-neutral-800">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <nav
+                aria-label="Breadcrumb"
+                className="flex items-center gap-1.5 text-xs text-neutral-500"
+              >
+                <Link
+                  to="/admin"
+                  className="hover:text-neutral-900 dark:hover:text-white transition-colors"
+                >
+                  {locale === "ar"
+                    ? "مركز قيادة المنصة"
+                    : "Admin Command Center"}
+                </Link>
+                <span>/</span>
+                <span className="text-neutral-700 dark:text-neutral-300 font-medium">
+                  {section.title}
+                </span>
+              </nav>
+              <h1 className="mt-1 text-2xl font-bold tracking-tight text-neutral-950 dark:text-white">
+                {section.title}
+              </h1>
+              <p className="mt-0.5 text-xs text-neutral-600 dark:text-neutral-400">
+                {section.description}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                {locale === "ar" ? "لوحة الإدارة نشطة" : "Admin Center Active"}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              {locale === "ar" ? "لوحة الإدارة نشطة" : "Admin Center Active"}
-            </span>
-          </div>
-        </div>
-      </header>
+        </header>
+      )}
       <Outlet />
     </section>
   );

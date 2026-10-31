@@ -29,7 +29,7 @@ import type {
 } from "../types";
 import { useI18n } from "../../../i18n";
 import { useToast } from "../../../components/ui/ToastProvider";
-import { useAppModal } from "../../../routes/layout";
+import { useAppModal } from "../../../components/AppModalContext";
 import { profileApi } from "../../profile/profileApi";
 import { useAuth } from "../../auth/store/authStore";
 import { useTour } from "../../applications/components/FirstApplicationGuidedTour";
@@ -47,7 +47,7 @@ function getNodeAvailableAt(
     .reduce((days, candidate) => days + candidate.durationDays, 0);
   const weeksAfterCurrent = Math.max(
     0,
-    node.weekNumber - journeyData.state.currentWeek,
+    node.weekNumber - Math.max(1, journeyData.state.currentWeek),
   );
   return new Date(
     new Date(journeyData.state.weekStartedAt).getTime() +
@@ -63,7 +63,8 @@ function getLockedNodeMessage(
   t: (key: string, values?: Record<string, string | number>) => string,
 ) {
   if (isAdmin) return t("journey.fogOfWarOverlay");
-  if (node.weekNumber > journeyData.state.currentWeek) return t("journey.completePreviousFirst");
+  if (node.weekNumber > journeyData.state.currentWeek)
+    return t("journey.completePreviousFirst");
 
   const incompletePreviousNode = journeyData.nodes.some(
     (candidate) =>
@@ -112,13 +113,12 @@ function ProgressBar({
           {label}
         </span>
         <span
+          dir="ltr"
           className={`tabular-nums font-semibold ${
             isDone
               ? "text-success-strong"
               : "text-neutral-700 dark:text-neutral-300"
-          } ${
-            isObscured ? "filter blur-[5px] opacity-35 select-none" : ""
-          }`}
+          } ${isObscured ? "filter blur-[5px] opacity-35 select-none" : ""}`}
         >
           {current} / {required} ({clamped}%)
         </span>
@@ -234,7 +234,9 @@ function ActiveNodeSideTaskForms({
                 {node.progress.posts.current}/{node.requiredPostsCount}
               </span>
             </div>
-            <div className={`grid grid-cols-1 gap-2.5 ${compact ? "" : "sm:grid-cols-2"}`}>
+            <div
+              className={`grid grid-cols-1 gap-2.5 ${compact ? "" : "sm:grid-cols-2"}`}
+            >
               <input
                 type="url"
                 required
@@ -276,7 +278,9 @@ function ActiveNodeSideTaskForms({
                 {node.progress.outreach.current}/{node.requiredOutreachCount}
               </span>
             </div>
-            <div className={`grid grid-cols-1 gap-2.5 ${compact ? "" : "sm:grid-cols-2 lg:grid-cols-4"}`}>
+            <div
+              className={`grid grid-cols-1 gap-2.5 ${compact ? "" : "sm:grid-cols-2 lg:grid-cols-4"}`}
+            >
               <input
                 type="text"
                 required
@@ -642,7 +646,16 @@ function ReviewStationCard({
             )}
 
             {/* Interactive Lab Form when ACTIVE */}
-            {node.nodeType === "FINAL_REPORT" && (isActive || isCompleted) && <Link className="btn-primary mt-4 inline-flex" to="/reports?final=1">{locale === "ar" ? "اقرأ تقرير الرحلة بالكامل" : "Read the complete journey report"}</Link>}
+            {node.nodeType === "FINAL_REPORT" && (isActive || isCompleted) && (
+              <Link
+                className="btn-primary mt-4 inline-flex"
+                to="/reports?final=1"
+              >
+                {locale === "ar"
+                  ? "اقرأ تقرير الرحلة بالكامل"
+                  : "Read the complete journey report"}
+              </Link>
+            )}
             {isActive && node.nodeType !== "FINAL_REPORT" && (
               <form onSubmit={handleCompleteReview} className="mt-4 space-y-3">
                 <div>
@@ -695,7 +708,13 @@ function ReviewStationCard({
   );
 }
 
-export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
+export function JourneyQuestsMap({
+  compact = false,
+  selectedCode,
+}: {
+  compact?: boolean;
+  selectedCode?: string;
+}) {
   const { t, locale } = useI18n();
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -706,10 +725,25 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
 
   const currentWeek = journeyData?.state.currentWeek ?? 0;
   const [selectedWeek, setSelectedWeek] = useState<number>(currentWeek);
-  const [lockedPopoverWeek, setLockedPopoverWeek] = useState<number | null>(null);
+  const [lockedPopoverWeek, setLockedPopoverWeek] = useState<number | null>(
+    null,
+  );
   const [lockedBtnRect, setLockedBtnRect] = useState<DOMRect | null>(null);
   const [wigglingWeek, setWigglingWeek] = useState<number | null>(null);
   const popoverTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!selectedCode || !journeyData) return;
+    const node = journeyData.nodes.find((n) => n.code === selectedCode);
+    if (node) setSelectedWeek(node.weekNumber);
+    const timer = window.setTimeout(
+      () =>
+        document
+          .querySelector(`[data-task-code="${selectedCode}"]`)
+          ?.scrollIntoView({ block: "nearest", behavior: "instant" }),
+      100,
+    );
+    return () => window.clearTimeout(timer);
+  }, [selectedCode, journeyData]);
 
   useEffect(() => {
     return () => {
@@ -746,16 +780,34 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
 
     if (!nextScheduledNode) return;
 
-    const timer = window.setTimeout(() => {
-      void queryClient.invalidateQueries({
-        queryKey: journeyQueryKeys.state(),
-      });
-    }, nextScheduledNode - now + 250);
+    const timer = window.setTimeout(
+      () => {
+        void queryClient.invalidateQueries({
+          queryKey: journeyQueryKeys.state(),
+        });
+      },
+      nextScheduledNode - now + 250,
+    );
 
     return () => window.clearTimeout(timer);
   }, [journeyData, queryClient, user?.role]);
 
-  if (isError) return <section role="alert" className="rounded-2xl border border-border bg-surface p-5"><p>{locale === 'ar' ? 'تعذر تحميل الرحلة.' : 'Could not load your journey.'}</p><button className="button-primary mt-3" onClick={() => void refetch()}>{locale === 'ar' ? 'حاول تاني' : 'Retry'}</button></section>;
+  if (isError)
+    return (
+      <section
+        role="alert"
+        className="rounded-2xl border border-border bg-surface p-5"
+      >
+        <p>
+          {locale === "ar"
+            ? "تعذر تحميل الرحلة."
+            : "Could not load your journey."}
+        </p>
+        <button className="button-primary mt-3" onClick={() => void refetch()}>
+          {locale === "ar" ? "حاول تاني" : "Retry"}
+        </button>
+      </section>
+    );
   if (isLoading || !journeyData) {
     return (
       <section className="space-y-4 rounded-2xl border border-border bg-surface p-5 shadow-xs">
@@ -808,7 +860,7 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
     popoverTimerRef.current = window.setTimeout(() => {
       setLockedPopoverWeek(null);
       setLockedBtnRect(null);
-    }, 2200);
+    }, 6500);
   };
 
   const handleDismissLockedPopover = () => {
@@ -819,11 +871,34 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
     setLockedBtnRect(null);
   };
 
-  const getLockedWeekPopoverText = (weekNum: number) => locale === "ar"
-    ? `يفتح الأسبوع ${weekNum} بعد إتمام أنشطة ومراجعة الأسبوع السابق. توقيت الإتاحة يتبع تقدمك الفعلي.`
-    : `Week ${weekNum} unlocks after completing the preceding week and its review. Availability follows your actual progress.`;
+  const getLockedWeekPopoverText = (weekNum: number) => {
+    const firstStart = journeyData.state.week1StartedAt;
+    if (currentWeek === 0 || !firstStart)
+      return locale === "ar"
+        ? weekNum === 1
+          ? "يفتح الأسبوع الأول بعد إتمام المهمة صفر. من لحظة إكمالها يبدأ توقيت الأسبوع ومواعيد مهامه."
+          : "أكمل المهمة صفر أولًا لتبدأ رحلة الأسابيع. يفصل بين بداية كل أسبوع والتالي 7 أيام، مع إكمال المهام والمراجعة."
+        : weekNum === 1
+          ? "Complete Task 0 to start Week 1 and its task schedule."
+          : "Complete Task 0 to start the calendar. Each next week needs seven days plus the preceding tasks and review.";
+    const days = Math.max(0, weekNum - currentWeek) * 7;
+    const opens = new Date(
+      new Date(journeyData.state.weekStartedAt).getTime() + days * 86400000,
+    );
+    const date = new Intl.DateTimeFormat(locale, {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(opens);
+    return locale === "ar"
+      ? `أقرب موعد لفتح الأسبوع ${weekNum}: ${date}. يلزم أيضًا إتمام مهام ومراجعة الأسبوع السابق. لو تأخر إكماله، تتأخر بداية الأسبوع التالي.`
+      : `Earliest start for Week ${weekNum}: ${date}. Complete the preceding tasks and review too; a late completion delays the next week.`;
+  };
 
-  const getFutureWeekMessage = (weekNum: number) => weekNum > currentWeek ? getLockedWeekPopoverText(weekNum) : null;
+  const getFutureWeekMessage = (weekNum: number) =>
+    weekNum > currentWeek ? getLockedWeekPopoverText(weekNum) : null;
 
   const handleSideTaskSubmitted = (nextState: JourneyStateResponse) => {
     celebrateJourneyUnlocks(journeyData, nextState, t, locale, showToast);
@@ -836,7 +911,9 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
       className={`space-y-5 rounded-2xl ${compact ? "border-0 bg-transparent p-0 shadow-none" : "border border-border bg-surface p-5 shadow-xs sm:p-6"}`}
     >
       {/* Top Header & Week Tabs */}
-      <div className={`flex flex-col gap-4 border-b border-border pb-5 ${compact ? "" : "lg:flex-row lg:items-center lg:justify-between"}`}>
+      <div
+        className={`flex flex-col gap-4 border-b border-border pb-5 ${compact ? "" : "lg:flex-row lg:items-center lg:justify-between"}`}
+      >
         <div>
           <div className="inline-flex items-center gap-2 rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200">
             <Compass className="h-3.5 w-3.5" aria-hidden="true" />
@@ -858,7 +935,9 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
         </div>
 
         {/* Week Selector Pills */}
-        <div className={`flex items-center gap-1.5 rounded-xl border border-border bg-neutral-50 p-1.5 dark:bg-neutral-900 ${compact ? "max-w-full flex-nowrap overflow-x-auto" : "flex-wrap"}`}>
+        <div
+          className={`flex items-center gap-1.5 rounded-xl border border-border bg-neutral-50 p-1.5 dark:bg-neutral-900 ${compact ? "max-w-full flex-nowrap overflow-x-auto" : "flex-wrap"}`}
+        >
           {[0, 1, 2, 3, 4].map((weekNum) => {
             const isSelected = selectedWeek === weekNum;
             const isFutureWeek = weekNum > journeyData.state.currentWeek;
@@ -866,10 +945,7 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
             const isWiggling = wigglingWeek === weekNum;
 
             return (
-              <div
-                key={weekNum}
-                className="relative"
-              >
+              <div key={weekNum} className="relative">
                 <button
                   type="button"
                   onMouseEnter={(e) => {
@@ -907,41 +983,71 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
                   )}
                 </button>
 
-                {isLockedPopoverOpen && lockedBtnRect && createPortal(
-                  <div
-                    role="tooltip"
-                    onMouseEnter={() => {
-                      if (popoverTimerRef.current) window.clearTimeout(popoverTimerRef.current);
-                    }}
-                    onMouseLeave={handleDismissLockedPopover}
-                    className="fixed z-[200] w-64 rounded-xl border border-neutral-200 bg-white p-3 shadow-2xl text-start animate-in fade-in zoom-in-95 duration-150 dark:border-neutral-700 dark:bg-neutral-900 pointer-events-auto"
-                    style={{
-                      top: Math.min(window.innerHeight - 150, lockedBtnRect.bottom + 8),
-                      left: locale === "ar"
-                        ? Math.max(16, Math.min(window.innerWidth - 270, lockedBtnRect.right - 256))
-                        : Math.max(16, Math.min(window.innerWidth - 270, lockedBtnRect.left)),
-                    }}
-                  >
-                    <div className="flex items-center gap-1.5 font-bold text-xs text-neutral-900 dark:text-white border-b border-neutral-100 dark:border-neutral-800 pb-1.5 mb-1.5">
-                      <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                      <span>
-                        {locale === "ar"
-                          ? `الأسبوع ${weekNum} غير متاح حالياً 🔒`
-                          : `Week ${weekNum} is currently locked 🔒`}
-                      </span>
-                    </div>
-                    <p className="text-[11px] leading-relaxed text-neutral-600 dark:text-neutral-300">
-                      {getLockedWeekPopoverText(weekNum)}
-                    </p>
-                  </div>,
-                  document.body
-                )}
+                {isLockedPopoverOpen &&
+                  lockedBtnRect &&
+                  createPortal(
+                    <div
+                      role="tooltip"
+                      onMouseEnter={() => {
+                        if (popoverTimerRef.current)
+                          window.clearTimeout(popoverTimerRef.current);
+                      }}
+                      onMouseLeave={handleDismissLockedPopover}
+                      className="fixed z-[200] w-64 rounded-xl border border-neutral-200 bg-white p-3 shadow-2xl text-start animate-in fade-in zoom-in-95 duration-150 dark:border-neutral-700 dark:bg-neutral-900 pointer-events-auto"
+                      style={{
+                        top: Math.min(
+                          window.innerHeight - 150,
+                          lockedBtnRect.bottom + 8,
+                        ),
+                        left:
+                          locale === "ar"
+                            ? Math.max(
+                                16,
+                                Math.min(
+                                  window.innerWidth - 270,
+                                  lockedBtnRect.right - 256,
+                                ),
+                              )
+                            : Math.max(
+                                16,
+                                Math.min(
+                                  window.innerWidth - 270,
+                                  lockedBtnRect.left,
+                                ),
+                              ),
+                      }}
+                    >
+                      <div className="flex items-center gap-1.5 font-bold text-xs text-neutral-900 dark:text-white border-b border-neutral-100 dark:border-neutral-800 pb-1.5 mb-1.5">
+                        <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                        <span>
+                          {locale === "ar"
+                            ? `الأسبوع ${weekNum} غير متاح حالياً 🔒`
+                            : `Week ${weekNum} is currently locked 🔒`}
+                        </span>
+                      </div>
+                      <p className="text-[11px] leading-relaxed text-neutral-600 dark:text-neutral-300">
+                        {getLockedWeekPopoverText(weekNum)}
+                      </p>
+                    </div>,
+                    document.body,
+                  )}
               </div>
             );
           })}
         </div>
       </div>
 
+      {journeyData.cvFoundation?.unlocked &&
+        !journeyData.cvFoundation.completed && (
+          <Link
+            to="/professional-development?guidance=INSIGHT_TASK_0_CV_BASE"
+            className="block rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 font-medium text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200"
+          >
+            {locale === "ar"
+              ? "خطوتك الحالية: طبّق إرشاد السيرة وارفع النسخة المحدّثة من داخله. إكماله يفتح التحليلات ويتيح تقدم مهام الأسبوع الأول."
+              : "Your next step: apply the CV guide and upload your revised file inside it. Completion unlocks analytics and Week 1 quest progression."}
+          </Link>
+        )}
       {/* Selected Week Progress Bar */}
       <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-neutral-50/60 px-4 py-3 dark:bg-neutral-900/50">
         <div className="min-w-0 flex-1">
@@ -951,7 +1057,7 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
                 ? t("journey.weekZeroProgressTitle")
                 : t("journey.weekProgressTitle", { week: selectedWeek })}
             </span>
-            <span className="tabular-nums">
+            <span dir="ltr" className="tabular-nums">
               {completedInWeek} / {weekNodes.length} ({weekProgressPct}%)
             </span>
           </div>
@@ -1008,6 +1114,7 @@ export function JourneyQuestsMap({ compact = false }: { compact?: boolean }) {
           return (
             <article
               key={node.code}
+              data-task-code={node.code}
               className={`relative overflow-hidden rounded-2xl border p-5 transition-all ${
                 isActive
                   ? "border-2 border-neutral-900 bg-white shadow-sm dark:border-neutral-100 dark:bg-neutral-900"
