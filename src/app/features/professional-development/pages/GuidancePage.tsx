@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useBlocker, useSearchParams } from "react-router";
 import { Lock, Sparkles, Check } from "lucide-react";
 import { useAuth } from "../../auth/store/authStore";
-import { PageHeading } from "../../../components/ui/PageHeading";
+import { MemberPageHeader } from "../../../design-system/MemberPageHeader";
 import { ProfessionalDevelopmentNav } from "../components/ProfessionalDevelopmentNav";
 import { GuidanceReadingModal } from "../components/GuidanceReadingModal";
 import { journeyApi, useJourneyState } from "../../journey/api/journeyApi";
@@ -193,7 +193,7 @@ export default function GuidancePage() {
   };
 
   return (
-    <div className="space-y-7 animate-in fade-in duration-150">
+    <div className="member-guidance space-y-7 animate-in fade-in duration-150">
       <FeatureTour feature="analytics-unlocked-v1" enabled={analyticsUnlocked && Boolean(journeyData?.features.analytics)} steps={ANALYTICS_UNLOCK_TOUR} onFinish={() => setAnalyticsUnlocked(false)} />
       {(journeyError || dbError) && (
         <div role="alert" className="rounded-xl border border-amber-300 p-4">
@@ -214,7 +214,7 @@ export default function GuidancePage() {
           </button>
         </div>
       )}
-      <PageHeading
+      <MemberPageHeader
         eyebrow={text("التطوير المهني", "Professional development")}
         title={text("الإرشادات والتعليمات", "Guidance and instructions")}
         description={text(
@@ -226,7 +226,7 @@ export default function GuidancePage() {
       <ProfessionalDevelopmentNav />
 
       {/* Guidance Header Banner */}
-      <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
+      <div className="guidance-summary rounded-2xl border border-border bg-surface p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border-strong bg-surface text-accent">
             <Sparkles className="h-6 w-6" />
@@ -263,7 +263,7 @@ export default function GuidancePage() {
           )}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className={`guidance-grid grid grid-cols-1 md:grid-cols-2 gap-4 ${unlockedGuidance.length === 0 ? "is-empty" : ""}`}>
           {/* Unlocked Guidance Cards */}
           {unlockedGuidance.map((item) => {
             const hasVideo = item.resources.some(
@@ -284,7 +284,7 @@ export default function GuidancePage() {
                 type="button"
                 key={item.code}
                 onClick={() => setSelectedItem(item)}
-                className="group text-start flex flex-col justify-between cursor-pointer rounded-2xl border border-border bg-surface p-5 transition-all hover:border-neutral-400 hover:shadow-md hover:-translate-y-0.5 select-none"
+                className="guidance-card group text-start flex flex-col justify-between cursor-pointer rounded-2xl border border-border bg-surface p-5 transition-all hover:border-neutral-400 hover:shadow-md hover:-translate-y-0.5 select-none"
               >
                 <div className="space-y-3">
                   {/* Top Bar: Phase & Read Status */}
@@ -359,7 +359,7 @@ export default function GuidancePage() {
 
           {/* Exactly ONE Mystery Card (Fog of War) */}
           {nextLockedItem && (
-            <article className="flex flex-col justify-between rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/60 p-5 dark:border-neutral-700 dark:bg-neutral-900/30 select-none">
+            <article className="guidance-locked flex flex-col justify-between rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/60 p-5 dark:border-neutral-700 dark:bg-neutral-900/30 select-none">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-200 px-2.5 py-0.5 text-[11px] font-bold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">

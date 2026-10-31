@@ -35,7 +35,7 @@ export function LockedStateView({
     : 0;
 
   return (
-    <div className="mx-auto my-8 max-w-xl rounded-3xl border border-neutral-200/80 bg-surface p-7 sm:p-10 text-center shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+    <div className="n-locked-state mx-auto my-8 max-w-xl rounded-3xl border border-neutral-200/80 bg-surface p-7 sm:p-10 text-center shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
       {/* Lock Icon */}
       <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-amber-100 text-amber-700 shadow-inner dark:bg-amber-950/60 dark:text-amber-300">
         <Lock className="h-8 w-8" />

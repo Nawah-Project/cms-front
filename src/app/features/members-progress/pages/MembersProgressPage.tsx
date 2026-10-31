@@ -1,3 +1,4 @@
+import { MemberPageHeader } from "../../../design-system/MemberPageHeader";
 import {
   useSectionDesign,
   SectionExposure,
@@ -74,7 +75,7 @@ export default function MembersProgressPage() {
 
 function MembersProgressContent() {
   const { user } = useAuth();
-  const { t, tp } = useI18n();
+  const { t, tp, locale } = useI18n();
   const { members, loading, error, retry } = useMembersProgress();
   const { data: journey } = useJourneyState({ enabled: Boolean(user) });
   const navigate = useNavigate();
@@ -92,16 +93,9 @@ function MembersProgressContent() {
         !design.failed
       }
     >
-      <section className="space-y-5 sm:space-y-8">
+      <section className="member-group space-y-5 sm:space-y-8">
         {loading && <FeatureTourPending feature="groups-week1-v1" />}
-        <header className="border-b border-border pb-7">
-          <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100 sm:text-4xl">
-            {t("members.title")}
-          </h1>
-          <p className="mt-2 text-sm text-neutral-500">
-            {t("members.subtitle")}
-          </p>
-        </header>
+        <MemberPageHeader eyebrow={locale === "ar" ? "تقدّم مشترك · كل واحد في مساره" : "SHARED PROGRESS · INDIVIDUAL JOURNEYS"} title={t("members.title")} description={t("members.subtitle")} />
 
         <FeatureTour
           feature="groups-week1-v1"

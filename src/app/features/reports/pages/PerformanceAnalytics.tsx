@@ -139,7 +139,7 @@ function ProgressChart({ report, admin }: { report: Report; admin: boolean }) {
   const total = period?.metrics ?? report.overall;
 
   return (
-    <section data-guide="analytics-chart" className="overflow-hidden rounded-2xl border border-border bg-surface">
+    <section data-guide="analytics-chart" className="analytics-chart overflow-hidden rounded-2xl border border-border bg-surface">
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border p-4 sm:p-5">
         <div>
           <h2 className="text-lg font-bold">
@@ -469,7 +469,7 @@ export default function PerformanceAnalytics({
           </p>
         </div>
         <div
-          className={`grid grid-cols-3 gap-2 sm:gap-3 sm:grid-cols-2 ${cards.length === 3 ? "xl:grid-cols-3" : cards.length === 4 ? "xl:grid-cols-4" : "xl:grid-cols-5"}`}
+          className={`analytics-metrics grid grid-cols-3 gap-2 sm:gap-3 sm:grid-cols-2 ${cards.length === 3 ? "xl:grid-cols-3" : cards.length === 4 ? "xl:grid-cols-4" : "xl:grid-cols-5"}`}
         >
           {cards.map((c) => (
             <article

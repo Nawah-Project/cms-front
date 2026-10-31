@@ -1,3 +1,6 @@
+import { STAGE_DOT } from "../design-system/stage-visuals";
+import { MemberPageHeader } from "../design-system/MemberPageHeader";
+import { Button } from "../design-system/Button";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useOutletContext, useSearchParams } from "react-router";
@@ -423,7 +426,7 @@ export default function ApplicationsPage() {
   const isRefreshing = isFetching && !isLoading;
 
   return (
-    <div className="space-y-5 sm:space-y-7">
+    <div className="member-applications space-y-5 sm:space-y-7">
       {cohortActive && <section className="rounded-xl border border-emerald-800/20 bg-emerald-50 p-4 dark:bg-emerald-950/30" aria-label={locale === "ar" ? "فلتر فترة التغيير" : "Change period filter"}>
         <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-semibold">{locale === "ar" ? "طلبات مرتبطة بفترة تغيير" : "Applications in a change period"}{cohortLabel ? ` · ${cohortLabel}` : ""}</h2><p className="mt-1 text-sm text-text-secondary">{locale === "ar" ? "الفلتر حسب تاريخ تسجيل الطلب، من بداية التغيير لحد التغيير التالي." : "Filtered by recording time, from this checkpoint up to the next one."}</p>{(createdFrom || createdBefore) && <p className="mt-1 text-xs text-text-secondary">{createdFrom ? new Date(createdFrom).toLocaleString(locale === "ar" ? "ar-EG" : "en-US") : "—"} — {createdBefore ? new Date(createdBefore).toLocaleString(locale === "ar" ? "ar-EG" : "en-US") : (locale === "ar" ? "حتى الآن" : "Present")}</p>}</div><button type="button" className="button-secondary min-h-10" onClick={() => { const next = new URLSearchParams(searchParams); for (const key of ["createdFrom", "createdBefore", "change", "page", "period"]) next.delete(key); setSearchParams(next); }}>{locale === "ar" ? "إلغاء فلتر التغيير" : "Clear change filter"}</button></div>
         <div className="mt-3 flex items-center justify-between gap-3 text-sm"><span>{locale === "ar" ? `${applicationsData?.total ?? 0} طلبات مطابقة` : `${applicationsData?.total ?? 0} matching applications`}</span><div className="flex items-center gap-2"><button type="button" className="button-secondary min-h-10" disabled={cohortPage<=1} onClick={() => {const next=new URLSearchParams(searchParams);next.set("page",String(cohortPage-1));setSearchParams(next);}}>{locale === "ar" ? "السابق" : "Previous"}</button><span>{cohortPage}</span><button type="button" className="button-secondary min-h-10" disabled={cohortPage*100 >= (applicationsData?.total ?? 0)} onClick={() => {const next=new URLSearchParams(searchParams);next.set("page",String(cohortPage+1));setSearchParams(next);}}>{locale === "ar" ? "التالي" : "Next"}</button></div></div>
@@ -431,55 +434,28 @@ export default function ApplicationsPage() {
 
       <FeatureTour feature="cv-filter-week1-v1" enabled={Boolean(journeyData?.features.analytics && maxCvVersion > 1)} steps={CV_FILTER_TOUR} />
       <FeatureTour feature="explorer-filters-week1-v1" enabled={isCompassModalOpen} steps={EXPLORER_TOUR} />
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 border-b border-stone-300/80 pb-4 sm:pb-7 sm:flex-row sm:items-end sm:justify-between dark:border-neutral-800">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-950 dark:text-neutral-100 sm:text-4xl">
-            {t("applications.title")}
-          </h1>
-          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-            {t("applications.subtitle")}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2.5">
-          <div className="relative inline-block">
-            <button
-              type="button"
-              onClick={() => setIsCompassModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 bg-white px-3.5 py-2 text-xs font-bold text-neutral-800 transition-all shadow-2xs hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-            >
-              <Compass className="h-4 w-4 text-primary-strong" />
-              <span>
-                {locale === "ar"
-                  ? "🧭 مستكشف الوظائف"
-                  : "🧭 Job Explorer"}
-              </span>
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => openAddModal()}
-            className="button-primary inline-flex items-center gap-1.5 py-2 text-sm"
-          >
-            <PlusIcon className="w-3.5 h-3.5" />
-            <span>{t("common.addApplication")}</span>
-          </button>
-        </div>
-      </div>
+      <MemberPageHeader
+        eyebrow={locale === "ar" ? "مساحة التقديم · من الفرصة للمتابعة" : "APPLICATIONS · FIND, APPLY, FOLLOW UP"}
+        title={t("applications.title")} description={t("applications.subtitle")}
+        icon={<Compass size={15} />}
+        actions={<>
+          <Button variant="secondary" onClick={() => setIsCompassModalOpen(true)}><Compass size={17} />{locale === "ar" ? "مستكشف الوظائف" : "Job Explorer"}</Button>
+          <Button onClick={() => openAddModal()}><PlusIcon className="h-4 w-4" />{t("common.addApplication")}</Button>
+        </>}
+      />
 
       {/* Two-Tier Filter and Search Bar */}
-      <div className="space-y-3.5 rounded-2xl border border-neutral-200/90 bg-white/70 p-3.5 shadow-2xs backdrop-blur-xs dark:border-neutral-800 dark:bg-neutral-900/70">
+      <div className="applications-toolbar space-y-3.5 rounded-2xl border border-neutral-200/90 bg-white/70 p-3.5 shadow-2xs backdrop-blur-xs dark:border-neutral-800 dark:bg-neutral-900/70">
         {/* Tier 1: Scope Switcher + Search + Preparation Period + View Mode */}
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-2.5">
             {/* Scope Switcher: All vs Active */}
-            <div className="inline-flex rounded-xl bg-neutral-100 p-1 border border-neutral-200/80 dark:bg-neutral-800/80 dark:border-neutral-700/80">
+            <div className="n-segmented inline-flex rounded-xl bg-neutral-100 p-1 border border-neutral-200/80 dark:bg-neutral-800/80 dark:border-neutral-700/80">
               <button
                 type="button"
                 onClick={() => updateStageFilter("ALL")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                aria-pressed={currentStage !== "ACTIVE" && !["APPLIED", "ASSIGNMENT", "INTERVIEW", "DECISION", "CLOSED"].includes(currentStage)}
+                className={`n-scope-control rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
                   currentStage === "ALL" || (currentStage !== "ACTIVE" && !["APPLIED", "ASSIGNMENT", "INTERVIEW", "DECISION", "CLOSED"].includes(currentStage))
                     ? "bg-white text-neutral-950 shadow-xs dark:bg-neutral-900 dark:text-white"
                     : "text-neutral-600 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-white"
@@ -491,7 +467,8 @@ export default function ApplicationsPage() {
               <button
                 type="button"
                 onClick={() => updateStageFilter("ACTIVE")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                aria-pressed={currentStage === "ACTIVE"}
+                className={`n-scope-control rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
                   currentStage === "ACTIVE"
                     ? "bg-white text-neutral-950 shadow-xs dark:bg-neutral-900 dark:text-white"
                     : "text-neutral-600 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-white"
@@ -528,14 +505,14 @@ export default function ApplicationsPage() {
             </form>
 
             {/* View Switcher */}
-            <div className="hidden md:inline-flex w-fit shrink-0 items-center gap-1 rounded-xl border border-neutral-300 bg-white p-1 shadow-2xs dark:border-neutral-700 dark:bg-neutral-900">
+            <div className="n-segmented hidden md:inline-flex w-fit shrink-0 items-center gap-1 rounded-xl border border-neutral-300 bg-white p-1 shadow-2xs dark:border-neutral-700 dark:bg-neutral-900">
               <button
                 type="button"
                 onClick={() => handleViewModeChange("kanban")}
                 title={t("applications.viewBoard")}
                 aria-label={t("applications.viewBoard")}
                 aria-pressed={viewMode === "kanban"}
-                className={`inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors ${
+                className={`n-view-control inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors ${
                   viewMode === "kanban"
                     ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-2xs"
                     : "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"
@@ -558,7 +535,7 @@ export default function ApplicationsPage() {
                   aria-pressed={viewMode === "table"}
                   aria-disabled={!canUseTableView}
                   aria-expanded={tableLockBubbleOpen}
-                  className={`inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors ${
+                  className={`n-view-control inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors ${
                     !canUseTableView
                       ? "cursor-pointer opacity-75 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
                       : viewMode === "table"
@@ -594,19 +571,20 @@ export default function ApplicationsPage() {
           </div>
 
           {[
-            { key: "APPLIED", label: t("applications.submitted"), color: "bg-[#64748b]", count: stageCounts.APPLIED },
-            { key: "ASSIGNMENT", label: t("applications.assignment"), color: "bg-[#525b88]", count: stageCounts.ASSIGNMENT },
-            { key: "INTERVIEW", label: t("applications.interview"), color: "bg-[#285987]", count: stageCounts.INTERVIEW },
-            { key: "DECISION", label: t("applications.decision"), color: "bg-[#b47d1c]", count: stageCounts.DECISION },
-            { key: "CLOSED", label: t("applications.closed"), color: "bg-[#4b5563]", count: stageCounts.CLOSED },
+            { key: "APPLIED", label: t("applications.submitted"), color: STAGE_DOT.APPLIED, count: stageCounts.APPLIED },
+            { key: "ASSIGNMENT", label: t("applications.assignment"), color: STAGE_DOT.ASSIGNMENT, count: stageCounts.ASSIGNMENT },
+            { key: "INTERVIEW", label: t("applications.interview"), color: STAGE_DOT.INTERVIEW, count: stageCounts.INTERVIEW },
+            { key: "DECISION", label: t("applications.decision"), color: STAGE_DOT.DECISION, count: stageCounts.DECISION },
+            { key: "CLOSED", label: t("applications.closed"), color: STAGE_DOT.CLOSED, count: stageCounts.CLOSED },
           ].map((stage) => {
             const isSelected = currentStage === stage.key;
             return (
               <button
                 key={stage.key}
+                aria-pressed={isSelected}
                 type="button"
                 onClick={() => toggleStageCapsule(stage.key as Stage)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all border ${
+                className={`n-stage-control inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all border ${
                   isSelected
                     ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900 shadow-2xs"
                     : "border-neutral-200/90 bg-white text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"

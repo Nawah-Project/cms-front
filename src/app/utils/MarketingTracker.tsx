@@ -16,7 +16,7 @@ function deviceType() {
 }
 
 export function trackMarketingEvent(type: MarketingType) {
-  if (typeof window === "undefined" || location.pathname.startsWith("/admin")) return;
+  if (typeof window === "undefined" || (location.pathname.startsWith("/admin") || location.pathname === "/__design-system")) return;
   const pageUrl = new URL(location.href);
   const acquisitionUrl = entryUrl ?? pageUrl;
   const referrer = document.referrer;
@@ -48,7 +48,7 @@ export function MarketingTracker() {
   const { pathname, search } = useLocation();
   const { user, loading } = useAuth();
   useEffect(() => {
-    if (loading || user?.role === "ADMIN" || pathname.startsWith("/admin")) return;
+    if (loading || user?.role === "ADMIN" || (pathname.startsWith("/admin") || pathname === "/__design-system")) return;
     const navigation = `${pathname}${search}`;
     if (lastNavigation !== navigation) { lastNavigation = navigation; trackMarketingEvent("PAGE_VIEW"); }
   }, [pathname, search, loading, user?.role]);
@@ -56,7 +56,7 @@ export function MarketingTracker() {
     if (user && user.role !== "ADMIN") trackMarketingConversion("SIGNUP_COMPLETED");
   }, [user?.id]);
   useEffect(() => {
-    if (loading || user?.role === "ADMIN" || pathname.startsWith("/admin")) return;
+    if (loading || user?.role === "ADMIN" || (pathname.startsWith("/admin") || pathname === "/__design-system")) return;
     let lastActivity = Date.now();
     let lastPulse = 0;
     const activity = () => { lastActivity = Date.now(); };

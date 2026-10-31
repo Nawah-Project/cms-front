@@ -362,13 +362,13 @@ export default function ReportsPage() {
   const pageTitle = finalSelected ? text("التقرير النهائي", "Final report") : selectedWeek ? text(`تقرير الأسبوع ${number(selectedWeek)}`, `Week ${number(selectedWeek)} report`) : text("تحليلات الأداء", "Performance analytics");
 
   return (
-    <main dir={ar ? "rtl" : "ltr"} className="mx-auto w-full max-w-[1440px] space-y-5 pb-10">
+    <main dir={ar ? "rtl" : "ltr"} className="member-reports mx-auto w-full max-w-[1440px] space-y-5 pb-10">
       <header className="flex flex-wrap items-start justify-between gap-4">
-        <div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">{text("نواة · رحلة البحث عن وظيفة", "NAWAH · JOB SEARCH JOURNEY")}</p><h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-[28px]">{pageTitle}</h1><p className="mt-1 text-sm text-text-secondary">{text("البيانات المحفوظة حتى", "Recorded data as of")} {formatDate(report.asOf, locale, true)}</p></div>
+        <div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">{text("مشروع نواة · اقرأ أثر خطواتك", "NAWAH PROJECT · UNDERSTAND YOUR PROGRESS")}</p><h1 className="report-page-title mt-1 text-2xl font-bold tracking-tight sm:text-[28px]">{pageTitle}</h1><p className="mt-1 text-sm text-text-secondary">{text("البيانات المحفوظة حتى", "Recorded data as of")} {formatDate(report.asOf, locale, true)}</p></div>
 
       </header>
 
-      {!preview && <nav aria-label={text("اختيار التقرير", "Report navigation")} className="flex flex-wrap gap-2 rounded-xl border border-border bg-surface p-2">
+      {!preview && <nav aria-label={text("اختيار التقرير", "Report navigation")} className="report-navigation n-segmented flex flex-wrap gap-2 rounded-xl border border-border bg-surface p-2">
         <button type="button" aria-pressed={scope === null} className={`min-h-10 rounded-lg px-3 text-sm font-semibold ${scope === null ? "bg-emerald-700 text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`} onClick={() => { setLockedWeek(null); setScope(null); }}>{text("تحليلات مستمرة", "Continuous analytics")}</button>
         {[1, 2, 3, 4].map((week) => {
           const unlocked = weekReportUnlocked(week, report);

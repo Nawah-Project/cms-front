@@ -51,7 +51,7 @@ export function ProfessionalDevelopmentNav({
   return (
     <nav
       aria-label={t("professionalDevelopment.sectionNavigation")}
-      className="flex w-fit max-w-full gap-1 rounded-xl border border-border bg-surface p-1 shadow-2xs"
+      className="development-navigation n-segmented flex w-fit max-w-full gap-1 rounded-xl border border-border bg-surface p-1 shadow-2xs"
     >
       {navItems.map((item) => {
         const selected = active === item.id;

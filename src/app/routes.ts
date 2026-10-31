@@ -6,6 +6,7 @@ import {
 } from "@react-router/dev/routes";
 
 export default [
+  route("__design-system", "design-system/workshop/DesignSystemPage.tsx"),
   route("auth/login", "features/auth/pages/LoginPage.tsx"),
   route("auth/register", "features/auth/pages/RegisterPage.tsx"),
   // UI layout and pages

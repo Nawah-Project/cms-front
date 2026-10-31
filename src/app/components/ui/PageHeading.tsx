@@ -8,7 +8,7 @@ export function PageHeading({
   description: string;
 }) {
   return (
-    <div>
+    <div className="page-heading">
       <p className="text-xs font-medium uppercase tracking-[0.12em] text-neutral-500">
         {eyebrow}
       </p>

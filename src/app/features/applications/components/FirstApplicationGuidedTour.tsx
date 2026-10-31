@@ -799,7 +799,7 @@ export function FirstApplicationGuidedTourProvider({
                     type="button"
                     disabled={!isStep5Valid}
                     onClick={nextStep}
-                    className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition-all duration-150 shrink-0 ${
+                    className={`button-primary inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition-all duration-150 shrink-0 ${
                       isStep5Valid
                         ? "bg-accent hover:bg-neutral-900 text-white shadow-sm cursor-pointer active:scale-95"
                         : "bg-neutral-100 text-neutral-500 border border-border cursor-not-allowed"
@@ -831,7 +831,7 @@ export function FirstApplicationGuidedTourProvider({
                     type="button"
                     disabled={!isStep6Valid}
                     onClick={nextStep}
-                    className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition-all duration-150 shrink-0 ${
+                    className={`button-primary inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition-all duration-150 shrink-0 ${
                       isStep6Valid
                         ? "bg-accent hover:bg-neutral-900 text-white shadow-sm cursor-pointer active:scale-95"
                         : "bg-neutral-100 text-neutral-500 border border-border cursor-not-allowed"

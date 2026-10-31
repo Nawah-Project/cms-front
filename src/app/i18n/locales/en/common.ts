@@ -1,4 +1,5 @@
 export default {
+  details: "Details",
   brand: "Nawah Project",
   changeLanguage: "Change language",
   languageArabic: "العربية",

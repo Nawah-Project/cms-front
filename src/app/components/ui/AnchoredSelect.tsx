@@ -85,7 +85,7 @@ export function AnchoredSelect({
         aria-label={label}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`inline-flex min-h-11 min-w-0 items-center justify-between gap-2 rounded-xl border border-neutral-300 bg-white px-3 text-start text-xs font-semibold text-neutral-900 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white ${className}`}
+        className={`n-anchored-trigger inline-flex min-h-11 min-w-0 items-center justify-between gap-2 rounded-xl border border-neutral-300 bg-white px-3 text-start text-xs font-semibold text-neutral-900 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white ${className}`}
         onClick={() => setOpen((v) => !v)}
         onKeyDown={(e) => {
           if (e.key === "ArrowDown" || e.key === "ArrowUp") {

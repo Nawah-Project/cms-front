@@ -280,10 +280,10 @@ export function AddApplicationModal({
                 }
                 setShowExplorerModal(true);
               }}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-neutral-300 bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800 px-3 py-1.5 text-xs font-bold text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors shadow-2xs"
+              className="button-secondary text-xs"
             >
               <Compass className="h-3.5 w-3.5 text-neutral-600 dark:text-neutral-300" />
-              <span>{locale === "ar" ? "🧭 مستكشف الوظائف" : "🧭 Job Explorer"}</span>
+              <span>{locale === "ar" ? "مستكشف الوظائف" : "Job Explorer"}</span>
             </button>
 
             {/* Welcoming Floating Hint on First Visit */}

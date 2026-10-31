@@ -1,4 +1,5 @@
 export default {
+  details: "التفاصيل",
   brand: "مشروع نواة",
   changeLanguage: "تغيير اللغة",
   languageArabic: "العربية",

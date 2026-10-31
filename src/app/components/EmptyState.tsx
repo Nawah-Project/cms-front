@@ -32,7 +32,7 @@ export function EmptyState({
 
   if (isFiltered) {
     return (
-      <div className="w-full py-16 px-4 text-center rounded-xl border border-dashed border-border bg-neutral-50/50">
+      <div className="n-empty w-full py-16 px-4 text-center rounded-xl border border-dashed border-border bg-neutral-50/50">
         <h3 className="text-sm font-semibold text-neutral-800">
           {title || t("applications.noResults")}
         </h3>
@@ -54,7 +54,7 @@ export function EmptyState({
 
   if (compact) {
     return (
-      <div className="w-full py-8 px-4 text-center rounded-xl border border-dashed border-border bg-surface/50 max-w-md mx-auto my-2">
+      <div className="n-empty w-full py-8 px-4 text-center rounded-xl border border-dashed border-border bg-surface/50 max-w-md mx-auto my-2">
         {icon && <div className="mb-2 flex justify-center text-neutral-400">{icon}</div>}
         {title && <h3 className="text-sm font-semibold text-neutral-800">{title}</h3>}
         {description && <p className="mt-1 text-xs text-neutral-500">{description}</p>}
@@ -74,8 +74,8 @@ export function EmptyState({
   }
 
   return (
-    <div className="w-full py-16 px-6 text-center rounded-xl border border-dashed border-border bg-surface shadow-xs max-w-lg mx-auto my-6">
-      <div className="w-12 h-12 mx-auto rounded-full bg-neutral-100 flex items-center justify-center text-neutral-600 mb-4">
+    <div className="n-empty w-full py-16 px-6 text-center rounded-xl border border-dashed border-border bg-surface shadow-xs max-w-lg mx-auto my-6">
+      <div className="n-empty-icon w-12 h-12 mx-auto rounded-full bg-neutral-100 flex items-center justify-center text-neutral-600 mb-4">
         {icon || (
           <svg
             className="w-6 h-6"

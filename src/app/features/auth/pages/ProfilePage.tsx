@@ -200,12 +200,12 @@ export default function ProfilePage() {
     .join("");
 
   return (
-    <div className="w-full min-w-0 space-y-7 animate-in fade-in duration-150">
+    <div className="member-profile w-full min-w-0 space-y-7 animate-in fade-in duration-150">
       {/* 1. Profile Identity Banner */}
-      <section className="relative overflow-hidden rounded-3xl border border-border bg-surface p-6 sm:p-8 shadow-xs">
+      <section className="profile-identity relative overflow-hidden rounded-3xl border border-border bg-surface p-6 sm:p-8 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
-            <div className="h-16 w-16 shrink-0 rounded-2xl bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 font-bold text-xl flex items-center justify-center shadow-md">
+            <div className="profile-avatar h-16 w-16 shrink-0 rounded-2xl bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 font-bold text-xl flex items-center justify-center shadow-md">
               {initials}
             </div>
             <div>
@@ -261,8 +261,8 @@ export default function ProfilePage() {
         /* 2. Modern Two-Column Bento Grid */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Right Column: Professional Data & Links (lg:col-span-7) */}
-          <section className="lg:col-span-7 rounded-3xl border border-border bg-surface p-6 sm:p-7 shadow-xs space-y-6">
-            <div>
+          <section className="profile-details n-panel lg:col-span-7 rounded-3xl border border-border bg-surface p-6 sm:p-7 shadow-xs space-y-6">
+            <div className="profile-section-heading">
               <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
                 {isRtl ? "البيانات المهنية والروابط" : "Professional Details & Links"}
               </h2>
@@ -367,7 +367,7 @@ export default function ProfilePage() {
           </section>
 
           {/* Left Column: CV Management (lg:col-span-5) */}
-          <section className="lg:col-span-5 rounded-3xl border border-border bg-surface p-6 sm:p-7 shadow-xs space-y-6 flex flex-col justify-between">
+          <section className="profile-cv n-panel lg:col-span-5 rounded-3xl border border-border bg-surface p-6 sm:p-7 shadow-xs space-y-6 flex flex-col justify-between">
             <div className="space-y-4">
               <div>
                 <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
@@ -488,7 +488,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => setViewCv(true)}
-                  className="button-primary w-full py-2.5 text-xs font-semibold shadow-xs flex items-center justify-center gap-2"
+                  className="button-secondary w-full py-2.5 text-xs font-semibold shadow-xs flex items-center justify-center gap-2"
                 >
                   <Eye className="h-4 w-4" />
                   <span>{t("profile.viewCv")}</span>

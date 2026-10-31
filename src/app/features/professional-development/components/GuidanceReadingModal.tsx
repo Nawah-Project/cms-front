@@ -133,9 +133,9 @@ export function GuidanceReadingModal({
       aria-labelledby="guidance-modal-title"
       className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-950/25 backdrop-blur-sm p-3.5 sm:p-5"
     >
-      <div className="relative flex flex-col w-full max-w-2xl max-h-[90dvh] rounded-2xl border border-border bg-surface shadow-2xl overflow-hidden ">
+      <div className="n-dialog-card relative flex flex-col w-full max-w-2xl max-h-[90dvh] rounded-2xl border border-border bg-surface shadow-2xl overflow-hidden ">
         {/* 1. Sticky Header */}
-        <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-surface/95 px-5 py-4 backdrop-blur-md">
+        <header className="n-dialog-header sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-surface/95 px-5 py-4 backdrop-blur-md">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-md bg-surface px-2 py-0.5 text-xs font-semibold text-accent border border-border-strong">
@@ -312,11 +312,7 @@ export function GuidanceReadingModal({
                 <button
                   type="button"
                   onClick={handleCopyPrompt}
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
-                    copied
-                      ? "bg-emerald-600 text-white"
-                      : "bg-neutral-800 text-neutral-100 hover:bg-neutral-700"
-                  }`}
+                  className="button-secondary text-xs"
                 >
                   {copied ? (
                     <>
@@ -331,7 +327,7 @@ export function GuidanceReadingModal({
                 </button>
               </div>
 
-              <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-4 font-mono text-xs leading-relaxed text-neutral-100 shadow-inner">
+              <div className="guidance-prompt rounded-xl border border-neutral-800 bg-neutral-950 p-4 font-mono text-xs leading-relaxed text-neutral-100 shadow-inner">
                 <pre
                   className="whitespace-pre-wrap break-words font-mono text-xs selection:bg-neutral-700"
                   dir="auto"
@@ -347,7 +343,7 @@ export function GuidanceReadingModal({
               </p>
             </div>
           )}
-          {cvUpdate && !isRead && <section id="guidance-cv-upload" className="rounded-xl border border-border-strong bg-surface p-4">
+          {cvUpdate && !isRead && <section id="guidance-cv-upload" className="guidance-cv-action rounded-xl border border-border-strong bg-surface p-4">
             <h3 className="font-semibold">{text("طبّق الإرشاد وارفع نسختك الجديدة هنا", "Apply the guide and upload your revised CV here")}</h3>
             <p className="mt-2 text-sm leading-6 text-text-secondary">{text("ارفع النسخة المعدّلة بعد تطبيق الإرشاد. بعد حفظها، هيتم تأكيد الإكمال تلقائيًا ويفتح تحليل الأداء. رفع نفس الملف الحالي لا يبدأ فترة جديدة.", "Upload your revised CV after applying the guide. Once saved, completion is confirmed automatically and analytics opens. Re-uploading the current file does not start a new period.")}</p>
             <label className="button-secondary mt-3 inline-flex min-h-11 cursor-pointer items-center">{uploading ? text("جارٍ رفع السيرة…", "Uploading CV…") : text("رفع الـCV المحدّث", "Upload revised CV")}<input type="file" accept="application/pdf,.pdf" disabled={uploading || saving} className="sr-only" aria-label={text("رفع الـCV المحدّث", "Upload revised CV")} onChange={async event => {
@@ -361,7 +357,7 @@ export function GuidanceReadingModal({
         </div>
 
         {/* 3. Sticky Footer */}
-        <footer className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface/95 px-5 py-3.5 backdrop-blur-md">
+        <footer className="n-dialog-footer sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t border-border bg-surface/95 px-5 py-3.5 backdrop-blur-md">
           {closeMessage && <p id="guidance-close-reason" role="alert" className="w-full border-s-2 border-accent ps-3 text-sm font-medium leading-6 text-text-primary">{closeMessage}</p>}
           <button
             type="button"
@@ -386,7 +382,7 @@ export function GuidanceReadingModal({
             <span>
               {isRead
                 ? text("تم تأكيد القراءة ✓", "Reading confirmed ✓")
-                : cvUpdate ? text("تأكيد الإكمال والمتابعة", "Confirm completion and continue") : text("أتممت قراءة الإرشادات ✓", "Mark guidance as read ✓")}
+                : cvUpdate ? text("تأكيد الإكمال والمتابعة", "Confirm completion and continue") : text("أتممت قراءة الإرشادات", "Mark guidance as read")}
             </span>
           </button>}
         </footer>

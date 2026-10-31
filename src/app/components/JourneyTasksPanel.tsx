@@ -205,7 +205,7 @@ export function JourneyTasksPanel({
       >
         {/* Inner Panel Drawer */}
         <div
-          id="journey-tasks-drawer"
+          id="journey-tasks-drawer" data-member-surface="tasks"
           aria-label={t("journey.panelTitle")}
           aria-hidden={!open}
           inert={!open}

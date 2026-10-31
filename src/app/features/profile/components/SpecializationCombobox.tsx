@@ -79,7 +79,7 @@ export function SpecializationCombobox({
 
   return (
     <div className="space-y-1.5" ref={containerRef}>
-      <div className="relative">
+      <div className="relative specialization-control" dir="ltr">
         <input
           type="text"
           dir="ltr"

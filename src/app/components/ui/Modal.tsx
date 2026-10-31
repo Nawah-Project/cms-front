@@ -85,12 +85,12 @@ export function Modal({
 
       {/* Modal Dialog Card */}
       <div
-        className={`relative z-10 w-full ${SIZE_CLASSES[size]} rounded-2xl border border-border bg-surface p-0 text-text-primary shadow-2xl animate-in fade-in zoom-in-95 duration-150 my-auto`}
+        className={`n-dialog-card relative z-10 w-full ${SIZE_CLASSES[size]} rounded-2xl border border-border bg-surface p-0 text-text-primary shadow-2xl animate-in fade-in zoom-in-95 duration-150 my-auto`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex max-h-[90vh] flex-col overflow-hidden">
           {/* Header */}
-          <div className="flex items-start justify-between border-b border-border px-6 py-4">
+          <div className="n-dialog-header flex items-start justify-between border-b border-border px-6 py-4">
             <div className="min-w-0 space-y-0.5 pe-4 [overflow-wrap:anywhere]">
               <h2
                 id={titleId}
@@ -117,11 +117,11 @@ export function Modal({
           </div>
 
           {/* Scrollable Content */}
-          <div className="overflow-y-auto p-6">{children}</div>
+          <div className="n-dialog-body overflow-y-auto p-6">{children}</div>
 
           {/* Footer */}
           {footer && (
-            <div className="flex items-center justify-end gap-3 border-t border-border bg-neutral-50/60 px-6 py-4">
+            <div className="n-dialog-footer flex items-center justify-end gap-3 border-t border-border bg-neutral-50/60 px-6 py-4">
               {footer}
             </div>
           )}

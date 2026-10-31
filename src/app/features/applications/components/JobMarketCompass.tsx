@@ -281,7 +281,7 @@ export function JobMarketCompass({
                   aria-pressed={isSelected}
                   data-work-mode={mode.id}
                   onClick={() => setWorkMode(mode.id)}
-                  className={`inline-flex items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                  className={`job-work-mode inline-flex items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                     isSelected
                       ? "border-accent bg-accent text-white shadow-xs"
                       : "border-transparent text-neutral-600 hover:bg-surface hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-white"
@@ -349,7 +349,7 @@ export function JobMarketCompass({
                     aria-pressed={active}
                     data-market={m.id}
                     onClick={() => handleMarketChange(m.id)}
-                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
+                    className={`job-country inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
                       active
                         ? "border-neutral-900 bg-neutral-900 text-white shadow-xs dark:border-white dark:bg-white dark:text-neutral-900"
                         : "border-border bg-neutral-50/70 text-neutral-700 hover:bg-neutral-100 hover:border-neutral-400 dark:bg-neutral-900/60 dark:text-neutral-300 dark:hover:bg-neutral-800"
@@ -478,7 +478,7 @@ export function JobMarketCompass({
                   onAuxClick={(event) => {
                     if (event.button === 1) handlePlatformClick(platform);
                   }}
-                  className="group flex items-start gap-3.5 rounded-2xl border border-border bg-surface p-4 text-start transition-all hover:border-neutral-400 hover:shadow-sm dark:hover:border-neutral-600 w-full"
+                  className="job-platform-card group flex items-start gap-3.5 rounded-2xl border border-border bg-surface p-4 text-start transition-all hover:border-neutral-400 hover:shadow-sm dark:hover:border-neutral-600 w-full"
                 >
                   {/* Platform Logo Box */}
                   <div className="h-11 w-11 shrink-0 rounded-xl border border-border/80 bg-white dark:bg-neutral-900 flex items-center justify-center p-2 shadow-2xs">
