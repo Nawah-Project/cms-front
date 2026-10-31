@@ -590,14 +590,14 @@ export default function AdminOperationsPage() {
                 {
                   key: "active",
                   label: text("النشطون", "Active"),
-                  color: "#23674e",
+                  color: "#125e4e",
                 },
               ]}
               limits={[
                 {
                   value: settings.activeWarn,
                   label: text("تحذير", "Warning"),
-                  color: "#b88e31",
+                  color: "#b1822b",
                 },
                 {
                   value: settings.activeCritical,
@@ -619,18 +619,18 @@ export default function AdminOperationsPage() {
               )}
               unit="ms"
               channels={[
-                { key: "p95", label: "API P95", color: "#3c7587" },
+                { key: "p95", label: "API P95", color: "#174c87" },
                 {
                   key: "clientP95",
                   label: text("من المتصفح P95", "Browser P95"),
-                  color: "#6b7950",
+                  color: "#527ba6",
                 },
               ]}
               limits={[
                 {
                   value: settings.latencyWarnMs,
                   label: text("تحذير", "Warning"),
-                  color: "#b88e31",
+                  color: "#b1822b",
                 },
                 {
                   value: settings.latencyCriticalMs,
@@ -649,7 +649,7 @@ export default function AdminOperationsPage() {
               )}
               unit="req/s"
               channels={[
-                { key: "rps", label: text("المعدل", "Rate"), color: "#23674e" },
+                { key: "rps", label: text("المعدل", "Rate"), color: "#125e4e" },
               ]}
             />
             <OperationsChart
@@ -666,7 +666,7 @@ export default function AdminOperationsPage() {
                 {
                   value: settings.errorWarnPercent,
                   label: text("تحذير", "Warning"),
-                  color: "#b88e31",
+                  color: "#b1822b",
                 },
                 {
                   value: settings.errorCriticalPercent,
@@ -686,11 +686,11 @@ export default function AdminOperationsPage() {
               unit="%"
               percent
               channels={[
-                { key: "cpu", label: "CPU", color: "#23674e" },
+                { key: "cpu", label: "CPU", color: "#125e4e" },
                 {
                   key: "memory",
                   label: text("الذاكرة", "Memory"),
-                  color: "#4b8291",
+                  color: "#174c87",
                 },
               ]}
               limits={[
@@ -722,19 +722,19 @@ export default function AdminOperationsPage() {
                 {
                   key: "tx",
                   label: text("إرسال", "Transmit"),
-                  color: "#23674e",
+                  color: "#125e4e",
                 },
                 {
                   key: "rx",
                   label: text("استقبال", "Receive"),
-                  color: "#6a8da0",
+                  color: "#527ba6",
                 },
               ]}
               limits={[
                 {
                   value: settings.uplinkMbps,
                   label: text("مرجع الرفع", "Uplink reference"),
-                  color: "#b88e31",
+                  color: "#b1822b",
                 },
               ]}
             />
@@ -962,7 +962,7 @@ export default function AdminOperationsPage() {
               {
                 key: "cvMiB",
                 label: text("استخدام فعلي", "Physical usage"),
-                color: "#23674e",
+                color: "#125e4e",
               },
             ]}
             limits={[

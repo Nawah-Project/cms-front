@@ -478,7 +478,7 @@ export function JourneyBlueprint({
                   refY="3.5"
                   orient="auto"
                 >
-                  <path d="M0 0 7 3.5 0 7" fill="#47675c" />
+                  <path d="M0 0 7 3.5 0 7" fill="#527ba6" />
                 </marker>
                 <marker
                   id="jro-guide-arrow"
@@ -513,7 +513,7 @@ export function JourneyBlueprint({
                       width="145"
                       height={b.height - 20}
                       rx="10"
-                      fill="#184c3e"
+                      fill="#125e4e"
                     />
                     <foreignObject
                       x={b.labelX + 9}
@@ -592,7 +592,7 @@ export function JourneyBlueprint({
                       key={edge.from + "-" + edge.to}
                       d={path}
                       fill="none"
-                      stroke={highlighted ? "#126c50" : "#47675c"}
+                      stroke={highlighted ? "#125e4e" : "#527ba6"}
                       opacity={edge.kind === "NEXT_WEEK" ? 0.55 : 1}
                       strokeWidth={highlighted ? 3.5 : 1.7}
                       strokeDasharray={
@@ -876,7 +876,7 @@ export function JourneyBlueprint({
                   height={c.height}
                   fill={
                     c.node.current
-                      ? "#155546"
+                      ? "#125e4e"
                       : c.kind === "REVIEW"
                         ? "#47616a"
                         : "#fff"
@@ -889,8 +889,8 @@ export function JourneyBlueprint({
                 y={-view.y / view.z}
                 width={size.w / view.z}
                 height={size.h / view.z}
-                fill="#15554618"
-                stroke="#155546"
+                fill="#125e4e18"
+                stroke="#125e4e"
                 strokeWidth="10"
               />
             </svg>
