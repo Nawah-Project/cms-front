@@ -1,6 +1,6 @@
 FROM node:24-alpine AS development-dependencies-env
-COPY . /app
 WORKDIR /app
+COPY package.json package-lock.json ./
 RUN npm ci --include=optional
 
 FROM node:24-alpine AS production-dependencies-env

@@ -1,133 +1,85 @@
-name: CI and production deploy
-
+name: Hosted CI and release candidate
 on:
   push:
     branches: [dev, main]
   pull_request:
     branches: [dev, main]
-
 permissions:
   contents: read
-
 concurrency:
-  group: cms-front-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
-
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   verify:
-    name: Build development and production frontend
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      VITE_API_URL: https://api.nawah-project.com
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure ephemeral CI development frontend
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --include=optional
+      - run: npm run typecheck
+      - run: node --test scripts/*checks.mjs
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+      - name: Build standalone production image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: .
+          load: true
+          platforms: linux/amd64
+          tags: nawah/frontend:sha-${{ github.sha }}
+          build-args: VITE_API_URL=https://api.nawah-project.com
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+      - name: Smoke test actual runtime with disposable CI state
+        env:
+          IMAGE: nawah/frontend:sha-${{ github.sha }}
         run: |
-          cat > .env.ci <<EOF
-          DEV_FRONTEND_HOST_PORT=5174
-          DEV_VITE_API_URL=http://127.0.0.1:3302
-          DEV_VITE_CV_MAX_FILE_SIZE_BYTES=5242880
-          EOF
-
-      - name: Validate development Compose file
-        run: docker compose --env-file .env.ci -p cms-ci-front -f compose.dev.yml config --quiet
-
-      - name: Build development frontend image
-        run: docker compose --env-file .env.ci -p cms-ci-front -f compose.dev.yml build frontend
-
-      - name: Start and smoke test development frontend
-        run: |
-          docker compose --env-file .env.ci -p cms-ci-front -f compose.dev.yml up -d frontend
-          for attempt in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:5174/ >/dev/null; then
-              exit 0
-            fi
+          docker run -d --name ci-runtime -e NODE_ENV=production -e PORT=3000 -p 127.0.0.1:18080:3000 "$IMAGE"
+          for attempt in $(seq 1 50); do
+            if curl --fail --silent http://127.0.0.1:18080/auth/login >/dev/null; then exit 0; fi
             sleep 2
           done
-          docker compose --env-file .env.ci -p cms-ci-front -f compose.dev.yml logs frontend
+          docker logs ci-runtime
           exit 1
-
-      - name: Stop CI frontend stack
+      - name: Package tested image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          IMAGE: nawah/frontend:sha-${{ github.sha }}
+        run: python3 scripts/release/release.py prepare --component frontend --image "$IMAGE"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          name: candidate-${{ github.sha }}
+          path: candidate/
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
+      - name: Remove disposable CI container
         if: always()
-        run: docker compose --env-file .env.ci -p cms-ci-front -f compose.dev.yml down --remove-orphans --volumes
-
-      - name: Build production frontend image
-        run: docker build --build-arg VITE_API_URL=https://api.nawah-project.com -t cms-front:ci .
-
-  deploy-production:
-    name: Deploy frontend to production
+        run: docker rm -f ci-runtime || true
+  publish:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: verify
-    runs-on: self-hosted
-    concurrency:
-      group: cms-front-production
-      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: write
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Check production runner access
-        run: |
-          test -w /data/cms-front
-          docker compose version
-          rsync --version
-
-      - name: Sync frontend source and deploy frontend only
-        run: |
-          rsync -az --delete \
-            --exclude='/.env' \
-            --exclude='/.env.*' \
-            --exclude='/.git/' \
-            --exclude='/node_modules/' \
-            --exclude='/build/' \
-            --exclude='/.react-router/' \
-            --exclude='/coverage/' \
-            ./ /data/cms-front/
-          docker compose -f /data/cms-back/compose.yml up -d --build frontend
-          for attempt in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:8080/ >/dev/null; then
-              exit 0
-            fi
-            sleep 2
-          done
-          docker compose -f /data/cms-back/compose.yml logs --tail=60 frontend
-          exit 1
-
-  deploy-development:
-    name: Deploy frontend to isolated development environment
-    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-    needs: verify
-    runs-on: self-hosted
-    concurrency:
-      group: cms-front-development
-      cancel-in-progress: false
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check development deployment access
-        run: |
-          test -w /data/cms-development
-          test -r /data/cms-development/.env
-          docker compose version
-          rsync --version
-
-      - name: Sync frontend source and deploy development frontend only
-        run: |
-          rsync -az --delete \
-            --exclude='/.env' \
-            --exclude='/.env.*' \
-            --exclude='/.git/' \
-            --exclude='/node_modules/' \
-            --exclude='/build/' \
-            --exclude='/.react-router/' \
-            --exclude='/coverage/' \
-            ./ /data/cms-development/frontend/
-          docker compose --project-name cms-development-frontend --env-file /data/cms-development/.env -f /data/cms-development/frontend/compose.dev.yml config --quiet
-          docker compose --project-name cms-development-frontend --env-file /data/cms-development/.env -f /data/cms-development/frontend/compose.dev.yml up -d --build frontend
-          frontend_endpoint="$(docker compose --project-name cms-development-frontend --env-file /data/cms-development/.env -f /data/cms-development/frontend/compose.dev.yml port frontend 5173)"
-          for attempt in $(seq 1 30); do
-            if curl --fail --silent "http://${frontend_endpoint}/" >/dev/null; then
-              exit 0
-            fi
-            sleep 2
-          done
-          docker compose --project-name cms-development-frontend --env-file /data/cms-development/.env -f /data/cms-development/frontend/compose.dev.yml logs --tail=60 frontend
-          exit 1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: candidate-${{ github.sha }}
+          path: candidate
+      - name: Publish unapproved candidate without rebuilding
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/release/release.py publish
