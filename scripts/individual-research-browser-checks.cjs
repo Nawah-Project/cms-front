@@ -60,7 +60,6 @@ let activeBrowser, activePage;
           'analytics-week1-v1',
           'analytics-unlocked-v1',
           'first-application-v1',
-          'guidance-first-v1',
         ])
           localStorage.setItem(`nawah_feature_tour_${id}_${f}`, 'true');
       },
