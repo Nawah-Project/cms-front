@@ -27,6 +27,7 @@ export function NotificationCenter({
 }: NotificationCenterProps) {
   const { t, number, locale, date } = useI18n();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [unreadFeedback, setUnreadFeedback] = useState<number>(0);
@@ -51,6 +52,10 @@ export function NotificationCenter({
   // Load companion stats once
   useEffect(() => {
     let active = true;
+    setStats(null);
+    setUnreadFeedback(0);
+    // These companion endpoints belong to members; admin notifications use their own feed.
+    if (user?.role !== "USER") return;
     void Promise.all([
       api.getDashboardStats().catch(() => null),
       api.getFeedbackUnreadCount().catch(() => ({ unreadCount: 0 })),
@@ -62,7 +67,7 @@ export function NotificationCenter({
     return () => {
       active = false;
     };
-  }, []);
+  }, [user?.id, user?.role]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -83,7 +88,6 @@ export function NotificationCenter({
     };
   }, [open]);
 
-  const { user } = useAuth();
   const { data: journeyData } = useJourneyState({ enabled: Boolean(user) });
   const currentWeek = journeyData?.state.currentWeek ?? 0;
 
