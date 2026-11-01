@@ -1,3 +1,4 @@
+import type { AccessDecision, ReportAccess } from "../admin/individual-research/api";
 export type JourneyNodeStatus = "COMPLETED" | "ACTIVE" | "LOCKED_BLURRED";
 
 export type JourneyNodeType =
@@ -82,6 +83,9 @@ export interface JourneyStateResponse {
   currentWeekNodes: EnrichedJourneyNode[];
   nodes: EnrichedJourneyNode[];
   weeklyStats: WeeklyConversionStats;
+  individualAccess?: AccessDecision[];
+  reportAccess?: ReportAccess;
+  normalFeatures?: {analytics:boolean;groups:boolean;tableView:boolean;professionalTasks:boolean};
   features: { groups: boolean; tableView: boolean; professionalTasks: boolean; analytics?: boolean };
 }
 

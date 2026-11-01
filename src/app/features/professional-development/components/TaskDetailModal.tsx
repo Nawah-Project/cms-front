@@ -30,10 +30,12 @@ const STATUS_KEYS: Record<TaskStatus, string> = {
 
 export function TaskDetailModal({
   taskId,
+  readOnly = false,
   onClose,
   onChanged,
 }: {
   taskId: string | null;
+  readOnly?: boolean;
   onClose: () => void;
   onChanged?: () => void;
 }) {
@@ -69,7 +71,7 @@ export function TaskDetailModal({
         const unread = data.notes.filter(
           (note) => note.type === "MENTOR_FEEDBACK" && !note.readAt,
         );
-        if (unread.length) {
+        if (!readOnly && unread.length) {
           await Promise.all(
             unread.map((note) => api.markMentorFeedbackRead(taskId, note.id)),
           );
@@ -83,7 +85,7 @@ export function TaskDetailModal({
         if (showLoading) setLoading(false);
       }
     },
-    [taskId, onChanged],
+    [taskId, onChanged, readOnly],
   );
 
   useEffect(() => {
@@ -100,6 +102,7 @@ export function TaskDetailModal({
   }, [taskId, load]);
 
   const updateTask = async (operation: () => Promise<ProfessionalTask>) => {
+    if (readOnly) return;
     setBusy(true);
     setActionError("");
     try {
@@ -115,6 +118,7 @@ export function TaskDetailModal({
   };
 
   const refreshDetails = async (operation: () => Promise<unknown>) => {
+    if (readOnly) return;
     setBusy(true);
     setActionError("");
     try {
@@ -235,11 +239,11 @@ export function TaskDetailModal({
                     <PriorityLabel priority={task.priority} />
                     {task.mentorPriority && <MentorPriorityMark />}
                   </div>
-                  {task.source === "PERSONAL" && (
+                  {!readOnly && task.source === "PERSONAL" && (
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
-                        disabled={busy}
+                        disabled={readOnly || busy}
                         onClick={() => setEditOpen(true)}
                         className="button-secondary px-3 py-2 text-xs"
                       >
@@ -247,7 +251,7 @@ export function TaskDetailModal({
                       </button>
                       <button
                         type="button"
-                        disabled={busy}
+                        disabled={readOnly || busy}
                         onClick={() => setIsDeleteTaskConfirmOpen(true)}
                         className="rounded-lg border border-danger-border px-3 py-2 text-xs font-medium text-danger-strong hover:bg-danger-soft"
                       >
@@ -259,7 +263,7 @@ export function TaskDetailModal({
                     {t("professionalDevelopment.updateStatus")}
                     <select
                       value={task.status}
-                      disabled={busy}
+                      disabled={readOnly || busy}
                       onChange={(event) =>
                         void updateTask(() =>
                           api.updateTaskStatus(
@@ -353,7 +357,7 @@ export function TaskDetailModal({
                           <input
                             type="checkbox"
                             checked={item.completed}
-                            disabled={busy}
+                            disabled={readOnly || busy}
                             onChange={(event) =>
                               void refreshDetails(() =>
                                 api.updateChecklistItem(task.id, item.id, {
@@ -389,7 +393,7 @@ export function TaskDetailModal({
                               />
                               <button
                                 type="submit"
-                                disabled={busy}
+                                disabled={readOnly || busy}
                                 className="button-secondary px-2 py-1 text-xs"
                               >
                                 {t("professionalDevelopment.save")}
@@ -402,10 +406,10 @@ export function TaskDetailModal({
                               {item.title}
                             </span>
                           )}
-                          {task.source === "PERSONAL" && (
+                          {!readOnly && task.source === "PERSONAL" && (
                             <button
                               type="button"
-                              disabled={busy}
+                              disabled={readOnly || busy}
                               onClick={() => {
                                 setEditingId(item.id);
                                 setEditedTitle(item.title);
@@ -415,10 +419,10 @@ export function TaskDetailModal({
                               {t("common.edit")}
                             </button>
                           )}
-                          {task.source === "PERSONAL" && (
+                          {!readOnly && task.source === "PERSONAL" && (
                             <button
                               type="button"
-                              disabled={busy}
+                              disabled={readOnly || busy}
                               aria-label={`${t("professionalDevelopment.deleteChecklistItem")}: ${item.title}`}
                               onClick={() =>
                                 setChecklistToDelete({
@@ -435,7 +439,7 @@ export function TaskDetailModal({
                       ))}
                     </ul>
                   )}
-                  {task.source === "PERSONAL" && (
+                  {!readOnly && task.source === "PERSONAL" && (
                     <form className="flex gap-2" onSubmit={addChecklist}>
                       <label htmlFor="new-checklist-item" className="sr-only">
                         {t("professionalDevelopment.checklistPlaceholder")}
@@ -454,7 +458,7 @@ export function TaskDetailModal({
                       />
                       <button
                         type="submit"
-                        disabled={busy || !checklistTitle.trim()}
+                        disabled={readOnly || busy || !checklistTitle.trim()}
                         className="button-secondary inline-flex shrink-0 items-center gap-1.5 px-3"
                       >
                         <PlusIcon className="h-4 w-4" />
@@ -545,7 +549,7 @@ export function TaskDetailModal({
                     <div className="flex justify-end">
                       <button
                         type="submit"
-                        disabled={busy || !personalNote.trim()}
+                        disabled={readOnly || busy || !personalNote.trim()}
                         className="button-primary px-3 py-2 text-xs"
                       >
                         {t("professionalDevelopment.addPersonalNote")}
@@ -593,7 +597,7 @@ export function TaskDetailModal({
           </div>
         </section>
       </dialog>
-      {editOpen && task?.source === "PERSONAL" && (
+      {!readOnly && editOpen && task?.source === "PERSONAL" && (
         <TaskFormDialog
           mode="editPersonal"
           task={task}

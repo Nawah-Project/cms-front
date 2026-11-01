@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
+import { useAuth } from "../auth/store/authStore";
+import { canAdminAccess } from "./adminAccess";
 import { useI18n } from "../../i18n";
 import { adminApi, type AdminGroup, type AdminMember } from "./api/adminApi";
 import { AdminMemberTasks } from "./components/AdminMemberTasks";
@@ -44,7 +46,9 @@ export default function AdminMentoringPage() {
   const { t, tp, locale, number } = useI18n();
   const isAr = locale === "ar";
   const toast = useToast();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
+  const {user} = useAuth();
+  const researchCase = searchParams.get("researchCase");
 
   // Active workspace tab for selected member: "tasks" | "feedback"
   const [workspaceTab, setWorkspaceTab] = useState<"tasks" | "feedback">(
@@ -57,7 +61,7 @@ export default function AdminMentoringPage() {
   const [dataLoading, setDataLoading] = useState(true);
 
   // Selected Member
-  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(() => searchParams.get("memberId"));
 
   // Filter & Search in member list
   const [searchQuery, setSearchQuery] = useState("");
@@ -103,6 +107,10 @@ export default function AdminMentoringPage() {
     Promise.all([adminApi.users({ limit: 100 }), adminApi.groups()])
       .then(([usersRes, groupsRes]) => {
         setMembers(usersRes.items);
+        const contextMember = searchParams.get("memberId");
+        if (contextMember && !usersRes.items.some(m => m.id === contextMember)) {
+          void adminApi.user(contextMember).then(member => setMembers(prev => [{...member.user, lastActivityAt: member.lastActivityAt, inactivityDays: member.inactivityDays, activityStatus: member.activityStatus, applicationsCount: member.applicationsCount, currentStageCounts: member.currentStageCounts}, ...prev])).catch(() => undefined);
+        }
         setGroups(groupsRes.items);
         if (usersRes.items.length) {
           setSelectedMemberId((prev) => prev ?? usersRes.items[0].id);
@@ -236,6 +244,7 @@ export default function AdminMentoringPage() {
 
   return (
     <div className="space-y-6">
+      {researchCase && canAdminAccess(user, 'INDIVIDUAL_RESEARCH') && <Link className="button-secondary inline-flex" to={'/admin/ux-lab/individual-research?case='+encodeURIComponent(researchCase)}>{isAr ? 'العودة للتجربة الفردية' : 'Back to individual case'}</Link>}
       {/* 1. TOP METRICS STRIP & BULK ACTIONS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric 1 */}

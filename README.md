@@ -89,3 +89,7 @@ This template comes with [Tailwind CSS](https://tailwindcss.com/) already config
 ---
 
 Built with ❤️ using React Router.
+
+## Individual Experience Studio (development)
+
+Arabic implementation, access policy and test notes: [Individual Experience Studio](docs/individual-experience-studio.md). This feature branch has not been deployed to production.
