@@ -1,0 +1,531 @@
+.ies {
+  color: var(--text-primary, #173c31);
+  min-width: 0;
+}
+.ies * {
+  box-sizing: border-box;
+}
+.ies button,
+.ies input,
+.ies select,
+.ies textarea {
+  font: inherit;
+}
+.ies button,
+.ies-link {
+  border: 1px solid var(--border, #cbd7cd);
+  border-radius: 9px;
+  background: var(--surface, #fff);
+  padding: 8px 12px;
+  min-height: 40px;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.ies button:hover {
+  background: var(--surface-hover, #eff4ed);
+}
+.ies button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.ies input,
+.ies textarea,
+.ies select {
+  width: 100%;
+  min-width: 0;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #cbd7cd);
+  border-radius: 9px;
+  color: inherit;
+  padding: 10px 12px;
+}
+.ies textarea {
+  resize: vertical;
+}
+.ies button:focus-visible,
+.ies input:focus-visible,
+.ies textarea:focus-visible,
+.ies select:focus-visible {
+  outline: 3px solid #6c967d;
+  outline-offset: 2px;
+}
+.ies .ies-primary {
+  background: #19533e;
+  color: #fff;
+  border-color: #19533e;
+}
+.ies .ies-primary:hover {
+  background: #23664b;
+}
+.ies .ies-light {
+  background: #e4edb8;
+  color: #143e2f;
+  border-color: #e4edb8;
+}
+.ies .ies-danger {
+  color: #8f3c31;
+  border-color: #cba79f;
+  background: #fffaf7;
+}
+.ies-hero {
+  background: #184c39;
+  color: #fffdf0;
+  border-radius: 18px;
+  padding: 28px;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
+}
+.ies-hero h1 {
+  font-size: 27px;
+  margin: 8px 0;
+}
+.ies-hero p {
+  max-width: 730px;
+  color: #d2e2d4;
+  font-size: 14px;
+}
+.ies-eyebrow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  color: inherit;
+}
+.ies-actions,
+.ies-row-top,
+.ies-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ies-actions {
+  justify-content: flex-start;
+}
+.ies-hero-link {
+  color: #eef3cc;
+  padding: 10px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.ies-grid {
+  display: grid;
+  grid-template-columns: 310px minmax(0, 1fr);
+  gap: 20px;
+  margin-top: 22px;
+}
+.ies-list {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #cbd7cd);
+  border-radius: 14px;
+  padding: 14px;
+  align-self: start;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.ies-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ies-search input {
+  min-width: 0;
+}
+.ies .ies-case-row {
+  display: block;
+  width: 100%;
+  text-align: start;
+  padding: 15px;
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.ies .ies-case-row > span,
+.ies .ies-case-row > small {
+  display: block;
+  margin: 7px 0;
+  font-size: 12px;
+  color: var(--text-secondary, #5d7065);
+}
+.ies .ies-case-row > .ies-row-top {
+  display: flex;
+  color: inherit;
+}
+.ies-case-row.is-selected {
+  border-color: #3c7754;
+  box-shadow: inset 3px 0 #3c7754;
+  background: #edf4e8;
+}
+.ies .ies-case-row > .ies-case-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: inherit;
+}
+.ies-badge {
+  display: inline-flex;
+  border-radius: 6px;
+  background: #edf1e9;
+  color: #395a44;
+  padding: 4px 8px;
+  font-size: 11px;
+  white-space: normal;
+  max-width: 100%;
+}
+.ies .ies-badge.status-ACTIVE {
+  background: #dfeddb;
+  color: #28513c;
+}
+.ies .ies-badge.status-PAUSED {
+  background: #ecece5;
+  color: #655f42;
+}
+.ies .ies-badge.status-COMPLETED {
+  background: #e4ecee;
+  color: #315467;
+}
+.ies .ies-barrier {
+  font-size: 12px;
+  color: #805322;
+  background: #f5eddd;
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+.ies-workspace {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #cbd7cd);
+  border-radius: 14px;
+  min-width: 0;
+  overflow: hidden;
+}
+.ies-case-header {
+  padding: 22px;
+  border-bottom: 1px solid var(--border, #d6dfd2);
+}
+.ies h2 {
+  font-size: 21px;
+  margin: 7px 0 15px;
+}
+.ies h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 9px;
+}
+.ies h4 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 13px 0 6px;
+}
+.ies p {
+  font-size: 14px;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+}
+.ies small {
+  color: var(--text-secondary, #5d7065);
+  font-size: 12px;
+}
+.ies-consent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 20px;
+  background: #f6f2e6;
+  color: #63583b;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.ies-consent.recorded {
+  background: #edf4e7;
+  color: #355e42;
+}
+.ies-consent > div {
+  flex: 1;
+}
+.ies-consent span {
+  display: block;
+  margin-top: 4px;
+}
+.ies-hint {
+  font-size: 12px !important;
+  color: var(--text-secondary, #586e5e);
+  line-height: 1.9;
+  padding: 12px 17px;
+  background: #f3f6ef;
+  margin: 12px;
+  border-radius: 8px;
+}
+.ies-tabs {
+  display: flex;
+  gap: 5px;
+  overflow: auto;
+  padding: 12px;
+  border-bottom: 1px solid var(--border, #d6dfd2);
+  scrollbar-width: thin;
+}
+.ies-tabs button {
+  white-space: nowrap;
+  border: 0;
+  font-size: 12px;
+  flex-shrink: 0;
+  background: transparent;
+}
+.ies-tabs button[aria-pressed='true'] {
+  background: #1d563e;
+  color: #fff;
+}
+.ies-tab-content {
+  padding: 22px;
+  min-width: 0;
+}
+.ies-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.ies-card {
+  border: 1px solid var(--border, #d6dfd2);
+  padding: 18px;
+  border-radius: 12px;
+  margin: 0 0 16px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ies-card select {
+  width: auto;
+  max-width: 100%;
+  margin-top: 12px;
+}
+.ies-card .ies-hint {
+  margin: 12px 0 0;
+}
+.ies-section-heading {
+  margin-bottom: 18px;
+}
+.ies-pre {
+  white-space: pre-wrap;
+}
+.ies-record-part {
+  border-top: 1px solid var(--border, #d6dfd2);
+  margin-top: 15px;
+  padding-top: 5px;
+}
+.ies-record-part:first-child {
+  border: 0;
+  margin: 0;
+}
+.ies-linked {
+  border-inline-start: 3px solid #bfd5b1;
+  padding-inline-start: 12px;
+}
+.ies-linked p {
+  font-size: 13px;
+}
+.ies-empty {
+  padding: 35px 22px;
+  text-align: center;
+  color: var(--text-secondary, #5c7464);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.ies-welcome {
+  min-height: 420px;
+  justify-content: center;
+  max-width: 600px;
+  margin: auto;
+}
+.ies-error {
+  background: #fff2ed;
+  color: #853e2e;
+  border: 1px solid #dec5bc;
+  border-radius: 8px;
+  padding: 12px;
+}
+.ies-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ies-timeline li {
+  display: flex;
+  gap: 13px;
+  padding-bottom: 21px;
+  position: relative;
+  font-size: 13px;
+}
+.ies-timeline li:before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 5px;
+  top: 12px;
+  bottom: 0;
+  width: 1px;
+  background: #c4d4c4;
+}
+.ies-timeline li:last-child:before {
+  display: none;
+}
+.ies-dot {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #4e7d58;
+  margin-top: 5px;
+}
+.ies-timeline p {
+  font-size: 12px;
+  margin: 5px 0;
+  color: var(--text-secondary, #5d7065);
+}
+.ies-editor {
+  padding: 24px;
+  display: grid;
+  gap: 16px;
+}
+.ies-field {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  min-width: 0;
+}
+.ies-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.ies-check input {
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+.ies-editor .ies-hint {
+  margin: 0;
+}
+.ies-fieldset {
+  border: 1px solid var(--border, #d6dfd2);
+  border-radius: 10px;
+  padding: 15px;
+  display: grid;
+  gap: 10px;
+}
+.ies-editor-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-start;
+  border-top: 1px solid var(--border, #d6dfd2);
+  padding-top: 18px;
+}
+.ies code {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.ies-mobile-back {
+  display: none !important;
+}
+@media (max-width: 1150px) {
+  .ies-grid {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+  .ies-two {
+    grid-template-columns: 1fr;
+  }
+  .ies-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .ies-case-header {
+    padding: 18px;
+  }
+  .ies-tab-content {
+    padding: 16px;
+  }
+}
+@media (max-width: 760px) {
+  .ies-grid {
+    grid-template-columns: 1fr;
+  }
+  .ies-grid.has-case .ies-list {
+    display: none;
+  }
+  .ies-grid:not(.has-case) .ies-workspace {
+    display: none;
+  }
+  .ies-hero {
+    padding: 20px;
+  }
+  .ies-hero h1 {
+    font-size: 24px;
+  }
+  .ies .ies-mobile-back {
+    display: inline-flex !important;
+    margin-bottom: 14px;
+  }
+  .ies-consent {
+    padding: 14px;
+  }
+  .ies-tab-content {
+    padding: 12px;
+  }
+  .ies-card {
+    padding: 14px;
+  }
+  .ies-tabs {
+    padding: 8px;
+  }
+  .ies-editor {
+    padding: 17px;
+  }
+  .ies input,
+  .ies select,
+  .ies textarea {
+    font-size: 16px;
+  }
+  .ies button {
+    min-height: 44px;
+  }
+  .ies h2 {
+    font-size: 19px;
+  }
+  .ies-row-top {
+    align-items: flex-start;
+  }
+  .ies-section-heading {
+    align-items: flex-start;
+  }
+  .ies-fieldset {
+    padding: 12px;
+  }
+}
+
+.ies-access-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 10px;
+}
+.ies-access-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex-direction: column;
+  padding: 12px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #cbd7cd);
+  border-radius: 9px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}

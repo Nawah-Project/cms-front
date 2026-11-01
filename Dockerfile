@@ -1,14 +1,14 @@
-FROM node:24-alpine AS development-dependencies-env
+FROM node:24.22.2-alpine@sha256:4eefa1bfce4197942661ef9148247d779ddf1bb0ee006d3294a467609de60724 AS development-dependencies-env
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --include=optional
 
-FROM node:24-alpine AS production-dependencies-env
+FROM node:24.22.2-alpine@sha256:4eefa1bfce4197942661ef9148247d779ddf1bb0ee006d3294a467609de60724 AS production-dependencies-env
 COPY ./package.json package-lock.json /app/
 WORKDIR /app
 RUN npm ci --omit=dev --include=optional
 
-FROM node:24-alpine AS build-env
+FROM node:24.22.2-alpine@sha256:4eefa1bfce4197942661ef9148247d779ddf1bb0ee006d3294a467609de60724 AS build-env
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 ENV NODE_OPTIONS="--max-old-space-size=4096"
@@ -17,7 +17,7 @@ COPY --from=development-dependencies-env /app/node_modules /app/node_modules
 WORKDIR /app
 RUN npm run test:job-explorer && npm run build
 
-FROM node:24-alpine
+FROM node:24.22.2-alpine@sha256:4eefa1bfce4197942661ef9148247d779ddf1bb0ee006d3294a467609de60724
 COPY ./package.json package-lock.json /app/
 COPY --from=production-dependencies-env /app/node_modules /app/node_modules
 COPY --from=build-env /app/build /app/build

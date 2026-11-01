@@ -1,3 +1,4 @@
+import { IndividualParticipationPanel } from "../components/IndividualParticipationPanel";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { Check, ExternalLink, FileUp, Sparkles, AlertCircle, Eye, ShieldCheck, Mail, History } from "lucide-react";
 import { useAuth } from "../store/authStore";
@@ -241,6 +242,7 @@ export default function ProfilePage() {
         </div>
       </section>
 
+      <IndividualParticipationPanel />
       {/* Loading & Error States */}
       {loading ? (
         <div className="flex min-h-60 items-center justify-center rounded-2xl border border-border bg-surface p-8 text-sm text-neutral-500">

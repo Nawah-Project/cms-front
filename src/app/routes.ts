@@ -38,6 +38,7 @@ export default [
       route("mentoring", "features/admin/AdminMentoringPage.tsx"),
       route("journey", "features/admin/AdminJourneyEnginePage.tsx"),
       route("report-preview", "features/admin/AdminReportPreviewPage.tsx"),
+      route("ux-lab/individual-research", "features/admin/individual-research/IndividualResearchPage.tsx"),
       route("ux-lab", "features/admin/AdminUxLabPage.tsx"),
       route("marketing", "features/admin/AdminMarketingPage.tsx"),
       route("operations", "features/admin/AdminOperationsPage.tsx"),
