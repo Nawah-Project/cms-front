@@ -28,7 +28,6 @@ type Props = {
   metrics: Metrics;
   canNavigate: boolean;
   admin?: boolean;
-  readOnly?: boolean;
   onAddUpdate: () => void;
 };
 
@@ -382,7 +381,6 @@ export default function PerformanceAnalytics({
   report,
   metrics,
   admin = false,
-  readOnly = false,
   onAddUpdate,
 }: Props) {
   const { locale, number } = useI18n();
@@ -457,7 +455,7 @@ export default function PerformanceAnalytics({
   ];
   return (
     <div className="space-y-5">
-      <FeatureTour feature="analytics-week1-v1" enabled={!admin && !readOnly} steps={ANALYTICS_TOUR} />
+      <FeatureTour feature="analytics-week1-v1" enabled={!admin} steps={ANALYTICS_TOUR} />
       <section data-guide="analytics-summary">
         <div className="mb-3">
           <h2 className="text-lg font-semibold">
@@ -497,7 +495,7 @@ export default function PerformanceAnalytics({
         </div>
       </section>
       <ProgressChart report={report} admin={admin} />
-      <ChangeLab report={report} admin={admin} readOnly={readOnly} onAddUpdate={onAddUpdate} />
+      <ChangeLab report={report} admin={admin} onAddUpdate={onAddUpdate} />
     </div>
   );
 }

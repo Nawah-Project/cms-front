@@ -36,7 +36,7 @@ const COLUMNS: Array<{ status: TaskStatus; key: string }> = [
 ];
 
 export default function TasksPage() {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -51,7 +51,6 @@ export default function TasksPage() {
   const isUnlocked =
     user?.role === "ADMIN" || Boolean(journeyData?.features?.professionalTasks);
 
-  const canInteract = user?.role === "ADMIN" || Boolean(journeyData?.normalFeatures?.professionalTasks ?? journeyData?.features.professionalTasks) || Boolean(journeyData?.individualAccess?.some(a => a.resourceType === 'FEATURE' && a.resourceId === 'professionalTasks' && a.interact));
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedTaskId = searchParams.get("task");
   const activeFilter = searchParams.get("filter");
@@ -148,7 +147,7 @@ export default function TasksPage() {
 
   const moveTask = async (taskId: string, status: TaskStatus) => {
     const task = tasks.find((item) => item.id === taskId);
-    if (!canInteract || !task || task.status === status || movingTaskIds.has(taskId)) return;
+    if (!task || task.status === status || movingTaskIds.has(taskId)) return;
 
     const previousStatus = task.status;
     setMoveError(false);
@@ -255,7 +254,6 @@ export default function TasksPage() {
         />
         <button
           type="button"
-          disabled={!canInteract}
           onClick={() => setTaskFormOpen(true)}
           className="button-primary inline-flex min-h-11 items-center gap-2 px-4 py-2 text-sm"
         >
@@ -266,7 +264,6 @@ export default function TasksPage() {
 
       <ProfessionalDevelopmentNav />
 
-      {!canInteract && <p role="status" className="rounded-xl border border-border bg-surface p-4 text-sm">{locale === 'ar' ? 'إتاحة فردية للمشاهدة فقط. لا تسجل مشاهدة المهمة إنجازًا أو قراءة للتوجيهات.' : 'Individual view-only access. Viewing a task does not record completion or feedback reading.'}</p>}
       {/* Celebratory Unlocked Banner for Time Management */}
       <div className="rounded-xl border border-emerald-300 bg-emerald-50/80 p-4 dark:border-emerald-800 dark:bg-emerald-950/40 flex items-start gap-3">
         <span className="text-lg">🎉</span>
@@ -363,8 +360,7 @@ export default function TasksPage() {
           </p>
           <button
             type="button"
-            disabled={!canInteract}
-          onClick={() => setTaskFormOpen(true)}
+            onClick={() => setTaskFormOpen(true)}
             className="button-primary mt-5 inline-flex min-h-10 items-center gap-2 px-4 py-2 text-sm"
           >
             <PlusIcon className="h-4 w-4" />
@@ -397,7 +393,7 @@ export default function TasksPage() {
                         key={task.id}
                         task={task}
                         onClick={() => selectTask(task.id)}
-                        draggable={canInteract && !movingTaskIds.has(task.id)}
+                        draggable={!movingTaskIds.has(task.id)}
                         onDragStart={(event) => {
                           event.dataTransfer.effectAllowed = "move";
                           event.dataTransfer.setData("text/plain", task.id);
@@ -453,11 +449,10 @@ export default function TasksPage() {
       )}
       <TaskDetailModal
         taskId={selectedTaskId}
-        readOnly={!canInteract}
         onClose={() => selectTask(null)}
         onChanged={load}
       />
-      {taskFormOpen && canInteract && (
+      {taskFormOpen && (
         <TaskFormDialog
           mode="personal"
           onClose={() => setTaskFormOpen(false)}

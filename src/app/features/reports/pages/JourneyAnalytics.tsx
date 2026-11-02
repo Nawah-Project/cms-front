@@ -53,12 +53,10 @@ function description(value: string | null | undefined): string | null {
 export function ChangeLab({
   report,
   admin,
-  readOnly = false,
   onAddUpdate,
 }: {
   report: Report;
   admin: boolean;
-  readOnly?: boolean;
   onAddUpdate: () => void;
 }) {
   const { locale, number } = useI18n();
@@ -147,7 +145,7 @@ export function ChangeLab({
             )}
           </p>
         </div>
-        {access.freeChanges && !admin && !readOnly && (
+        {access.freeChanges && !admin && (
           <div className="max-w-xs">
             <button
               type="button"

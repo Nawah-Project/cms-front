@@ -62,8 +62,7 @@ export default function GuidancePage() {
   );
   const [analyticsUnlocked, setAnalyticsUnlocked] = useState(false);
   const openedDeepLink = useRef<string | null>(null);
-  const selectedCanInteract = user?.role === "ADMIN" || Boolean(selectedItem && ((journeyData?.state.unlockedInsightCodes ?? []).includes(selectedItem.code) || journeyData?.individualAccess?.some(a => a.resourceType === 'GUIDANCE' && a.resourceId === selectedItem.code && a.interact)));
-  const mustCompleteCv = Boolean(selectedCanInteract && selectedItem?.code === "INSIGHT_TASK_0_CV_BASE" && user?.role!=="ADMIN" && !journeyData?.cvFoundation?.completed);
+  const mustCompleteCv = Boolean(selectedItem?.code === "INSIGHT_TASK_0_CV_BASE" && user?.role!=="ADMIN" && !journeyData?.cvFoundation?.completed);
   const blocker = useBlocker(mustCompleteCv);
   useEffect(()=>{if(blocker.state==="blocked")blocker.reset();},[blocker]);
   const loadGuidanceFromApi = useCallback(async () => {
@@ -88,7 +87,7 @@ export default function GuidancePage() {
   }, [loadGuidanceFromApi]);
 
   const unlockedSet = useMemo(() => {
-    return new Set([...(journeyData?.state.unlockedInsightCodes ?? []), ...(journeyData?.individualAccess ?? []).filter(a => a.resourceType === 'GUIDANCE' && a.view).map(a => a.resourceId)]);
+    return new Set(journeyData?.state.unlockedInsightCodes ?? []);
   }, [journeyData]);
 
   const isAdmin = user?.role === "ADMIN";
@@ -407,13 +406,12 @@ export default function GuidancePage() {
       {selectedItem && (
         <GuidanceReadingModal
           post={selectedItem}
-          readOnly={!selectedCanInteract}
           onClose={() => {if(!mustCompleteCv) {
             setSelectedItem(null);
             setSearchParams(previous => { const next = new URLSearchParams(previous); next.delete("guidance"); return next; }, {replace:true});
           }}}
           onMarkRead={handleMarkRead}
-          cvUpdate={selectedCanInteract && selectedItem.code === "INSIGHT_TASK_0_CV_BASE" && user?.role !== "ADMIN" ? {
+          cvUpdate={selectedItem.code === "INSIGHT_TASK_0_CV_BASE" && user?.role !== "ADMIN" ? {
             canComplete: Boolean(journeyData?.cvFoundation?.canComplete),
             completed: Boolean(journeyData?.cvFoundation?.completed),
             onUpload: async (file: File) => {

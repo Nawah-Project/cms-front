@@ -129,16 +129,8 @@ const ADMIN_PRIMARY_ITEMS: AdminNavItem[] = [
     labelAr: "تحليلات التجربة والسلوك",
     labelEn: "UX & Behavior Lab",
     to: "/admin/ux-lab",
-    end: true,
     icon: "admin-ux-lab",
     section: "UX_LAB",
-  },
-  {
-    labelAr: "التجارب الفردية",
-    labelEn: "Individual research",
-    to: "/admin/ux-lab/individual-research",
-    icon: "admin-ux-lab",
-    section: "INDIVIDUAL_RESEARCH",
   },
   {
     labelAr: "المركتنج ونمو الزيارات",

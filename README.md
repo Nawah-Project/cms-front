@@ -90,6 +90,5 @@ This template comes with [Tailwind CSS](https://tailwindcss.com/) already config
 
 Built with ❤️ using React Router.
 
-## Individual Experience Studio (development)
 
-Arabic implementation, access policy and test notes: [Individual Experience Studio](docs/individual-experience-studio.md). This feature branch has not been deployed to production.
+Studio P0 was retired on 2026-11-02; see `docs/retire-studio-p0.md`. Career Consulting and the pre-existing UX Lab remain active.

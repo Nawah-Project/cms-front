@@ -26,7 +26,6 @@ interface GuidanceReadingModalProps {
         isRead?: boolean;
         publishedAt?: string;
       };
-  readOnly?: boolean;
   cvUpdate?: { canComplete: boolean; completed: boolean; onUpload: (file: File) => Promise<void> };
   onClose: () => void;
   onMarkRead: (postId: string) => Promise<void>;
@@ -54,14 +53,13 @@ export function GuidanceReadingModal({
   onClose,
   onMarkRead,
   cvUpdate,
-  readOnly = false,
 }: GuidanceReadingModalProps) {
   const toast = useToast();
   const { locale } = useI18n();
   const ar = locale === "ar";
   const text = (a: string, e: string) => (ar ? a : e);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const mustComplete = Boolean(!readOnly && cvUpdate && !cvUpdate.completed && !post.isRead);
+  const mustComplete = Boolean(cvUpdate && !cvUpdate.completed && !post.isRead);
   const [closeMessage, setCloseMessage] = useState("");
   const attemptClose = () => { if(mustComplete) { setCloseMessage(text("لازم ترفع الـCV المحدّث علشان تكمل الخطوة اللي بعدها. بعد حفظه، الإرشاد هيكتمل ويتقفل تلقائيًا.","Upload your revised CV to continue to the next step. Once saved, this guide completes and closes automatically.")); document.getElementById("guidance-cv-upload")?.scrollIntoView({block:"center"}); } else onClose(); };
   useDialogFocus(dialogRef, true, attemptClose);
@@ -90,7 +88,6 @@ export function GuidanceReadingModal({
   };
 
   const handleCompleteReading = async () => {
-    if (readOnly) return;
     if (cvUpdate && !cvUpdate.canComplete) { setUploadError(text("ارفع الـCV المحدّث أولًا قبل تأكيد إكمال الإرشاد.", "Upload your revised CV before completing this guide.")); return; }
     setSaving(true);
     try {
@@ -179,7 +176,6 @@ export function GuidanceReadingModal({
         {/* 2. Scrollable Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-7 py-6 space-y-6">
 
-          {readOnly && <p role="status" className="rounded-lg border border-border bg-surface p-3 text-sm">{text("إتاحة فردية للمشاهدة فقط. فتح الإرشاد لا يسجّل قراءة أو إنجازًا.", "Individual view-only access. Opening this guidance does not record reading or completion.")}</p>}
           {/* Main Content */}
           <div className="space-y-3">
             <div
@@ -347,7 +343,7 @@ export function GuidanceReadingModal({
               </p>
             </div>
           )}
-          {!readOnly && cvUpdate && !isRead && <section id="guidance-cv-upload" className="guidance-cv-action rounded-xl border border-border-strong bg-surface p-4">
+          {cvUpdate && !isRead && <section id="guidance-cv-upload" className="guidance-cv-action rounded-xl border border-border-strong bg-surface p-4">
             <h3 className="font-semibold">{text("طبّق الإرشاد وارفع نسختك الجديدة هنا", "Apply the guide and upload your revised CV here")}</h3>
             <p className="mt-2 text-sm leading-6 text-text-secondary">{text("ارفع النسخة المعدّلة بعد تطبيق الإرشاد. بعد حفظها، هيتم تأكيد الإكمال تلقائيًا ويفتح تحليل الأداء. رفع نفس الملف الحالي لا يبدأ فترة جديدة.", "Upload your revised CV after applying the guide. Once saved, completion is confirmed automatically and analytics opens. Re-uploading the current file does not start a new period.")}</p>
             <label className="button-secondary mt-3 inline-flex min-h-11 cursor-pointer items-center">{uploading ? text("جارٍ رفع السيرة…", "Uploading CV…") : text("رفع الـCV المحدّث", "Upload revised CV")}<input type="file" accept="application/pdf,.pdf" disabled={uploading || saving} className="sr-only" aria-label={text("رفع الـCV المحدّث", "Upload revised CV")} onChange={async event => {
@@ -372,7 +368,7 @@ export function GuidanceReadingModal({
             {text("إغلاق", "Close")}
           </button>
 
-          {!readOnly && (!cvUpdate || (!isRead && cvUpdate.canComplete)) && <button
+          {(!cvUpdate || (!isRead && cvUpdate.canComplete)) && <button
             type="button"
             onClick={handleCompleteReading}
             disabled={isRead || saving || uploading || Boolean(cvUpdate && !cvUpdate.canComplete)}

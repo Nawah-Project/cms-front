@@ -82,7 +82,7 @@ test("logout/account boundary discards private cache and an old in-flight result
     defaultOptions: { queries: { retry: false, retryOnMount: false } },
   });
   let finish;
-  client.setQueryData(["journey", "reports", "performance"], { private: "A" });
+  client.setQueryData(["journey", "reports"], { private: "A" });
   const pending = client
     .fetchQuery({
       queryKey: ["profile"],
@@ -93,7 +93,7 @@ test("logout/account boundary discards private cache and an old in-flight result
     })
     .catch(() => undefined);
   clearPrivateAccountCache(client);
-  assert.equal(client.getQueryData(["journey", "reports", "performance"]), undefined);
+  assert.equal(client.getQueryData(["journey", "reports"]), undefined);
   client.setQueryData(["profile"], { owner: "B" });
   finish({ owner: "A" });
   await pending;
@@ -107,7 +107,7 @@ test("report error renders an alert and a retry action instead of loading foreve
   });
   client
     .getQueryCache()
-    .build(client, { queryKey: ["journey", "reports", "performance"] })
+    .build(client, { queryKey: ["journey", "reports"] })
     .setState({
       status: "error",
       error: new Error("Synthetic API failure"),
@@ -178,7 +178,7 @@ test("long activity histories use weekly or monthly bins without changing event 
 
 test("one application has a cumulative chart with a labelled origin and no invented activity day", () => {
   const client=new QueryClient({defaultOptions:{queries:{retry:false}}});
-  client.setQueryData(["journey","reports","performance"],{...report,overall:{...metrics,logged:1},daily:[{date:"2026-10-03",logged:1,positiveEvents:0}]});
+  client.setQueryData(["journey","reports"],{...report,overall:{...metrics,logged:1},daily:[{date:"2026-10-03",logged:1,positiveEvents:0}]});
   const html=render(client);
   assert.match(html,/role="img"/);
   assert.match(html,/2026-10-03|٣ أكتوبر/);
@@ -186,7 +186,7 @@ test("one application has a cumulative chart with a labelled origin and no inven
   client.clear();
 });
 test("empty analytics show real emptiness and a next-change placeholder",()=>{
-  const client=new QueryClient({defaultOptions:{queries:{retry:false}}});client.setQueryData(["journey","reports","performance"],report);
+  const client=new QueryClient({defaultOptions:{queries:{retry:false}}});client.setQueryData(["journey","reports"],report);
   const html=render(client);assert.match(html,/No saved CV or change|لسه مفيش نسخة CV/);assert.doesNotMatch(html,/role="img"/);client.clear();
 });
 
@@ -194,7 +194,7 @@ test("early members get continuous analytics while weekly and final reports rema
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, retryOnMount: false } },
   });
-  client.setQueryData(["journey", "reports", "performance"], {
+  client.setQueryData(["journey", "reports"], {
     ...report,
     currentWeek: 0,
     currentNodeCode: "TASK_0",
@@ -300,7 +300,7 @@ test("populated analytics keep dates, actual checkpoints, stage distributions an
     },
     milestones: { assignments: 0, interviews: 1, decisions: 0 },
   };
-  client.setQueryData(["journey", "reports", "performance"], {
+  client.setQueryData(["journey", "reports"], {
     ...report,
     overall: populatedMetrics,
     weeks: report.weeks.map((week) => ({ ...week, ...populatedMetrics })),
@@ -428,12 +428,12 @@ test("registration preserves a pending account and its failed-delivery status fo
 
 test("early analytics never spoil publishing or outreach, while current unlocked metrics appear later",()=>{
   const client=new QueryClient({defaultOptions:{queries:{retry:false}}});
-  client.setQueryData(["journey","reports","performance"],{...report,currentWeek:1,currentNodeCode:"W1_M1",completedNodeCodes:["TASK_0"],finalAvailable:false});
+  client.setQueryData(["journey","reports"],{...report,currentWeek:1,currentNodeCode:"W1_M1",completedNodeCodes:["TASK_0"],finalAvailable:false});
   const early=render(client);
   assert.doesNotMatch(early,/منشورات|تواصل مهني|المحتوى والحضور|العلاقات المهنية|Recorded posts|Recorded outreach/);
   assert.doesNotMatch(early,/إضافة تحديث|Add an update/);
   assert.match(early,/التعديل القادم عند محطة مراجعة الأسبوع/);
-  client.setQueryData(["journey","reports","performance"],{...report,currentWeek:3});const week3=render(client);
+  client.setQueryData(["journey","reports"],{...report,currentWeek:3});const week3=render(client);
   assert.match(week3,/إضافة تحديث|Add an update/);assert.match(week3,/منشورات موثقة|Recorded posts/);assert.doesNotMatch(week3,/تواصل مهني موثق|Recorded outreach/);client.clear();
 });
 test("admin sees all metrics without update writes",()=>{
@@ -442,7 +442,7 @@ test("admin sees all metrics without update writes",()=>{
  const html=render(client,Preview);assert.match(html,/منشورات موثقة|Recorded posts/);assert.match(html,/تواصل مهني موثق|Recorded outreach/);assert.doesNotMatch(html,/إضافة تحديث|Add an update/);client.clear();
 });
 test("update button respects server cooldown and cohort link preserves precise period boundaries",async()=>{
- const client=new QueryClient({defaultOptions:{queries:{retry:false}}});client.setQueryData(["journey","reports","performance"],{...report,currentWeek:3,manualUpdate:{eligible:true,canSubmit:false,nextAvailableAt:"2026-10-29T00:00:00Z"}});
+ const client=new QueryClient({defaultOptions:{queries:{retry:false}}});client.setQueryData(["journey","reports"],{...report,currentWeek:3,manualUpdate:{eligible:true,canSubmit:false,nextAvailableAt:"2026-10-29T00:00:00Z"}});
  const html=render(client);assert.match(html,/<button[^>]*disabled[^>]*>.*إضافة تحديث/s);client.clear();
  const {cohortApplicationsUrl}=await server.ssrLoadModule("/src/app/features/reports/pages/JourneyAnalytics.tsx");
  const url=new URL(cohortApplicationsUrl({startAt:"2026-10-01T12:34:56Z",endAt:"2026-10-04T15:00:00Z"},"CV v2"),"http://local");
@@ -473,20 +473,10 @@ test("onboarding uses one labelled specialization picker instead of a wall of ca
 test("member analytics explain the actual CV prerequisite rather than showing a generic error", async () => {
   const {ApiError} = await server.ssrLoadModule('/src/app/lib/api-client.ts');
   const client = new QueryClient({defaultOptions:{queries:{retry:false,retryOnMount:false}}});
-  client.getQueryCache().build(client,{queryKey:['journey','reports','performance']}).setState({status:'error',error:new ApiError('Locked',403,{code:'CV_FOUNDATION_REQUIRED',guidanceUnlocked:true}),fetchStatus:'idle'});
+  client.getQueryCache().build(client,{queryKey:['journey','reports']}).setState({status:'error',error:new ApiError('Locked',403,{code:'CV_FOUNDATION_REQUIRED',guidanceUnlocked:true}),fetchStatus:'idle'});
   const html = render(client);
   assert.match(html,/تحليل الأداء لسه مقفول/);
   assert.match(html,/professional-development\?guidance=INSIGHT_TASK_0_CV_BASE/);
   assert.doesNotMatch(html,/حاول تاني/);
-  client.clear();
-});
-
-
-test("individual performance VIEW does not expose update writes even when the real journey allows changes", () => {
-  const client=new QueryClient({defaultOptions:{queries:{retry:false}}});
-  client.setQueryData(["journey","reports","performance"],{...report,currentWeek:3,analyticsAccess:{cv:true,pipeline:true,tailoring:true,publishing:true,networking:true,freeChanges:true},access:{performance:{source:"ADMIN",view:true,interact:false},weeks:[],final:{source:"LOCKED",view:false,interact:false}}});
-  const html=render(client);
-  assert.match(html,/مشاهدة مبكرة بإتاحة فردية/);
-  assert.doesNotMatch(html,/<button[^>]*>[^<]*إضافة تحديث/);
   client.clear();
 });

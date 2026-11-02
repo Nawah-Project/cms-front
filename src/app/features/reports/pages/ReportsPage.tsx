@@ -1,4 +1,3 @@
-import type { ReportAccess } from "../../admin/individual-research/api";
 import { FeatureTourPending } from "../../../components/FeatureTour";
 import { createContext, useContext, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router";
@@ -7,7 +6,7 @@ import { ArrowLeft, ArrowRight, Check, CircleCheck, FileText, Lock, Plus } from 
 import { Modal } from "../../../components/ui/Modal";
 import { useI18n } from "../../../i18n";
 import { ApiError, apiClient } from "../../../lib/api-client";
-import { journeyApi, useJourneyState } from "../../journey/api/journeyApi";
+import { journeyApi } from "../../journey/api/journeyApi";
 import ActivityResponseChart from "./ActivityResponseChart";
 import PerformanceAnalytics from "./PerformanceAnalytics";
 
@@ -37,8 +36,6 @@ export interface Metrics {
 }
 
 export interface Report {
-  access?: ReportAccess;
-  scope?: string;
   manualUpdate?: { eligible: boolean; canSubmit: boolean; nextAvailableAt: string | null };
   dailyCohorts?: { date: string; logged: number; positive: number }[];
   analyticsAccess?: { cv: boolean; pipeline: boolean; tailoring: boolean; publishing: boolean; networking: boolean; freeChanges: boolean };
@@ -106,12 +103,11 @@ export function ReportPreviewProvider({ value, children }: { value: ReportPrevie
 }
 
 function weekReportUnlocked(week: number, report: Report) {
-  if(report.access?.weeks.find(w=>w.resourceId===String(week))?.view)return true;
   const completed = new Set(report.completedNodeCodes);
   if (week === 1) return completed.has("W1_REVIEW") || report.currentNodeCode === "W1_REVIEW" || report.currentWeek > 1;
   if (week === 2) return completed.has("W2_REVIEW") || report.currentNodeCode === "W2_REVIEW" || report.currentWeek > 2;
   if (week === 3) return completed.has("W3_REVIEW") || report.currentNodeCode === "W3_REVIEW" || report.currentWeek > 3;
-  return report.currentNodeCode === "FINAL_REPORT" || report.finalAvailable || report.completed || report.access?.final.view;
+  return report.currentNodeCode === "FINAL_REPORT" || report.finalAvailable || report.completed;
 }
 
 function formatDate(value: string | null | undefined, locale: string, year = false) {
@@ -313,7 +309,7 @@ function FinalJourneyReport({ report, readOnly, onComplete, pending, saveError }
         </div>
       </section>
       <details className="rounded-2xl border border-border bg-surface px-4 sm:px-5"><summary className="min-h-12 cursor-pointer py-3 font-semibold">{text("منهجية الملخص", "How this summary is calculated")}</summary><p className="pb-4 text-sm leading-6 text-text-secondary">{text("الطلبات تُجمع حسب journeyWeek المحفوظ. النتائج الحالية لا تعني إن الرد وصل في نفس الأسبوع، وتواريخ الانتقالات منفصلة. سجلات المراحل التاريخية غير المكتملة تفضل unknown. التقرير وصفي ولا يثبت إن تغييرًا بعينه أدى لنتيجة.", "Applications are grouped by stored journeyWeek. Current outcomes do not imply a reply arrived in the same week; transition timestamps remain separate. Incomplete history stays unknown. This report is descriptive and does not claim that any change caused an outcome.")}</p></details>
-      {readOnly ? <p role="status" className="rounded-lg bg-neutral-50 p-3 text-sm text-text-secondary dark:bg-neutral-900/60">{report.access?.final.source === "ADMIN" ? text("إتاحة فردية للمشاهدة فقط؛ لن تغيّر إكمال الرحلة أو تقدمها.", "Individual view-only access; it will not change journey completion or progress.") : text("معاينة Admin للقراءة فقط؛ لن تغيّر إكمال الرحلة أو تقدمها.", "Admin preview is read-only; it will not change journey completion or progress.")}</p> : report.completed ? <p role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">{text("إكمال الرحلة محفوظ. تقدر تواصل متابعة طلباتك.", "Journey completion is saved. You can continue tracking applications.")}</p> : report.finalAvailable ? <div><button type="button" disabled={pending} className="button-primary min-h-11" onClick={onComplete}>{pending ? text("بنحفظ…", "Saving…") : text("قرأت التقرير الكامل — أكمل الرحلة", "I have read the complete report — finish journey")}</button>{saveError && <p role="alert" className="mt-2 text-sm text-rose-700">{saveError}</p>}</div> : null}
+      {readOnly ? <p role="status" className="rounded-lg bg-neutral-50 p-3 text-sm text-text-secondary dark:bg-neutral-900/60">{text("معاينة Admin للقراءة فقط؛ لن تغيّر إكمال الرحلة أو تقدمها.", "Admin preview is read-only; it will not change journey completion or progress.")}</p> : report.completed ? <p role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">{text("إكمال الرحلة محفوظ. تقدر تواصل متابعة طلباتك.", "Journey completion is saved. You can continue tracking applications.")}</p> : report.finalAvailable ? <div><button type="button" disabled={pending} className="button-primary min-h-11" onClick={onComplete}>{pending ? text("بنحفظ…", "Saving…") : text("قرأت التقرير الكامل — أكمل الرحلة", "I have read the complete report — finish journey")}</button>{saveError && <p role="alert" className="mt-2 text-sm text-rose-700">{saveError}</p>}</div> : null}
     </div>
   );
 }
@@ -324,18 +320,12 @@ export default function ReportsPage() {
   const text = (a: string, e: string) => ar ? a : e;
   const queryClient = useQueryClient();
   const preview = useContext(ReportPreviewContext);
+  const query = useQuery({ queryKey: ["journey", "reports"], queryFn: () => apiClient.get<Report>("/journey/reports"), retry: (count,error) => !(error instanceof ApiError && error.status === 403) && count < 2, enabled: !preview });
   const [memberScope, setMemberScope] = useState<number | null | "final">(null);
-  const journeyAvailability=useJourneyState({enabled:!preview});
-  const access=journeyAvailability.data?.reportAccess;
-  const preferred=access&&!access.performance.view?(access.weeks.find(w=>w.view)?.resourceId??(access.final.view?'final':null)):null;
-  const scope = preview ? preview.forceFinalPreview && preview.scope === null ? "final" : preview.scope : memberScope ?? (preferred==='final'?'final':preferred?Number(preferred):null);
-  const reportScope=scope==='final'?'final':scope===null?'performance':`week:${scope}`;
-  const query = useQuery({queryKey:["journey","reports",reportScope],queryFn:()=>apiClient.get<Report>("/journey/reports",{params:{scope:reportScope}}),retry:(count,error)=>!(error instanceof ApiError&&error.status===403)&&count<2,enabled:!preview&&!journeyAvailability.isLoading});
+  const scope = preview ? preview.forceFinalPreview && preview.scope === null ? "final" : preview.scope : memberScope;
   const setScope = (next: number | null | "final") => preview ? preview.onScopeChange(next === "final" ? null : next) : setMemberScope(next);
-  const selectedAccess=scope==='final'?access?.final:scope===null?access?.performance:access?.weeks.find(w=>w.resourceId===String(scope));
+  const readOnly = Boolean(preview);
   const report = preview?.data ?? query.data;
-  const payloadDecision=scope==='final'?report?.access?.final:scope===null?report?.access?.performance:report?.access?.weeks.find(w=>w.resourceId===String(scope));
-  const readOnly = Boolean(preview) || selectedAccess?.source==='ADMIN' || payloadDecision?.source==='ADMIN';
   const [changeOpen, setChangeOpen] = useState(false);
   const [note, setNote] = useState("");
   const [pending, setPending] = useState(false);
@@ -379,19 +369,18 @@ export default function ReportsPage() {
       </header>
 
       {!preview && <nav aria-label={text("اختيار التقرير", "Report navigation")} className="report-navigation n-segmented flex flex-wrap gap-2 rounded-xl border border-border bg-surface p-2">
-        <button type="button" disabled={Boolean(access&&!access.performance.view)} aria-pressed={scope === null} className={`min-h-10 rounded-lg px-3 text-sm font-semibold ${scope === null ? "bg-emerald-700 text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`} onClick={() => { setLockedWeek(null); setScope(null); }}>{text("تحليلات مستمرة", "Continuous analytics")}</button>
+        <button type="button" aria-pressed={scope === null} className={`min-h-10 rounded-lg px-3 text-sm font-semibold ${scope === null ? "bg-emerald-700 text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`} onClick={() => { setLockedWeek(null); setScope(null); }}>{text("تحليلات مستمرة", "Continuous analytics")}</button>
         {[1, 2, 3, 4].map((week) => {
           const unlocked = weekReportUnlocked(week, report);
           return <button key={week} type="button" aria-pressed={scope === week} aria-label={unlocked ? text(`تقرير الأسبوع ${number(week)}`, `Week ${number(week)} report`) : text(`تقرير الأسبوع ${number(week)} مقفول`, `Week ${number(week)} report locked`)} className={`inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold ${scope === week ? "bg-emerald-700 text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`} onClick={() => { if (unlocked) { setLockedWeek(null); setScope(week); } else setLockedWeek(week); }}>{!unlocked && <Lock className="h-3.5 w-3.5" aria-hidden="true" />}{text(`الأسبوع ${number(week)}`, `Week ${number(week)}`)}</button>;
         })}
-        <button type="button" aria-pressed={finalSelected} aria-label={report.finalAvailable || report.completed || report.access?.final.view ? text("التقرير النهائي", "Final report") : text("التقرير النهائي مقفول", "Final report locked")} className={`inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold ${finalSelected ? "bg-emerald-700 text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`} onClick={() => { if (report.finalAvailable || report.completed || report.access?.final.view) { setLockedWeek(null); setScope("final"); } else setLockedWeek("final"); }}>{report.finalAvailable || report.completed || report.access?.final.view ? <FileText className="h-4 w-4" aria-hidden="true" /> : <Lock className="h-3.5 w-3.5" aria-hidden="true" />}{text("النهائي", "Final")}</button>
+        <button type="button" aria-pressed={finalSelected} aria-label={report.finalAvailable || report.completed ? text("التقرير النهائي", "Final report") : text("التقرير النهائي مقفول", "Final report locked")} className={`inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold ${finalSelected ? "bg-emerald-700 text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-800"}`} onClick={() => { if (report.finalAvailable || report.completed) { setLockedWeek(null); setScope("final"); } else setLockedWeek("final"); }}>{report.finalAvailable || report.completed ? <FileText className="h-4 w-4" aria-hidden="true" /> : <Lock className="h-3.5 w-3.5" aria-hidden="true" />}{text("النهائي", "Final")}</button>
       </nav>}
 
       {lockedWeek !== null && <p role="note" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"><Lock className="me-1 inline h-4 w-4" aria-hidden="true" />{lockedWeek === "final" || lockedWeek === 4 ? text("التقرير النهائي والأسبوع الرابع بيظهروا عند الوصول لمرحلة التقرير النهائي.", "Week 4 and the final report are available at the final-report journey stage.") : !report.week1StartedAt ? text("التقرير ده هيفتح بعد إكمال Task 0 وبداية الأسبوع الأول.", "This report unlocks after Task 0 is complete and Week 1 begins.") : text(`التقرير ده لسه مقفول حسب تقدم الرحلة الحالي.`, `This report is still locked at the current journey stage.`)}</p>}
 
-      {!preview && readOnly && <p role="note" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950">{text("مشاهدة مبكرة بإتاحة فردية. الأرقام من نشاطك الحقيقي؛ المشاهدة لا تكمل محطة أو تقريرًا، والبيانات غير المتاحة لا تعني إنجازًا.", "Early viewing through individual access. Values reflect actual recorded activity. Viewing never completes a milestone or report; unavailable evidence remains unavailable.")}</p>}
       <div hidden={selectedWeek !== null || finalSelected}>
-        <PerformanceAnalytics report={report} metrics={report.overall} canNavigate={!readOnly} readOnly={readOnly} admin={Boolean(preview)} onAddUpdate={() => { setSaveError(""); setChangeOpen(true); }} />
+        <PerformanceAnalytics report={report} metrics={report.overall} canNavigate={!readOnly} admin={readOnly} onAddUpdate={() => { setSaveError(""); setChangeOpen(true); }} />
       </div>
       {selectedWeek !== null && <WeeklyReportView report={report} week={selectedWeek} metrics={metrics} readOnly={readOnly} />}
       {finalSelected && <FinalJourneyReport report={report} readOnly={readOnly} onComplete={() => void completeFinal()} pending={pending} saveError={saveError} />}
