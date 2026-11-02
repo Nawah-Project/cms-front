@@ -101,7 +101,7 @@ export function Published({
   c?: CaseData;
   member?: boolean;
 }) {
-  const { t, label } = useText();
+  const { t, label, locale } = useText();
   const content = pub.content;
   const omit = [
     "title",
@@ -142,7 +142,9 @@ export function Published({
                 value={
                   ["stage", "nextActor", "sourceType"].includes(k)
                     ? label(String(v))
-                    : v
+                    : ["scheduledAt", "followUpAt", "deadline", "observedAt"].includes(k)
+                      ? when(String(v), locale)
+                      : v
                 }
               />
             )}
