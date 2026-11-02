@@ -30,7 +30,7 @@ export type AdminAccessAccount = {
   };
 };
 
-export type AccountDeletionPreview = { id: string; name: string; email: string; counts: { applications: number; assignedTasks: number; sideTaskSubmissions: number; notifications: number; experienceProgress: number; cvVersions: number } };
+export type AccountDeletionPreview = { id: string; name: string; email: string; counts: { applications: number; assignedTasks: number; sideTaskSubmissions: number; notifications: number; experienceProgress: number; cvVersions: number; consultingCases?:number;consultingFiles?:number } };
 
 export type ActivityStatus = "ACTIVE" | "WARNING" | "CRITICAL" | "NEVER_ACTIVE";
 export type ExperimentVariant = "A" | "B" | "C";
@@ -293,7 +293,7 @@ export const adminApi = {
       `/admin/monitoring/users/${encodeURIComponent(id)}`,
     ),
   deletionPreview: (userId: string) => request<AccountDeletionPreview>(`/admin/users/${encodeURIComponent(userId)}/deletion-preview`),
-  deleteAccount: (userId: string, email: string) => request<{ deleted: boolean; cvFilesPending: number }>(`/admin/users/${encodeURIComponent(userId)}`, { method: "DELETE", body: JSON.stringify({ email, confirmation: "DELETE_PERMANENTLY" }) }),
+  deleteAccount: (userId: string, email: string) => request<{ deleted: boolean; cvFilesPending: number;consultingFilesPending?:number }>(`/admin/users/${encodeURIComponent(userId)}`, { method: "DELETE", body: JSON.stringify({ email, confirmation: "DELETE_PERMANENTLY" }) }),
   removeFromGroup: (groupId: string, userId: string) =>
     request<{ success: boolean }>(
       `/admin/groups/${encodeURIComponent(groupId)}/members/${encodeURIComponent(userId)}`,

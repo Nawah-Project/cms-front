@@ -100,6 +100,7 @@ export type OpsOverview = {
   storage: {
     bytes: number;
     files: number;
+    cvBytes?:number;cvFiles?:number;consultingBytes?:number;consultingFiles?:number;
     diskAvailableBytes: number;
     diskTotalBytes: number;
   };

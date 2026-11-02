@@ -9,6 +9,7 @@ export default [
   route("__design-system", "design-system/workshop/DesignSystemPage.tsx"),
   route("auth/login", "features/auth/pages/LoginPage.tsx"),
   route("auth/register", "features/auth/pages/RegisterPage.tsx"),
+  route("career-consulting", "features/career-consulting/MemberConsultingPage.tsx"),
   // UI layout and pages
   layout("routes/layout.tsx", [
     index("routes/IndexRedirect.tsx"),
@@ -40,6 +41,7 @@ export default [
       route("report-preview", "features/admin/AdminReportPreviewPage.tsx"),
       route("ux-lab/individual-research", "features/admin/individual-research/IndividualResearchPage.tsx"),
       route("ux-lab", "features/admin/AdminUxLabPage.tsx"),
+      route("career-consulting", "features/career-consulting/AdminConsultingPage.tsx"),
       route("marketing", "features/admin/AdminMarketingPage.tsx"),
       route("operations", "features/admin/AdminOperationsPage.tsx"),
       // Backwards-compatibility redirects:

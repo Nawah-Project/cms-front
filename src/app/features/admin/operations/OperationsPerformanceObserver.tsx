@@ -27,7 +27,7 @@ export function OperationsPerformanceObserver() {
             continue;
           const path = url.pathname;
           if (
-            /\/(?:admin|auth|operations)(?:\/|$)/.test(path) ||
+            /\/(?:admin|auth|operations|career-consulting)(?:\/|$)/.test(path) ||
             /\/cv(?:\/|$)/.test(path) ||
             path.includes("/ux-lab/events")
           )

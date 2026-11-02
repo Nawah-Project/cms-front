@@ -1,3 +1,4 @@
+import { ConsultingInvite } from "../career-consulting/ConsultingInvite";
 import { IndividualParticipationPanel } from "../auth/components/IndividualParticipationPanel";
 import { SectionExposure } from "../ux-lab/SectionExperience";
 import { JourneyScenery } from "../../components/JourneyScenery";
@@ -30,6 +31,9 @@ export function ProfileCompletionGate({
     user?.role === "ADMIN" &&
     location.pathname === "/" &&
     new URLSearchParams(location.search).get("labPreview") === "home:B";
+  const isConsultingAdmin =
+    user?.role === "ADMIN" &&
+    location.pathname.startsWith("/admin/career-consulting");
   const { t } = useI18n();
   const { introVideoUrl } = useUxExperiment();
   const navigate = useNavigate();
@@ -42,7 +46,7 @@ export function ProfileCompletionGate({
   const [videoModalOpen, setVideoModalOpen] = useState(false);
 
   useEffect(() => {
-    if (!authenticated || isHomePreview) return;
+    if (!authenticated || isHomePreview || isConsultingAdmin) return;
     let active = true;
     setLoading(true);
     setFailed(false);
@@ -66,9 +70,9 @@ export function ProfileCompletionGate({
     return () => {
       active = false;
     };
-  }, [authenticated, user?.id, attempt, isHomePreview]);
+  }, [authenticated, user?.id, attempt, isHomePreview, isConsultingAdmin]);
 
-  if (!authenticated || isHomePreview) return children;
+  if (!authenticated || isHomePreview || isConsultingAdmin) return children;
   if (loading) {
     return (
       <main
@@ -119,6 +123,7 @@ export function ProfileCompletionGate({
               <span />
               {t("common.brand")}
             </div>
+            <ConsultingInvite />
             {/* Stepper Header */}
             <div className="mb-5 border-b border-border pb-4 sm:mb-8 sm:pb-6">
               <div className="flex items-center justify-between">
