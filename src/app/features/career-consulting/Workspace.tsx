@@ -4,6 +4,7 @@ BookOpen,
 BriefcaseBusiness,
 Compass,
 Handshake,
+Map,
 Plus,
 Users
 } from "lucide-react";
@@ -24,6 +25,7 @@ type CaseData,
 type CaseSummary,
 type Catalog
 } from "./api";
+import { Roadmaps } from "./Roadmaps";
 import { CaseWorkspace } from "./CaseWorkspace";
 import "./consulting.css";
 import { Learning,LessonView } from "./PracticeGuide";
@@ -180,6 +182,7 @@ export default function ConsultingWorkspace({
               "Activity reference",
               BriefcaseBusiness,
             ],
+            ["maps", "مخططات", "Roadmaps", Map],
           ].map(([id, a, b, Icon]) => {
             const I = Icon as typeof Users;
             return (
@@ -210,7 +213,7 @@ export default function ConsultingWorkspace({
           {notice}
         </div>
       )}
-      {view !== "cases" && !member ? (
+      {view === "maps" && !member ? <Roadmaps /> : view !== "cases" && !member ? (
         catalog.isPending ? (
           <p role="status">{t("تحميل الدليل…", "Loading guide…")}</p>
         ) : catalog.data ? (
