@@ -1,3 +1,4 @@
+import { ConsultingInvite } from "../features/career-consulting/ConsultingInvite";
 import { useSectionDesign } from "../features/ux-lab/SectionExperience";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
@@ -87,6 +88,7 @@ type AdminNavItem = {
 };
 
 const ADMIN_PRIMARY_ITEMS: AdminNavItem[] = [
+  {labelAr:"الاستشارات المهنية",labelEn:"Career Consulting",to:"/admin/career-consulting",icon:"admin-mentoring",section:"CAREER_CONSULTING"},
   {
     labelAr: "نظرة عامة",
     labelEn: "Overview",
@@ -552,6 +554,7 @@ export function AppSidebar({
 
   const renderStandardUserNav = (mobile = false) => (
     <div className="space-y-1">
+      <ConsultingInvite compact/>
       {user?.role === "USER" && homeDesign.version === "B" && (
         <Link
           to="/"

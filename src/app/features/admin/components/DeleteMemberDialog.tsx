@@ -74,7 +74,7 @@ export function DeleteMemberDialog({
           setError("");
           try {
             const result = await adminApi.deleteAccount(userId, email.trim());
-            onDeleted(result.cvFilesPending);
+            onDeleted(result.cvFilesPending+(result.consultingFilesPending??0));
           } catch {
             setError(
               text(
@@ -113,6 +113,8 @@ export function DeleteMemberDialog({
                   preview.counts.applications,
                 ],
                 [text("ملفات CV", "CV files"), preview.counts.cvVersions],
+                [text("حالات الاستشارة", "Consultation cases"),preview.counts.consultingCases??0],
+                [text("مرفقات الاستشارة", "Consultation files"),preview.counts.consultingFiles??0],
                 [text("مهام", "Tasks"), preview.counts.assignedTasks],
                 [
                   text("جولات محفوظة", "Saved guides"),

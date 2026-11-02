@@ -236,7 +236,7 @@ export default function AdminOperationsPage() {
     ],
     [
       "cvQuotaMiB",
-      text("حصة تخزين CV بالميجا (MiB)", "CV storage allocation (MiB)"),
+      text("حصة التخزين الخاص: CV ومرفقات الاستشارة (MiB)", "Private storage allocation: CVs & consultation files (MiB)"),
       text(
         "حد فعلي لإجمالي الملفات الفريدة الحالية والتاريخية.",
         "Enforced allocation for unique current and historical files.",
@@ -841,7 +841,7 @@ export default function AdminOperationsPage() {
             <article className="ops-card ops-storage">
               <span className="ops-eyebrow">
                 <HardDrive size={16} />
-                {text("تخزين السير الذاتية", "Private CV storage")}
+                {text("تخزين السير الذاتية ومرفقات الاستشارة", "Private CV & consultation storage")}
               </span>
               <h2>
                 {text(
@@ -952,7 +952,7 @@ export default function AdminOperationsPage() {
           <OperationsChart
             ar={ar}
             points={points}
-            title={text("نمو ملفات السيرة", "CV storage growth")}
+            title={text("نمو الملفات الخاصة", "Private document storage growth")}
             description={text(
               "الملفات الفريدة الحالية والتاريخية وغير المرتبطة؛ الحصة لا تزيد حجم القرص نفسه.",
               "Unique current, historical and unreferenced files; allocation does not enlarge the disk.",

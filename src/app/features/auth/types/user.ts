@@ -19,6 +19,7 @@ export interface User {
         | "REPORTS"
         | "UX_LAB"
         | "INDIVIDUAL_RESEARCH"
+        | "CAREER_CONSULTING"
         | "MARKETING"
         | "OPERATIONS",
         "READ" | "WRITE"

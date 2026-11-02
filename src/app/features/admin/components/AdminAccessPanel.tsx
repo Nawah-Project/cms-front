@@ -21,6 +21,7 @@ const labels: Record<AdminSection, [string, string]> = {
   MENTORING: ["التوجيه والإرشاد", "Mentoring & guidance"],
   JOURNEY: ["هندسة الرحلة والحبكة", "Journey & plot engine"],
   REPORTS: ["معاينة تقارير الرحلة", "Journey report preview"],
+  CAREER_CONSULTING: ["الاستشارات المهنية — الحالات والعمل الخاص", "Career Consulting — private cases & work"],
   INDIVIDUAL_RESEARCH: ["التجارب الفردية والملاحظات الخاصة", "Individual research & private notes"],
   UX_LAB: ["تحليلات التجربة والسلوك", "UX & behavior lab"],
   MARKETING: ["المركتنج ونمو الزيارات", "Marketing & acquisition"],
