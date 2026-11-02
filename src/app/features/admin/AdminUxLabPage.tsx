@@ -1,4 +1,3 @@
-import { Link } from "react-router";
 import { fetchApi } from "../../lib/api-client";
 import { useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -294,7 +293,6 @@ export default function AdminUxLabPage() {
         className="lab-tabs"
         aria-label={text("تحليلات التجربة", "Experience analytics")}
       >
-        {canAdminAccess(user, "INDIVIDUAL_RESEARCH") && <Link to="/admin/ux-lab/individual-research">{text("التجارب الفردية", "Individual research")}</Link>}
         {(
           [
             { id: "MAP", a: "خريطة الرحلة", e: "Journey map", icon: Compass },

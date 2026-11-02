@@ -1,5 +1,4 @@
 import { ConsultingInvite } from "../career-consulting/ConsultingInvite";
-import { IndividualParticipationPanel } from "../auth/components/IndividualParticipationPanel";
 import { SectionExposure } from "../ux-lab/SectionExperience";
 import { JourneyScenery } from "../../components/JourneyScenery";
 import { useEffect, useState } from "react";
@@ -371,7 +370,6 @@ export function ProfileCompletionGate({
           </Modal>
         </section>
       </main>
-      <IndividualParticipationPanel />
     </SectionExposure>
   );
 }

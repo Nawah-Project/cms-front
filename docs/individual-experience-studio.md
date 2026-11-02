@@ -1,3 +1,5 @@
+> Historical documentation: Studio P0 was retired on 2026-11-02. These endpoints and grants are no longer available. See [retirement notes](retire-studio-p0.md).
+
 # Individual Experience Studio — واجهة P0
 
 المسار الإداري: `/admin/ux-lab/individual-research`، بصلاحية مستقلة `INDIVIDUAL_RESEARCH` READ/WRITE وACL لكل حالة من الخادم. رابط من UX Lab ومن القائمة الإدارية؛ لا تستخدم صلاحية UX_LAB كبديل للوصول إلى ملاحظات خاصة.
