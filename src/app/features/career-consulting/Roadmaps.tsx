@@ -364,7 +364,7 @@ function MapWorkspace({
             <p className="cc-readonly">{t('قراءة فقط', 'Read only')}</p>
           )}
           {content.observations.length > 0 && (
-            <details open>
+            <details>
               <summary>
                 {t('ما نعرفه وما يحتاج سؤالًا', 'Evidence and open questions')}
               </summary>
