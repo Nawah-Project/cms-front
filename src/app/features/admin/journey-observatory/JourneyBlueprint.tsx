@@ -466,7 +466,7 @@ export function JourneyBlueprint({
                   <path
                     d="M28 0H0V28"
                     fill="none"
-                    stroke="#cfdbd5"
+                    stroke="var(--admin-line,#cfdbd5)"
                     strokeWidth=".6"
                   />
                 </pattern>
@@ -478,7 +478,7 @@ export function JourneyBlueprint({
                   refY="3.5"
                   orient="auto"
                 >
-                  <path d="M0 0 7 3.5 0 7" fill="#527ba6" />
+                  <path d="M0 0 7 3.5 0 7" fill="var(--admin-blue,#527ba6)" />
                 </marker>
                 <marker
                   id="jro-guide-arrow"
@@ -488,7 +488,7 @@ export function JourneyBlueprint({
                   refY="3"
                   orient="auto"
                 >
-                  <path d="M0 0 6 3 0 6" fill="#9b7428" />
+                  <path d="M0 0 6 3 0 6" fill="var(--admin-gold,#9b7428)" />
                 </marker>
               </defs>
               <rect width="100%" height="100%" fill="url(#jro-grid)" />
@@ -504,8 +504,8 @@ export function JourneyBlueprint({
                       width={layout.width - 12}
                       height={b.height}
                       rx="14"
-                      fill={b.week % 2 === 0 ? "#e1eae5" : "#edf2ef"}
-                      stroke="#bfcec4"
+                      fill={b.week % 2 === 0 ? "var(--admin-soft,#e1eae5)" : "var(--admin-surface,#edf2ef)"}
+                      stroke="var(--admin-line,#bfcec4)"
                     />
                     <rect
                       x={b.labelX}
@@ -513,7 +513,7 @@ export function JourneyBlueprint({
                       width="145"
                       height={b.height - 20}
                       rx="10"
-                      fill="#125e4e"
+                      fill="var(--admin-action,#125e4e)"
                     />
                     <foreignObject
                       x={b.labelX + 9}
@@ -592,7 +592,7 @@ export function JourneyBlueprint({
                       key={edge.from + "-" + edge.to}
                       d={path}
                       fill="none"
-                      stroke={highlighted ? "#125e4e" : "#527ba6"}
+                      stroke={highlighted ? "var(--admin-green,#125e4e)" : "var(--admin-blue,#527ba6)"}
                       opacity={edge.kind === "NEXT_WEEK" ? 0.55 : 1}
                       strokeWidth={highlighted ? 3.5 : 1.7}
                       strokeDasharray={
@@ -617,7 +617,7 @@ export function JourneyBlueprint({
                           : `M${x} ${parent.y + parent.height} V${cell.y}`
                       }
                       fill="none"
-                      stroke={cell.kind === "GUIDANCE" ? "#9b7428" : "#a0b5a9"}
+                      stroke={cell.kind === "GUIDANCE" ? "var(--admin-gold,#9b7428)" : "#a0b5a9"}
                       strokeWidth="1.2"
                       strokeDasharray="3 3"
                       markerEnd={
@@ -876,7 +876,7 @@ export function JourneyBlueprint({
                   height={c.height}
                   fill={
                     c.node.current
-                      ? "#125e4e"
+                      ? "var(--admin-green,#125e4e)"
                       : c.kind === "REVIEW"
                         ? "#47616a"
                         : "#fff"
@@ -890,7 +890,7 @@ export function JourneyBlueprint({
                 width={size.w / view.z}
                 height={size.h / view.z}
                 fill="#125e4e18"
-                stroke="#125e4e"
+                stroke="var(--admin-green,#125e4e)"
                 strokeWidth="10"
               />
             </svg>

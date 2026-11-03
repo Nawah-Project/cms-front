@@ -1,3 +1,4 @@
+import { AdminAppearance } from '../../platform/appearance/AdminAppearance';
 import { useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import { useAuth } from "../auth/store/authStore";
@@ -121,7 +122,7 @@ export default function AdminLayout() {
   const section = getSectionMeta(location.pathname, locale);
 
   return (
-    <section className="space-y-6">
+    <AdminAppearance><section className="space-y-6">
       {!location.pathname.startsWith("/admin/ux-lab") &&
         !location.pathname.startsWith("/admin/strategic-relationships") &&
         !location.pathname.startsWith("/admin/founder-workspace") &&
@@ -165,6 +166,6 @@ export default function AdminLayout() {
           </header>
         )}
       <Outlet />
-    </section>
+    </section></AdminAppearance>
   );
 }

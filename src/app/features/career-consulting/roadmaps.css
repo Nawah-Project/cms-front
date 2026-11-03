@@ -20,21 +20,21 @@
   justify-content: space-between;
   align-items: start;
   gap: 20px;
-  background: #194d3d;
-  color: #fff;
+  background:var(--admin-deep,#194d3d);
+  color:var(--admin-on-brand,#fff);
   padding: 24px;
-  border-radius: 18px 18px 0 0;
+  border-radius:18px 18px 0 0;
 }
 .cc-map-heading p {
-  color: #d9e6da;
+  color:var(--admin-on-brand,#d9e6da);
   margin-top: 8px;
   max-width: 95ch;
 }
 .cc-map-viewport {
   max-height: 760px;
   overflow: auto;
-  border: 1px solid #becfbe;
-  background: #dfece2;
+  border:1px solid var(--admin-line,#becfbe);
+  background:var(--admin-green-soft,#dfece2);
   scrollbar-width: thin;
 }
 .cc-map-viewport.expanded {
@@ -45,8 +45,8 @@
   padding: 36px 28px;
   position: relative;
   isolation: isolate;
-  background-image: radial-gradient(#a5c2aa66 0.8px, transparent 0.8px);
-  background-size: 20px 20px;
+  background-image:radial-gradient(var(--admin-green-soft-66,#a5c2aa66) 0.8px, transparent 0.8px);
+  background-size:20px 20px;
 }
 .cc-map-wires {
   position: absolute;
@@ -83,11 +83,11 @@
   white-space: normal;
   min-width: 0;
   padding: 24px 18px 16px;
-  background: #fffef8;
-  border: 1px solid #aac1ae;
-  border-top: 4px solid #5b8e69;
-  border-radius: 13px;
-  box-shadow: 0 3px 10px #315c3b0c;
+  background:var(--admin-surface,#fffef8);
+  border:1px solid var(--admin-control-line,#aac1ae);
+  border-top:4px solid var(--admin-control-line,#5b8e69);
+  border-radius:13px;
+  box-shadow:0 3px 10px var(--admin-shadow-0c,#315c3b0c);
   min-height: 190px;
 }
 .cc-map-node strong {
@@ -95,15 +95,15 @@
 }
 .cc-map-node small {
   font-weight: 400;
-  color: #4b6657;
+  color:var(--admin-muted,#4b6657);
   margin-top: 10px;
 }
 .cc-map-node .cc-map-number {
   display: inline-block;
-  border-radius: 6px;
+  border-radius:6px;
   padding: 1px 8px;
-  background: #dce9d4;
-  color: #25513d;
+  background:var(--admin-green-soft,#dce9d4);
+  color:var(--admin-green,#25513d);
   position: absolute;
   inset-inline-start: 14px;
   top: -18px;
@@ -112,33 +112,33 @@
 .cc-map-node .cc-map-open {
   margin-top: auto;
   padding-top: 12px;
-  color: #2d6550;
+  color:var(--admin-green,#2d6550);
   font-size: 11px;
 }
 .cc button.cc-map-node[aria-pressed='true'] {
-  background: #f6fadf;
-  border: 2px solid #216747;
-  border-top-width: 4px;
-  color: #193f30;
-  box-shadow: 0 0 0 4px #becf9455;
+  background:var(--admin-gold-soft,#f6fadf);
+  border:2px solid var(--admin-control-line,#216747);
+  border-top-width:4px;
+  color:var(--admin-green,#193f30);
+  box-shadow:0 0 0 4px var(--admin-shadow-55,#becf9455);
 }
 .cc .cc-map-node.lane-explore {
-  border-top-color: #5e8e9c;
+  border-top-color:var(--admin-line,#5e8e9c);
 }
 .cc .cc-map-node.lane-experiment {
-  border-top-color: #b59152;
+  border-top-color:var(--admin-line,#b59152);
 }
 .cc .cc-map-node.lane-finish {
-  border-top-color: #355269;
+  border-top-color:var(--admin-line,#355269);
 }
 .cc-map-expand {
   display: flex;
   justify-content: center;
   padding: 12px;
-  background: #edf3e9;
-  border: 1px solid #becfbe;
-  border-top: 0;
-  border-radius: 0 0 15px 15px;
+  background:var(--admin-green-soft,#edf3e9);
+  border:1px solid var(--admin-line,#becfbe);
+  border-top:0;
+  border-radius:0 0 15px 15px;
   margin-bottom: 24px;
 }
 .cc-map-stage {
@@ -151,8 +151,8 @@
   align-items: center;
 }
 .cc-map-stage:focus {
-  outline: 3px solid #9cb456;
-  outline-offset: 4px;
+  outline:3px solid var(--admin-control-line,#9cb456);
+  outline-offset:4px;
 }
 .cc-map-tool-note {
   display: block;
@@ -166,9 +166,9 @@
 }
 .cc-map-observation {
   padding: 16px;
-  background: #f4f7f1;
-  border: 1px solid #d1dece;
-  border-radius: 12px;
+  background:var(--admin-green-soft,#f4f7f1);
+  border:1px solid var(--admin-line,#d1dece);
+  border-radius:12px;
 }
 .cc-map-sources {
   display: grid;
@@ -178,8 +178,8 @@
 }
 .cc-map-sources article {
   padding: 17px;
-  border: 1px solid #d3ddd1;
-  border-radius: 12px;
+  border:1px solid var(--admin-line,#d3ddd1);
+  border-radius:12px;
 }
 .cc-map-sources article small {
   display: block;
@@ -194,11 +194,11 @@
   align-items: center;
   flex-wrap: wrap;
   padding: 14px 18px;
-  border: 1px solid #b9cba9;
-  background: #f7faedee;
+  border:1px solid var(--admin-line,#b9cba9);
+  background:var(--admin-gold-soft-ee,#f7faedee);
   backdrop-filter: blur(8px);
-  border-radius: 12px;
-  box-shadow: 0 6px 24px #153a2418;
+  border-radius:12px;
+  box-shadow:0 6px 24px var(--admin-shadow-18,#153a2418);
   z-index: 2;
   margin: 20px 0;
 }

@@ -1,19 +1,17 @@
-# Admin daytime identity and Founder night review
+# Administrative appearance
 
-The administrator interface uses the same daytime role tokens and generic controls as the member interface: ivory canvas, white surfaces, forest green actions, blue information/comparison, gold emphasis and IBM Plex Sans Arabic. Existing member layouts remain scoped to members. Consulting, operations, marketing, journey, UX Lab and the two integrated workspaces resolve their presentation roles to this palette.
+All `/admin` routes share the member daytime identity and the approved forest-charcoal night palette. Dark, Light and System controls are owned by the administration layout, so changing sections retains the preference and does not remount domain workspaces or save their documents. Member routes remain daytime.
 
-## Founder-only night pilot
+The whitelisted browser preference `nawah.admin.appearance.v1` takes precedence over the previous Founder pilot preference. If only the pilot preference exists it is adopted without changing the old key. Default is Dark. Storage failures keep a session preference and show a status message; changes in system appearance and other tabs are observed. A constant route-checked pre-paint bootstrap avoids a bright initial render. Cleanup removes the attribute when leaving administration.
 
-Only `/admin/founder-workspace` and its subviews activate the night palette. Warm ivory text sits on charcoal forest surfaces; lighter green is for text, while stronger green is retained for filled actions. Blue and gold retain their semantic roles. Borders and focus indicators are distinct from decorative dividers. The ordinary admin sidebar is retained.
+Shared `--n-*` tokens define canvas, surface, raised surface, text, muted text, actions, focus, borders, charts and statuses. Legacy domain styles use `--admin-*` roles with their original literal as the daytime fallback. Only administration night defines those aliases; shared consulting/member styles keep their daytime values. Green text is separate from filled green actions, as are blue/red/gold filled controls. Utility adapters target exact existing class tokens without enabling dormant Tailwind dark variants. Native controls, portals, graph labels, tooltip surfaces and both integrated ShadowRoot workspaces follow the palette. ShadowRoot is style isolation, not authorization.
 
-The local controls offer Dark, Light and System. Dark is the initial preference for this review. The whitelisted preference is stored under `nawah.founder.appearance.v1`, separately from documents, account data and API revisions. Blocked browser storage falls back to a session preference. System changes and cross-tab preference changes do not remount the workspace or save its document.
+No backend, permission, database or saved-document changes are made. Deploy the administrator image through the existing hosted build, approval, rate-limited download and health-check workflow. Retain the previous image for rollback.
 
-A constant pre-paint bootstrap checks the exact route and preference whitelist. Route cleanup removes the theme attribute. Other administrative sections and the member interface keep their daytime presentation, even after selecting Dark in Founder. There is no global dark class and no general night-mode rollout in this release.
+Validation:
 
-## Validation and limits
+- TypeScript and `node --test scripts/*checks.mjs` include palette contrast, route/bootstrap isolation, storage behavior and migration from the pilot preference.
+- `scripts/qa/admin-appearance.cjs` with synthetic fixtures checks all five Founder views, the other admin sections, charts, operating-control dialog, draft persistence, blocked storage, system/cross-tab behavior, refresh, Arabic/English and responsive layouts. `QA_WEB`, `PLAYWRIGHT_MODULE`, `SOURCE_ROOT` and `QA_OUTPUT` select a disposable runtime, tools, fixtures and evidence location. No production token or private record is used.
+- Run the same harness against the hosted image via the member gateway, then against the production deployment with API responses intercepted. HTTP health and runtime/data fingerprints are verified separately. Appearance testing is not a new audit of unchanged backend authorization.
 
-`node --test scripts/founder-appearance-checks.mjs` checks normal-text role pairs at 4.5:1, controls/focus/connectors at 3:1, preference whitelisting and isolated bootstrap behavior. These checks cover selected palette pairs, not a claim of complete WCAG conformance. `scripts/qa/founder-appearance.cjs` is the reproducible browser harness (`QA_WEB`, `PLAYWRIGHT_MODULE`, `SOURCE_ROOT` and `QA_OUTPUT` select the disposable runtime, browser tools, fixtures and evidence directory). Browser QA uses synthetic data and verifies all five Founder views, open drafts, refresh, blocked storage, cross-tab and system changes, Arabic/English, phone/tablet/desktop, native form colors and the absence of night styling outside Founder.
-
-Reference: [WCAG text contrast](https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html), [native control color-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/color-scheme).
-
-No schemas, permissions, workspace documents or backend behavior change. Publication uses the existing hosted build and approved admin-image deployment. Extending night mode to other sections requires the user's review of this pilot.
+Selected role pairs are tested at 4.5:1 for normal text and 3:1 for control indicators/connectors, not a claim of complete WCAG conformance. References: [WCAG text contrast](https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html), [native color-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/color-scheme).
