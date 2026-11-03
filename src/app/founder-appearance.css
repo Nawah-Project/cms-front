@@ -1,0 +1,67 @@
+/* Review scope: these selectors cannot activate outside the Founder route. */
+html[data-founder-theme] { color-scheme:light; }
+html[data-founder-theme] body[data-brand-scope="admin"] {
+  --n-shadow-color:#103c32; --n-action:#125e4e; --n-action-hover:#0d493d; --n-action-pressed:#09382f;
+  --n-action-border:#125e4e; --n-on-brand:#f8faf8; --n-connection:#527c9a;
+  --n-paper-raised:#ffffff; --n-grid:#c8d7ce; --n-hero-muted:#d4e4d8;
+  --n-gold-wash:#e7b85a1a; --n-chart-green:#125e4e; --n-chart-blue:#174c87;
+}
+html[data-founder-theme="dark"] { color-scheme:dark; background:#101b16; }
+html[data-founder-theme="dark"] body[data-brand-scope="admin"] {
+  color-scheme:dark;
+  --n-canvas:#101b16; --n-paper:#19291f; --n-paper-raised:#21362a; --n-paper-soft:#15241c;
+  --n-ink:#e5ece5; --n-muted:#adbfaf; --n-line:#3b5141; --n-control-line:#789381;
+  --n-green:#9bd6b1; --n-green-hover:#b5e5c5; --n-green-pressed:#ceeeda;
+  --n-green-soft:#223d2b; --n-green-hover-soft:#2b4936; --n-green-border:#719f7e;
+  --n-action:#24634c; --n-action-hover:#2a7055; --n-action-pressed:#1d523e; --n-action-border:#77ae92;
+  --n-blue:#9bc5f5; --n-blue-hover:#c0dcfb; --n-blue-muted:#b0c8e1; --n-blue-soft:#203246;
+  --n-blue-border:#7895b5; --n-blue-pressed:#2b4460; --n-blue-ink:#bad8f8;
+  --n-gold:#e9c77f; --n-gold-ink:#eed298; --n-gold-soft:#352f20; --n-gold-border:#a88d58;
+  --n-gold-inverse:#edcd8d; --n-gold-halo:#e9c77f55; --n-gold-halo-soft:#e9c77f20; --n-gold-outline:#e9c77f88;
+  --n-danger:#f0ada4; --n-danger-soft:#3c2826; --n-danger-border:#bc8077;
+  --n-danger-hover:#51332f; --n-danger-pressed:#604039;
+  --n-surface-muted:#22342a; --n-disabled-surface:#233128; --n-locked-surface:#1d2e23;
+  --n-map-ground:#14281e; --n-map-grid:#59766355; --n-grid:#486552;
+  --n-connection:#93b4d2; --n-line-soft-green:#4e705b; --n-skeleton:#455d4c;
+  --n-deep:#102e22; --n-on-brand:#f2f4ed; --n-on-brand-muted:#d1e1d5; --n-hero-muted:#c2d6c8;
+  --n-on-brand-border:#83a38a; --n-on-brand-hover:#ffffff14; --n-on-brand-wash:#ffffff0e; --n-on-brand-track:#ffffff26;
+  --n-shadow-color:#000000; --n-shadow:0 5px 20px #00000020; --n-shadow-card:#00000016;
+  --n-shadow-raised:0 12px 32px #00000030; --n-shadow-dialog:#00000088;
+  --n-focus:0 0 0 3px #9bc5f544; --n-gold-wash:#e9c77f14;
+  --color-app:var(--n-canvas); --color-surface:var(--n-paper); --color-surface-raised:var(--n-paper-raised);
+  --color-text-primary:var(--n-ink); --color-text-secondary:var(--n-muted); --color-text-muted:var(--n-muted);
+  --color-border:var(--n-line); --color-border-subtle:var(--n-line); --color-border-strong:var(--n-control-line);
+}
+html[data-founder-theme] .founder-appearance-bar {
+  display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  background:var(--n-paper);color:var(--n-ink);border:1px solid var(--n-line);border-radius:18px;
+  padding:18px 22px;margin-bottom:20px;position:relative;
+}
+html[data-founder-theme] .founder-appearance-bar::before {content:"";position:absolute;inset-block:18px;inset-inline-start:0;width:4px;border-radius:4px;background:var(--n-green);}
+html[data-founder-theme] .founder-appearance-eyebrow {font-size:11px;font-weight:600;color:var(--n-blue);}
+html[data-founder-theme] .founder-appearance-bar h2 {font-size:16px;font-weight:700;margin-top:3px;}
+html[data-founder-theme] .founder-appearance-bar p {font-size:12px;color:var(--n-muted);margin-top:4px;line-height:1.8;}
+html[data-founder-theme] .founder-appearance-options {display:flex;gap:6px;flex-wrap:wrap;}
+html[data-founder-theme] .founder-appearance-options button {display:flex;align-items:center;gap:7px;min-height:42px;padding:8px 13px;border-radius:10px;border:1px solid var(--n-control-line);background:var(--n-paper);color:var(--n-ink);font-size:12px;cursor:pointer;}
+html[data-founder-theme] .founder-appearance-options button:hover {background:var(--n-blue-soft);border-color:var(--n-blue);}
+html[data-founder-theme] .founder-appearance-options button[aria-pressed=true] {background:var(--n-action);border-color:var(--n-action-border);color:var(--n-on-brand);box-shadow:inset 0 -2px var(--n-gold);}
+html[data-founder-theme] .founder-appearance-options button:focus-visible {outline:3px solid var(--n-blue);outline-offset:3px;}
+html[data-founder-theme] .founder-appearance-note {width:100%;}
+html[data-founder-theme] .workspace-shell {--color-text-primary:var(--n-ink);--color-info-strong:var(--n-blue);--color-info-soft:var(--n-blue-soft);--color-info-border:var(--n-blue-border);}
+html[data-founder-theme="dark"] .workspace-sidebar {background:var(--n-deep);border-color:var(--n-line);}
+html[data-founder-theme="dark"] .workspace-shell > header {background:var(--n-paper);border-color:var(--n-line);color:var(--n-ink);}
+html[data-founder-theme="dark"] .workspace-shell > header :is(.text-neutral-950,.text-neutral-700,.text-neutral-500) {color:var(--n-ink);}
+html[data-founder-theme="dark"] .workspace-shell > header button:hover {background:var(--n-paper-raised);}
+html[data-founder-theme="dark"] .workspace-shell > header nav :is(a,button) {color:var(--n-muted);}
+html[data-founder-theme="dark"] .workspace-shell > header nav a[aria-current=page] {background:var(--n-action);color:var(--n-on-brand);}
+html[data-founder-theme] dialog[aria-labelledby=workspace-leave-title] {background:var(--n-paper);color:var(--n-ink);border-color:var(--n-control-line);}
+html[data-founder-theme] dialog[aria-labelledby=workspace-leave-title] button {border-color:var(--n-control-line);}
+html[data-founder-theme] dialog[aria-labelledby=workspace-leave-title] button:first-child {background:var(--n-action);color:var(--n-on-brand);border-color:var(--n-action-border);}
+@media(max-width:700px){html[data-founder-theme] .founder-appearance-bar{align-items:stretch;gap:14px;padding:16px;}html[data-founder-theme] .founder-appearance-options{width:100%;}html[data-founder-theme] .founder-appearance-options button{flex:1;justify-content:center;padding-inline:9px;}}
+html[data-founder-theme] body[data-brand-scope="admin"] {--n-backdrop:#102c3266;}
+html[data-founder-theme="dark"] body[data-brand-scope="admin"] {--n-backdrop:#00000099;}
+/* Chrome portals are part of the Founder surface only while this route is active. */
+html[data-founder-theme="dark"] body[data-brand-scope="admin"] :is(.bg-white,.bg-neutral-50,.bg-neutral-100) {background-color:var(--n-paper);}
+html[data-founder-theme="dark"] body[data-brand-scope="admin"] :is(.text-neutral-950,.text-neutral-900,.text-neutral-800,.text-neutral-700) {color:var(--n-ink);}
+html[data-founder-theme="dark"] body[data-brand-scope="admin"] :is(.border-neutral-100,.border-neutral-200,.border-neutral-300) {border-color:var(--n-line);}
+html[data-founder-theme="dark"] body[data-brand-scope="admin"] :is(.hover\:bg-neutral-50,.hover\:bg-neutral-100):hover {background-color:var(--n-paper-raised);}

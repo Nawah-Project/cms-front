@@ -13,6 +13,9 @@ import type { Route } from "./+types/root";
 import "./app.css";
 import "./brand-user.css";
 import "./brand-admin.css";
+import "./founder-appearance.css";
+// @ts-expect-error Constant bootstrap and pure pathname helper, no feature implementation.
+import { FOUNDER_APPEARANCE_BOOTSTRAP, isFounderPath } from './platform/appearance/founder-appearance.mjs';
 import { AuthProvider } from "./features/auth/store/authStore";
 import { I18nProvider } from "./i18n";
 import { ToastProvider } from "./components/ui/ToastProvider";
@@ -29,11 +32,13 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
+  const founderPilot = import.meta.env.VITE_FRONTEND_APP !== "member" && isFounderPath(pathname);
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="ar" dir="rtl" data-founder-theme={founderPilot ? "dark" : undefined} suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {founderPilot && <script dangerouslySetInnerHTML={{ __html: FOUNDER_APPEARANCE_BOOTSTRAP }} />}
         <Meta />
         <Links />
       </head>
