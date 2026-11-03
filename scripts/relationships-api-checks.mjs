@@ -1,0 +1,29 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync,readdirSync} from 'node:fs';
+import {resolve,relative,dirname} from 'node:path';
+import {execFileSync} from 'node:child_process';
+import {blank} from '../public/strategic-relationships/domain/model.mjs';
+import {training} from '../public/strategic-relationships/domain/sample.mjs';
+import {Workspace} from '../public/strategic-relationships/application/workspace.mjs';
+import {ApiRepository,MemoryRepository} from '../public/strategic-relationships/infrastructure/api-repository.mjs';
+const root=resolve('public/strategic-relationships');
+const walk=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(resolve(dir,e.name)):[resolve(dir,e.name)]);
+test('relationships module boundaries, syntax and personal-content persistence are enforced',()=>{
+ const allowed={domain:['domain'],application:['domain','application'],infrastructure:['domain','infrastructure'],integration:['integration','domain'],ui:['ui','domain','application','infrastructure','integration']};
+ for(const file of walk(root).filter(f=>f.endsWith('.mjs'))){execFileSync(process.execPath,['--check',file]);const layer=relative(root,file).split('/')[0],source=readFileSync(file,'utf8');
+ for(const m of source.matchAll(/from\s+['"]([^'"]+)['"]/g)){assert.ok(m[1].startsWith('.'));const target=relative(root,resolve(dirname(file),m[1]));assert.ok(!target.startsWith('..'));assert.ok(allowed[layer].includes(target.split('/')[0]),file+' -> '+target);}
+ assert.ok(!/\b(?:localStorage|sessionStorage)\s*\.|indexedDB\s*\./.test(source),file);assert.ok(!/sendBeacon\s*\(|\/ux-lab\/events|\/marketing\/track/.test(source),file);
+ }
+ assert.ok(!walk(root).some(f=>/\.(pdf|dump|env)$/.test(f)));
+});
+function transport({write=true}={}){let stored=null,fail=false,lost=false;const calls=[];return {calls,get stored(){return stored},set fail(v){fail=v},set lost(v){lost=v},fetch:async(url,options)=>{
+ calls.push({url,options});const path=new URL(url).pathname;if(path.endsWith('/access'))return Response.json({canWrite:write,actorId:'actor-synthetic'});if(path.endsWith('/template'))return Response.json(blank());if(path.endsWith('/workspaces')&&options.method==='GET')return Response.json({items:stored?[{id:stored.id}]:[]});
+ if(['POST','PATCH'].includes(options.method)){if(fail)throw Error('Synthetic transport fault');const b=JSON.parse(options.body);stored={id:'server-workspace',document:{...b.document,id:'server-workspace',revision:options.method==='POST'?0:b.expectedRevision+1}};if(lost)throw Error('Synthetic lost response');return Response.json({...stored,revision:stored.document.revision});}return Response.json(stored);
+ }};}
+test('server adapter durably saves with credentials and no private browser snapshot',async()=>{const t=transport(),repo=new ApiRepository('https://api.example.test',t.fetch),w=new Workspace(repo,blank());try{await w.open();await w.change('phase',d=>{d.settings.activePhase='backend'});assert.equal(t.stored.document.settings.activePhase,'backend');assert.ok(t.calls.every(c=>c.options.credentials==='include'));}finally{repo.channel?.close()}});
+test('failed transport leaves the same pending mutation, request key and timestamp',async()=>{const t=transport(),repo=new ApiRepository('https://api.example.test',t.fetch),w=new Workspace(repo,blank());try{await w.open();t.fail=true;await assert.rejects(()=>w.change('phase',d=>{d.settings.activePhase='backend'}));const id=repo.attempt.requestId,time=w.pending.next.history.at(-1).at;assert.equal(w.document.settings.activePhase,'ux');t.fail=false;await w.retry();assert.equal(t.stored.document.history.at(-1).at,time);const writes=t.calls.filter(c=>c.options.method==='PATCH');assert.equal(JSON.parse(writes.at(-1).options.body).requestId,id);}finally{repo.channel?.close()}});
+test('READ opens an empty account without POST and blocks all application changes',async()=>{const t=transport({write:false}),repo=new ApiRepository('https://api.example.test',t.fetch),w=new Workspace(repo,blank());try{await w.open();assert.equal(w.document.people.length,0);assert.equal(t.calls.some(c=>c.options.method==='POST'),false);await assert.rejects(()=>w.change('phase',d=>{d.settings.activePhase='backend'}),e=>e.code==='READ_ONLY');await assert.rejects(()=>repo.save(blank(),-1),e=>e.code==='READ_ONLY');}finally{repo.channel?.close()}});
+test('temporary training changes never write to the account API',async()=>{const t=transport(),repo=new ApiRepository('https://api.example.test',t.fetch);try{await repo.read();const count=t.calls.length,w=new Workspace(new MemoryRepository(training(),repo.canWrite),blank());await w.open();await w.change('test',d=>{d.people[0].context='Synthetic exercise edit'});assert.equal(t.calls.length,count);const fresh=new Workspace(new MemoryRepository(training(),repo.canWrite),blank());await fresh.open();assert.notEqual(fresh.document.people[0].context,'Synthetic exercise edit');}finally{repo.channel?.close()}});
+test('same-account bootstrap keys are stable across tabs',async()=>{const t=transport(),a=new ApiRepository('https://api.example.test',t.fetch),b=new ApiRepository('https://api.example.test',t.fetch);try{await a.read();await b.read();await Promise.all([a.save(blank(),-1),b.save(blank(),-1)]);const ids=t.calls.filter(c=>c.options.method==='POST').map(c=>JSON.parse(c.options.body).requestId);assert.equal(new Set(ids).size,1);}finally{a.channel?.close();b.channel?.close()}});
+test('AUTH, forbidden and stale writes cannot be converted into local success',async()=>{for(const status of [401,403,409]){const repo=new ApiRepository('https://api.example.test',async()=>new Response('{}',{status}));try{repo.canWrite=true;await assert.rejects(()=>repo.save(blank(),0),e=>e.code===(status===409?'CONFLICT':'AUTH'));assert.ok(repo.attempt);}finally{repo.channel?.close()}}});

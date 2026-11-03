@@ -39,6 +39,7 @@ const memberRoutes: RouteConfig = [
   ]),
 ];
 const adminRoutes: RouteConfig = [
+  route("admin/strategic-relationships", "features/strategic-relationships/StrategicRelationshipsPage.tsx"),
   route("admin/founder-workspace", "features/founder-workspace/FounderWorkspacePage.tsx"),
   layout("routes/admin-shell.tsx", [
     route("admin", "features/admin/AdminLayout.tsx", [

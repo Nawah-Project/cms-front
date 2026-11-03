@@ -1,5 +1,5 @@
 import http from 'node:http';
-const adminPath = path => path === '/admin' || path.startsWith('/admin/') || path === '/admin-assets' || path.startsWith('/admin-assets/') || path.startsWith('/founder-workspace/');
+const adminPath = path => path === '/admin' || path.startsWith('/admin/') || path === '/admin-assets' || path.startsWith('/admin-assets/') || path.startsWith('/founder-workspace/') || path.startsWith('/strategic-relationships/');
 export function isAdminRequest(value) {
   const url = new URL(value, 'http://local');
   if (adminPath(url.pathname)) return true;

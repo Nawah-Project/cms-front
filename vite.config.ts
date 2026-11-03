@@ -41,6 +41,12 @@ export default defineConfig(({ command, mode }) => {
           res.setHeader('Cache-Control', 'no-store');
           res.end(JSON.stringify({ apiUrl: values.VITE_API_URL || 'http://localhost:3000' }));
         });
+        server.middlewares.use('/strategic-relationships/config.json', (_req, res) => {
+          const values = loadEnv(mode, process.cwd(), 'VITE_');
+          res.setHeader('Content-Type', 'application/json');
+          res.setHeader('Cache-Control', 'no-store');
+          res.end(JSON.stringify({ apiUrl: values.VITE_API_URL || 'http://localhost:3000' }));
+        });
       },
     }, tailwindcss(), reactRouter()],
     resolve: {
