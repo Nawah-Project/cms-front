@@ -28,8 +28,21 @@ export default defineConfig(({ command, mode }) => {
     }
   }
 
+  const target = process.env.NAWAH_FRONTEND_APP || 'combined';
   return {
-    plugins: [tailwindcss(), reactRouter()],
+    base: target === 'admin' ? '/admin-assets/' : '/',
+    define: { 'import.meta.env.VITE_FRONTEND_APP': JSON.stringify(target) },
+    plugins: [{
+      name: 'founder-workspace-development-config',
+      configureServer(server) {
+        server.middlewares.use('/founder-workspace/config.json', (_req, res) => {
+          const values = loadEnv(mode, process.cwd(), 'VITE_');
+          res.setHeader('Content-Type', 'application/json');
+          res.setHeader('Cache-Control', 'no-store');
+          res.end(JSON.stringify({ apiUrl: values.VITE_API_URL || 'http://localhost:3000' }));
+        });
+      },
+    }, tailwindcss(), reactRouter()],
     resolve: {
       tsconfigPaths: true,
     },
