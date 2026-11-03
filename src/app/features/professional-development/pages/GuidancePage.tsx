@@ -13,7 +13,7 @@ import { api } from "../../../services/api";
 import { useI18n } from "../../../i18n";
 import type { FeedbackPost, FeedbackResource } from "../types";
 import { profileApi } from "../../profile/profileApi";
-import { LoadingState } from "../../admin/components/AdminUI";
+import { LoadingState } from "../../../components/LoadingState";
 import { PlayCircleIcon } from "../../../components/Icons";
 import { FeatureTour, type FeatureTourStep } from "../../../components/FeatureTour";
 

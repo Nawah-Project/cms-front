@@ -11,7 +11,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { useBlocker, useSearchParams } from 'react-router';
 import { ApiError } from '../../lib/api-client';
-import { canAdminAccess } from '../admin/adminAccess';
+import { canAdminAccess } from '../../platform/access/adminAccess';
 import { useAuth } from '../auth/store/authStore';
 import {
   base,

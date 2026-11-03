@@ -2,6 +2,12 @@ name: Approve production
 on:
   workflow_dispatch:
     inputs:
+      component:
+        description: Frontend component to approve
+        required: true
+        default: frontend
+        type: choice
+        options: [frontend, admin]
       candidate_tag:
         description: Exact build tag from a successful main candidate
         required: true
@@ -9,7 +15,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: frontend-production-approval
+  group: frontend-production-approval-${{ inputs.component }}
   cancel-in-progress: false
 jobs:
   approve:
@@ -24,7 +30,8 @@ jobs:
       - name: Approve existing tested image
         env:
           GH_TOKEN: ${{ github.token }}
+          COMPONENT: ${{ inputs.component }}
           CANDIDATE_TAG: ${{ inputs.candidate_tag }}
         run: |
           args=()
-          python3 scripts/release/release.py approve --tag "$CANDIDATE_TAG" "${args[@]}"
+          python3 scripts/release/release.py approve --component "$COMPONENT" --tag "$CANDIDATE_TAG" "${args[@]}"

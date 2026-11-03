@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { API_BASE_URL } from "../../../lib/api-client";
-import { useAuth } from "../../auth/store/authStore";
+import { API_BASE_URL } from "../../lib/api-client";
+import { useAuth } from "../../features/auth/store/authStore";
 // Account-bound transport; only numeric durations enter aggregate storage. No URLs, forms or file contents.
 export function OperationsPerformanceObserver() {
   const { user } = useAuth();

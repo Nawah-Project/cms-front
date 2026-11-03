@@ -8,7 +8,8 @@ import {
   type ReactNode,
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocation, Link } from "react-router";
+import { useLocation } from "react-router";
+import { WorkspaceLink as Link } from "../../platform/navigation/WorkspaceLink";
 import { useAuth } from "../auth/store/authStore";
 import { API_BASE_URL, fetchApi } from "../../lib/api-client";
 import { useI18n } from "../../i18n";

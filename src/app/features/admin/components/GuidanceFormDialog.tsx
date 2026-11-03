@@ -4,13 +4,13 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { adminApi } from "../../admin/api/adminApi";
+import { adminApi } from "../api/adminApi";
 import { CloseIcon, SparklesIcon } from "../../../components/Icons";
 import { useI18n } from "../../../i18n";
 import type {
   CreateFeedbackInput,
   FeedbackPost,
-} from "../types";
+} from "../../professional-development/types";
 
 interface FormResourceItem {
   title: string;

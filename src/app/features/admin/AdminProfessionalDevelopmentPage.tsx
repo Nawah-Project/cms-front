@@ -13,8 +13,8 @@ import {
   timeTitle,
 } from "./components/AdminUI";
 import { TaskFormDialog } from "../professional-development/components/TaskFormDialog";
-import { FeedbackFormDialog } from "../professional-development/components/FeedbackFormDialog";
-import { GuidanceFormDialog } from "../professional-development/components/GuidanceFormDialog";
+import { FeedbackFormDialog } from "./components/FeedbackFormDialog";
+import { GuidanceFormDialog } from "./components/GuidanceFormDialog";
 import type {
   CreateTaskInput,
   FeedbackPost,

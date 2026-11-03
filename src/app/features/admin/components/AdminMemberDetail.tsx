@@ -18,7 +18,7 @@ import { AdminActivityList } from "./AdminActivityList";
 import { useI18n } from "../../../i18n";
 import { ProfessionalProfileActions } from "../../profile/MemberProfessionalCard";
 import { AdminMemberTasks } from "./AdminMemberTasks";
-import { FeedbackFormDialog } from "../../professional-development/components/FeedbackFormDialog";
+import { FeedbackFormDialog } from "./FeedbackFormDialog";
 
 export function AdminMemberDetail({
   member,

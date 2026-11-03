@@ -8,7 +8,9 @@ import type {
   TaskStatus,
   UpdateTaskInput,
 } from "../types";
-import type { AdminGroup, AdminMember } from "../../admin/api/adminApi";
+// Recipient view contracts belong to the task interface, not the admin API.
+type AdminMember = { id: string; name: string; group?: { name: string } | null };
+type AdminGroup = { id: string; name: string; memberCount: number };
 
 const PRIORITIES: TaskPriority[] = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 const STATUSES: TaskStatus[] = ["TODO", "IN_PROGRESS", "BLOCKED", "DONE"];

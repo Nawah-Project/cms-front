@@ -6,7 +6,7 @@ import {
   adminHomePath,
   adminSectionForPath,
   canAdminAccess,
-} from "./adminAccess";
+} from "../../platform/access/adminAccess";
 
 function getSectionMeta(pathname: string, locale: string) {
   const isAr = locale === "ar";

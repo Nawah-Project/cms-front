@@ -12,7 +12,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '../auth/store/authStore';
-import { canAdminAccess } from '../admin/adminAccess';
+import { canAdminAccess } from '../../platform/access/adminAccess';
 import { read, write, type Localized } from './api';
 import { Field, useText, useUnsaved, when } from './shared';
 import './roadmaps.css';

@@ -15,7 +15,7 @@ import type { Report } from "../../reports/pages/ReportsPage";
 import type {
   AdminPermissionMap,
   AdminSection,
-} from "../adminAccess";
+} from "../../../platform/access/adminAccess";
 
 export type AdminAccessAccount = {
   id: string;

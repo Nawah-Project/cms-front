@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CloseIcon } from "../../../components/Icons";
 import { useI18n } from "../../../i18n";
-import { adminApi } from "../../admin/api/adminApi";
 import { api } from "../../../services/api";
 import type { FeedbackPost } from "../types";
 import { FeedbackRichContent } from "./FeedbackRichContent";
@@ -17,11 +16,13 @@ import {
 export function FeedbackDetailModal({
   feedbackId,
   admin = false,
+  loadFeedback,
   onClose,
   onRead,
 }: {
   feedbackId: string | null;
   admin?: boolean;
+  loadFeedback?: (id: string) => Promise<FeedbackPost>;
   onClose: () => void;
   onRead?: (feedbackId: string) => void;
 }) {
@@ -39,7 +40,7 @@ export function FeedbackDetailModal({
     setError(false);
     try {
       let result = admin
-        ? await adminApi.feedback(feedbackId)
+        ? await (loadFeedback ? loadFeedback(feedbackId) : Promise.reject(new Error("An administrator loader is required")))
         : await api.getFeedbackItem(feedbackId);
       if (!admin && !result.isRead) {
         const read = await api.markFeedbackRead(feedbackId);
@@ -53,7 +54,7 @@ export function FeedbackDetailModal({
     } finally {
       setLoading(false);
     }
-  }, [admin, feedbackId, onRead]);
+  }, [admin, feedbackId, onRead, loadFeedback]);
 
   useEffect(() => {
     if (!feedbackId) return;

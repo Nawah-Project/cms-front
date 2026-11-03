@@ -5,7 +5,7 @@
   "scripts": {
     "build": "react-router build",
     "dev": "react-router dev",
-    "start": "node --import ./monitoring/instrumentation.mjs ./node_modules/.bin/react-router-serve ./build/server/index.js",
+    "start": "node --import ./monitoring/instrumentation.mjs ./server.mjs",
     "typecheck": "react-router typegen && tsc",
     "test:stabilization": "node --test scripts/stabilization-checks.mjs",
     "test:job-explorer": "node --test scripts/job-explorer-checks.mjs",
@@ -26,7 +26,10 @@
     "react-router": "^8.4.0",
     "recharts": "3.10.1",
     "zod": "^4.4.3",
-    "zustand": "^5.0.13"
+    "zustand": "^5.0.13",
+    "express": "5.2.1",
+    "compression": "1.8.2",
+    "@react-router/express": "8.4.0"
   },
   "devDependencies": {
     "@react-router/dev": "^8.4.0",

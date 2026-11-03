@@ -1,7 +1,8 @@
 import { ConsultingInvite } from "../features/career-consulting/ConsultingInvite";
 import { useSectionDesign } from "../features/ux-lab/SectionExperience";
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
+import { WorkspaceLink as Link } from "../platform/navigation/WorkspaceLink";
 import {
   ChevronDown,
   Eye,
@@ -25,7 +26,7 @@ import {
   adminHomePath,
   canAdminAccess,
   type AdminSection,
-} from "../features/admin/adminAccess";
+} from "../platform/access/adminAccess";
 
 type NavItem = {
   labelKey: string;
@@ -88,6 +89,7 @@ type AdminNavItem = {
 };
 
 const ADMIN_PRIMARY_ITEMS: AdminNavItem[] = [
+  { labelAr: "مساحة المؤسس", labelEn: "Founder workspace", to: "/admin/founder-workspace", icon: "admin-overview", section: "FOUNDER_WORKSPACE" },
   {labelAr:"الاستشارات المهنية",labelEn:"Career Consulting",to:"/admin/career-consulting",icon:"admin-mentoring",section:"CAREER_CONSULTING"},
   {
     labelAr: "نظرة عامة",

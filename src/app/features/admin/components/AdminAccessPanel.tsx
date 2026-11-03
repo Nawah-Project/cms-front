@@ -12,7 +12,7 @@ import {
   type AdminAccessLevel,
   type AdminPermissionMap,
   type AdminSection,
-} from "../adminAccess";
+} from "../../../platform/access/adminAccess";
 import { ErrorState, LoadingState } from "./AdminUI";
 
 const labels: Record<AdminSection, [string, string]> = {
@@ -22,6 +22,7 @@ const labels: Record<AdminSection, [string, string]> = {
   JOURNEY: ["هندسة الرحلة والحبكة", "Journey & plot engine"],
   REPORTS: ["معاينة تقارير الرحلة", "Journey report preview"],
   CAREER_CONSULTING: ["الاستشارات المهنية — الحالات والعمل الخاص", "Career Consulting — private cases & work"],
+  FOUNDER_WORKSPACE: ["مساحة المؤسس — الخطة والتعلّم والعمل", "Founder workspace — plans, learning & work"],
   UX_LAB: ["تحليلات التجربة والسلوك", "UX & behavior lab"],
   MARKETING: ["المركتنج ونمو الزيارات", "Marketing & acquisition"],
   OPERATIONS: ["العمليات والموارد التشغيلية", "Operations & resources"],

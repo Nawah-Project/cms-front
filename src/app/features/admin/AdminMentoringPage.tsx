@@ -4,7 +4,7 @@ import { useI18n } from "../../i18n";
 import { adminApi, type AdminGroup, type AdminMember } from "./api/adminApi";
 import { AdminMemberTasks } from "./components/AdminMemberTasks";
 import { MemberInspectorModal } from "./components/MemberInspectorModal";
-import { FeedbackFormDialog } from "../professional-development/components/FeedbackFormDialog";
+import { FeedbackFormDialog } from "./components/FeedbackFormDialog";
 import { TaskFormDialog } from "../professional-development/components/TaskFormDialog";
 import type {
   CreateTaskInput,

@@ -11,7 +11,7 @@ import {
 } from "./api/adminApi";
 import { AdminActivityList } from "./components/AdminActivityList";
 import { MemberInspectorModal } from "./components/MemberInspectorModal";
-import { FeedbackFormDialog } from "../professional-development/components/FeedbackFormDialog";
+import { FeedbackFormDialog } from "./components/FeedbackFormDialog";
 import { useI18n } from "../../i18n";
 import {
   AttentionReasonBadges,
