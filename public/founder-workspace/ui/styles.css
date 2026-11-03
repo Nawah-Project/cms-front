@@ -21,7 +21,7 @@
 .map-connections{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:#95ad88;stroke-width:1;pointer-events:none;z-index:0}.roadmap-grid>.cycle-node{z-index:1}.cycle-node:after{display:none!important}.capacity-settings{margin-top:18px}
 
 /* Integrated domain content: the administrator shell owns navigation and page scrolling. */
-:host{display:block;min-width:0;border-radius:16px;overflow:clip}
+:host{display:block;min-width:0;border-radius:16px;overflow:clip;font-family:inherit}
 .workspace{margin-inline-start:0!important;min-width:0}
 .workspace>.topbar{padding:16px 24px;min-height:64px}
 main{padding:24px!important}

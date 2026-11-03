@@ -30,3 +30,5 @@ flowchart TB
 The Backend remains one NestJS application. Domain ownership is independent of presentation placement. Future extraction must also address storage, identity contracts and deployment, rather than copying a folder or retaining duplicated navigation.
 
 The member gateway must route React Router 8 `/__manifest?paths=...` discovery batches to the admin runtime whenever they contain admin paths. Legacy repeated `p` remains supported. Browser verification should traverse the member gateway plus independent admin image, rather than checking only the admin origin.
+
+Integrated content inherits the administrator brand font. Shadow-local font-face declarations are not a reliable font registration boundary; relying on the local Plex family left Arabic glyphs unpainted in Chromium. The shell already registers and loads the shared Arabic/Latin family.
