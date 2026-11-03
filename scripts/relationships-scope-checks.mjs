@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {blank} from '../public/strategic-relationships/domain/model.mjs';
+import {record} from '../public/strategic-relationships/domain/records.mjs';
+import {networkView,networkResult,scopedPeople} from '../public/strategic-relationships/ui/render.mjs';
+test('a large personal network offers explicit scope selection without silently dropping records or calculating truncated metrics',()=>{const d=blank();for(let i=0;i<61;i++)d.people.push(record('people',{name:'Synthetic '+i,id:'p-'+i}));const before=JSON.stringify(d),state={language:'en',networkKind:'knows'};const html=networkView(d,state);assert.match(html,/data-action="network-scope"/);assert.match(html,/61 people/);assert.ok(!html.includes('metric-large'));assert.equal(JSON.stringify(d),before);state.networkIds=['p-0','p-1'];const n=networkResult(d,state);assert.equal(n.nodes.length,2);assert.equal(n.unknown,1);assert.equal(n.density,null);assert.equal(d.people.length,61);assert.equal(scopedPeople(d,state).length,2);});
