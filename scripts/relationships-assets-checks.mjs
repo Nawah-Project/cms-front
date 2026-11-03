@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {existsSync,readFileSync} from 'node:fs';import {resolve} from 'node:path';
+import {blank} from '../public/strategic-relationships/domain/model.mjs';
+import {shell} from '../public/strategic-relationships/ui/render.mjs';
+test('workspace branding resolves inside its independently served administrator asset directory',()=>{const base=new URL('https://nawah.example/strategic-relationships/index.html'),html=shell(blank(),{language:'ar',view:'today',today:'2026-11-03',navExpanded:true},'<p>Synthetic</p>');const images=[...html.matchAll(/<img[^>]+src="([^"]+)"/g)];assert.ok(images.length);for(const [,src]of images){const url=new URL(src,base);assert.ok(url.pathname.startsWith('/strategic-relationships/'));const file=resolve('public',url.pathname.slice(1));assert.ok(existsSync(file));assert.ok(readFileSync(file).length>0)}});
