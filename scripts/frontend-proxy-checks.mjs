@@ -4,8 +4,8 @@ import http from 'node:http';
 import { once } from 'node:events';
 import { isAdminRequest, proxyAdmin } from '../server/admin-proxy.mjs';
 test('admin paths, assets and route manifests are routed without catching member paths', () => {
-  for (const p of ['/admin', '/admin/ux-lab?view=map', '/admin-assets/assets/main.js', '/strategic-relationships/ui/app.mjs', '/strategic-relationships/config.json', '/founder-workspace/ui/app.mjs', '/__manifest?p=%2Fadmin%2Fjourney']) assert.ok(isAdminRequest(p), p);
-  for (const p of ['/', '/auth/login', '/career-consulting', '/applications', '/administer', '/__manifest?p=%2Fapplications']) assert.ok(!isAdminRequest(p), p);
+  for (const p of ['/admin', '/admin/ux-lab?view=map', '/admin-assets/assets/main.js', '/strategic-relationships/ui/app.mjs', '/strategic-relationships/config.json', '/founder-workspace/ui/app.mjs', '/__manifest?p=%2Fadmin%2Fjourney', '/__manifest?paths=%2Fadmin%2Fstrategic-relationships%2Fpeople%2C%2Fadmin%2Ffounder-workspace%2Ftoday&version=synthetic', '/__manifest?paths=%2Fprofile%2C%2Fadmin%2Fjourney']) assert.ok(isAdminRequest(p), p);
+  for (const p of ['/', '/auth/login', '/career-consulting', '/applications', '/administer', '/__manifest?p=%2Fapplications', '/__manifest?paths=%2Fapplications%2C%2Fprofile', '/__manifest?paths=%2Fadminister']) assert.ok(!isAdminRequest(p), p);
 });
 test('streaming proxy preserves paths, queries, credentials and response headers', async () => {
   const origin = http.createServer((req, res) => { assert.equal(req.url, '/admin/ux-lab?view=map'); assert.equal(req.headers.cookie, 'synthetic=qa'); res.setHeader('Cache-Control', 'private, no-store'); res.end('admin page'); });
