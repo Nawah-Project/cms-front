@@ -3,7 +3,9 @@ const adminPath = path => path === '/admin' || path.startsWith('/admin/') || pat
 export function isAdminRequest(value) {
   const url = new URL(value, 'http://local');
   if (adminPath(url.pathname)) return true;
-  return url.pathname === '/__manifest' && url.searchParams.getAll('p').some(adminPath);
+  // React Router 8 uses comma-separated `paths`; retain legacy repeated `p`.
+  const paths = [...url.searchParams.getAll('p'), ...url.searchParams.getAll('paths').flatMap(value => value.split(','))];
+  return url.pathname === '/__manifest' && paths.some(adminPath);
 }
 const hop = new Set(['connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailer', 'transfer-encoding', 'upgrade']);
 export function proxyAdmin(req, res, origin) {
