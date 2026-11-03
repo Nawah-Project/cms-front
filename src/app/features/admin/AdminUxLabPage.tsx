@@ -33,11 +33,11 @@ import {
 import type { SectionId } from "../ux-lab/SectionExperience";
 import { JourneyTopologyCanvas } from "./components/JourneyTopologyCanvas";
 import { MemberInspectorModal } from "./components/MemberInspectorModal";
-import { FeedbackFormDialog } from "../professional-development/components/FeedbackFormDialog";
+import { FeedbackFormDialog } from "./components/FeedbackFormDialog";
 import { UxResearchGuide } from "./journey-observatory/UxResearchGuide";
 import "./ux-lab.css";
 import { useAuth } from "../auth/store/authStore";
-import { canAdminAccess } from "./adminAccess";
+import { canAdminAccess } from "../../platform/access/adminAccess";
 
 function labError(error: unknown, ar: boolean) {
   const message = error instanceof Error ? error.message : "";

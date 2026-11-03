@@ -17,6 +17,7 @@ import { AuthProvider } from "./features/auth/store/authStore";
 import { I18nProvider } from "./i18n";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { queryClient } from "./lib/react-query";
+import { CrossAppNavigation } from "./platform/navigation/WorkspaceLink";
 import { MarketingTracker } from "./utils/MarketingTracker";
 
 export const links: Route.LinksFunction = () => [
@@ -37,6 +38,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body data-brand-scope={pathname.startsWith("/admin") ? "admin" : "user"}>
+        <CrossAppNavigation />
         {children}
         <ScrollRestoration />
         <Scripts />

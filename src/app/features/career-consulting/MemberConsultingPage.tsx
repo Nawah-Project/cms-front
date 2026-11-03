@@ -1,4 +1,5 @@
-import { Link } from "react-router";
+
+import { WorkspaceLink as Link } from "../../platform/navigation/WorkspaceLink";
 import { useI18n } from "../../i18n";
 import { EmailVerificationGate } from "../auth/components/EmailVerificationGate";
 import { ProtectedRoute } from "../auth/components/ProtectedRoute";

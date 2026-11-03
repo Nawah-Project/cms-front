@@ -3,7 +3,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { Counter, Gauge, Histogram, Registry, collectDefaultMetrics } from '@prometheus-io/client';
 
 const registry = new Registry();
-registry.setDefaultLabels({ environment: process.env.OBSERVABILITY_ENV ?? 'unknown', service: 'frontend' });
+registry.setDefaultLabels({ environment: process.env.OBSERVABILITY_ENV ?? 'unknown', service: process.env.NAWAH_FRONTEND_APP === 'admin' ? 'admin-frontend' : 'frontend' });
 collectDefaultMetrics({ register: registry, prefix: 'nawah_' });
 const requests = new Counter({ name: 'http_requests_total', help: 'Completed frontend HTTP requests by normalized route, method, and status code.', labelNames: ['route', 'method', 'status_code'], registers: [registry] });
 const duration = new Histogram({ name: 'http_request_duration_seconds', help: 'Frontend HTTP request duration in seconds by normalized route, method, and status code.', labelNames: ['route', 'method', 'status_code'], buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10], registers: [registry] });

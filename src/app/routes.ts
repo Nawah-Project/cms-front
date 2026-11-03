@@ -5,7 +5,9 @@ import {
   route,
 } from "@react-router/dev/routes";
 
-export default [
+// Combined mode is for development/type generation; production images are separate.
+const target = process.env.NAWAH_FRONTEND_APP || "combined";
+const memberRoutes: RouteConfig = [
   route("__design-system", "design-system/workshop/DesignSystemPage.tsx"),
   route("auth/login", "features/auth/pages/LoginPage.tsx"),
   route("auth/register", "features/auth/pages/RegisterPage.tsx"),
@@ -33,8 +35,15 @@ export default [
     ),
     route("profile", "features/auth/pages/ProfilePage.tsx"),
     route("applications/:id", "routes/application-details.tsx"),
+
+  ]),
+];
+const adminRoutes: RouteConfig = [
+  route("admin/founder-workspace", "features/founder-workspace/FounderWorkspacePage.tsx"),
+  layout("routes/admin-shell.tsx", [
     route("admin", "features/admin/AdminLayout.tsx", [
       index("features/admin/AdminOverviewPage.tsx"),
+      route("feedback", "features/admin/feedback/AdminFeedbackPage.tsx"),
       route("community", "features/admin/AdminCommunityPage.tsx"),
       route("mentoring", "features/admin/AdminMentoringPage.tsx"),
       route("journey", "features/admin/AdminJourneyEnginePage.tsx"),
@@ -57,4 +66,5 @@ export default [
       ),
     ]),
   ]),
-] satisfies RouteConfig;
+];
+export default [...(target !== "admin" ? memberRoutes : []), ...(target !== "member" ? adminRoutes : [])] satisfies RouteConfig;

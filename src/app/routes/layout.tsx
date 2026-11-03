@@ -1,4 +1,4 @@
-import { OperationsPerformanceObserver } from "../features/admin/operations/OperationsPerformanceObserver";
+import { OperationsPerformanceObserver } from "../platform/telemetry/OperationsPerformanceObserver";
 import { useAuth } from "../features/auth/store/authStore";
 import {
   SectionExperienceProvider,
