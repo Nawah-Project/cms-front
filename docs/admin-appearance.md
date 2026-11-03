@@ -12,7 +12,7 @@ A constant pre-paint bootstrap checks the exact route and preference whitelist. 
 
 ## Validation and limits
 
-`node --test scripts/founder-appearance-checks.mjs` checks normal-text role pairs at 4.5:1, controls/focus/connectors at 3:1, preference whitelisting and isolated bootstrap behavior. These checks cover selected palette pairs, not a claim of complete WCAG conformance. Browser QA uses synthetic data and verifies all five Founder views, open drafts, refresh, blocked storage, cross-tab and system changes, Arabic/English, phone/tablet/desktop, native form colors and the absence of night styling outside Founder.
+`node --test scripts/founder-appearance-checks.mjs` checks normal-text role pairs at 4.5:1, controls/focus/connectors at 3:1, preference whitelisting and isolated bootstrap behavior. These checks cover selected palette pairs, not a claim of complete WCAG conformance. `scripts/qa/founder-appearance.cjs` is the reproducible browser harness (`QA_WEB`, `PLAYWRIGHT_MODULE`, `SOURCE_ROOT` and `QA_OUTPUT` select the disposable runtime, browser tools, fixtures and evidence directory). Browser QA uses synthetic data and verifies all five Founder views, open drafts, refresh, blocked storage, cross-tab and system changes, Arabic/English, phone/tablet/desktop, native form colors and the absence of night styling outside Founder.
 
 Reference: [WCAG text contrast](https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html), [native control color-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/color-scheme).
 
