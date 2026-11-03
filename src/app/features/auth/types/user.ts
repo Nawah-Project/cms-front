@@ -20,6 +20,7 @@ export interface User {
         | "UX_LAB"
         | "CAREER_CONSULTING"
         | "FOUNDER_WORKSPACE"
+        | "STRATEGIC_RELATIONSHIPS"
         | "MARKETING"
         | "OPERATIONS",
         "READ" | "WRITE"

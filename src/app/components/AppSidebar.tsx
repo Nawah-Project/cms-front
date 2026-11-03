@@ -89,6 +89,7 @@ type AdminNavItem = {
 };
 
 const ADMIN_PRIMARY_ITEMS: AdminNavItem[] = [
+  { labelAr:"إدارة العلاقات الاستراتيجية",labelEn:"Strategic relationships",to:"/admin/strategic-relationships",icon:"admin-community",section:"STRATEGIC_RELATIONSHIPS" },
   { labelAr: "مساحة المؤسس", labelEn: "Founder workspace", to: "/admin/founder-workspace", icon: "admin-overview", section: "FOUNDER_WORKSPACE" },
   {labelAr:"الاستشارات المهنية",labelEn:"Career Consulting",to:"/admin/career-consulting",icon:"admin-mentoring",section:"CAREER_CONSULTING"},
   {

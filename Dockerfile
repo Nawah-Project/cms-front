@@ -16,7 +16,7 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 COPY . /app/
 COPY --from=development-dependencies-env /app/node_modules /app/node_modules
 WORKDIR /app
-RUN if [ "$NAWAH_FRONTEND_APP" = "member" ]; then rm -rf public/founder-workspace src/app/features/admin; fi
+RUN if [ "$NAWAH_FRONTEND_APP" = "member" ]; then rm -rf public/founder-workspace public/strategic-relationships src/app/features/admin src/app/features/strategic-relationships; fi
 RUN npm run test:job-explorer && npm run build && node scripts/check-frontend-bundle.mjs
 
 FROM node:24.22.2-alpine@sha256:4eefa1bfce4197942661ef9148247d779ddf1bb0ee006d3294a467609de60724

@@ -22,10 +22,19 @@ if (target === 'admin') {
     res.setHeader('Content-Security-Policy', `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' ${origin}; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'`);
     next();
   });
+  app.get('/strategic-relationships/config.json', (_req, res) => { res.setHeader('Cache-Control', 'private, no-store'); res.json({ apiUrl: process.env.VITE_API_URL }); });
+  app.use('/strategic-relationships', (_req, res, next) => {
+    const origin = new URL(process.env.VITE_API_URL).origin;
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' ${origin}; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'`);
+    next();
+  });
 }
 const assetsBase = target === 'admin' ? '/admin-assets' : '';
 app.use(assetsBase + '/assets', express.static(path.join(root, 'build/client/assets'), { immutable: true, maxAge: '1y' }));
-app.use(assetsBase || '/', express.static(path.join(root, 'build/client'), { maxAge: '1h', setHeaders(res, file) { if (file.includes('/founder-workspace/')) res.setHeader('Cache-Control', 'no-store'); } }));
+app.use(assetsBase || '/', express.static(path.join(root, 'build/client'), { maxAge: '1h', setHeaders(res, file) { if (file.includes('/founder-workspace/') || file.includes('/strategic-relationships/')) res.setHeader('Cache-Control', 'no-store'); } }));
 // Public shared media retain their original URLs on both frontends.
 if (target === 'admin') app.use(express.static(path.join(root, 'build/client'), { maxAge: '1h' }));
 const build = await import('./build/server/index.js');

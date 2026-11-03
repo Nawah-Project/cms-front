@@ -9,6 +9,7 @@ export const ADMIN_SECTIONS = [
   "UX_LAB",
   "CAREER_CONSULTING",
   "FOUNDER_WORKSPACE",
+  "STRATEGIC_RELATIONSHIPS",
   "MARKETING",
   "OPERATIONS",
 ] as const;
@@ -38,6 +39,7 @@ export function adminSectionForPath(pathname: string): AdminSection {
   if (pathname.startsWith("/admin/career-consulting")) return "CAREER_CONSULTING";
   if (pathname.startsWith("/admin/marketing")) return "MARKETING";
   if (pathname.startsWith("/admin/operations")) return "OPERATIONS";
+  if (pathname.startsWith("/admin/strategic-relationships")) return "STRATEGIC_RELATIONSHIPS";
   if (pathname.startsWith("/admin/founder-workspace")) return "FOUNDER_WORKSPACE";
   return "OVERVIEW";
 }
@@ -51,6 +53,7 @@ const SECTION_PATH: Record<AdminSection, string> = {
   UX_LAB: "/admin/ux-lab",
   CAREER_CONSULTING: "/admin/career-consulting",
   FOUNDER_WORKSPACE: "/admin/founder-workspace",
+  STRATEGIC_RELATIONSHIPS: "/admin/strategic-relationships",
   MARKETING: "/admin/marketing",
   OPERATIONS: "/admin/operations",
 };
