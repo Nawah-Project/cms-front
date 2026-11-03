@@ -126,8 +126,8 @@ export default function AdminLayout() {
         !location.pathname.startsWith("/admin/strategic-relationships") &&
         !location.pathname.startsWith("/admin/founder-workspace") &&
         !location.pathname.startsWith("/admin/career-consulting") && (
-          <header className="border-b border-border/80 pb-4 dark:border-neutral-800">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+          <header className="n-page-header">
+            <div className="flex w-full flex-wrap items-center justify-between gap-3">
               <div>
                 <nav
                   aria-label="Breadcrumb"

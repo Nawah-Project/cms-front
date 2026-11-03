@@ -35,3 +35,10 @@ dialog{padding:0;border:1px solid #d6e1ce;border-radius:17px;width:min(1020px,ca
 main{padding:24px!important}
 .footer{margin-inline-start:0!important}
 @media(max-width:760px){main{padding:16px!important}.workspace>.topbar{padding:12px 16px;gap:12px}.top-actions{flex-wrap:wrap}.page-head h1{font-size:26px}}
+
+/* Daytime administrator identity; this domain has no night-mode opt-in. */
+:host{--ink:var(--n-ink,#183b37);--deep:var(--n-deep,#103c32);--green:var(--n-green,#125e4e);--lime:var(--n-gold-inverse,#f5d99e);--paper:var(--n-canvas,#f4f4ed);--white:var(--n-paper,#fff);--muted:var(--n-muted,#5c6d69);--line:var(--n-line,#d4dfda);--soft:var(--n-green-soft,#edf4ef);--map:var(--n-map-ground,#e9f0ee);--warn:var(--n-gold-ink,#725019);--warn-bg:var(--n-gold-soft,#fbf4e5);--danger:var(--n-danger,#963b36)}
+.button.primary{background:var(--n-action,#125e4e);color:var(--n-on-brand,#fff);border-color:var(--n-action-border,#125e4e)}
+.button.primary:hover{background:var(--n-action-hover,#0d493d)}
+input:not([type=checkbox]):not([type=radio]),select,textarea{border-color:var(--n-control-line,#7c9389)}
+:focus-visible{outline-color:var(--n-blue,#174c87)}

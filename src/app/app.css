@@ -6,7 +6,7 @@ html {
   font-size: clamp(16px, calc(15px + 0.105vw), 17px);
 }
 
-/* This product uses a light workspace theme regardless of the OS preference. */
+/* Existing utility dark variants remain available; Founder appearance uses scoped semantic tokens. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {

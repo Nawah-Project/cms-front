@@ -1,5 +1,5 @@
-/* One source for member UI roles and their interaction states. */
-body[data-brand-scope="user"] {
+/* Shared daytime brand roles for member and administrator interfaces. */
+body:is([data-brand-scope="user"],[data-brand-scope="admin"]) {
   --n-green: #125e4e;
   --n-green-hover: #0d493d;
   --n-green-pressed: #09382f;
@@ -92,7 +92,7 @@ body[data-brand-scope="user"] {
   color: var(--n-ink);
 }
 /* The legacy workspace declares local tokens. Resolve them to the same roles. */
-body[data-brand-scope="user"] .workspace-shell {
+body:is([data-brand-scope="user"],[data-brand-scope="admin"]) .workspace-shell {
   --color-text-primary: var(--n-ink);
   --color-text-secondary: var(--n-muted);
   --color-text-muted: var(--n-muted);

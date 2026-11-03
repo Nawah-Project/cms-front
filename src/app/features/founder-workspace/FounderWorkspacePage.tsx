@@ -1,2 +1,3 @@
 import { IntegratedWorkspace } from '../../platform/workspaces/IntegratedWorkspace';
-export default function FounderWorkspacePage() { return <IntegratedWorkspace name="founder-workspace" />; }
+import { FounderAppearance } from './appearance/FounderAppearance';
+export default function FounderWorkspacePage() { return <FounderAppearance><IntegratedWorkspace name="founder-workspace" /></FounderAppearance>; }
