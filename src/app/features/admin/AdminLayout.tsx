@@ -123,6 +123,8 @@ export default function AdminLayout() {
   return (
     <section className="space-y-6">
       {!location.pathname.startsWith("/admin/ux-lab") &&
+        !location.pathname.startsWith("/admin/strategic-relationships") &&
+        !location.pathname.startsWith("/admin/founder-workspace") &&
         !location.pathname.startsWith("/admin/career-consulting") && (
           <header className="border-b border-border/80 pb-4 dark:border-neutral-800">
             <div className="flex flex-wrap items-center justify-between gap-3">

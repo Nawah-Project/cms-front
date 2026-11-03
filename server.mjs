@@ -13,6 +13,9 @@ const app = express(); app.disable('x-powered-by'); app.use(compression());
 app.get('/__frontend-health', (_req, res) => res.json({ status: 'ok', target }));
 if (target === 'member') app.use((req, res, next) => isAdminRequest(req.originalUrl) ? proxyAdmin(req, res, process.env.ADMIN_FRONTEND_ORIGIN || 'http://admin:3000') : next());
 if (target === 'admin') {
+  for (const domain of ['founder-workspace', 'strategic-relationships']) {
+    app.get([`/${domain}`, `/${domain}/`, `/${domain}/index.html`], (_req, res) => res.redirect(302, `/admin/${domain}`));
+  }
   app.get('/founder-workspace/config.json', (_req, res) => { res.setHeader('Cache-Control', 'private, no-store'); res.json({ apiUrl: process.env.VITE_API_URL }); });
   app.use('/founder-workspace', (_req, res, next) => {
     const origin = new URL(process.env.VITE_API_URL).origin;

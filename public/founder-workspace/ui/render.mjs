@@ -35,24 +35,16 @@ export function taskRow(d, s, task) {
     <div class="task-meta"><span>${number(task.hours)} ${tr(s, 'س', 'h')}</span>${badge(STATUS_LABELS[task.status][s.language === 'en' ? 1 : 0], task.status)}</div>
   </article>`;
 }
-const NAV = [['overview', 'map', 'الصورة الكبيرة', 'The big picture'], ['loop', 'loop', 'حلقة الممارسة', 'Practice loop'], ['timeline', 'calendar', 'الجدول الزمني', 'Timeline'], ['today', 'today', 'اليوم والدورة', 'Today & cycle'], ['review', 'book', 'المراجعة والأدلة', 'Reviews & evidence']];
+
 export function shell(d, s) {
-  const cycle = cycleOf(d, s);
-  return `<aside class="sidebar" aria-label="${tr(s, 'تنقل مساحة المؤسس', 'Founder workspace navigation')}">
-    <a class="brand" href="#overview"><img src="assets/nawah-logo.svg" alt=""><span>نواة <small>NAWAH · FOUNDER WORKSPACE</small></span></a>
-    <div class="workspace-name">${tr(s, 'مساحة المؤسس', 'Founder workspace')}<span>${tr(s, 'من الممارسة إلى أثر أكبر', 'From practice to greater impact')}</span></div>
-    <div class="nav-caption">${tr(s, 'مساحة العمل', 'WORKSPACE')}</div>
-    <nav>${NAV.map(n => `<button type="button" class="nav-item ${s.view === n[0] ? 'active' : ''}" data-action="view" data-view="${n[0]}" ${s.view === n[0] ? 'aria-current="page"' : ''}>${icon(n[1])}<span>${tr(s, n[2], n[3])}</span>${s.view === n[0] ? '<span class="nav-dot"></span>' : ''}</button>`).join('')}</nav>
-    <div class="sidebar-cycle"><span class="eyebrow">${tr(s, 'الدورة التي تعمل عليها', 'YOUR CURRENT CYCLE')}</span><strong>${tr(s, 'الدورة', 'Cycle')} ${d.cycles.find(c => c.id === d.settings.currentCycleId)?.number || 1} <span>/ 24</span></strong><span>${h(label(s, d.cycles.find(c => c.id === d.settings.currentCycleId) || cycle))}</span><div class="mini-line"></div><small>${tr(s, 'دليل صغير كل مرة. معرفة تتراكم.', 'Small evidence. Compounding knowledge.')}</small></div>
-    <div class="sidebar-bottom">${button('architecture', tr(s, 'كيف تتصل الأجزاء؟', 'How do the parts connect?'), 'layers', 'sidebar-link')}${button('consulting', tr(s, 'مسار الاستشارة الموازي', 'Parallel consulting path'), 'book', 'sidebar-link')}<div class="preview-label"><span></span>${tr(s, 'مساحة خاصة · محفوظة في حسابك', 'Private workspace · account storage')}</div></div>
-  </aside>
-  <div class="workspace">
-    <header class="topbar"><div class="breadcrumbs">${tr(s, 'نواة', 'Nawah')} <span>/</span> <strong>${tr(s, 'مساحة المؤسس', 'Founder workspace')}</strong>${badge(tr(s, 'مساحتي', 'MY WORKSPACE'), 'preview')}</div><div class="top-actions"><a class="button quiet" href="/admin" target="_top">${icon('arrow')}${tr(s, 'الإدارة', 'Admin')}</a>${button('language', s.language === 'en' ? 'العربية' : 'EN', '', 'quiet', 'aria-label="Change language / تغيير اللغة"')}${button('export', tr(s, 'تصدير', 'Export'), 'download', 'quiet')}${button('import', tr(s, 'استيراد', 'Import'), 'upload', 'quiet')}${button('settings', tr(s, 'الإعدادات', 'Settings'), 'settings', 'quiet')}</div></header>
+  return `<div class="workspace">
+    <header class="topbar"><div class="breadcrumbs">${tr(s, 'نواة', 'Nawah')} <span>/</span> <strong>${tr(s, 'مساحة المؤسس', 'Founder workspace')}</strong>${badge(tr(s, 'مساحتي', 'MY WORKSPACE'), 'preview')}</div><div class="top-actions">${button('export', tr(s, 'تصدير', 'Export'), 'download', 'quiet')}${button('import', tr(s, 'استيراد', 'Import'), 'upload', 'quiet')}${button('settings', tr(s, 'الإعدادات', 'Settings'), 'settings', 'quiet')}</div></header>
     ${s.storageProblem ? `<div class="notice error">${h(s.storageProblem)} ${button('export', tr(s, 'تصدير النسخة الحالية', 'Export current copy'), 'download', 'small')}</div>` : ''}
     ${s.conflict ? `<div class="notice warning" role="alert">${tr(s, 'هناك نسخة أحدث في نافذة أخرى. مسودتك محفوظة في النافذة الحالية؛ صدّرها أو حمّل آخر نسخة قبل الحفظ.', 'A newer version exists in another tab. Your current draft is preserved; export it or load the latest version before saving.')} ${button('reload-data', tr(s, 'تحميل آخر نسخة', 'Load latest version'), '', 'small')}${button('export', tr(s, 'تصدير نسختي', 'Export my copy'), 'download', 'small')}</div>` : ''}
     <main id="main" tabindex="-1">${content(d, s)}</main>
-    <footer class="footer"><span>${icon('shield')}${tr(s, 'الحفظ في حسابك على السيرفر', 'Saved to your account on the server')} <b>·</b> ${tr(s, 'لا اتصال ببيانات المشاركين', 'No participant data connection')}</span><span>${s.readOnly ? tr(s, 'معاينة القراءة فقط', 'Read-only simulation') : tr(s, 'قابل للتعديل', 'Editable')} <b>·</b> Africa/Cairo</span></footer>
+    <footer class="footer"><span>${icon('shield')}${tr(s, 'الحفظ في حسابك على السيرفر', 'Saved to your account on the server')} <b>·</b> ${tr(s, 'لا اتصال ببيانات المشاركين', 'No participant data connection')}</span><span>${s.readOnly ? tr(s, 'للقراءة فقط', 'Read only') : tr(s, 'قابل للتعديل', 'Editable')} <b>·</b> Africa/Cairo</span></footer>
   </div>`;
+
 }
 export function content(d, s) {
   if (s.view === 'timeline') return timeline(d, s);

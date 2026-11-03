@@ -4,12 +4,15 @@ import { ApiRepository } from '../infrastructure/api-repository.mjs';
 import { Workspace } from '../application/workspace.mjs';
 import { shell, h, tr, label, dateLabel, icon, button, option, cycleOf, consultingContent, architectureContent, warningText, timelineRange } from './render.mjs';
 
+export async function mountWorkspace(environment) {
+const {document,window,location,history,fetch,setTimeout,clearTimeout}=environment;
+function createRepository(url) { const repository=new ApiRepository(url,fetch);environment.onDispose(()=>repository.channel?.close());return repository; }
 const app = document.getElementById('app'), dialog = document.getElementById('editor'), notifications = document.getElementById('notifications');
 const config = await fetch(new URL('../config.json', import.meta.url), { cache: 'no-store' }).then(r => { if (!r.ok) throw new Error('Workspace configuration unavailable'); return r.json(); });
-const repository = new ApiRepository(config.apiUrl), workspace = new Workspace(repository, () => copy(repository.template || createSeed()));
+const repository = createRepository(config.apiUrl), workspace = new Workspace(repository, () => copy(repository.template || createSeed()));
 const viewNames = ['overview', 'loop', 'timeline', 'today', 'review'];
 const initialView = location.hash.slice(1);
-const state = { language: new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'ar', view: viewNames.includes(initialView) ? initialView : 'overview', cycleId: 'cycle-1', horizon: 6, today: localToday(), selectedDay: localToday(), span: 15, timelineAnchor: '', kindFilter: '', taskScope: 'day', collapsed: new Set(), loopStep: 0, readOnly: false, conflict: false, storageProblem: '' };
+const state = { language: new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'ar', integrated: true, view: viewNames.includes(initialView) ? initialView : 'overview', cycleId: 'cycle-1', horizon: 6, today: localToday(), selectedDay: localToday(), span: 15, timelineAnchor: '', kindFilter: '', taskScope: 'day', collapsed: new Set(), loopStep: 0, readOnly: false, conflict: false, storageProblem: '' };
 let editorState = null, pendingImport = null;
 try { await workspace.load(); state.cycleId = workspace.document.settings.currentCycleId; state.readOnly = !repository.canWrite; workspace.readOnly = state.readOnly; }
 catch (error) {
@@ -42,9 +45,9 @@ const errorMessages = {
   EVIDENCE_REQUIRED: ['اربط دليلًا قبل اعتبار المستوى مدعومًا بأدلة.', 'Link evidence before marking the level as supported.'],
   RECURRENCE: ['التكرار بحد أقصى 180 يومًا و100 مرة، وتاريخ النهاية بعد البداية.', 'Recurrence is limited to 180 days and 100 occurrences; its end must follow its start.'],
   SPLIT: ['اختر جهدًا للجزء الجديد أكبر من صفر وأقل من جهد المهمة.', 'New-part effort must be positive and less than the original task effort.'],
-  READ_ONLY: ['الكتابة غير متاحة بهذه الصلاحية أو أثناء محاكاة القراءة.', 'Read-only simulation is enabled. Disable it in settings to edit.'],
+  READ_ONLY: ['صلاحيتك للقراءة فقط؛ لا يمكن تعديل الخطة.', 'Your permission is read-only; the plan cannot be edited.'],
   CONFLICT: ['هناك نسخة أحدث. مسودتك لم تُفقد. صدّر مسودة النموذج ثم أغلقه وحمّل آخر نسخة.', 'A newer version exists. Your draft is preserved. Export this form draft, then close and load the latest copy.'],
-  STORAGE_READ: ['تعذر تحميل بيانات السيرفر. لم نكتب فوقها.', 'Local storage could not be read; it was not overwritten.'],
+  STORAGE_READ: ['تعذر تحميل بيانات السيرفر. لم نكتب فوقها.', 'Server data could not be loaded; nothing was overwritten.'],
   STORAGE_WRITE: ['تعذر تأكيد الحفظ على السيرفر. مسودتك ما زالت مفتوحة؛ حاول مرة أخرى أو صدّرها قبل الإغلاق.', 'Server save could not be confirmed. Your draft remains open; retry or export it before closing.'],
   IMPORT_SIZE: ['الملف أكبر من حد الاستيراد: 4 ميجابايت.', 'Import file exceeds the 4 MB limit.'],
 };
@@ -56,7 +59,7 @@ function showError(error) {
   else notify(message);
 }
 async function transact(name, change) { try { await workspace.transact(name, change); state.storageProblem = ''; render(); return true; } catch (error) { showError(error); return false; } }
-function changeView(view) { state.view = view; history.replaceState(null, '', `#${view}`); render(true); window.scrollTo({ top: 0, behavior: 'instant' }); }
+function changeView(view) { if (viewNames.includes(view)) environment.onNavigate(view); }
 function canEdit() { if (state.readOnly) { showError({ code: 'READ_ONLY' }); return false; } return true; }
 function download(text, name, type = 'application/json') {
   const blob = new Blob([text], { type }), url = URL.createObjectURL(blob), a = document.createElement('a');
@@ -120,7 +123,7 @@ function reviewEditor(id = '') {
 }
 function settingsEditor() {
   const days = state.language === 'en' ? ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] : ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-  dialogOpen(tr(state, 'السعة والإعدادات', 'Capacity & settings'), `<form data-form="settings">${formError}<p class="dialog-intro">${tr(state, 'المرجع 35–45 ساعة أسبوعيًا. عدّل السعة حسب واقعك، ويظل التزامن في التواريخ مسموحًا.', 'Reference capacity is 35–45 hours weekly. Adjust to your circumstances; overlapping date windows remain allowed.')}</p>${button('manage-lanes', tr(state, 'تنظيم أسماء وألوان المسارات', 'Manage track names & colors'), 'layers', 'small')}<div class="capacity-settings">${days.map((day, i) => field(day, input(`day-${i}`, doc().settings.dayHours[i], 'number', 'required min="0" max="16" step="0.5"'))).join('')}</div><div class="small-note">${tr(state, 'كل المواعيد المعروضة بتوقيت القاهرة. هذه السعة محفوظة مع خطتك في حسابك.', 'All displayed appointments use Cairo time. Capacity is saved with the plan in your account.')}</div><label class="checkbox-label"><input name="readOnly" type="checkbox" ${state.readOnly ? 'checked' : ''}>${tr(state, 'محاكاة القراءة فقط داخل المعاينة', 'Simulate read-only preview')}</label><p class="form-hint">${tr(state, 'الصلاحية الفعلية يفحصها السيرفر عند كل طلب. المحاكاة لا تمنح صلاحية كتابة.', 'The server checks actual permission on every request. Simulation cannot grant write access.')}</p><div class="form-actions">${button('close-dialog', tr(state, 'إلغاء', 'Cancel'))}<button type="submit" class="button primary">${tr(state, 'تطبيق الإعدادات', 'Apply settings')}</button></div></form>`, 'settings');
+  dialogOpen(tr(state, 'السعة والإعدادات', 'Capacity & settings'), `<form data-form="settings">${formError}<p class="dialog-intro">${tr(state, 'المرجع 35–45 ساعة أسبوعيًا. عدّل السعة حسب واقعك، ويظل التزامن في التواريخ مسموحًا.', 'Reference capacity is 35–45 hours weekly. Adjust to your circumstances; overlapping date windows remain allowed.')}</p>${button('manage-lanes', tr(state, 'تنظيم أسماء وألوان المسارات', 'Manage track names & colors'), 'layers', 'small')}<div class="capacity-settings">${days.map((day, i) => field(day, input(`day-${i}`, doc().settings.dayHours[i], 'number', 'required min="0" max="16" step="0.5"'))).join('')}</div><div class="small-note">${tr(state, 'كل المواعيد المعروضة بتوقيت القاهرة. هذه السعة محفوظة مع خطتك في حسابك.', 'All displayed appointments use Cairo time. Capacity is saved with the plan in your account.')}</div><div class="form-actions">${button('close-dialog', tr(state, 'إلغاء', 'Cancel'))}<button type="submit" class="button primary">${tr(state, 'تطبيق الإعدادات', 'Apply settings')}</button></div></form>`, 'settings');
 }
 function cycleEditor() {
   const c = cycleOf(doc(), state);
@@ -164,7 +167,7 @@ function splitDialog(id) {
 }
 function importDialog(data) {
   pendingImport = data;
-  dialogOpen(tr(state, 'مراجعة استيراد الخطة', 'Review plan import'), `<div class="form-error" role="alert" tabindex="-1" hidden></div><p>${tr(state, 'تم التحقق من بنية الملف وروابطه الداخلية. الاستيراد يستبدل بيانات هذه المعاينة المحلية فقط.', 'The file structure and internal references were validated. Import replaces only this local preview data.')}</p><div class="import-summary"><strong>${h(data.title)}</strong><span>${data.cycles.length} ${tr(state, 'دورة', 'cycles')} · ${data.tasks.length} ${tr(state, 'مهمة', 'tasks')} · ${data.evidence.length} ${tr(state, 'دليل', 'evidence items')}</span></div><p class="small-note">${tr(state, 'صدّر الخطة الحالية أولًا إذا كنت تريد الاحتفاظ بنسخة منها.', 'Export the current plan first if you want to keep a copy.')}</p><div class="form-actions">${button('export', tr(state, 'تصدير الحالية', 'Export current'), 'download')}${button('apply-import', tr(state, 'استيراد هذه النسخة', 'Import this version'), 'upload', 'primary', state.readOnly ? 'disabled' : '')}</div>`, 'import');
+  dialogOpen(tr(state, 'مراجعة استيراد الخطة', 'Review plan import'), `<div class="form-error" role="alert" tabindex="-1" hidden></div><p>${tr(state, 'تم التحقق من بنية الملف وروابطه الداخلية. الاستيراد يستبدل خطة المؤسس الحالية المحفوظة في حسابك على السيرفر بعد التأكيد. لا يغيّر بيانات الأقسام الأخرى.', 'The file structure and internal references were validated. After confirmation, import replaces your current Founder plan saved on the server. Other domains are unchanged.')}</p><div class="import-summary"><strong>${h(data.title)}</strong><span>${data.cycles.length} ${tr(state, 'دورة', 'cycles')} · ${data.tasks.length} ${tr(state, 'مهمة', 'tasks')} · ${data.evidence.length} ${tr(state, 'دليل', 'evidence items')}</span></div><p class="small-note">${tr(state, 'صدّر الخطة الحالية أولًا إذا كنت تريد الاحتفاظ بنسخة منها.', 'Export the current plan first if you want to keep a copy.')}</p><div class="form-actions">${button('export', tr(state, 'تصدير الحالية', 'Export current'), 'download')}${button('apply-import', tr(state, 'استيراد هذه النسخة', 'Import this version'), 'upload', 'primary', state.readOnly ? 'disabled' : '')}</div>`, 'import');
 }
 
 async function handleAction(event) {
@@ -249,9 +252,9 @@ dialog.addEventListener('submit', async event => {
   event.preventDefault(); const form = event.target, type = form.dataset.form, data = new FormData(form), v = name => String(data.get(name) || '');
   const snapshot = editorState;
   if (type === 'settings') {
-    const readOnly = data.has('readOnly');
+    const readOnly = !repository.canWrite;
     if (!state.readOnly && !await transact('Update weekly capacity', d => { d.settings.dayHours = Array.from({ length: 7 }, (_, i) => Number(v(`day-${i}`))); })) return;
-    state.readOnly = readOnly || !repository.canWrite; workspace.readOnly = state.readOnly; closeDialog(true); render(); notify(tr(state, readOnly ? 'تم تشغيل محاكاة القراءة فقط.' : 'تم تطبيق الإعدادات.', readOnly ? 'Read-only simulation enabled.' : 'Settings applied.')); return;
+    state.readOnly = readOnly || !repository.canWrite; workspace.readOnly = state.readOnly; closeDialog(true); render(); notify(tr(state, 'تم تطبيق الإعدادات.', 'Settings applied.')); return;
   }
   if (!canEdit()) return;
   let changedId = '';
@@ -312,6 +315,13 @@ repository.subscribe((revision) => {
 });
 window.addEventListener('resize', drawMapConnections);
 document.fonts.ready.then(drawMapConnections);
-window.addEventListener('beforeunload', event => { if (dirty()) { event.preventDefault(); event.returnValue = ''; } });
+window.addEventListener('beforeunload', event => { if (dirty() || workspace.pending || workspace.saving) { event.preventDefault(); event.returnValue = ''; } });
 window.addEventListener('hashchange', () => { const next = location.hash.slice(1); if (viewNames.includes(next)) { state.view = next; render(); } });
 render();
+
+return {
+ isDirty: () => !!(dirty() || workspace.pending || workspace.saving),
+ update(view, language) { if (!viewNames.includes(view)) return; const changed=state.view!==view; state.language=language; if(changed)closeDialog(true); state.view=view; render(changed); },
+ destroy() { repository.channel?.close(); environment.dispose(); }
+};
+}

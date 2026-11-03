@@ -39,11 +39,11 @@ const memberRoutes: RouteConfig = [
   ]),
 ];
 const adminRoutes: RouteConfig = [
-  route("admin/strategic-relationships", "features/strategic-relationships/StrategicRelationshipsPage.tsx"),
-  route("admin/founder-workspace", "features/founder-workspace/FounderWorkspacePage.tsx"),
   layout("routes/admin-shell.tsx", [
     route("admin", "features/admin/AdminLayout.tsx", [
       index("features/admin/AdminOverviewPage.tsx"),
+      route("strategic-relationships/:view?", "features/strategic-relationships/StrategicRelationshipsPage.tsx"),
+      route("founder-workspace/:view?", "features/founder-workspace/FounderWorkspacePage.tsx"),
       route("feedback", "features/admin/feedback/AdminFeedbackPage.tsx"),
       route("community", "features/admin/AdminCommunityPage.tsx"),
       route("mentoring", "features/admin/AdminMentoringPage.tsx"),

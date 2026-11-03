@@ -1,4 +1,9 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {existsSync,readFileSync} from 'node:fs';import {resolve} from 'node:path';
 import {blank} from '../public/strategic-relationships/domain/model.mjs';
 import {shell} from '../public/strategic-relationships/ui/render.mjs';
-test('workspace branding resolves inside its independently served administrator asset directory',()=>{const base=new URL('https://nawah.example/strategic-relationships/index.html'),html=shell(blank(),{language:'ar',view:'today',today:'2026-11-03',navExpanded:true},'<p>Synthetic</p>');const images=[...html.matchAll(/<img[^>]+src="([^"]+)"/g)];assert.ok(images.length);for(const [,src]of images){const url=new URL(src,base);assert.ok(url.pathname.startsWith('/strategic-relationships/'));const file=resolve('public',url.pathname.slice(1));assert.ok(existsSync(file));assert.ok(readFileSync(file).length>0)}});
+test('workspace defers branding to the admin shell and resolves its fonts in its asset directory',()=>{
+ const html=shell(blank(),{language:'ar',view:'today',today:'2026-11-03'},'<p>Synthetic</p>');
+ assert(!html.includes('class="brand"'));assert(!html.includes('<aside'));
+ const css=readFileSync('public/strategic-relationships/ui/styles.css','utf8');
+ for(const [,src]of css.matchAll(/url\('([^']+)'\)/g))assert(existsSync(resolve('public/strategic-relationships/ui',src)));
+});
