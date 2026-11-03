@@ -34,7 +34,7 @@ import { useToast } from "../../components/ui/ToastProvider";
 import { marketingApi } from "./marketing/marketingApi";
 import "./marketing/marketing.css";
 
-const COLORS = ["#125e4e", "#174c87", "#e7b85a", "#71837c"];
+const COLORS = ["var(--admin-green,#125e4e)", "var(--admin-blue,#174c87)", "var(--admin-gold,#e7b85a)", "#71837c"];
 
 export default function AdminMarketingPage() {
   const { locale } = useI18n();
@@ -153,17 +153,17 @@ export default function AdminMarketingPage() {
             <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <AreaChart data={data.trend} margin={{ top: 18, right: 12, left: -18, bottom: 2 }} accessibilityLayer>
                 <defs>
-                  <linearGradient id="newVisitors" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#125e4e" stopOpacity={0.3}/><stop offset="95%" stopColor="#125e4e" stopOpacity={0.02}/></linearGradient>
-                  <linearGradient id="returningVisitors" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#174c87" stopOpacity={0.35}/><stop offset="95%" stopColor="#174c87" stopOpacity={0.03}/></linearGradient>
+                  <linearGradient id="newVisitors" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--admin-green,#125e4e)" stopOpacity={0.3}/><stop offset="95%" stopColor="var(--admin-green,#125e4e)" stopOpacity={0.02}/></linearGradient>
+                  <linearGradient id="returningVisitors" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--admin-blue,#174c87)" stopOpacity={0.35}/><stop offset="95%" stopColor="var(--admin-blue,#174c87)" stopOpacity={0.03}/></linearGradient>
                 </defs>
-                <CartesianGrid vertical={false} stroke="#dbe7df" strokeDasharray="3 5" />
-                <XAxis dataKey="date" tickFormatter={dayLabel} minTickGap={38} tick={{ fontSize: 10, fill: "#708077" }} axisLine={false} tickLine={false}/>
-                <YAxis tick={{ fontSize: 10, fill: "#708077" }} axisLine={false} tickLine={false} allowDecimals={false}/>
+                <CartesianGrid vertical={false} stroke="var(--admin-line,#dbe7df)" strokeDasharray="3 5" />
+                <XAxis dataKey="date" tickFormatter={dayLabel} minTickGap={38} tick={{ fontSize: 10, fill: "var(--admin-muted,#708077)" }} axisLine={false} tickLine={false}/>
+                <YAxis tick={{ fontSize: 10, fill: "var(--admin-muted,#708077)" }} axisLine={false} tickLine={false} allowDecimals={false}/>
                 <Tooltip labelFormatter={(v) => dayLabel(String(v))} contentStyle={{ borderRadius: 12, borderColor: "#c8d8ce", fontSize: 12 }}/>
                 <Legend wrapperStyle={{ fontSize: 11 }}/>
-                <Area type="monotone" dataKey="newVisitors" name={text("جدد", "New")} stroke="#125e4e" fill="url(#newVisitors)" strokeWidth={2.5}/>
-                <Area type="monotone" dataKey="returningVisitors" name={text("عائدون", "Returning")} stroke="#174c87" fill="url(#returningVisitors)" strokeWidth={2}/>
-                <Line type="monotone" dataKey="signups" name={text("تسجيل", "Sign-ups")} stroke="#b1822b" strokeWidth={2.5} dot={false}/>
+                <Area type="monotone" dataKey="newVisitors" name={text("جدد", "New")} stroke="var(--admin-green,#125e4e)" fill="url(#newVisitors)" strokeWidth={2.5}/>
+                <Area type="monotone" dataKey="returningVisitors" name={text("عائدون", "Returning")} stroke="var(--admin-blue,#174c87)" fill="url(#returningVisitors)" strokeWidth={2}/>
+                <Line type="monotone" dataKey="signups" name={text("تسجيل", "Sign-ups")} stroke="var(--admin-gold,#b1822b)" strokeWidth={2.5} dot={false}/>
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -200,13 +200,13 @@ export default function AdminMarketingPage() {
             <div className="mk-chart mk-chart-small" dir="ltr">
               <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <BarChart data={data.sources.slice(0, 8)} layout="vertical" margin={{ top: 5, right: 14, left: 20, bottom: 0 }} accessibilityLayer>
-                  <CartesianGrid horizontal={false} stroke="#e1e9e4" />
+                  <CartesianGrid horizontal={false} stroke="var(--admin-line,#e1e9e4)" />
                   <XAxis type="number" hide />
-                  <YAxis type="category" dataKey="source" width={95} tick={{ fontSize: 10, fill: "#4d6256" }} axisLine={false} tickLine={false}/>
+                  <YAxis type="category" dataKey="source" width={95} tick={{ fontSize: 10, fill: "var(--admin-muted,#4d6256)" }} axisLine={false} tickLine={false}/>
                   <Tooltip contentStyle={{ borderRadius: 12, borderColor: "#c8d8ce", fontSize: 12 }}/>
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="visitors" name={text("زوار", "Visitors")} fill="#125e4e" radius={[0, 6, 6, 0]}/>
-                  <Bar dataKey="signups" name={text("تسجيل", "Sign-ups")} fill="#e7b85a" radius={[0, 6, 6, 0]}/>
+                  <Bar dataKey="visitors" name={text("زوار", "Visitors")} fill="var(--admin-green,#125e4e)" radius={[0, 6, 6, 0]}/>
+                  <Bar dataKey="signups" name={text("تسجيل", "Sign-ups")} fill="var(--admin-gold,#e7b85a)" radius={[0, 6, 6, 0]}/>
                 </BarChart>
               </ResponsiveContainer>
             </div>

@@ -75,7 +75,7 @@ export function OperationsChart({
                 accessibilityLayer
               >
                 <CartesianGrid
-                  stroke="#e4ece6"
+                  stroke="var(--admin-line,#e4ece6)"
                   strokeDasharray="3 5"
                   vertical={false}
                 />
@@ -83,14 +83,14 @@ export function OperationsChart({
                   dataKey="time"
                   tickFormatter={time}
                   minTickGap={45}
-                  tick={{ fill: "#73847b", fontSize: 10 }}
+                  tick={{ fill: "var(--admin-muted,#73847b)", fontSize: 10 }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
                   width={48}
                   domain={percent ? [0, 100] : [0, "auto"]}
-                  tick={{ fill: "#73847b", fontSize: 10 }}
+                  tick={{ fill: "var(--admin-muted,#73847b)", fontSize: 10 }}
                   axisLine={false}
                   tickLine={false}
                 />

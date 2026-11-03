@@ -590,19 +590,19 @@ export default function AdminOperationsPage() {
                 {
                   key: "active",
                   label: text("النشطون", "Active"),
-                  color: "#125e4e",
+                  color: "var(--admin-green,#125e4e)",
                 },
               ]}
               limits={[
                 {
                   value: settings.activeWarn,
                   label: text("تحذير", "Warning"),
-                  color: "#b1822b",
+                  color: "var(--admin-gold,#b1822b)",
                 },
                 {
                   value: settings.activeCritical,
                   label: text("خطر", "Critical"),
-                  color: "#b9494a",
+                  color: "var(--admin-danger,#b9494a)",
                 },
               ]}
             />
@@ -619,23 +619,23 @@ export default function AdminOperationsPage() {
               )}
               unit="ms"
               channels={[
-                { key: "p95", label: "API P95", color: "#174c87" },
+                { key: "p95", label: "API P95", color: "var(--admin-blue,#174c87)" },
                 {
                   key: "clientP95",
                   label: text("من المتصفح P95", "Browser P95"),
-                  color: "#527ba6",
+                  color: "var(--admin-teal,#527ba6)",
                 },
               ]}
               limits={[
                 {
                   value: settings.latencyWarnMs,
                   label: text("تحذير", "Warning"),
-                  color: "#b1822b",
+                  color: "var(--admin-gold,#b1822b)",
                 },
                 {
                   value: settings.latencyCriticalMs,
                   label: text("خطر", "Critical"),
-                  color: "#b9494a",
+                  color: "var(--admin-danger,#b9494a)",
                 },
               ]}
             />
@@ -649,7 +649,7 @@ export default function AdminOperationsPage() {
               )}
               unit="req/s"
               channels={[
-                { key: "rps", label: text("المعدل", "Rate"), color: "#125e4e" },
+                { key: "rps", label: text("المعدل", "Rate"), color: "var(--admin-green,#125e4e)" },
               ]}
             />
             <OperationsChart
@@ -661,17 +661,17 @@ export default function AdminOperationsPage() {
                 "5xx responses only; 429 rejections and other 4xx responses are separate.",
               )}
               unit="%"
-              channels={[{ key: "errors", label: "5xx", color: "#a14c4e" }]}
+              channels={[{ key: "errors", label: "5xx", color: "var(--admin-danger,#a14c4e)" }]}
               limits={[
                 {
                   value: settings.errorWarnPercent,
                   label: text("تحذير", "Warning"),
-                  color: "#b1822b",
+                  color: "var(--admin-gold,#b1822b)",
                 },
                 {
                   value: settings.errorCriticalPercent,
                   label: text("خطر", "Critical"),
-                  color: "#b9494a",
+                  color: "var(--admin-danger,#b9494a)",
                 },
               ]}
             />
@@ -686,23 +686,23 @@ export default function AdminOperationsPage() {
               unit="%"
               percent
               channels={[
-                { key: "cpu", label: "CPU", color: "#125e4e" },
+                { key: "cpu", label: "CPU", color: "var(--admin-green,#125e4e)" },
                 {
                   key: "memory",
                   label: text("الذاكرة", "Memory"),
-                  color: "#174c87",
+                  color: "var(--admin-blue,#174c87)",
                 },
               ]}
               limits={[
                 {
                   value: settings.cpuCritical,
                   label: text("خطر CPU", "CPU critical"),
-                  color: "#b9494a",
+                  color: "var(--admin-danger,#b9494a)",
                 },
                 {
                   value: settings.memoryCritical,
                   label: text("خطر RAM", "RAM critical"),
-                  color: "#9d6b67",
+                  color: "var(--admin-danger,#9d6b67)",
                 },
               ]}
             />
@@ -722,19 +722,19 @@ export default function AdminOperationsPage() {
                 {
                   key: "tx",
                   label: text("إرسال", "Transmit"),
-                  color: "#125e4e",
+                  color: "var(--admin-green,#125e4e)",
                 },
                 {
                   key: "rx",
                   label: text("استقبال", "Receive"),
-                  color: "#527ba6",
+                  color: "var(--admin-teal,#527ba6)",
                 },
               ]}
               limits={[
                 {
                   value: settings.uplinkMbps,
                   label: text("مرجع الرفع", "Uplink reference"),
-                  color: "#b1822b",
+                  color: "var(--admin-gold,#b1822b)",
                 },
               ]}
             />
@@ -962,14 +962,14 @@ export default function AdminOperationsPage() {
               {
                 key: "cvMiB",
                 label: text("استخدام فعلي", "Physical usage"),
-                color: "#125e4e",
+                color: "var(--admin-green,#125e4e)",
               },
             ]}
             limits={[
               {
                 value: settings.cvQuotaMiB,
                 label: text("الحصة الحالية", "Current allocation"),
-                color: "#b9494a",
+                color: "var(--admin-danger,#b9494a)",
               },
             ]}
           />
