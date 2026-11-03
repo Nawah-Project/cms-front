@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, loadEnv } from "vite";
@@ -35,6 +37,17 @@ export default defineConfig(({ command, mode }) => {
     plugins: [{
       name: 'founder-workspace-development-config',
       configureServer(server) {
+        // Native, self-hosted workspace modules are mounted by the React shell.
+        // Serve them as-is in development too, before Vite interprets ?import.
+        server.middlewares.use((req, res, next) => {
+          const pathname = (req.url || '').split('?')[0];
+          if (!/^\/(founder-workspace|strategic-relationships)\/[a-z0-9-]+\/[a-z0-9.-]+\.mjs$/.test(pathname)) return next();
+          readFile(resolve(process.cwd(), 'public', '.' + pathname)).then(source => {
+            res.setHeader('Content-Type', 'text/javascript');
+            res.setHeader('Cache-Control', 'no-store');
+            res.end(source);
+          }).catch(() => { res.statusCode = 404; res.end(); });
+        });
         server.middlewares.use('/founder-workspace/config.json', (_req, res) => {
           const values = loadEnv(mode, process.cwd(), 'VITE_');
           res.setHeader('Content-Type', 'application/json');
