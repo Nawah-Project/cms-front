@@ -11,3 +11,8 @@
 !.env.example
 __pycache__/
 /candidate/
+
+.delivery/
+.ci-results/
+__pycache__/
+*.pyc
