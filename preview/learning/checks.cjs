@@ -77,6 +77,12 @@ async function luminance() {
     return a.sort((a, b) => a - b)[40];
   });
 }
+async function readerShot(path) {
+  await page.evaluate(() => window.scrollTo(0, document.querySelector('.ll-reader').getBoundingClientRect().top + scrollY));
+  await page.waitForTimeout(750);
+  await render();
+  await page.screenshot({path});
+}
 async function confirm(start, end) {
   await page.getByRole("button", name("تأكيد ما قرأته")).click();
   const d = page.getByRole("dialog");
@@ -169,10 +175,7 @@ async function note(text) {
         if (!n) await page.getByRole("button", name("125%")).click();
       });
     await render();
-    await page.screenshot({
-      path: "/evidence/reader-night-notes.png",
-      fullPage: true,
-    });
+    await readerShot("/evidence/reader-night-notes.png");
     await page.getByRole("button", name("بحث")).click();
     await page
       .locator(".ll-reader-notes input[type=search]")
@@ -244,10 +247,7 @@ async function note(text) {
       (await state()).notes[0].editionId,
       (await state()).editions[0].id,
     );
-    await page.screenshot({
-      path: "/evidence/reader-arabic.png",
-      fullPage: true,
-    });
+    await readerShot("/evidence/reader-arabic.png");
     console.log(
       "PASS actual PDF render, original/night/paper, middle-page reading, overlap, search, anchored note, zoom, draft protection, missing/renamed/different edition",
     );
@@ -371,10 +371,7 @@ async function note(text) {
     await page.mouse.click(sb.x + sb.width * 0.4, sb.y + sb.height * 0.2);
     await page.getByRole("button", name("ملاحظة على التحديد")).click();
     await note("ملاحظة موضعية على صفحة مصوّرة بلا طبقة نصية");
-    await page.screenshot({
-      path: "/evidence/reader-scanned.png",
-      fullPage: true,
-    });
+    await readerShot("/evidence/reader-scanned.png");
     await page.getByRole("button", name("وضع التركيز")).click();
     assert.equal(
       await page.locator(".workspace-sidebar").evaluate((e) => e.inert),
@@ -402,12 +399,11 @@ async function note(text) {
     );
     await page.getByRole("button", name("الملاحظات والفهرس")).click();
     await page.locator(".ll-reader-notes.is-open").waitFor();
-    await page.screenshot({
-      path: "/evidence/reader-mobile.png",
-      fullPage: true,
-    });
+    await readerShot("/evidence/reader-mobile.png");
     await page.getByRole("button", name("طي لوحة الملاحظات")).click();
     await page.getByRole("button", name("وضع التركيز")).click();
+    await render();
+    assert.equal(await page.evaluate(() => !!document.elementFromPoint(12, 12)?.closest('.ll-reader.is-focus')), true, 'Focus covers the mobile admin toolbar');
     await page.screenshot({ path: "/evidence/reader-mobile-focus.png" });
     await page.keyboard.press("Escape");
     console.log(
