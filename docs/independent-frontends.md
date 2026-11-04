@@ -5,7 +5,7 @@
 `NAWAH_FRONTEND_APP=member|admin` selects production routes and runtime; omitted/combined is for development and global type generation. A single source repository produces independent images and candidate approvals:
 
 - `nawah/frontend:sha-COMMIT`: member routes, authentication, onboarding, journey and member consulting.
-- `nawah/admin:sha-COMMIT`: administrative routes and founder workspace; no programme page routes.
+- `nawah/admin:sha-COMMIT`: product administrative routes; no programme page routes.
 
 The member image is actually built **after removing `src/app/features/admin` and the founder public assets inside the disposable builder**. A new accidental dependency therefore fails the build. `check-frontend-bundle.mjs` verifies compiled route IDs and asset exclusion. This does not change the local checkout or remove existing shared domain resources needed by admin workflows.
 
@@ -19,13 +19,9 @@ Admin Vite assets use a separate `/admin-assets/` base. Shared navigation uses f
 
 The gateway proxy preserves path, query, cookies and response status/headers, strips hop-by-hop headers, uses a fixed configured internal target, handles aborts, and has a bounded timeout. Both frontend processes preserve the patched Node/runtime baseline and protected metrics; admin metrics have their own service label.
 
-## Founder workspace
+## Personal application
 
-`/admin/founder-workspace` is a protected full-page workspace, using an independent view document under the admin frontend. It keeps its task model and scheduling engine detached from React and the existing admin pages. A visible link returns to the main admin area.
-
-Its persistence adapter uses credentialed API calls, actual backend READ/WRITE capability, revisions and stable request IDs. First-tab bootstrap is account-scoped/idempotent across windows. No plan content, draft, participant material, or auth token is persisted in browser storage. Failed saves keep the form and offer draft export; conflicting changes are not silently replaced. Cross-tab broadcasts contain revision metadata only.
-
-The reviewed local-preview JSON can be imported explicitly into the authenticated workspace after validation. No automatic browser-account migration or sharing occurs. Evidence remains text/link-based. The consulting practice guide links to the existing consulting workspace without copying client data or writing case/Journey state.
+Personal domains are no longer served by either product image. See [the extraction contract](personal-extraction.md).
 
 ## Delivery and rollback
 

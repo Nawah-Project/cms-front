@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "@noble/hashes": "2.4.0",
     "@prometheus-io/client": "0.16.1",
     "@react-router/express": "8.4.0",
     "@react-router/node": "^8.4.0",
@@ -23,7 +22,6 @@
     "express": "5.2.1",
     "isbot": "^5.1.36",
     "lucide-react": "^1.16.0",
-    "pdfjs-dist": "6.5.438",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.75.0",

@@ -1,4 +1,3 @@
-import { workspaceViews, type WorkspaceName } from '../platform/workspaces/views';
 import { ConsultingInvite } from "../features/career-consulting/ConsultingInvite";
 import { useSectionDesign } from "../features/ux-lab/SectionExperience";
 import { useEffect, useState } from "react";
@@ -90,9 +89,6 @@ type AdminNavItem = {
 };
 
 const ADMIN_PRIMARY_ITEMS: AdminNavItem[] = [
-  {labelAr:"مكتبة التعلّم",labelEn:"Learning library",to:"/admin/learning",icon:"admin-mentoring" as const,section:"LEARNING_LIBRARY" as const},
-  { labelAr:"إدارة العلاقات الاستراتيجية",labelEn:"Strategic relationships",to:"/admin/strategic-relationships",icon:"admin-community",section:"STRATEGIC_RELATIONSHIPS" },
-  { labelAr: "مساحة المؤسس", labelEn: "Founder workspace", to: "/admin/founder-workspace", icon: "admin-overview", section: "FOUNDER_WORKSPACE" },
   {labelAr:"الاستشارات المهنية",labelEn:"Career Consulting",to:"/admin/career-consulting",icon:"admin-mentoring",section:"CAREER_CONSULTING"},
   {
     labelAr: "نظرة عامة",
@@ -321,7 +317,6 @@ export function AppSidebar({
   onToggleCollapsed: () => void;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [workspaceGroups, setWorkspaceGroups] = useState<Record<string, boolean>>({});
   const [guidanceHint, setGuidanceHint] = useState<{ mobile: boolean } | null>(
     null,
   );
@@ -415,29 +410,6 @@ export function AppSidebar({
               : "text-neutral-300 hover:bg-neutral-800/70 hover:text-white"
         } ${collapsed && !mobile ? "justify-center px-2" : ""}`;
 
-        const workspaceName = item.to.slice('/admin/'.length) as WorkspaceName;
-        const children = workspaceViews[workspaceName];
-        if (children) {
-          const open = workspaceGroups[workspaceName] ?? active;
-          const narrow = collapsed && !mobile;
-          const groupId = `workspace-${workspaceName}-${mobile ? 'mobile' : 'desktop'}`;
-          return <div key={item.to}>
-            <button type="button" className={`${className} w-full`} aria-label={locale === 'ar' ? item.labelAr : item.labelEn} aria-expanded={open && !narrow} aria-controls={groupId}
-              onClick={() => { if (narrow) { onToggleCollapsed(); setWorkspaceGroups(previous => ({ ...previous, [workspaceName]: true })); } else setWorkspaceGroups(previous => ({ ...previous, [workspaceName]: !open })); }}>
-              <span className="flex min-w-0 items-center gap-2.5"><NavIcon name={item.icon} /><span className={narrow ? 'sr-only' : 'text-start'}>{locale === 'ar' ? item.labelAr : item.labelEn}</span></span>
-              {!narrow && <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />}
-            </button>
-            <nav id={groupId} hidden={!open || narrow} aria-label={locale === 'ar' ? item.labelAr : item.labelEn} className="ms-5 my-1 space-y-1 border-s border-emerald-500/25 ps-2">
-              {children.map(([key, ar, en]) => {
-                const selected = location.pathname === `${item.to}/${key}` || (location.pathname === item.to && key === children[0][0]);
-                return <Link key={key} to={`${item.to}/${key}`} aria-current={selected ? 'page' : undefined} onClick={() => mobile && setMobileOpen(false)}
-                  className={`block rounded-lg px-3 py-2 text-xs leading-relaxed ${selected ? (mobile ? 'bg-emerald-100 text-emerald-950 font-bold' : 'bg-white/10 text-white font-bold') : (mobile ? 'text-neutral-700 hover:bg-neutral-100' : 'text-neutral-300 hover:bg-white/5 hover:text-white')}`}>
-                  {locale === 'ar' ? ar : en}
-                </Link>;
-              })}
-            </nav>
-          </div>;
-        }
         return (
           <Link
             key={item.to}

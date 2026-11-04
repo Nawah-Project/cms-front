@@ -32,7 +32,7 @@ test('pre-paint bootstrap applies only to Admin and never executes stored conten
 });
 
 test('theme declarations retain valid variable references after token migration',()=>{
- const css=readFileSync('public/founder-workspace/ui/styles.css','utf8')+brand+pilot;
+ const css=brand+pilot;
  assert.doesNotMatch(css,/var\(--var\(/);
  assert.doesNotMatch(css,/var\(--[\w-]+\)[0-9a-f]{2}(?=[;,\s])/i);
 });
@@ -43,7 +43,7 @@ test('adopt the pilot preference without overwriting it, with the new key taking
 });
 
 test('all domain night roles have definitions and utility references are valid',()=>{
- const files=['src/app/features/admin/ux-lab.css','src/app/features/admin/marketing/marketing.css','src/app/features/admin/operations/operations.css','src/app/features/admin/journey-observatory/journey-observatory.css','src/app/features/career-consulting/consulting.css','src/app/features/career-consulting/roadmaps.css','public/strategic-relationships/ui/styles.css'];
+ const files=['src/app/features/admin/ux-lab.css','src/app/features/admin/marketing/marketing.css','src/app/features/admin/operations/operations.css','src/app/features/admin/journey-observatory/journey-observatory.css','src/app/features/career-consulting/consulting.css','src/app/features/career-consulting/roadmaps.css'];
  const declared=new Set([...pilot.matchAll(/(--admin-[\w-]+)\s*:/g)].map(m=>m[1]));
  for(const path of files)for(const [,role]of readFileSync(path,'utf8').matchAll(/var\((--admin-[\w-]+)/g))assert(declared.has(role),`${path}: ${role}`);
  assert.doesNotMatch(pilot,/var\(--[\w-]+\//);

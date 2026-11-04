@@ -38,13 +38,16 @@ const memberRoutes: RouteConfig = [
 
   ]),
 ];
+const personalRedirects: RouteConfig = [
+  route("admin/learning/*", "features/admin/redirects/PersonalLearningRedirect.tsx"),
+  route("admin/founder-workspace/:view?", "features/admin/redirects/PersonalFounderRedirect.tsx"),
+  route("admin/strategic-relationships/:view?", "features/admin/redirects/PersonalRelationshipsRedirect.tsx"),
+];
 const adminRoutes: RouteConfig = [
+  ...personalRedirects,
   layout("routes/admin-shell.tsx", [
     route("admin", "features/admin/AdminLayout.tsx", [
       index("features/admin/AdminOverviewPage.tsx"),
-      route("learning/*", "features/learning-library/LearningLibraryPage.tsx"),
-      route("strategic-relationships/:view?", "features/strategic-relationships/StrategicRelationshipsPage.tsx"),
-      route("founder-workspace/:view?", "features/founder-workspace/FounderWorkspacePage.tsx"),
       route("feedback", "features/admin/feedback/AdminFeedbackPage.tsx"),
       route("community", "features/admin/AdminCommunityPage.tsx"),
       route("mentoring", "features/admin/AdminMentoringPage.tsx"),
