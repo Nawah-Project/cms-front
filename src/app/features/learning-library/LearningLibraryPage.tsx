@@ -31,6 +31,8 @@ function LibraryContent() {
     t = useWords(),
     location = useLocation(),
     confirm = useRef<HTMLDialogElement>(null);
+  const preview =
+    import.meta.env.DEV && import.meta.env.VITE_LEARNING_PREVIEW === "true";
   const parts = location.pathname.split("/").slice(3),
     view = parts[0] || "today";
   const blocker = useBlocker(
@@ -64,6 +66,10 @@ function LibraryContent() {
     read: ["مساحة القراءة", "Reading workspace"],
   };
   const errors: Record<string, [string, string]> = {
+    PERMISSION_DENIED: [
+      "صلاحيتك قراءة فقط؛ لم يُحفظ تعديل.",
+      "Your access is read only; no change was saved.",
+    ],
     REVIEW_REQUIRED: [
       "الخلاصة والتطبيق والمراجعة مطلوبة قبل إكمال الهدف.",
       "Synthesis, application and review are required to complete a goal.",
@@ -112,20 +118,24 @@ function LibraryContent() {
           <h1>{t(...(titles[view] || titles.today))}</h1>
         </div>
         <span className="ll-badge">
-          {t("معاينة للمراجعة", "Review preview")}
+          {preview
+            ? t("معاينة للمراجعة", "Review preview")
+            : t("مكتبتي الخاصة", "My private library")}
         </span>
       </header>
-      <div className="ll-preview-notice">
-        <p>
-          {t(
-            "معاينة خاصة: بيانات هذه المكتبة محفوظة في هذا المتصفح فقط. ملفات PDF تبقى محلية. حفظ الحساب والرفع والاستيراد من السيرفر يأتيان بعد مراجعة التجربة.",
-            "Private review preview: this library is saved in this browser only. PDF files stay local. Account storage, uploads and server import follow experience review.",
-          )}
-        </p>
-        <a href="https://nawah-project.com/admin">
-          {t("العودة للإدارة المنشورة", "Open production administration")}
-        </a>
-      </div>
+      {preview && (
+        <div className="ll-preview-notice">
+          <p>
+            {t(
+              "معاينة خاصة: بيانات هذه المكتبة محفوظة في هذا المتصفح فقط. ملفات PDF تبقى محلية. حفظ الحساب والرفع والاستيراد من السيرفر يأتيان بعد مراجعة التجربة.",
+              "Private review preview: this library is saved in this browser only. PDF files stay local. Account storage, uploads and server import follow experience review.",
+            )}
+          </p>
+          <a href="https://nawah-project.com/admin">
+            {t("العودة للإدارة المنشورة", "Open production administration")}
+          </a>
+        </div>
+      )}
       {(error || externalChange) && (
         <div className="ll-save-alert" role="alert">
           <p>

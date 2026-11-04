@@ -122,7 +122,7 @@ function AccessEditor({
         </div>
       ) : (
         <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          {ADMIN_SECTIONS.filter((section) => section !== "LEARNING_LIBRARY").map((section) => {
+          {ADMIN_SECTIONS.map((section) => {
             const value: Choice = draft[section] ?? "NONE";
             return (
               <label key={section} className="rounded-xl border border-border bg-canvas/50 p-3 text-sm">

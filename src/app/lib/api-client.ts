@@ -132,7 +132,7 @@ export async function fetchApi<T, TBody = unknown>(
   }
 
   if (!response.ok) {
-    if (!path.startsWith('/ux-lab') && !path.startsWith('/auth') && !path.includes('/career-consulting')) {
+    if (!path.startsWith('/ux-lab') && !path.startsWith('/auth') && !path.includes('/career-consulting') && !path.startsWith('/admin/learning-library')) {
       if(response.status===400||response.status===422)trackSectionAction('validation_failed');
       else if(response.status>=500)trackSectionAction('request_failed');
     }

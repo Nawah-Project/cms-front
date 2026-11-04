@@ -271,13 +271,19 @@ test("completing a goal requires synthesis, application and review and never cha
   assert.equal(coverage(next, "edition-1").percent, 0);
 });
 
-test("the review route cannot ship in production, the member build excludes it, and PDFs stay outside the source tree", async () => {
+test("the account library stays isolated and personal PDFs remain outside the source tree", async () => {
   const { readFileSync, readdirSync } = await import("node:fs");
   const routes = readFileSync("src/app/routes.ts", "utf8");
   assert.match(
     routes,
-    /process\.env\.NODE_ENV !== "production" && process\.env\.NAWAH_LEARNING_PREVIEW === "true" && target !== "member"/,
+    /route\("learning\/\*", "features\/learning-library\/LearningLibraryPage.tsx"\)/,
   );
+  const adapter = readFileSync(
+    "src/app/features/learning-library/LibraryContext.tsx",
+    "utf8",
+  );
+  assert.match(adapter, /account-repository/);
+  assert.match(adapter, /import.meta.env.DEV/);
   assert.match(readFileSync(".dockerignore", "utf8"), /^preview\/?$/m);
   const root = "src/app/features/learning-library";
   function files(path) {

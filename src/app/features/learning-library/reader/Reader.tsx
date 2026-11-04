@@ -22,7 +22,7 @@ import type { Book, Chapter, Edition, Note } from "../domain/types";
 import { Dialog, Empty, readerUrl, useWords } from "../ui";
 import { BookTools } from "../BookLibrary";
 import { NoteCard, NoteEditor } from "../Notes";
-import { openPdf, type PdfHandle } from "./pdf";
+import { openPdf, openServerPdf, type PdfHandle } from "./pdf";
 import { PdfPage } from "./PdfPage";
 type Mode = "night" | "paper" | "original";
 export function Reader({ bookId }: { bookId: string }) {
@@ -58,6 +58,7 @@ function ReaderEdition({ book, edition }: { book: Book; edition: Edition }) {
       forget,
       register,
       busy,
+      canWrite,
       error,
       reload,
     } = useLibrary(),
@@ -127,9 +128,12 @@ function ReaderEdition({ book, edition }: { book: Book; edition: Edition }) {
       opened: PdfHandle | undefined;
     setHandle(null);
     setFileError("");
-    if (!file) return;
+    if (!file && !edition.assetId) return;
     setOpening(true);
-    void openPdf(file, async (retry) =>
+    const open = file
+      ? openPdf
+      : (_file: any, pw: any) => openServerPdf(edition.assetId!, pw);
+    void open(file!, async (retry) =>
       window.prompt(
         retry
           ? t("كلمة المرور غير صحيحة", "Incorrect password")
@@ -155,9 +159,9 @@ function ReaderEdition({ book, edition }: { book: Book; edition: Edition }) {
       searchRun.current++;
       void opened?.close();
     };
-  }, [file, edition.id]);
+  }, [file, edition.id, edition.assetId]);
   useEffect(() => {
-    if (!handle) return;
+    if (!handle || !canWrite) return;
     const timer = setTimeout(() => {
       void commit("position", {
         editionId: edition.id,
@@ -166,7 +170,7 @@ function ReaderEdition({ book, edition }: { book: Book; edition: Edition }) {
       });
     }, 350);
     return () => clearTimeout(timer);
-  }, [handle, page, edition.id]);
+  }, [handle, page, edition.id, canWrite]);
   useEffect(() => {
     setPeek(false);
     setSelection(null);
@@ -453,7 +457,7 @@ function ReaderEdition({ book, edition }: { book: Book; edition: Edition }) {
       </div>
       <div className={"ll-reader-body " + (side ? "has-notes" : "")}>
         <div className="ll-reader-main">
-          {!file ? (
+          {!file && !edition.assetId ? (
             <div className="ll-file-missing">
               <BookOpen size={44} />
               <h3>
@@ -506,7 +510,7 @@ function ReaderEdition({ book, edition }: { book: Book; edition: Edition }) {
                   "Could not open PDF; notes are unchanged.",
                 )}
               </p>
-              <button className="ll-button" onClick={() => forget(edition.id)}>
+              <button className="ll-button" onClick={() => {forget(edition.id);input.current?.click();}}>
                 {t("إعادة اختيار الملف", "Choose file again")}
               </button>
             </div>

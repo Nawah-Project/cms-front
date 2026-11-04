@@ -189,50 +189,53 @@ export function TodayView() {
           </Link>
         </section>
       </div>
-      <section className="ll-sample-panel">
-        {sampleError && (
-          <p role="alert">
-            {t(
-              "تعذر فتح المثال. جرّب مجددًا أو اختر PDF من جهازك.",
-              "Could not open the sample. Retry or choose a local PDF.",
+      {import.meta.env.DEV &&
+        import.meta.env.VITE_LEARNING_PREVIEW === "true" && (
+          <section className="ll-sample-panel">
+            {sampleError && (
+              <p role="alert">
+                {t(
+                  "تعذر فتح المثال. جرّب مجددًا أو اختر PDF من جهازك.",
+                  "Could not open the sample. Retry or choose a local PDF.",
+                )}
+              </p>
             )}
-          </p>
+            <span className="ll-eyebrow">
+              {t(
+                "أمثلة مصطنعة لمراجعة القارئ",
+                "Synthetic samples for reader review",
+              )}
+            </span>
+            <h3>
+              {t(
+                "جرّب النص والصورة والعربية قبل اختيار كتبك",
+                "Try text, scans and Arabic before choosing your books",
+              )}
+            </h3>
+            <p>
+              {t(
+                "هذه ملفات اختبار وليست كتبك أو سجلات مشاركين. اختيار مثال يضيفه لمكتبة المعاينة فقط.",
+                "These are test documents, not your books or participant records. Choosing a sample adds it only to the preview library.",
+              )}
+            </p>
+            <div className="ll-actions">
+              {[
+                ["text", "PDF نصي", "Text PDF"],
+                ["scan", "صفحات مصوّرة", "Scanned pages"],
+                ["mixed", "عربي ورسوم", "Arabic & diagrams"],
+              ].map(([key, ar, en]) => (
+                <button
+                  className="ll-button"
+                  key={key}
+                  disabled={busy || !!sampleBusy}
+                  onClick={() => void sample(key)}
+                >
+                  {sampleBusy === key ? t("تجهيز…", "Preparing…") : t(ar, en)}
+                </button>
+              ))}
+            </div>
+          </section>
         )}
-        <span className="ll-eyebrow">
-          {t(
-            "أمثلة مصطنعة لمراجعة القارئ",
-            "Synthetic samples for reader review",
-          )}
-        </span>
-        <h3>
-          {t(
-            "جرّب النص والصورة والعربية قبل اختيار كتبك",
-            "Try text, scans and Arabic before choosing your books",
-          )}
-        </h3>
-        <p>
-          {t(
-            "هذه ملفات اختبار وليست كتبك أو سجلات مشاركين. اختيار مثال يضيفه لمكتبة المعاينة فقط.",
-            "These are test documents, not your books or participant records. Choosing a sample adds it only to the preview library.",
-          )}
-        </p>
-        <div className="ll-actions">
-          {[
-            ["text", "PDF نصي", "Text PDF"],
-            ["scan", "صفحات مصوّرة", "Scanned pages"],
-            ["mixed", "عربي ورسوم", "Arabic & diagrams"],
-          ].map(([key, ar, en]) => (
-            <button
-              className="ll-button"
-              key={key}
-              disabled={busy || !!sampleBusy}
-              onClick={() => void sample(key)}
-            >
-              {sampleBusy === key ? t("تجهيز…", "Preparing…") : t(ar, en)}
-            </button>
-          ))}
-        </div>
-      </section>
     </>
   );
 }

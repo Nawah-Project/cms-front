@@ -13,6 +13,8 @@ import type { Book } from "./domain/types";
 import { coverage } from "./domain/model.mjs";
 import { csv, Dialog, Empty, readerUrl, useWords } from "./ui";
 
+import { LibraryBackup } from "./LibraryBackup";
+import { ServerCopy } from "./ServerCopy";
 export function ImportBooks({ compact = false }: { compact?: boolean }) {
   const { register, busy } = useLibrary(),
     input = useRef<HTMLInputElement>(null),
@@ -56,8 +58,8 @@ export function ImportBooks({ compact = false }: { compact?: boolean }) {
       {!compact && (
         <span className="ll-muted">
           {t(
-            "تُفتح الملفات محليًا. لا تُرفع ملفات الكتب في هذه المعاينة.",
-            "Files open locally. Book files are not uploaded in this preview.",
+            "تُفتح الملفات محليًا. لا يُرفع الكتاب إلا عند اختيار نسخة السيرفر.",
+            "Files open locally. A server copy is uploaded only when you choose it.",
           )}
         </span>
       )}
@@ -81,7 +83,11 @@ export function BookCard({ book }: { book: Book }) {
         ) : (
           <BookOpen size={42} />
         )}
-        <span>{t("ملف محلي", "Local file")}</span>
+        <span>
+          {edition.storage === "server"
+            ? t("نسخة عبر الحساب", "Account copy")
+            : t("ملف محلي", "Local file")}
+        </span>
       </div>
       <div className="ll-book-details">
         <small>
@@ -240,6 +246,7 @@ export function BookTools({ book }: { book: Book }) {
   return (
     <>
       <div className="ll-actions">
+        <ServerCopy book={book} />
         <button className="ll-button" onClick={() => setEdit(true)}>
           <Pencil size={15} />
           {t("بيانات الكتاب", "Book details")}
@@ -308,6 +315,7 @@ export function LibraryView() {
     <>
       <div className="ll-toolbar">
         <ImportBooks />
+        <LibraryBackup />
       </div>
       <div className="ll-filters">
         <label>

@@ -12,7 +12,9 @@ import { uid } from "./domain/model.mjs";
 import { useAuth } from "../auth/store/authStore";
 import type { LearningRepository } from "./infrastructure/repository";
 import { fingerprint, inspectPdf, openPdf } from "./reader/pdf";
+import { canAdminAccess } from "../../platform/access/adminAccess";
 type Value = {
+  canWrite: boolean;
   document: LibraryDocument;
   busy: boolean;
   error: string;
@@ -35,6 +37,7 @@ export const useLibrary = () => {
 };
 export function LibraryProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const canWrite = canAdminAccess(user, "LEARNING_LIBRARY", "WRITE");
   const [document, setDocument] = useState<LibraryDocument | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -50,15 +53,15 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     let repo: LearningRepository | undefined,
       unsubscribe: (() => void) | undefined;
     if (!user?.id) return;
-    if (
-      !import.meta.env.DEV ||
-      import.meta.env.VITE_LEARNING_PREVIEW !== "true"
-    ) {
-      setError("ACCOUNT_ADAPTER_PENDING");
-      return;
-    }
-    import("./infrastructure/preview-repository")
-      .then((x) => x.openPreviewRepository(user.id))
+    const opening =
+      import.meta.env.DEV && import.meta.env.VITE_LEARNING_PREVIEW === "true"
+        ? import("./infrastructure/preview-repository").then((x) =>
+            x.openPreviewRepository(user.id),
+          )
+        : import("./infrastructure/account-repository").then((x) =>
+            x.openAccountRepository(user.id),
+          );
+    opening
       .then(async (value) => {
         repo = value;
         if (closed) {
@@ -90,6 +93,10 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   }, []);
   const commit = useCallback(
     (type: string, payload: Command["payload"]): Promise<boolean> => {
+      if (!canWrite) {
+        setError("PERMISSION_DENIED");
+        return Promise.resolve(false);
+      }
       // Queue this tab's autosaves; an external revision still fails CAS and keeps the draft.
       const request: Command = {
         id: uid(),
@@ -119,7 +126,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       queue.current = operation.catch(() => undefined);
       return operation;
     },
-    [],
+    [canWrite],
   );
   const remember = (editionId: string, file: File) =>
     setFiles((old) => new Map(old).set(editionId, file));
@@ -225,13 +232,14 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         {error === "ACCOUNT_ADAPTER_PENDING"
           ? "المكتبة لم تُفعّل على حساب الإنتاج بعد. / Account library is not enabled yet."
           : error
-            ? "تعذر فتح تخزين المعاينة في المتصفح. / Preview storage unavailable."
+            ? "تعذر فتح المكتبة. تحقق من الاتصال وتسجيل الدخول ثم أعد تحميل الصفحة؛ لم ننتقل إلى حفظ محلي بديل. / Library unavailable. Check connection and session, then reload; no local fallback was used."
             : "جارٍ فتح المكتبة… / Opening library…"}
       </div>
     );
   return (
     <Context.Provider
       value={{
+        canWrite,
         document,
         busy,
         error,

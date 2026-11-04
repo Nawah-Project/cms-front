@@ -5,6 +5,7 @@ import { useLibrary } from "./LibraryContext";
 import type { Goal } from "./domain/types";
 import { coverage, uid } from "./domain/model.mjs";
 import { Dialog, Empty, readerUrl, useWords } from "./ui";
+import { FounderLink } from "./FounderLink";
 export function GoalsView() {
   const { document } = useLibrary(),
     t = useWords(),
@@ -69,6 +70,7 @@ export function GoalsView() {
                   </span>
                 </div>
                 <footer>
+                  <FounderLink goal={goal} />
                   <button className="ll-button" onClick={() => setEdit(goal)}>
                     {t("افتح العمل والمراجعة", "Open work & review")}
                   </button>
@@ -287,8 +289,8 @@ function GoalEditor({
         </label>
         <p className="ll-muted">
           {t(
-            "الرابط مرجع فقط في المعاينة؛ لا ينشئ أو ينجز مهمة في خطة المؤسس.",
-            "This preview link is a reference only; it does not create or complete a Founder task.",
+            "حفظ الرابط لا ينشئ أو ينجز مهمة. الربط والإنشاء الصريح من بطاقة الهدف.",
+            "Saving a reference does not create or complete a task. Use the goal card to explicitly link or create one.",
           )}
         </p>
         <button className="ll-button primary" disabled={saving}>

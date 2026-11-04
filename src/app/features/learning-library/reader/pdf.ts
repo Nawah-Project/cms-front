@@ -58,10 +58,11 @@ export async function openPdf(
     disableStream: true,
     rangeChunkSize: 65536,
     useSystemFonts: true,
-    cMapUrl: "/learning-pdf-assets/cmaps/",
+    cMapUrl: (import.meta.env.BASE_URL || "/") + "learning-pdf-assets/cmaps/",
     cMapPacked: true,
-    standardFontDataUrl: "/learning-pdf-assets/standard_fonts/",
-    wasmUrl: "/learning-pdf-assets/wasm/",
+    standardFontDataUrl:
+      (import.meta.env.BASE_URL || "/") + "learning-pdf-assets/standard_fonts/",
+    wasmUrl: (import.meta.env.BASE_URL || "/") + "learning-pdf-assets/wasm/",
   });
   task.onPassword = (update: (password: string) => void, reason: number) => {
     void (
@@ -133,4 +134,45 @@ export async function inspectPdf(handle: PdfHandle): Promise<PdfInspection> {
     outline,
     pageLabels: (await doc.getPageLabels().catch(() => null)) || [],
   };
+}
+
+export async function openServerPdf(
+  assetId: string,
+  password?: (retry: boolean) => Promise<string | null>,
+): Promise<PdfHandle> {
+  const pdf = await import("pdfjs-dist");
+  const { API_BASE_URL } = await import("../../../lib/api-client");
+  pdf.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+  const base = import.meta.env.BASE_URL || "/";
+  const task = pdf.getDocument({
+    url:
+      API_BASE_URL +
+      "/admin/learning-library/files/" +
+      encodeURIComponent(assetId),
+    withCredentials: true,
+    disableAutoFetch: true,
+    disableStream: true,
+    rangeChunkSize: 1024 ** 2,
+    useSystemFonts: true,
+    cMapUrl: base + "learning-pdf-assets/cmaps/",
+    cMapPacked: true,
+    standardFontDataUrl: base + "learning-pdf-assets/standard_fonts/",
+    wasmUrl: base + "learning-pdf-assets/wasm/",
+  });
+  task.onPassword = (update: (password: string) => void, reason: number) => {
+    void (
+      password?.(reason === pdf.PasswordResponses.INCORRECT_PASSWORD) ??
+      Promise.resolve(null)
+    ).then((value) => {
+      if (value === null) void task.destroy();
+      else update(value);
+    });
+  };
+  try {
+    const document = await task.promise;
+    return { document, close: () => task.destroy() };
+  } catch (e) {
+    await task.destroy();
+    throw e;
+  }
 }
