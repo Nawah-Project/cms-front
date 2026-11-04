@@ -32,6 +32,11 @@ jobs:
         node-version: 24.22.2
     - name: Check release helper syntax
       run: python3 -m py_compile scripts/release/release.py
+    - name: Keep existing frontend unit checks for operator-only edits
+      if: needs.plan.outputs.code != 'true'
+      run: |-
+        npm ci
+        node --test scripts/*checks.mjs
   verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
