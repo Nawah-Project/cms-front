@@ -16,15 +16,12 @@ import {
 import { ErrorState, LoadingState } from "./AdminUI";
 
 const labels: Record<AdminSection, [string, string]> = {
-  LEARNING_LIBRARY: ["مكتبة التعلّم", "Learning library"],
   OVERVIEW: ["النظرة العامة", "Overview"],
   COMMUNITY: ["إدارة المنصة والأعضاء", "Community & members"],
   MENTORING: ["التوجيه والإرشاد", "Mentoring & guidance"],
   JOURNEY: ["هندسة الرحلة والحبكة", "Journey & plot engine"],
   REPORTS: ["معاينة تقارير الرحلة", "Journey report preview"],
   CAREER_CONSULTING: ["الاستشارات المهنية — الحالات والعمل الخاص", "Career Consulting — private cases & work"],
-  STRATEGIC_RELATIONSHIPS: ["إدارة العلاقات الاستراتيجية", "Strategic relationships"],
-  FOUNDER_WORKSPACE: ["مساحة المؤسس — الخطة والتعلّم والعمل", "Founder workspace — plans, learning & work"],
   UX_LAB: ["تحليلات التجربة والسلوك", "UX & behavior lab"],
   MARKETING: ["المركتنج ونمو الزيارات", "Marketing & acquisition"],
   OPERATIONS: ["العمليات والموارد التشغيلية", "Operations & resources"],
