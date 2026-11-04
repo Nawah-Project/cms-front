@@ -16,6 +16,7 @@ import {
 import { ErrorState, LoadingState } from "./AdminUI";
 
 const labels: Record<AdminSection, [string, string]> = {
+  LEARNING_LIBRARY: ["مكتبة التعلّم", "Learning library"],
   OVERVIEW: ["النظرة العامة", "Overview"],
   COMMUNITY: ["إدارة المنصة والأعضاء", "Community & members"],
   MENTORING: ["التوجيه والإرشاد", "Mentoring & guidance"],

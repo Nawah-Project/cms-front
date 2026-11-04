@@ -9,6 +9,7 @@ export const ADMIN_SECTIONS = [
   "UX_LAB",
   "CAREER_CONSULTING",
   "FOUNDER_WORKSPACE",
+  "LEARNING_LIBRARY",
   "STRATEGIC_RELATIONSHIPS",
   "MARKETING",
   "OPERATIONS",
@@ -30,6 +31,7 @@ export function canAdminAccess(
 }
 
 export function adminSectionForPath(pathname: string): AdminSection {
+  if (pathname === "/admin/learning" || pathname.startsWith("/admin/learning/")) return "LEARNING_LIBRARY";
   if (pathname.startsWith("/admin/feedback")) return "MENTORING";
   if (pathname.startsWith("/admin/community")) return "COMMUNITY";
   if (pathname.startsWith("/admin/mentoring")) return "MENTORING";
@@ -53,6 +55,7 @@ const SECTION_PATH: Record<AdminSection, string> = {
   UX_LAB: "/admin/ux-lab",
   CAREER_CONSULTING: "/admin/career-consulting",
   FOUNDER_WORKSPACE: "/admin/founder-workspace",
+  LEARNING_LIBRARY: "/admin/learning",
   STRATEGIC_RELATIONSHIPS: "/admin/strategic-relationships",
   MARKETING: "/admin/marketing",
   OPERATIONS: "/admin/operations",

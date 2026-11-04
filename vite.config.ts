@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFile,cp,mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
@@ -36,6 +36,7 @@ export default defineConfig(({ command, mode }) => {
     define: { 'import.meta.env.VITE_FRONTEND_APP': JSON.stringify(target) },
     plugins: [{
       name: 'founder-workspace-development-config',
+      async writeBundle(){if(target!=='member'){await mkdir('build/client/learning-pdf-assets',{recursive:true});for(const folder of ['cmaps','standard_fonts','wasm'])await cp('node_modules/pdfjs-dist/'+folder,'build/client/learning-pdf-assets/'+folder,{recursive:true});}},
       configureServer(server) {
         // Native, self-hosted workspace modules are mounted by the React shell.
         // Serve them as-is in development too, before Vite interprets ?import.

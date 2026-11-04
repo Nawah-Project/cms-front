@@ -66,7 +66,7 @@ function buildUrl(
   params?: Record<string, string | number | boolean | undefined | null>,
 ): string {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  const fullUrl = new URL(`${API_BASE_URL}${normalizedPath}`);
+  const fullUrl = new URL(`${API_BASE_URL}${normalizedPath}`, typeof window !== "undefined" ? window.location.origin : undefined);
   if (params) {
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined && value !== null && value !== "") {
@@ -132,7 +132,7 @@ export async function fetchApi<T, TBody = unknown>(
   }
 
   if (!response.ok) {
-    if (!path.startsWith('/ux-lab') && !path.startsWith('/auth') && !path.includes('/career-consulting')) {
+    if (!path.startsWith('/ux-lab') && !path.startsWith('/auth') && !path.includes('/career-consulting') && !path.startsWith('/admin/learning-library')) {
       if(response.status===400||response.status===422)trackSectionAction('validation_failed');
       else if(response.status>=500)trackSectionAction('request_failed');
     }
