@@ -42,6 +42,7 @@ const adminRoutes: RouteConfig = [
   layout("routes/admin-shell.tsx", [
     route("admin", "features/admin/AdminLayout.tsx", [
       index("features/admin/AdminOverviewPage.tsx"),
+      ...(process.env.NODE_ENV !== "production" && process.env.NAWAH_LEARNING_PREVIEW === "true" && target !== "member" ? [route("learning/*", "features/learning-library/LearningLibraryPage.tsx")] : []),
       route("strategic-relationships/:view?", "features/strategic-relationships/StrategicRelationshipsPage.tsx"),
       route("founder-workspace/:view?", "features/founder-workspace/FounderWorkspacePage.tsx"),
       route("feedback", "features/admin/feedback/AdminFeedbackPage.tsx"),

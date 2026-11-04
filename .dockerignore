@@ -7,3 +7,6 @@ README.md
 .env.*
 coverage
 *.log
+
+# Review harnesses and their synthetic authentication never ship in runtime images.
+preview

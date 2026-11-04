@@ -1,5 +1,13 @@
 // Navigation metadata only. No domain services or private workspace data.
 export const workspaceViews = {
+  'learning': [
+    ['today', 'قراءتي اليوم', 'Reading today'],
+    ['library', 'المكتبة', 'Library'],
+    ['notes', 'الملاحظات والأفكار', 'Notes & ideas'],
+    ['maps', 'خرائط المعرفة', 'Knowledge maps'],
+    ['practice', 'التطبيق والمراجعة', 'Application & review'],
+    ['progress', 'التقدم والحصيلة', 'Progress & outcomes'],
+  ],
   'strategic-relationships': [
     ['today', 'المتابعة اليوم', 'Today & follow-up'],
     ['people', 'الأشخاص والجهات', 'People & organizations'],

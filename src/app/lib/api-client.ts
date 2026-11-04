@@ -66,7 +66,7 @@ function buildUrl(
   params?: Record<string, string | number | boolean | undefined | null>,
 ): string {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  const fullUrl = new URL(`${API_BASE_URL}${normalizedPath}`);
+  const fullUrl = new URL(`${API_BASE_URL}${normalizedPath}`, typeof window !== "undefined" ? window.location.origin : undefined);
   if (params) {
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined && value !== null && value !== "") {

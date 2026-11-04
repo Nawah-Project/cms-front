@@ -16,6 +16,7 @@ import {
 import { ErrorState, LoadingState } from "./AdminUI";
 
 const labels: Record<AdminSection, [string, string]> = {
+  LEARNING_LIBRARY: ["مكتبة التعلّم", "Learning library"],
   OVERVIEW: ["النظرة العامة", "Overview"],
   COMMUNITY: ["إدارة المنصة والأعضاء", "Community & members"],
   MENTORING: ["التوجيه والإرشاد", "Mentoring & guidance"],
@@ -121,7 +122,7 @@ function AccessEditor({
         </div>
       ) : (
         <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          {ADMIN_SECTIONS.map((section) => {
+          {ADMIN_SECTIONS.filter((section) => section !== "LEARNING_LIBRARY").map((section) => {
             const value: Choice = draft[section] ?? "NONE";
             return (
               <label key={section} className="rounded-xl border border-border bg-canvas/50 p-3 text-sm">
